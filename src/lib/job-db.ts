@@ -1,0 +1,109 @@
+import { FIXED_AREA, type District, type Job, type JobType } from "@/types/job";
+
+export type JobPayload = {
+  shopName: string;
+  district: District;
+  jobType: JobType;
+  salary: string;
+  benefits: string[];
+  description: string;
+  imageUrl?: string;
+  lineUrl: string;
+  workHours?: string;
+  requirements?: string[];
+  isVerified?: boolean;
+};
+
+type JobRow = {
+  id: string;
+  shop_name: string;
+  area: string;
+  district: District;
+  job_type: JobType;
+  title: string;
+  salary: string;
+  work_hours: string;
+  description: string;
+  requirements: string[] | null;
+  benefits: string[] | null;
+  is_verified: boolean;
+  image_url: string | null;
+  line_url: string;
+  posted_at: string;
+};
+
+export function rowToJob(row: JobRow): Job {
+  return {
+    id: row.id,
+    shopName: row.shop_name,
+    area: FIXED_AREA,
+    district: row.district,
+    jobType: row.job_type,
+    title: row.title,
+    salary: row.salary,
+    workHours: row.work_hours,
+    description: row.description,
+    requirements: row.requirements ?? [],
+    benefits: row.benefits ?? [],
+    isVerified: row.is_verified,
+    imageUrl: row.image_url ?? undefined,
+    lineUrl: row.line_url,
+    postedAt: row.posted_at,
+  };
+}
+
+export function payloadToRow(payload: JobPayload) {
+  const shopName = payload.shopName.trim();
+
+  return {
+    shop_name: shopName,
+    area: FIXED_AREA,
+    district: payload.district,
+    job_type: payload.jobType,
+    title: `${shopName}｜${payload.jobType}募集`,
+    salary: payload.salary.trim(),
+    work_hours: payload.workHours ?? "20:00〜LAST",
+    description: payload.description.trim(),
+    requirements: payload.requirements ?? ["20歳以上"],
+    benefits: payload.benefits,
+    is_verified: payload.isVerified ?? false,
+    image_url: payload.imageUrl?.trim() || null,
+    line_url: payload.lineUrl.trim(),
+  };
+}
+
+export function normalizeJobPayload(body: unknown): JobPayload {
+  const data = body as Partial<JobPayload>;
+  return {
+    shopName: String(data.shopName ?? ""),
+    district: data.district as District,
+    jobType: data.jobType as JobType,
+    salary: String(data.salary ?? ""),
+    benefits: Array.isArray(data.benefits) ? data.benefits.map(String) : [],
+    description: String(data.description ?? ""),
+    imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
+    lineUrl: String(data.lineUrl ?? ""),
+    workHours: data.workHours ? String(data.workHours) : undefined,
+    requirements: Array.isArray(data.requirements)
+      ? data.requirements.map(String)
+      : undefined,
+    isVerified: Boolean(data.isVerified ?? false),
+  };
+}
+
+export function validateJobPayload(payload: JobPayload): string | null {
+  if (!payload.shopName.trim()) return "店名を入力してください。";
+  if (!payload.district) return "地区を選択してください。";
+  if (!payload.jobType) return "職種を選択してください。";
+  if (!payload.salary.trim()) return "時給を入力してください。";
+  if (!payload.description.trim()) return "説明文を入力してください。";
+  if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
+  return null;
+}
+
+export function parseBenefits(value: string): string[] {
+  return value
+    .split(/[\n,、]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
