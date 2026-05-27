@@ -5,7 +5,18 @@ import { JobList } from "@/components/JobList";
 import type { JobFilters } from "@/types/job";
 
 interface JobsPageProps {
-  searchParams: Promise<{ district?: string; jobType?: string; q?: string }>;
+  searchParams: Promise<{
+    district?: string;
+    jobType?: string;
+    q?: string;
+    minSalary?: string;
+    benefit?: string | string[];
+  }>;
+}
+
+function toArray(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 export default async function JobsPage({ searchParams }: JobsPageProps) {
@@ -14,6 +25,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     district: params.district ?? null,
     jobType: params.jobType ?? null,
     query: params.q ?? null,
+    minSalary: params.minSalary ?? null,
+    benefits: toArray(params.benefit),
   };
 
   return (

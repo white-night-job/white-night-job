@@ -82,4 +82,6 @@ export interface JobFilters {
   district: string | null;
   jobType: string | null;
   query?: string | null;
+  minSalary?: string | null;
+  benefits?: string[];
 }

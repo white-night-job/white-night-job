@@ -7,7 +7,18 @@ import { JobList } from "@/components/JobList";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
-  searchParams: Promise<{ district?: string; jobType?: string; q?: string }>;
+  searchParams: Promise<{
+    district?: string;
+    jobType?: string;
+    q?: string;
+    minSalary?: string;
+    benefit?: string | string[];
+  }>;
+}
+
+function toArray(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -16,9 +27,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     district: params.district ?? null,
     jobType: params.jobType ?? null,
     query: params.q ?? null,
+    minSalary: params.minSalary ?? null,
+    benefits: toArray(params.benefit),
   };
 
-  const filterLabel = [filters.district, filters.jobType, filters.query]
+  const filterLabel = [
+    filters.district,
+    filters.jobType,
+    filters.query,
+    filters.minSalary ? `${Number(filters.minSalary).toLocaleString()}円以上` : null,
+    ...(filters.benefits ?? []),
+  ]
     .filter(Boolean)
     .join(" · ");
 

@@ -7,6 +7,8 @@ function buildJobQuery(filters?: JobFilters): string {
   if (filters?.district) params.set("district", filters.district);
   if (filters?.jobType) params.set("jobType", filters.jobType);
   if (filters?.query) params.set("q", filters.query);
+  if (filters?.minSalary) params.set("minSalary", filters.minSalary);
+  filters?.benefits?.forEach((benefit) => params.append("benefit", benefit));
   const query = params.toString();
   return query ? `?${query}` : "";
 }
