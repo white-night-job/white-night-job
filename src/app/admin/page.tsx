@@ -21,6 +21,7 @@ type JobForm = {
   benefits: string;
   description: string;
   imageUrl: string;
+  phone: string;
   lineUrl: string;
 };
 
@@ -32,6 +33,7 @@ const emptyForm: JobForm = {
   benefits: "",
   description: "",
   imageUrl: "",
+  phone: "",
   lineUrl: "",
 };
 
@@ -49,6 +51,7 @@ function toPayload(form: JobForm) {
     benefits: parseBenefits(form.benefits),
     description: form.description,
     imageUrl: form.imageUrl || undefined,
+    phone: form.phone || undefined,
     lineUrl: form.lineUrl,
   };
 }
@@ -62,6 +65,7 @@ function toForm(job: Job): JobForm {
     benefits: job.benefits.join("\n"),
     description: job.description,
     imageUrl: job.imageUrl ?? "",
+    phone: job.phone ?? "",
     lineUrl: job.lineUrl,
   };
 }
@@ -428,6 +432,23 @@ export default function AdminPage() {
             placeholder="https://line.me/R/ti/p/@xxxx"
             required
           />
+        </div>
+
+        <div>
+          <label htmlFor="phone" className={labelClass}>
+            電話番号（任意）
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            value={form.phone}
+            onChange={(event) => setField("phone", event.target.value)}
+            className={inputClass}
+            placeholder="011-000-0000"
+          />
+          <p className="mt-1 text-xs text-muted">
+            入力した場合のみ、求人詳細ページに電話応募ボタンが表示されます。
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2">

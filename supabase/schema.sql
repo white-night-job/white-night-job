@@ -17,6 +17,7 @@ create table if not exists public.jobs (
   benefits text[] not null default array[]::text[],
   is_verified boolean not null default false,
   image_url text,
+  phone text,
   line_url text not null,
   published boolean not null default true,
   posted_at date not null default current_date,
@@ -67,6 +68,7 @@ insert into public.jobs (
   benefits,
   is_verified,
   image_url,
+  phone,
   line_url,
   posted_at
 ) values
@@ -82,6 +84,7 @@ insert into public.jobs (
   array['20歳以上', '週2日〜OK'],
   array['送迎あり', '衣装・美容サポート', 'ノルマなし'],
   true,
+  null,
   null,
   'https://line.me/R/ti/p/@example-sapporo-rosetta',
   '2026-05-19'
@@ -99,6 +102,7 @@ insert into public.jobs (
   array['まかないあり', '交通費支給', '昇給あり'],
   true,
   null,
+  null,
   'https://line.me/R/ti/p/@example-sapporo-aurora',
   '2026-05-18'
 ),
@@ -114,6 +118,7 @@ insert into public.jobs (
   array['20歳以上', '週1日〜OK'],
   array['体験入店OK', '週払い可', '私服出勤相談可'],
   false,
+  null,
   null,
   'https://line.me/R/ti/p/@example-sapporo-blanc',
   '2026-05-17'

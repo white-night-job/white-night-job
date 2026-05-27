@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { LineApplyButton } from "@/components/LineApplyButton";
+import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
@@ -85,7 +85,12 @@ export default function JobDetailPage({
               ))}
             </ul>
           )}
-          <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
+          <div className="space-y-3">
+            <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
+            {job.phone && (
+              <PhoneApplyButton phone={job.phone} fullWidth size="lg" />
+            )}
+          </div>
         </div>
       </article>
     </div>
