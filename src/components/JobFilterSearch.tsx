@@ -47,14 +47,6 @@ type JobFilterSearchProps = {
   onApply: (filters: JobFilters) => void;
 };
 
-const EMPTY_FILTERS: JobFilters = {
-  district: null,
-  jobType: null,
-  query: null,
-  minSalary: null,
-  benefits: [],
-};
-
 export function JobFilterSearch({
   appliedFilters,
   onApply,
@@ -112,8 +104,6 @@ export function JobFilterSearch({
     setDraftJobType("all");
     setDraftMinSalary("all");
     setDraftBenefits([]);
-    onApply(EMPTY_FILTERS);
-    pushParams(EMPTY_FILTERS);
   }
 
   function handleSearch(event?: React.FormEvent<HTMLFormElement>) {
