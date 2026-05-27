@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { Hero } from "@/components/Hero";
 import { JobCount } from "@/components/JobCount";
 import { JobFilterSearch } from "@/components/JobFilterSearch";
@@ -43,6 +44,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
           <JobList filters={filters} />
         </section>
+
+        <FirstTimeGuide />
       </div>
     </div>
   );
