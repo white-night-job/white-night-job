@@ -37,6 +37,7 @@ export interface JobEntry {
   isVerified: boolean;
   imageUrl?: string;
   phone?: string;
+  address?: string;
   postedAt: string;
 }
 
@@ -56,6 +57,7 @@ export interface Job {
   isVerified: boolean;
   imageUrl?: string;
   phone?: string;
+  address?: string;
   lineUrl: string;
   postedAt: string;
 }

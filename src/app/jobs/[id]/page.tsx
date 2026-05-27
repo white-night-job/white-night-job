@@ -75,6 +75,12 @@ export default function JobDetailPage({
         <div className="space-y-6 px-5 py-6 sm:px-8">
           <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
           <p className="text-sm text-muted">勤務時間：{job.workHours}</p>
+          {job.address && (
+            <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
+              <p className="text-xs font-medium text-muted">住所</p>
+              <p className="mt-1 text-sm font-medium text-charcoal">{job.address}</p>
+            </div>
+          )}
           <p className="leading-relaxed text-muted">{job.description}</p>
           {job.benefits.length > 0 && (
             <ul className="flex flex-wrap gap-2">

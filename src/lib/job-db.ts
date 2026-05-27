@@ -9,6 +9,7 @@ export type JobPayload = {
   description: string;
   imageUrl?: string;
   phone?: string;
+  address?: string;
   lineUrl: string;
   workHours?: string;
   requirements?: string[];
@@ -30,6 +31,7 @@ type JobRow = {
   is_verified: boolean;
   image_url: string | null;
   phone: string | null;
+  address: string | null;
   line_url: string;
   posted_at: string;
 };
@@ -50,6 +52,7 @@ export function rowToJob(row: JobRow): Job {
     isVerified: row.is_verified,
     imageUrl: row.image_url ?? undefined,
     phone: row.phone ?? undefined,
+    address: row.address ?? undefined,
     lineUrl: row.line_url,
     postedAt: row.posted_at,
   };
@@ -72,6 +75,7 @@ export function payloadToRow(payload: JobPayload) {
     is_verified: payload.isVerified ?? false,
     image_url: payload.imageUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
+    address: payload.address?.trim() || null,
     line_url: payload.lineUrl.trim(),
   };
 }
@@ -87,6 +91,7 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     description: String(data.description ?? ""),
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
+    address: data.address ? String(data.address) : undefined,
     lineUrl: String(data.lineUrl ?? ""),
     workHours: data.workHours ? String(data.workHours) : undefined,
     requirements: Array.isArray(data.requirements)

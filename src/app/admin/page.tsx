@@ -22,6 +22,7 @@ type JobForm = {
   description: string;
   imageUrl: string;
   phone: string;
+  address: string;
   lineUrl: string;
 };
 
@@ -34,6 +35,7 @@ const emptyForm: JobForm = {
   description: "",
   imageUrl: "",
   phone: "",
+  address: "",
   lineUrl: "",
 };
 
@@ -52,6 +54,7 @@ function toPayload(form: JobForm) {
     description: form.description,
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
+    address: form.address || undefined,
     lineUrl: form.lineUrl,
   };
 }
@@ -66,6 +69,7 @@ function toForm(job: Job): JobForm {
     description: job.description,
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
+    address: job.address ?? "",
     lineUrl: job.lineUrl,
   };
 }
@@ -436,7 +440,7 @@ export default function AdminPage() {
 
         <div>
           <label htmlFor="phone" className={labelClass}>
-            電話番号（任意）
+            電話番号
           </label>
           <input
             id="phone"
@@ -449,6 +453,19 @@ export default function AdminPage() {
           <p className="mt-1 text-xs text-muted">
             入力した場合のみ、求人詳細ページに電話応募ボタンが表示されます。
           </p>
+        </div>
+
+        <div>
+          <label htmlFor="address" className={labelClass}>
+            住所
+          </label>
+          <input
+            id="address"
+            value={form.address}
+            onChange={(event) => setField("address", event.target.value)}
+            className={inputClass}
+            placeholder="例：北海道札幌市中央区南○条西○丁目"
+          />
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2">
