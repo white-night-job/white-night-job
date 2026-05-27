@@ -51,54 +51,66 @@ export function JobFilterSearch() {
   const currentQuery = searchParams.get("q") ?? "";
   const currentMinSalary = searchParams.get("minSalary") ?? "all";
   const currentBenefits = searchParams.getAll("benefit");
+  const currentBenefitsKey = currentBenefits.join(",");
   const [keyword, setKeyword] = useState(currentQuery);
+  const [draftDistrict, setDraftDistrict] = useState(currentDistrict);
+  const [draftJobType, setDraftJobType] = useState(currentJobType);
+  const [draftMinSalary, setDraftMinSalary] = useState(currentMinSalary);
+  const [draftBenefits, setDraftBenefits] = useState<string[]>(currentBenefits);
 
   useEffect(() => {
     setKeyword(currentQuery);
-  }, [currentQuery]);
+    setDraftDistrict(currentDistrict);
+    setDraftJobType(currentJobType);
+    setDraftMinSalary(currentMinSalary);
+    setDraftBenefits(currentBenefitsKey ? currentBenefitsKey.split(",") : []);
+  }, [
+    currentBenefitsKey,
+    currentDistrict,
+    currentJobType,
+    currentMinSalary,
+    currentQuery,
+  ]);
 
   function pushParams(params: URLSearchParams) {
     const query = params.toString();
     router.push(query ? `${pathname}?${query}#jobs-section` : `${pathname}#jobs-section`);
   }
 
-  function updateParam(key: "district" | "jobType", value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "all") params.delete(key);
-    else params.set(key, value);
-    pushParams(params);
-  }
-
-  function updateMinSalary(value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === "all") params.delete("minSalary");
-    else params.set("minSalary", value);
-    pushParams(params);
-  }
-
   function toggleBenefit(benefit: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    const benefits = params.getAll("benefit");
-    params.delete("benefit");
-    const nextBenefits = benefits.includes(benefit)
-      ? benefits.filter((item) => item !== benefit)
-      : [...benefits, benefit];
-    nextBenefits.forEach((item) => params.append("benefit", item));
-    pushParams(params);
+    setDraftBenefits((benefits) =>
+      benefits.includes(benefit)
+        ? benefits.filter((item) => item !== benefit)
+        : [...benefits, benefit],
+    );
   }
 
   function resetFilters() {
     setKeyword("");
+    setDraftDistrict("all");
+    setDraftJobType("all");
+    setDraftMinSalary("all");
+    setDraftBenefits([]);
     router.push(`${pathname}#jobs-section`);
+  }
+
+  function handleSearch(event?: React.FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const params = new URLSearchParams();
+    const nextKeyword = keyword.trim();
+
+    if (nextKeyword) params.set("q", nextKeyword);
+    if (draftMinSalary !== "all") params.set("minSalary", draftMinSalary);
+    if (draftDistrict !== "all") params.set("district", draftDistrict);
+    if (draftJobType !== "all") params.set("jobType", draftJobType);
+    draftBenefits.forEach((benefit) => params.append("benefit", benefit));
+
+    pushParams(params);
   }
 
   function handleKeywordSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
-    const nextKeyword = keyword.trim();
-    if (nextKeyword) params.set("q", nextKeyword);
-    else params.delete("q");
-    pushParams(params);
+    handleSearch();
   }
 
   return (
@@ -149,8 +161,8 @@ export function JobFilterSearch() {
           </label>
           <select
             id="minSalary"
-            value={currentMinSalary}
-            onChange={(event) => updateMinSalary(event.target.value)}
+            value={draftMinSalary}
+            onChange={(event) => setDraftMinSalary(event.target.value)}
             className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
           >
             {SALARY_OPTIONS.map((option) => (
@@ -170,7 +182,7 @@ export function JobFilterSearch() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {category.items.map((benefit) => {
-                  const selected = currentBenefits.includes(benefit);
+                  const selected = draftBenefits.includes(benefit);
                   return (
                     <button
                       key={benefit}
@@ -195,14 +207,14 @@ export function JobFilterSearch() {
         <p className="mb-3 text-sm font-semibold text-charcoal">エリア：札幌（固定）</p>
         <h2 className="mb-3 text-sm font-semibold text-charcoal">地区で探す</h2>
         <div className="flex flex-wrap gap-2">
-          <FilterButton active={currentDistrict === "all"} onClick={() => updateParam("district", "all")}>
+          <FilterButton active={draftDistrict === "all"} onClick={() => setDraftDistrict("all")}>
             すべて
           </FilterButton>
           {DISTRICTS.map((d) => (
             <FilterButton
               key={d}
-              active={currentDistrict === d}
-              onClick={() => updateParam("district", d)}
+              active={draftDistrict === d}
+              onClick={() => setDraftDistrict(d)}
             >
               {d}
             </FilterButton>
@@ -212,20 +224,41 @@ export function JobFilterSearch() {
       <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
         <h2 className="mb-3 text-sm font-semibold text-charcoal">職種で探す</h2>
         <div className="flex flex-wrap gap-2">
-          <FilterButton active={currentJobType === "all"} onClick={() => updateParam("jobType", "all")}>
+          <FilterButton active={draftJobType === "all"} onClick={() => setDraftJobType("all")}>
             すべて
           </FilterButton>
           {JOB_TYPES.map((type) => (
             <FilterButton
               key={type}
-              active={currentJobType === type}
-              onClick={() => updateParam("jobType", type)}
+              active={draftJobType === type}
+              onClick={() => setDraftJobType(type)}
             >
               {type}
             </FilterButton>
           ))}
         </div>
       </section>
+      <div className="grid gap-3 rounded-2xl border border-gold/25 bg-white p-4 shadow-[0_8px_24px_rgba(33,29,24,0.06)] sm:grid-cols-[1fr_auto] sm:p-5">
+        <p className="text-xs leading-relaxed text-muted sm:self-center">
+          条件を選んだら「検索する」を押すと、求人一覧に反映されます。
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => handleSearch()}
+            className="min-h-12 rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+          >
+            検索する
+          </button>
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="min-h-12 rounded-full border border-gold/40 bg-ivory px-6 py-3 text-sm font-semibold text-gold-dark hover:bg-gold-light/20"
+          >
+            リセット
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
