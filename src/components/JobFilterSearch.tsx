@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { BENEFIT_SEARCH_CATEGORIES } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
-import { JOB_TYPES } from "@/types/job";
+import { JOB_TYPES, type JobFilters } from "@/types/job";
 
 const SALARY_OPTIONS = [
   { label: "指定なし", value: "all" },
@@ -42,15 +42,30 @@ function FilterButton({
   );
 }
 
-export function JobFilterSearch() {
+type JobFilterSearchProps = {
+  appliedFilters: JobFilters;
+  onApply: (filters: JobFilters) => void;
+};
+
+const EMPTY_FILTERS: JobFilters = {
+  district: null,
+  jobType: null,
+  query: null,
+  minSalary: null,
+  benefits: [],
+};
+
+export function JobFilterSearch({
+  appliedFilters,
+  onApply,
+}: JobFilterSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentDistrict = searchParams.get("district") ?? "all";
-  const currentJobType = searchParams.get("jobType") ?? "all";
-  const currentQuery = searchParams.get("q") ?? "";
-  const currentMinSalary = searchParams.get("minSalary") ?? "all";
-  const currentBenefits = searchParams.getAll("benefit");
+  const currentDistrict = appliedFilters.district ?? "all";
+  const currentJobType = appliedFilters.jobType ?? "all";
+  const currentQuery = appliedFilters.query ?? "";
+  const currentMinSalary = appliedFilters.minSalary ?? "all";
+  const currentBenefits = appliedFilters.benefits ?? [];
   const currentBenefitsKey = currentBenefits.join(",");
   const [keyword, setKeyword] = useState(currentQuery);
   const [draftDistrict, setDraftDistrict] = useState(currentDistrict);
@@ -72,7 +87,13 @@ export function JobFilterSearch() {
     currentQuery,
   ]);
 
-  function pushParams(params: URLSearchParams) {
+  function pushParams(filters: JobFilters) {
+    const params = new URLSearchParams();
+    if (filters.query) params.set("q", filters.query);
+    if (filters.minSalary) params.set("minSalary", filters.minSalary);
+    if (filters.district) params.set("district", filters.district);
+    if (filters.jobType) params.set("jobType", filters.jobType);
+    filters.benefits?.forEach((benefit) => params.append("benefit", benefit));
     const query = params.toString();
     router.push(query ? `${pathname}?${query}#jobs-section` : `${pathname}#jobs-section`);
   }
@@ -91,21 +112,23 @@ export function JobFilterSearch() {
     setDraftJobType("all");
     setDraftMinSalary("all");
     setDraftBenefits([]);
-    router.push(`${pathname}#jobs-section`);
+    onApply(EMPTY_FILTERS);
+    pushParams(EMPTY_FILTERS);
   }
 
   function handleSearch(event?: React.FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    const params = new URLSearchParams();
     const nextKeyword = keyword.trim();
+    const nextFilters: JobFilters = {
+      district: draftDistrict === "all" ? null : draftDistrict,
+      jobType: draftJobType === "all" ? null : draftJobType,
+      query: nextKeyword || null,
+      minSalary: draftMinSalary === "all" ? null : draftMinSalary,
+      benefits: draftBenefits,
+    };
 
-    if (nextKeyword) params.set("q", nextKeyword);
-    if (draftMinSalary !== "all") params.set("minSalary", draftMinSalary);
-    if (draftDistrict !== "all") params.set("district", draftDistrict);
-    if (draftJobType !== "all") params.set("jobType", draftJobType);
-    draftBenefits.forEach((benefit) => params.append("benefit", benefit));
-
-    pushParams(params);
+    onApply(nextFilters);
+    pushParams(nextFilters);
   }
 
   function handleKeywordSubmit(event: React.FormEvent<HTMLFormElement>) {

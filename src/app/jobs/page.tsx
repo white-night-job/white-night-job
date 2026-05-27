@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import { JobCount } from "@/components/JobCount";
-import { JobFilterSearch } from "@/components/JobFilterSearch";
-import { JobList } from "@/components/JobList";
+import { JobSearchSection } from "@/components/JobSearchSection";
 import type { JobFilters } from "@/types/job";
 
 interface JobsPageProps {
@@ -42,18 +40,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
       <div className="space-y-6">
         <Suspense fallback={<div className="h-52 animate-pulse rounded-2xl bg-white" />}>
-          <JobFilterSearch />
+          <JobSearchSection initialFilters={filters} title="掲載求人" />
         </Suspense>
-
-        <section id="jobs-section" className="scroll-mt-20">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-charcoal">掲載求人</h2>
-            <span className="text-sm text-muted">
-              <JobCount filters={filters} />
-            </span>
-          </div>
-          <JobList filters={filters} />
-        </section>
       </div>
     </div>
   );
