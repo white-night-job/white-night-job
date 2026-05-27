@@ -13,6 +13,10 @@ export type JobPayload = {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  xUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
   lineUrl: string;
   workHours?: string;
   requirements?: string[];
@@ -38,6 +42,10 @@ type JobRow = {
   image_url: string | null;
   phone: string | null;
   address: string | null;
+  x_url: string | null;
+  instagram_url: string | null;
+  tiktok_url: string | null;
+  youtube_url: string | null;
   line_url: string;
   posted_at: string;
 };
@@ -62,6 +70,10 @@ export function rowToJob(row: JobRow): Job {
     imageUrl: row.image_url ?? undefined,
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
+    xUrl: row.x_url ?? undefined,
+    instagramUrl: row.instagram_url ?? undefined,
+    tiktokUrl: row.tiktok_url ?? undefined,
+    youtubeUrl: row.youtube_url ?? undefined,
     lineUrl: row.line_url,
     postedAt: row.posted_at,
   };
@@ -88,6 +100,10 @@ export function payloadToRow(payload: JobPayload) {
     image_url: payload.imageUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
     address: payload.address?.trim() || null,
+    x_url: payload.xUrl?.trim() || null,
+    instagram_url: payload.instagramUrl?.trim() || null,
+    tiktok_url: payload.tiktokUrl?.trim() || null,
+    youtube_url: payload.youtubeUrl?.trim() || null,
     line_url: payload.lineUrl.trim(),
   };
 }
@@ -109,6 +125,10 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
+    xUrl: data.xUrl ? String(data.xUrl) : undefined,
+    instagramUrl: data.instagramUrl ? String(data.instagramUrl) : undefined,
+    tiktokUrl: data.tiktokUrl ? String(data.tiktokUrl) : undefined,
+    youtubeUrl: data.youtubeUrl ? String(data.youtubeUrl) : undefined,
     lineUrl: String(data.lineUrl ?? ""),
     workHours: data.workHours ? String(data.workHours) : undefined,
     requirements: Array.isArray(data.requirements)

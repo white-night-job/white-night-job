@@ -31,6 +31,10 @@ type JobForm = {
   imageUrl: string;
   phone: string;
   address: string;
+  xUrl: string;
+  instagramUrl: string;
+  tiktokUrl: string;
+  youtubeUrl: string;
   lineUrl: string;
 };
 
@@ -47,6 +51,10 @@ const emptyForm: JobForm = {
   imageUrl: "",
   phone: "",
   address: "",
+  xUrl: "",
+  instagramUrl: "",
+  tiktokUrl: "",
+  youtubeUrl: "",
   lineUrl: "",
 };
 
@@ -69,6 +77,10 @@ function toPayload(form: JobForm) {
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
     address: form.address || undefined,
+    xUrl: form.xUrl || undefined,
+    instagramUrl: form.instagramUrl || undefined,
+    tiktokUrl: form.tiktokUrl || undefined,
+    youtubeUrl: form.youtubeUrl || undefined,
     lineUrl: form.lineUrl,
   };
 }
@@ -90,6 +102,10 @@ function toForm(job: Job): JobForm {
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
     address: job.address ?? "",
+    xUrl: job.xUrl ?? "",
+    instagramUrl: job.instagramUrl ?? "",
+    tiktokUrl: job.tiktokUrl ?? "",
+    youtubeUrl: job.youtubeUrl ?? "",
     lineUrl: job.lineUrl,
   };
 }
@@ -528,6 +544,69 @@ export default function AdminPage() {
             placeholder="https://line.me/R/ti/p/@xxxx"
             required
           />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">SNSリンク</p>
+            <p className="mt-1 text-xs text-muted">
+              入力したSNSだけ求人詳細ページに表示されます。
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="xUrl" className={labelClass}>
+                Xリンク
+              </label>
+              <input
+                id="xUrl"
+                type="url"
+                value={form.xUrl}
+                onChange={(event) => setField("xUrl", event.target.value)}
+                className={inputClass}
+                placeholder="https://x.com/xxxx"
+              />
+            </div>
+            <div>
+              <label htmlFor="instagramUrl" className={labelClass}>
+                Instagramリンク
+              </label>
+              <input
+                id="instagramUrl"
+                type="url"
+                value={form.instagramUrl}
+                onChange={(event) => setField("instagramUrl", event.target.value)}
+                className={inputClass}
+                placeholder="https://www.instagram.com/xxxx"
+              />
+            </div>
+            <div>
+              <label htmlFor="tiktokUrl" className={labelClass}>
+                TikTokリンク
+              </label>
+              <input
+                id="tiktokUrl"
+                type="url"
+                value={form.tiktokUrl}
+                onChange={(event) => setField("tiktokUrl", event.target.value)}
+                className={inputClass}
+                placeholder="https://www.tiktok.com/@xxxx"
+              />
+            </div>
+            <div>
+              <label htmlFor="youtubeUrl" className={labelClass}>
+                YouTubeリンク
+              </label>
+              <input
+                id="youtubeUrl"
+                type="url"
+                value={form.youtubeUrl}
+                onChange={(event) => setField("youtubeUrl", event.target.value)}
+                className={inputClass}
+                placeholder="https://www.youtube.com/@xxxx"
+              />
+            </div>
+          </div>
         </div>
 
         <div>

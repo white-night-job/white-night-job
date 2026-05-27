@@ -41,6 +41,10 @@ export interface JobEntry {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  xUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
   postedAt: string;
 }
 
@@ -64,6 +68,10 @@ export interface Job {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  xUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
   lineUrl: string;
   postedAt: string;
 }

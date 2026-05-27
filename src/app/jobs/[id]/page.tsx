@@ -42,6 +42,12 @@ export default function JobDetailPage({
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
+  const socialLinks = [
+    { label: "X", href: job.xUrl },
+    { label: "Instagram", href: job.instagramUrl },
+    { label: "TikTok", href: job.tiktokUrl },
+    { label: "YouTube", href: job.youtubeUrl },
+  ].filter((link): link is { label: string; href: string } => Boolean(link.href));
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -103,6 +109,26 @@ export default function JobDetailPage({
               <p className="text-xs font-medium text-muted">住所</p>
               <p className="mt-1 text-sm font-medium text-charcoal">{job.address}</p>
             </div>
+          )}
+          {socialLinks.length > 0 && (
+            <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-4">
+              <h2 className="mb-3 text-base font-semibold text-charcoal">
+                公式SNS
+              </h2>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-h-12 items-center justify-center rounded-full border border-gold/40 bg-white px-4 py-3 text-sm font-semibold text-gold-dark shadow-sm transition hover:border-gold hover:bg-gold-light/20"
+                  >
+                    {link.label}を見る
+                  </a>
+                ))}
+              </div>
+            </section>
           )}
           <p className="leading-relaxed text-muted">{job.description}</p>
           {benefitGroups.length > 0 && (
