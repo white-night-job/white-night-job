@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
+import { getBenefitCategoryGroups } from "@/data/benefits";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 
@@ -38,6 +39,8 @@ export default function JobDetailPage({
       </div>
     );
   }
+
+  const benefitGroups = getBenefitCategoryGroups(job.benefits);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -74,7 +77,26 @@ export default function JobDetailPage({
         </div>
         <div className="space-y-6 px-5 py-6 sm:px-8">
           <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
-          <p className="text-sm text-muted">勤務時間：{job.workHours}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
+              <p className="text-xs font-medium text-muted">勤務時間</p>
+              <p className="mt-1 text-sm font-medium text-charcoal">{job.workHours}</p>
+            </div>
+            {job.businessHours && (
+              <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
+                <p className="text-xs font-medium text-muted">営業時間</p>
+                <p className="mt-1 text-sm font-medium text-charcoal">
+                  {job.businessHours}
+                </p>
+              </div>
+            )}
+            {job.ageGroup && (
+              <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
+                <p className="text-xs font-medium text-muted">年齢層</p>
+                <p className="mt-1 text-sm font-medium text-charcoal">{job.ageGroup}</p>
+              </div>
+            )}
+          </div>
           {job.address && (
             <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
               <p className="text-xs font-medium text-muted">住所</p>
@@ -82,14 +104,30 @@ export default function JobDetailPage({
             </div>
           )}
           <p className="leading-relaxed text-muted">{job.description}</p>
-          {job.benefits.length > 0 && (
-            <ul className="flex flex-wrap gap-2">
-              {job.benefits.map((b) => (
-                <li key={b} className="rounded-full border border-gold/30 bg-ivory px-3 py-1 text-sm">
-                  {b}
-                </li>
+          {benefitGroups.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-base font-semibold text-charcoal">待遇</h2>
+              {benefitGroups.map((group) => (
+                <div
+                  key={group.title}
+                  className="rounded-2xl border border-gold/20 bg-ivory p-4"
+                >
+                  <h3 className="mb-3 text-sm font-semibold text-gold-dark">
+                    {group.title}
+                  </h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {group.items.map((benefit) => (
+                      <li
+                        key={benefit}
+                        className="rounded-full border border-gold/30 bg-white px-3 py-1.5 text-sm text-charcoal"
+                      >
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </section>
           )}
           <div className="space-y-3">
             <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />

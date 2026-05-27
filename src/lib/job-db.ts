@@ -7,6 +7,8 @@ export type JobPayload = {
   salary: string;
   benefits: string[];
   description: string;
+  businessHours?: string;
+  ageGroup?: string;
   imageUrl?: string;
   phone?: string;
   address?: string;
@@ -25,6 +27,8 @@ type JobRow = {
   title: string;
   salary: string;
   work_hours: string;
+  business_hours: string | null;
+  age_group: string | null;
   description: string;
   requirements: string[] | null;
   benefits: string[] | null;
@@ -46,6 +50,8 @@ export function rowToJob(row: JobRow): Job {
     title: row.title,
     salary: row.salary,
     workHours: row.work_hours,
+    businessHours: row.business_hours ?? undefined,
+    ageGroup: row.age_group ?? undefined,
     description: row.description,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
@@ -69,6 +75,8 @@ export function payloadToRow(payload: JobPayload) {
     title: `${shopName}｜${payload.jobType}募集`,
     salary: payload.salary.trim(),
     work_hours: payload.workHours ?? "20:00〜LAST",
+    business_hours: payload.businessHours?.trim() || null,
+    age_group: payload.ageGroup?.trim() || null,
     description: payload.description.trim(),
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
@@ -89,6 +97,8 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     salary: String(data.salary ?? ""),
     benefits: Array.isArray(data.benefits) ? data.benefits.map(String) : [],
     description: String(data.description ?? ""),
+    businessHours: data.businessHours ? String(data.businessHours) : undefined,
+    ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,

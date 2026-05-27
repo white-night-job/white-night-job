@@ -31,6 +31,8 @@ export interface JobEntry {
   jobType: JobType;
   salary: string;
   workHours: string;
+  businessHours?: string;
+  ageGroup?: string;
   description: string;
   requirements: string[];
   benefits: string[];
@@ -51,6 +53,8 @@ export interface Job {
   title: string;
   salary: string;
   workHours: string;
+  businessHours?: string;
+  ageGroup?: string;
   description: string;
   requirements: string[];
   benefits: string[];

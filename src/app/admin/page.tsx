@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { BENEFIT_CATEGORIES } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
-import { parseBenefits } from "@/lib/job-db";
 import {
   FIXED_AREA,
   JOB_TYPES,
@@ -18,7 +18,9 @@ type JobForm = {
   district: District;
   jobType: JobType;
   salary: string;
-  benefits: string;
+  businessHours: string;
+  ageGroup: string;
+  benefits: string[];
   description: string;
   imageUrl: string;
   phone: string;
@@ -31,7 +33,9 @@ const emptyForm: JobForm = {
   district: "すすきの",
   jobType: "ニュークラ",
   salary: "",
-  benefits: "",
+  businessHours: "",
+  ageGroup: "",
+  benefits: [],
   description: "",
   imageUrl: "",
   phone: "",
@@ -50,7 +54,9 @@ function toPayload(form: JobForm) {
     district: form.district,
     jobType: form.jobType,
     salary: form.salary,
-    benefits: parseBenefits(form.benefits),
+    businessHours: form.businessHours,
+    ageGroup: form.ageGroup,
+    benefits: form.benefits,
     description: form.description,
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
@@ -65,7 +71,9 @@ function toForm(job: Job): JobForm {
     district: job.district,
     jobType: job.jobType,
     salary: job.salary,
-    benefits: job.benefits.join("\n"),
+    businessHours: job.businessHours ?? "",
+    ageGroup: job.ageGroup ?? "",
+    benefits: job.benefits,
     description: job.description,
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
@@ -116,6 +124,15 @@ export default function AdminPage() {
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function toggleBenefit(benefit: string) {
+    setForm((current) => ({
+      ...current,
+      benefits: current.benefits.includes(benefit)
+        ? current.benefits.filter((item) => item !== benefit)
+        : [...current.benefits, benefit],
+    }));
   }
 
   function resetForm() {
@@ -374,17 +391,61 @@ export default function AdminPage() {
         </div>
 
         <div>
-          <label htmlFor="benefits" className={labelClass}>
-            待遇
+          <label htmlFor="businessHours" className={labelClass}>
+            営業時間
           </label>
-          <textarea
-            id="benefits"
-            value={form.benefits}
-            onChange={(event) => setField("benefits", event.target.value)}
+          <input
+            id="businessHours"
+            value={form.businessHours}
+            onChange={(event) => setField("businessHours", event.target.value)}
             className={inputClass}
-            rows={3}
-            placeholder={"送迎あり\n衣装貸与\nノルマなし"}
+            placeholder="例：20:00〜LAST"
           />
+        </div>
+
+        <div>
+          <label htmlFor="ageGroup" className={labelClass}>
+            年齢層
+          </label>
+          <input
+            id="ageGroup"
+            value={form.ageGroup}
+            onChange={(event) => setField("ageGroup", event.target.value)}
+            className={inputClass}
+            placeholder="例：20代前半〜30代前半"
+          />
+        </div>
+
+        <div>
+          <p className={labelClass}>待遇</p>
+          <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+            {BENEFIT_CATEGORIES.map((category) => (
+              <div key={category.title}>
+                <p className="mb-2 text-sm font-semibold text-gold-dark">
+                  {category.title}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {category.items.map((benefit) => {
+                    const selected = form.benefits.includes(benefit);
+                    return (
+                      <button
+                        key={benefit}
+                        type="button"
+                        onClick={() => toggleBenefit(benefit)}
+                        className={`rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
+                          selected
+                            ? "border-gold bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
+                            : "border-gold/30 bg-white text-muted hover:border-gold hover:text-gold-dark"
+                        }`}
+                      >
+                        {benefit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
