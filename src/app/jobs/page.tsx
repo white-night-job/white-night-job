@@ -5,7 +5,7 @@ import { JobList } from "@/components/JobList";
 import type { JobFilters } from "@/types/job";
 
 interface JobsPageProps {
-  searchParams: Promise<{ district?: string; jobType?: string }>;
+  searchParams: Promise<{ district?: string; jobType?: string; q?: string }>;
 }
 
 export default async function JobsPage({ searchParams }: JobsPageProps) {
@@ -13,6 +13,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   const filters: JobFilters = {
     district: params.district ?? null,
     jobType: params.jobType ?? null,
+    query: params.q ?? null,
   };
 
   return (
@@ -31,7 +32,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
           <JobFilterSearch />
         </Suspense>
 
-        <section>
+        <section id="jobs-section" className="scroll-mt-20">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-charcoal">掲載求人</h2>
             <span className="text-sm text-muted">

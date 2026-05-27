@@ -13,11 +13,14 @@ export function Header() {
             {SITE_NAME}
           </span>
         </Link>
-        <nav className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-muted sm:gap-6 sm:text-sm">
+        <nav className="flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted sm:gap-5 sm:text-sm">
           <Link href="/#first-time-guide" className="whitespace-nowrap hover:text-gold-dark">
             初めての方へ
           </Link>
-          <Link href="/" className="hover:text-gold-dark">
+          <Link href="/#jobs-section" className="whitespace-nowrap hover:text-gold-dark">
+            店舗を探す🔍
+          </Link>
+          <Link href="/jobs" className="whitespace-nowrap hover:text-gold-dark">
             求人一覧
           </Link>
           <Link href="/report" className="whitespace-nowrap hover:text-gold-dark">

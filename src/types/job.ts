@@ -81,4 +81,5 @@ export interface Job {
 export interface JobFilters {
   district: string | null;
   jobType: string | null;
+  query?: string | null;
 }

@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const district = searchParams.get("district");
     const jobType = searchParams.get("jobType");
+    const keyword = searchParams.get("q")?.trim().toLowerCase() ?? "";
     const supabase = createSupabaseAdmin();
 
     let query = supabase
@@ -28,7 +29,24 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ jobs: (data ?? []).map(rowToJob) });
+    const jobs = (data ?? []).map(rowToJob);
+    const filteredJobs = keyword
+      ? jobs.filter((job) =>
+          [
+            job.shopName,
+            job.jobType,
+            job.area,
+            job.district,
+            ...job.benefits,
+            ...(job.otherBenefits ?? []),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword),
+        )
+      : jobs;
+
+    return NextResponse.json({ jobs: filteredJobs });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の取得に失敗しました。") },

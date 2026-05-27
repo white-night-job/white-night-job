@@ -6,6 +6,7 @@ function buildJobQuery(filters?: JobFilters): string {
   const params = new URLSearchParams();
   if (filters?.district) params.set("district", filters.district);
   if (filters?.jobType) params.set("jobType", filters.jobType);
+  if (filters?.query) params.set("q", filters.query);
   const query = params.toString();
   return query ? `?${query}` : "";
 }

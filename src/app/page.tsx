@@ -7,7 +7,7 @@ import { JobList } from "@/components/JobList";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
-  searchParams: Promise<{ district?: string; jobType?: string }>;
+  searchParams: Promise<{ district?: string; jobType?: string; q?: string }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -15,9 +15,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const filters: JobFilters = {
     district: params.district ?? null,
     jobType: params.jobType ?? null,
+    query: params.q ?? null,
   };
 
-  const filterLabel = [filters.district, filters.jobType].filter(Boolean).join(" · ");
+  const filterLabel = [filters.district, filters.jobType, filters.query]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
@@ -28,7 +31,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <JobFilterSearch />
         </Suspense>
 
-        <section>
+        <section id="jobs-section" className="scroll-mt-20">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-charcoal sm:text-xl">
               求人一覧

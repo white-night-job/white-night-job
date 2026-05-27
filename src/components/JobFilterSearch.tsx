@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DISTRICTS } from "@/data/districts";
 import { JOB_TYPES } from "@/types/job";
@@ -30,20 +32,53 @@ function FilterButton({
 
 export function JobFilterSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentDistrict = searchParams.get("district") ?? "all";
   const currentJobType = searchParams.get("jobType") ?? "all";
+  const currentQuery = searchParams.get("q") ?? "";
+  const [keyword, setKeyword] = useState(currentQuery);
+
+  function pushParams(params: URLSearchParams) {
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}#jobs-section` : `${pathname}#jobs-section`);
+  }
 
   function updateParam(key: "district" | "jobType", value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value === "all") params.delete(key);
     else params.set(key, value);
-    const query = params.toString();
-    router.push(query ? `/?${query}` : "/");
+    pushParams(params);
+  }
+
+  function handleKeywordSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    const nextKeyword = keyword.trim();
+    if (nextKeyword) params.set("q", nextKeyword);
+    else params.delete("q");
+    pushParams(params);
   }
 
   return (
     <div className="space-y-4">
+      <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
+        <h2 className="mb-3 text-sm font-semibold text-charcoal">店舗名・待遇で探す</h2>
+        <form onSubmit={handleKeywordSubmit} className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            className="min-h-11 flex-1 rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20"
+            placeholder="例：ロゼッタ、ニュークラ、送迎あり"
+          />
+          <button
+            type="submit"
+            className="min-h-11 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-md"
+          >
+            検索する
+          </button>
+        </form>
+      </section>
       <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
         <p className="mb-3 text-sm font-semibold text-charcoal">エリア：札幌（固定）</p>
         <h2 className="mb-3 text-sm font-semibold text-charcoal">地区で探す</h2>
