@@ -1,17 +1,23 @@
 const concerns = [
-  "お店の実態が分からない",
-  "ノルマや罰金が怖い",
-  "人間関係が不安",
-  "無理な営業をさせられそう",
-  "求人内容と実際が違う",
+  "本当に安全なお店なのか分からない",
+  "求人内容と実際が違いそう",
+  "怖いお客さんが来ないか不安",
+  "ノルマや罰金があるのか分からない",
+  "無理にお酒を飲まされそう",
+  "人間関係がギスギスしてそう",
+  "未経験でも浮かないか不安",
+  "辞めたい時に辞められるか心配",
+  "送迎や身バレ対策がちゃんとしてるか気になる",
 ];
 
 const supports = [
-  "当サイト独自の審査",
-  "ブラック報告機能",
-  "店舗情報の見やすさ",
-  "エリア・職種検索",
-  "実態確認",
+  "通常審査+当サイト独自の審査",
+  "ブラック店の報告機能",
+  "店舗情報の見やすさ改善",
+  "エリア / 職種検索",
+  "実態確認済み店舗の掲載",
+  "未経験歓迎店の表示",
+  "女の子目線での安全性確認",
 ];
 
 export function FirstTimeGuide() {
@@ -41,7 +47,7 @@ export function FirstTimeGuide() {
           <p>
             White Night Jobは、
             <br />
-            「安心して働ける夜職求人を探したい」人のための求人サイトです。
+            「安心して働ける夜職求人だけを探したい」人のための求人サイトです。
           </p>
 
           <div>
@@ -65,7 +71,7 @@ export function FirstTimeGuide() {
             <p>
               このサイトでは、
               <br />
-              “安心して働けるお店”を見つけやすくするために、
+              できる限り“安心して働けるお店”を見つけやすくするために、
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {supports.map((item) => (
@@ -84,16 +90,67 @@ export function FirstTimeGuide() {
             <p>
               「夜職＝怖い」ではなく、
               <br />
-              自分に合った環境で楽しく働ける人を増やしたい。
+              自分に合った環境で働ける人を増やしたい。
             </p>
             <p className="mt-4">
-              その思いで運営させていただいております。
+              そんな思いで運営しています。
             </p>
             <p className="mt-4 text-gold-light">
               まずは気になるお店を、
               <br />
               ゆっくり探してみてください。
             </p>
+          </div>
+
+          <div className="flex items-center gap-3 py-2 text-gold-light/70">
+            <span className="h-px flex-1 bg-gold/30" />
+            <span className="text-xs tracking-[0.25em]">SUPPORT</span>
+            <span className="h-px flex-1 bg-gold/30" />
+          </div>
+
+          <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-black/40 to-gold/10 p-5 sm:p-6">
+            <p className="font-serif text-xl font-semibold text-gold-light sm:text-2xl">
+              業界唯一
+              <br />
+              全店舗相談受付実施
+            </p>
+
+            <div className="mt-5 space-y-4 text-white/85">
+              <p>
+                「話だけ聞きたいだけだったのに、
+                <br />
+                面接に行ったらそのまま入店扱いになってしまった…」
+              </p>
+              <p>
+                「面接後に考える予定だったのに、
+                <br />
+                気づいたら話が進んでいた…」
+              </p>
+              <p>実際に、こういったケースは少なくありません。</p>
+              <p>
+                White Night Jobでは、
+                <br />
+                全店舗相談受付を実施しています。
+              </p>
+              <p>
+                「まだ面接に行くのは少し怖いな…」
+              </p>
+              <p>
+                そんな時でも、
+                <br />
+                小さな不安や疑問を相談できる環境をご用意しています✨
+              </p>
+              <p>
+                対応の良さにも、
+                <br />
+                きっと驚いていただけると思います。
+              </p>
+              <p className="text-gold-light">
+                少しでも気になる店舗があった際は、
+                <br />
+                お気軽に相談・ご連絡してみてください！
+              </p>
+            </div>
           </div>
         </div>
       </div>
