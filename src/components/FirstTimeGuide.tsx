@@ -16,7 +16,10 @@ const supports = [
 
 export function FirstTimeGuide() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#18130b] to-[#2b2112] px-5 py-8 text-white shadow-gold sm:px-8 sm:py-10 md:px-10">
+    <section
+      id="first-time-guide"
+      className="scroll-mt-20 relative overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#18130b] to-[#2b2112] px-5 py-8 text-white shadow-gold sm:px-8 sm:py-10 md:px-10"
+    >
       <div
         className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gold/20 blur-3xl"
         aria-hidden
