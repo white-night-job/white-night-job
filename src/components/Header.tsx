@@ -17,7 +17,7 @@ export function Header() {
           <Link href="/#first-time-guide" className="whitespace-nowrap hover:text-gold-dark">
             初めての方へ
           </Link>
-          <Link href="/#jobs-section" className="whitespace-nowrap hover:text-gold-dark">
+          <Link href="/#shop-search" className="whitespace-nowrap hover:text-gold-dark">
             店舗を探す🔍
           </Link>
           <Link href="/jobs" className="whitespace-nowrap hover:text-gold-dark">
