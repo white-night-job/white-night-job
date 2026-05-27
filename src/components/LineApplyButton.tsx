@@ -15,7 +15,7 @@ const guideMessage = (
       『ホワイトナイト見ました！』
     </span>
     <br />
-    <span>と必ずお伝えお願いします✨</span>
+    <span>とお伝えお願いします✨</span>
   </>
 );
 
@@ -40,18 +40,10 @@ function ConfirmApplyModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-charcoal via-[#1c160c] to-[#302512] text-white shadow-2xl">
-        <div className="border-b border-gold/20 px-5 py-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold-light/80">
-            Before Contact
-          </p>
-          <h2 className="mt-2 font-serif text-xl font-semibold text-gold-light">
-            ご連絡前のお願い
-          </h2>
-        </div>
-
-        <div className="space-y-5 px-5 py-6 text-center">
-          <p className="text-sm leading-8 text-white/90 sm:text-base">
+      <div className="w-full max-w-sm overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-charcoal via-[#1c160c] to-[#302512] px-5 py-6 text-white shadow-2xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,213,163,0.18),transparent_35%)]" />
+        <div className="relative space-y-5 text-center">
+          <p className="rounded-2xl border border-gold/25 bg-black/20 px-4 py-5 text-sm leading-8 text-white/90 sm:text-base">
             {guideMessage}
           </p>
 
