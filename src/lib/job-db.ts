@@ -17,6 +17,7 @@ export type JobPayload = {
   instagramUrl?: string;
   tiktokUrl?: string;
   youtubeUrl?: string;
+  websiteUrl?: string;
   lineUrl: string;
   workHours?: string;
   requirements?: string[];
@@ -46,6 +47,7 @@ type JobRow = {
   instagram_url: string | null;
   tiktok_url: string | null;
   youtube_url: string | null;
+  website_url: string | null;
   line_url: string;
   posted_at: string;
 };
@@ -74,6 +76,7 @@ export function rowToJob(row: JobRow): Job {
     instagramUrl: row.instagram_url ?? undefined,
     tiktokUrl: row.tiktok_url ?? undefined,
     youtubeUrl: row.youtube_url ?? undefined,
+    websiteUrl: row.website_url ?? undefined,
     lineUrl: row.line_url,
     postedAt: row.posted_at,
   };
@@ -104,6 +107,7 @@ export function payloadToRow(payload: JobPayload) {
     instagram_url: payload.instagramUrl?.trim() || null,
     tiktok_url: payload.tiktokUrl?.trim() || null,
     youtube_url: payload.youtubeUrl?.trim() || null,
+    website_url: payload.websiteUrl?.trim() || null,
     line_url: payload.lineUrl.trim(),
   };
 }
@@ -129,6 +133,7 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     instagramUrl: data.instagramUrl ? String(data.instagramUrl) : undefined,
     tiktokUrl: data.tiktokUrl ? String(data.tiktokUrl) : undefined,
     youtubeUrl: data.youtubeUrl ? String(data.youtubeUrl) : undefined,
+    websiteUrl: data.websiteUrl ? String(data.websiteUrl) : undefined,
     lineUrl: String(data.lineUrl ?? ""),
     workHours: data.workHours ? String(data.workHours) : undefined,
     requirements: Array.isArray(data.requirements)

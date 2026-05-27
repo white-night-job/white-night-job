@@ -35,6 +35,7 @@ type JobForm = {
   instagramUrl: string;
   tiktokUrl: string;
   youtubeUrl: string;
+  websiteUrl: string;
   lineUrl: string;
 };
 
@@ -55,6 +56,7 @@ const emptyForm: JobForm = {
   instagramUrl: "",
   tiktokUrl: "",
   youtubeUrl: "",
+  websiteUrl: "",
   lineUrl: "",
 };
 
@@ -81,6 +83,7 @@ function toPayload(form: JobForm) {
     instagramUrl: form.instagramUrl || undefined,
     tiktokUrl: form.tiktokUrl || undefined,
     youtubeUrl: form.youtubeUrl || undefined,
+    websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
   };
 }
@@ -106,6 +109,7 @@ function toForm(job: Job): JobForm {
     instagramUrl: job.instagramUrl ?? "",
     tiktokUrl: job.tiktokUrl ?? "",
     youtubeUrl: job.youtubeUrl ?? "",
+    websiteUrl: job.websiteUrl ?? "",
     lineUrl: job.lineUrl,
   };
 }
@@ -604,6 +608,19 @@ export default function AdminPage() {
                 onChange={(event) => setField("youtubeUrl", event.target.value)}
                 className={inputClass}
                 placeholder="https://www.youtube.com/@xxxx"
+              />
+            </div>
+            <div>
+              <label htmlFor="websiteUrl" className={labelClass}>
+                WebサイトURL
+              </label>
+              <input
+                id="websiteUrl"
+                type="url"
+                value={form.websiteUrl}
+                onChange={(event) => setField("websiteUrl", event.target.value)}
+                className={inputClass}
+                placeholder="https://example.com"
               />
             </div>
           </div>

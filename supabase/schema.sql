@@ -26,6 +26,7 @@ create table if not exists public.jobs (
   instagram_url text,
   tiktok_url text,
   youtube_url text,
+  website_url text,
   line_url text not null,
   published boolean not null default true,
   posted_at date not null default current_date,

@@ -43,11 +43,38 @@ export default function JobDetailPage({
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
   const socialLinks = [
-    { label: "X", href: job.xUrl },
-    { label: "Instagram", href: job.instagramUrl },
-    { label: "TikTok", href: job.tiktokUrl },
-    { label: "YouTube", href: job.youtubeUrl },
-  ].filter((link): link is { label: string; href: string } => Boolean(link.href));
+    {
+      label: "X",
+      href: job.xUrl,
+      className: "border-black bg-black text-white hover:bg-zinc-900",
+    },
+    {
+      label: "Instagram",
+      href: job.instagramUrl,
+      className:
+        "border-pink-400 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 text-white hover:brightness-110",
+    },
+    {
+      label: "TikTok",
+      href: job.tiktokUrl,
+      className:
+        "border-cyan-300 bg-[linear-gradient(135deg,#000_0%,#111_48%,#25f4ee_49%,#25f4ee_52%,#fe2c55_53%,#fe2c55_56%,#000_57%)] text-white hover:brightness-110",
+    },
+    {
+      label: "YouTube",
+      href: job.youtubeUrl,
+      className: "border-red-600 bg-red-600 text-white hover:bg-red-700",
+    },
+    {
+      label: "Webサイト",
+      href: job.websiteUrl,
+      className:
+        "border-gold bg-gradient-to-r from-gold to-gold-dark text-white hover:brightness-110",
+    },
+  ].filter(
+    (link): link is { label: string; href: string; className: string } =>
+      Boolean(link.href),
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -111,18 +138,18 @@ export default function JobDetailPage({
             </div>
           )}
           {socialLinks.length > 0 && (
-            <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-4">
+            <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
               <h2 className="mb-3 text-base font-semibold text-charcoal">
                 公式SNS
               </h2>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {socialLinks.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex min-h-12 items-center justify-center rounded-full border border-gold/40 bg-white px-4 py-3 text-sm font-semibold text-gold-dark shadow-sm transition hover:border-gold hover:bg-gold-light/20"
+                    className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
                   >
                     {link.label}を見る
                   </a>
