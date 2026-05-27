@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { BENEFIT_CATEGORIES } from "@/data/benefits";
+import {
+  BENEFIT_CATEGORIES,
+  getKnownBenefits,
+  getUncategorizedBenefits,
+} from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import { parseBenefits } from "@/lib/job-db";
 import {
   FIXED_AREA,
   JOB_TYPES,
@@ -21,6 +26,7 @@ type JobForm = {
   businessHours: string;
   ageGroup: string;
   benefits: string[];
+  otherBenefits: string;
   description: string;
   imageUrl: string;
   phone: string;
@@ -36,6 +42,7 @@ const emptyForm: JobForm = {
   businessHours: "",
   ageGroup: "",
   benefits: [],
+  otherBenefits: "",
   description: "",
   imageUrl: "",
   phone: "",
@@ -57,6 +64,7 @@ function toPayload(form: JobForm) {
     businessHours: form.businessHours,
     ageGroup: form.ageGroup,
     benefits: form.benefits,
+    otherBenefits: parseBenefits(form.otherBenefits),
     description: form.description,
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
@@ -73,7 +81,11 @@ function toForm(job: Job): JobForm {
     salary: job.salary,
     businessHours: job.businessHours ?? "",
     ageGroup: job.ageGroup ?? "",
-    benefits: job.benefits,
+    benefits: getKnownBenefits(job.benefits),
+    otherBenefits: [
+      ...(job.otherBenefits ?? []),
+      ...getUncategorizedBenefits(job.benefits),
+    ].join("\n"),
     description: job.description,
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
@@ -445,6 +457,25 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+            <div>
+              <label
+                htmlFor="otherBenefits"
+                className="mb-2 block text-sm font-semibold text-gold-dark"
+              >
+                その他
+              </label>
+              <textarea
+                id="otherBenefits"
+                value={form.otherBenefits}
+                onChange={(event) => setField("otherBenefits", event.target.value)}
+                className={inputClass}
+                rows={4}
+                placeholder={"完全自由シフト\n顔出しNG対応\n待機カットなし"}
+              />
+              <p className="mt-1 text-xs text-muted">
+                1行に1つ、または「、」で区切って自由に入力できます。
+              </p>
+            </div>
           </div>
         </div>
 

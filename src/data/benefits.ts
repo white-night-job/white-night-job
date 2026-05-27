@@ -42,17 +42,21 @@ export function getBenefitCategoryGroups(benefits: string[]) {
     items: category.items.filter((item) => benefits.includes(item)),
   })).filter((category) => category.items.length > 0);
 
+  return categoryGroups;
+}
+
+export function getKnownBenefits(benefits: string[]) {
   const knownBenefits = new Set<string>(
     BENEFIT_CATEGORIES.flatMap((category) => [...category.items]),
   );
-  const otherItems = benefits.filter((benefit) => !knownBenefits.has(benefit));
 
-  if (otherItems.length > 0) {
-    categoryGroups.push({
-      title: "その他",
-      items: otherItems,
-    });
-  }
+  return benefits.filter((benefit) => knownBenefits.has(benefit));
+}
 
-  return categoryGroups;
+export function getUncategorizedBenefits(benefits: string[]) {
+  const knownBenefits = new Set<string>(
+    BENEFIT_CATEGORIES.flatMap((category) => [...category.items]),
+  );
+
+  return benefits.filter((benefit) => !knownBenefits.has(benefit));
 }

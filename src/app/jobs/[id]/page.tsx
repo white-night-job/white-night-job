@@ -41,6 +41,7 @@ export default function JobDetailPage({
   }
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
+  const otherBenefits = job.otherBenefits ?? [];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -127,6 +128,23 @@ export default function JobDetailPage({
                   </ul>
                 </div>
               ))}
+            </section>
+          )}
+          {otherBenefits.length > 0 && (
+            <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
+              <h2 className="mb-3 text-base font-semibold text-charcoal">
+                その他待遇
+              </h2>
+              <ul className="space-y-2">
+                {otherBenefits.map((benefit) => (
+                  <li
+                    key={benefit}
+                    className="rounded-xl border border-gold/20 bg-white px-3 py-2 text-sm text-charcoal"
+                  >
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
           <div className="space-y-3">

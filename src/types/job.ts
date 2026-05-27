@@ -36,6 +36,7 @@ export interface JobEntry {
   description: string;
   requirements: string[];
   benefits: string[];
+  otherBenefits?: string[];
   isVerified: boolean;
   imageUrl?: string;
   phone?: string;
@@ -58,6 +59,7 @@ export interface Job {
   description: string;
   requirements: string[];
   benefits: string[];
+  otherBenefits?: string[];
   isVerified: boolean;
   imageUrl?: string;
   phone?: string;
