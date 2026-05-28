@@ -38,27 +38,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <section className="space-y-4">
           <Link
             href="#support-system"
-            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-gradient-to-br from-[#fff1b8] via-gold to-[#a97922] px-5 py-7 text-center shadow-[0_18px_45px_rgba(201,169,98,0.32),inset_0_1px_0_rgba(255,255,255,0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(201,169,98,0.45),0_0_42px_rgba(232,213,163,0.48)] sm:px-8 sm:py-9"
+            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-[linear-gradient(135deg,#fff4bf_0%,#d8ad3d_34%,#9f6d18_58%,#f7dc7a_78%,#b57a1d_100%)] px-5 py-8 text-center shadow-[0_18px_45px_rgba(201,169,98,0.34),0_0_32px_rgba(232,213,163,0.32),inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(201,169,98,0.48),0_0_50px_rgba(232,213,163,0.55),inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8 sm:py-10"
           >
             <span
-              className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_28%,rgba(255,255,255,0.62)_45%,rgba(255,255,255,0.22)_58%,transparent_100%),radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.55),transparent_18%),radial-gradient(circle_at_78%_70%,rgba(255,255,255,0.32),transparent_20%)] opacity-90"
+              className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_27%,rgba(255,255,255,0.72)_43%,rgba(255,255,255,0.18)_58%,transparent_100%),radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.58),transparent_16%),radial-gradient(circle_at_78%_72%,rgba(255,255,255,0.36),transparent_18%)] opacity-95"
               aria-hidden
             />
-            <span className="absolute -left-8 top-5 h-16 w-2 -rotate-45 bg-black/70 shadow-[18px_18px_0_rgba(0,0,0,0.55)] sm:-left-5" aria-hidden />
-            <span className="absolute -left-2 bottom-4 h-14 w-2 -rotate-45 bg-black/55 shadow-[18px_18px_0_rgba(0,0,0,0.4)]" aria-hidden />
-            <span className="absolute -right-8 top-5 h-16 w-2 rotate-45 bg-black/70 shadow-[-18px_18px_0_rgba(0,0,0,0.55)] sm:-right-5" aria-hidden />
-            <span className="absolute -right-2 bottom-4 h-14 w-2 rotate-45 bg-black/55 shadow-[-18px_18px_0_rgba(0,0,0,0.4)]" aria-hidden />
-            <span className="relative mx-auto inline-flex rounded-full border border-black/70 bg-black px-5 py-2 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_8px_24px_rgba(0,0,0,0.28)] sm:text-2xl">
+            <span className="sparkle left-[12%] top-[18%]">✦</span>
+            <span className="sparkle animation-delay-150 right-[14%] top-[16%] text-sm">✧</span>
+            <span className="sparkle animation-delay-300 left-[20%] bottom-[24%] text-xs">✦</span>
+            <span className="sparkle animation-delay-450 right-[23%] bottom-[20%] text-xs">✧</span>
+            <span className="sparkle animation-delay-600 left-[48%] top-[10%] text-[10px]">✦</span>
+            <span className="absolute -left-7 top-[-20px] h-[calc(100%+40px)] w-3 -rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[14px_0_0_rgba(0,0,0,0.72)] sm:-left-4 sm:w-4" aria-hidden />
+            <span className="absolute left-3 top-[-20px] h-[calc(100%+40px)] w-2 -rotate-12 bg-black/70 sm:left-7 sm:w-3" aria-hidden />
+            <span className="absolute -right-7 top-[-20px] h-[calc(100%+40px)] w-3 rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[-14px_0_0_rgba(0,0,0,0.72)] sm:-right-4 sm:w-4" aria-hidden />
+            <span className="absolute right-3 top-[-20px] h-[calc(100%+40px)] w-2 rotate-12 bg-black/70 sm:right-7 sm:w-3" aria-hidden />
+            <span className="relative mx-auto inline-flex [clip-path:polygon(9%_0,91%_0,100%_50%,91%_100%,9%_100%,0_50%)] border border-black/80 bg-gradient-to-r from-black via-[#1c1710] to-black px-8 py-2.5 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_10px_26px_rgba(0,0,0,0.34)] sm:px-12 sm:text-2xl">
               業界唯一
             </span>
-            <span className="relative mt-4 block text-2xl font-black leading-tight text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.35)] sm:text-4xl">
-              全掲載店舗相談受付実施
+            <span className="relative mx-auto mt-5 block max-w-[18rem] text-2xl font-black leading-tight tracking-[0.08em] text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:max-w-none sm:text-4xl">
+              全掲載店舗
+              <br className="sm:hidden" />
+              相談受付実施
             </span>
             <span className="relative mt-2 block text-sm font-semibold text-black/75">
               不安や疑問を事前に相談できる、安心のサポート体制
             </span>
-            <span className="relative mx-auto mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-black/70 bg-black px-6 py-3 text-sm font-bold text-gold-light shadow-md transition-transform duration-300 group-hover:scale-105">
+            <span className="relative mx-auto mt-6 inline-flex min-h-11 items-center justify-center border border-black bg-gradient-to-r from-black via-[#18130d] to-black px-8 py-3 text-sm font-bold text-white shadow-[0_0_20px_rgba(232,213,163,0.28)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_0_28px_rgba(232,213,163,0.42)]">
               詳しく見る
+              <span className="ml-3 text-white">→</span>
             </span>
           </Link>
           <Link
