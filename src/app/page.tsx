@@ -60,7 +60,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <span className="relative mx-auto mb-2 flex items-center justify-center gap-2 text-sm font-bold tracking-[0.25em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:text-base">
               <span>★</span>
               <span>★</span>
-              <span className="text-lg sm:text-xl">👑</span>
+              <span className="font-serif text-lg leading-none text-[#7b4f0b] drop-shadow-[0_0_8px_rgba(123,79,11,0.22)] sm:text-xl">
+                ♛
+              </span>
               <span>★</span>
               <span>★</span>
             </span>
