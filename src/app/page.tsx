@@ -66,8 +66,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <span>★</span>
               <span>★</span>
             </span>
-            <span className="relative mx-auto inline-flex min-w-[12rem] items-center justify-center [clip-path:polygon(0_0,12%_0,18%_50%,12%_100%,0_100%,7%_50%,0_0,100%_0,88%_0,82%_50%,88%_100%,100%_100%,93%_50%,100%_0)] border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-10 py-2.5 font-serif text-xl font-black tracking-[0.18em] text-gold-light shadow-[0_12px_30px_rgba(0,0,0,0.48),0_0_18px_rgba(0,0,0,0.25)] drop-shadow-[0_1px_0_rgba(255,255,255,0.18)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-white/30 sm:min-w-[17rem] sm:px-16 sm:text-2xl">
-              業界唯一
+            <span className="relative mx-auto inline-flex min-w-[12rem] items-center justify-center sm:min-w-[17rem]">
+              <span className="absolute -left-4 top-1/2 h-9 w-8 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_8px_18px_rgba(0,0,0,0.35)] sm:-left-6 sm:h-11 sm:w-10" aria-hidden />
+              <span className="absolute -right-4 top-1/2 h-9 w-8 -translate-y-1/2 bg-black [clip-path:polygon(0_0,100%_50%,0_100%)] shadow-[0_8px_18px_rgba(0,0,0,0.35)] sm:-right-6 sm:h-11 sm:w-10" aria-hidden />
+              <span className="relative z-10 inline-flex items-center justify-center border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-10 py-2.5 font-serif text-xl font-black tracking-[0.18em] text-gold-light shadow-[0_12px_30px_rgba(0,0,0,0.48),0_0_18px_rgba(0,0,0,0.25)] drop-shadow-[0_1px_0_rgba(255,255,255,0.18)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-white/30 sm:px-16 sm:text-2xl">
+                業界唯一
+              </span>
             </span>
             <span className="relative mx-auto mt-5 block max-w-[19rem] py-1 font-serif text-[2.15rem] font-black leading-[1.24] tracking-[0.14em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_8px_rgba(0,0,0,0.16)] sm:max-w-none sm:text-[3.5rem] sm:leading-[1.14]">
               全掲載店舗
