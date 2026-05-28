@@ -57,19 +57,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <span className="absolute left-3 top-[-20px] h-[calc(100%+40px)] w-2 -rotate-12 bg-black/70 sm:left-7 sm:w-3" aria-hidden />
             <span className="absolute -right-7 top-[-20px] h-[calc(100%+40px)] w-3 rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[-14px_0_0_rgba(0,0,0,0.72)] sm:-right-4 sm:w-4" aria-hidden />
             <span className="absolute right-3 top-[-20px] h-[calc(100%+40px)] w-2 rotate-12 bg-black/70 sm:right-7 sm:w-3" aria-hidden />
-            <span className="relative mx-auto mb-2 flex items-center justify-center gap-2 text-sm font-bold tracking-[0.25em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:text-base">
+            <span className="relative mx-auto mb-1 flex items-center justify-center gap-2 text-xs font-bold tracking-[0.28em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:text-sm">
               <span>★</span>
               <span>★</span>
-              <span className="font-serif text-lg leading-none text-[#7b4f0b] drop-shadow-[0_0_8px_rgba(123,79,11,0.22)] sm:text-xl">
+              <span className="font-serif text-base leading-none text-[#7b4f0b] drop-shadow-[0_0_8px_rgba(123,79,11,0.22)] sm:text-lg">
                 ♛
               </span>
               <span>★</span>
               <span>★</span>
             </span>
-            <span className="relative mx-auto inline-flex [clip-path:polygon(9%_0,91%_0,100%_50%,91%_100%,9%_100%,0_50%)] border border-black/80 bg-gradient-to-r from-black via-[#1c1710] to-black px-8 py-2.5 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_10px_26px_rgba(0,0,0,0.34)] sm:px-12 sm:text-2xl">
+            <span className="relative mx-auto inline-flex min-w-[12rem] items-center justify-center [clip-path:polygon(0_0,12%_0,18%_50%,12%_100%,0_100%,7%_50%,0_0,100%_0,88%_0,82%_50%,88%_100%,100%_100%,93%_50%,100%_0)] border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-10 py-2.5 font-serif text-xl font-black tracking-[0.18em] text-gold-light shadow-[0_12px_30px_rgba(0,0,0,0.48),0_0_18px_rgba(0,0,0,0.25)] drop-shadow-[0_1px_0_rgba(255,255,255,0.18)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-white/30 sm:min-w-[17rem] sm:px-16 sm:text-2xl">
               業界唯一
             </span>
-            <span className="relative mx-auto mt-5 block max-w-[18rem] text-2xl font-black leading-tight tracking-[0.08em] text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:max-w-none sm:text-4xl">
+            <span className="relative mx-auto mt-5 block max-w-[19rem] py-1 font-serif text-[2.15rem] font-black leading-[1.24] tracking-[0.14em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_8px_rgba(0,0,0,0.16)] sm:max-w-none sm:text-[3.5rem] sm:leading-[1.14]">
               全掲載店舗
               <br className="sm:hidden" />
               相談受付実施
