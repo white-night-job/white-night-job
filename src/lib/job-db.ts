@@ -13,6 +13,7 @@ export type JobPayload = {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  access?: string;
   xUrl?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
@@ -43,6 +44,7 @@ type JobRow = {
   image_url: string | null;
   phone: string | null;
   address: string | null;
+  access: string | null;
   x_url: string | null;
   instagram_url: string | null;
   tiktok_url: string | null;
@@ -72,6 +74,7 @@ export function rowToJob(row: JobRow): Job {
     imageUrl: row.image_url ?? undefined,
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
+    access: row.access ?? undefined,
     xUrl: row.x_url ?? undefined,
     instagramUrl: row.instagram_url ?? undefined,
     tiktokUrl: row.tiktok_url ?? undefined,
@@ -103,6 +106,7 @@ export function payloadToRow(payload: JobPayload) {
     image_url: payload.imageUrl?.trim() || null,
     phone: payload.phone?.trim() || null,
     address: payload.address?.trim() || null,
+    access: payload.access?.trim() || null,
     x_url: payload.xUrl?.trim() || null,
     instagram_url: payload.instagramUrl?.trim() || null,
     tiktok_url: payload.tiktokUrl?.trim() || null,
@@ -129,6 +133,7 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
+    access: data.access ? String(data.access) : undefined,
     xUrl: data.xUrl ? String(data.xUrl) : undefined,
     instagramUrl: data.instagramUrl ? String(data.instagramUrl) : undefined,
     tiktokUrl: data.tiktokUrl ? String(data.tiktokUrl) : undefined,

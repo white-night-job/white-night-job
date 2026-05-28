@@ -41,6 +41,7 @@ export interface JobEntry {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  access?: string;
   xUrl?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
@@ -69,6 +70,7 @@ export interface Job {
   imageUrl?: string;
   phone?: string;
   address?: string;
+  access?: string;
   xUrl?: string;
   instagramUrl?: string;
   tiktokUrl?: string;

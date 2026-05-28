@@ -31,6 +31,7 @@ type JobForm = {
   imageUrl: string;
   phone: string;
   address: string;
+  access: string;
   xUrl: string;
   instagramUrl: string;
   tiktokUrl: string;
@@ -52,6 +53,7 @@ const emptyForm: JobForm = {
   imageUrl: "",
   phone: "",
   address: "",
+  access: "",
   xUrl: "",
   instagramUrl: "",
   tiktokUrl: "",
@@ -79,6 +81,7 @@ function toPayload(form: JobForm) {
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
     address: form.address || undefined,
+    access: form.access || undefined,
     xUrl: form.xUrl || undefined,
     instagramUrl: form.instagramUrl || undefined,
     tiktokUrl: form.tiktokUrl || undefined,
@@ -105,6 +108,7 @@ function toForm(job: Job): JobForm {
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
     address: job.address ?? "",
+    access: job.access ?? "",
     xUrl: job.xUrl ?? "",
     instagramUrl: job.instagramUrl ?? "",
     tiktokUrl: job.tiktokUrl ?? "",
@@ -432,6 +436,19 @@ export default function AdminPage() {
             onChange={(event) => setField("businessHours", event.target.value)}
             className={inputClass}
             placeholder="例：20:00〜LAST"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="access" className={labelClass}>
+            アクセス
+          </label>
+          <input
+            id="access"
+            value={form.access}
+            onChange={(event) => setField("access", event.target.value)}
+            className={inputClass}
+            placeholder="例：すすきの駅から徒歩3分"
           />
         </div>
 

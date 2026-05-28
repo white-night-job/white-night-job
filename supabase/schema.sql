@@ -22,6 +22,7 @@ create table if not exists public.jobs (
   image_url text,
   phone text,
   address text,
+  access text,
   x_url text,
   instagram_url text,
   tiktok_url text,
@@ -82,6 +83,7 @@ insert into public.jobs (
   image_url,
   phone,
   address,
+  access,
   line_url,
   posted_at
 ) values
@@ -103,6 +105,7 @@ insert into public.jobs (
   null,
   null,
   null,
+  'すすきの駅から徒歩3分',
   'https://line.me/R/ti/p/@example-sapporo-rosetta',
   '2026-05-19'
 ),
@@ -124,6 +127,7 @@ insert into public.jobs (
   null,
   null,
   null,
+  'すすきの駅から徒歩5分',
   'https://line.me/R/ti/p/@example-sapporo-aurora',
   '2026-05-18'
 ),
@@ -145,6 +149,7 @@ insert into public.jobs (
   null,
   null,
   null,
+  'すすきの駅から徒歩4分',
   'https://line.me/R/ti/p/@example-sapporo-blanc',
   '2026-05-17'
 )
