@@ -38,26 +38,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <section className="space-y-4">
           <Link
             href="#support-system"
-            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold/50 bg-gradient-to-br from-black via-[#171109] to-[#332612] px-5 py-7 text-center shadow-[0_18px_45px_rgba(33,29,24,0.2),0_0_34px_rgba(201,169,98,0.22)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(33,29,24,0.28),0_0_46px_rgba(201,169,98,0.34)] sm:px-8 sm:py-9"
+            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-gradient-to-br from-[#fff1b8] via-gold to-[#a97922] px-5 py-7 text-center shadow-[0_18px_45px_rgba(201,169,98,0.32),inset_0_1px_0_rgba(255,255,255,0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(201,169,98,0.45),0_0_42px_rgba(232,213,163,0.48)] sm:px-8 sm:py-9"
           >
             <span
-              className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(232,213,163,0.14)_35%,rgba(255,255,255,0.22)_48%,rgba(232,213,163,0.12)_60%,transparent_100%),radial-gradient(circle_at_top,rgba(201,169,98,0.42),transparent_34%)] opacity-90"
+              className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_28%,rgba(255,255,255,0.62)_45%,rgba(255,255,255,0.22)_58%,transparent_100%),radial-gradient(circle_at_20%_18%,rgba(255,255,255,0.55),transparent_18%),radial-gradient(circle_at_78%_70%,rgba(255,255,255,0.32),transparent_20%)] opacity-90"
               aria-hidden
             />
             <span className="absolute -left-8 top-5 h-16 w-2 -rotate-45 bg-black/70 shadow-[18px_18px_0_rgba(0,0,0,0.55)] sm:-left-5" aria-hidden />
             <span className="absolute -left-2 bottom-4 h-14 w-2 -rotate-45 bg-black/55 shadow-[18px_18px_0_rgba(0,0,0,0.4)]" aria-hidden />
             <span className="absolute -right-8 top-5 h-16 w-2 rotate-45 bg-black/70 shadow-[-18px_18px_0_rgba(0,0,0,0.55)] sm:-right-5" aria-hidden />
             <span className="absolute -right-2 bottom-4 h-14 w-2 rotate-45 bg-black/55 shadow-[-18px_18px_0_rgba(0,0,0,0.4)]" aria-hidden />
-            <span className="relative mx-auto inline-flex rounded-full border border-gold/50 bg-black px-5 py-2 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_0_22px_rgba(201,169,98,0.28)] sm:text-2xl">
+            <span className="relative mx-auto inline-flex rounded-full border border-black/70 bg-black px-5 py-2 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_8px_24px_rgba(0,0,0,0.28)] sm:text-2xl">
               業界唯一
             </span>
-            <span className="relative mt-4 block text-lg font-bold leading-relaxed text-white sm:text-2xl">
+            <span className="relative mt-4 block text-2xl font-black leading-tight text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.35)] sm:text-4xl">
               全掲載店舗相談受付実施
             </span>
-            <span className="relative mt-2 block text-sm font-medium text-gold-light/90">
+            <span className="relative mt-2 block text-sm font-semibold text-black/75">
               不安や疑問を事前に相談できる、安心のサポート体制
             </span>
-            <span className="relative mx-auto mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-gold/60 bg-gradient-to-r from-gold-light to-gold px-6 py-3 text-sm font-bold text-charcoal shadow-md transition-transform duration-300 group-hover:scale-105">
+            <span className="relative mx-auto mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-black/70 bg-black px-6 py-3 text-sm font-bold text-gold-light shadow-md transition-transform duration-300 group-hover:scale-105">
               詳しく見る
             </span>
           </Link>
