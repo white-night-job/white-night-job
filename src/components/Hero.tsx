@@ -12,14 +12,12 @@ export function Hero() {
           <span className="text-charcoal">優良認定店専門サイト</span>
         </h1>
         <div className="mt-5 flex flex-col items-center justify-center gap-1">
-          <div className="rounded-2xl border border-gold/35 bg-gradient-to-br from-charcoal via-[#1b150d] to-[#3a2b13] px-6 py-4 text-center shadow-[0_0_28px_rgba(201,169,98,0.24)]">
-            <p className="font-serif text-2xl font-bold tracking-[0.25em] text-white drop-shadow-[0_0_14px_rgba(232,213,163,0.42)] sm:text-3xl md:text-4xl">
-              White Night
-            </p>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.5em] text-[#d4af37] sm:text-sm">
-              Job
-            </p>
-          </div>
+          <p className="font-serif text-2xl font-bold tracking-[0.25em] text-[#d4af37] drop-shadow-lg [text-shadow:0_0_18px_rgba(212,175,55,0.28)] sm:text-3xl md:text-4xl">
+            White Night
+          </p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.5em] text-[#e5c76b] drop-shadow-[0_0_10px_rgba(229,199,107,0.25)] sm:text-sm">
+            Job
+          </p>
         </div>
         <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted sm:text-base">
           審査済みの優良店のみ厳選。ブラック店は報告フォームからご連絡ください。
