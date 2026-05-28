@@ -11,11 +11,11 @@ export function Hero() {
           <br />
           <span className="text-charcoal">優良認定店専門サイト</span>
         </h1>
-        <div className="mt-5 flex flex-col items-center justify-center gap-1">
-          <p className="border-b border-black pb-0.5 font-serif text-2xl font-bold tracking-[0.25em] text-[#d4af37] drop-shadow-lg [text-shadow:0_1px_0_rgba(255,255,255,0.35),0_2px_10px_rgba(0,0,0,0.18),0_0_18px_rgba(212,175,55,0.32)] sm:text-3xl md:text-4xl">
+        <div className="mt-5 flex flex-col items-center justify-center">
+          <p className="inline-block border-b border-black pb-0 font-serif text-2xl font-bold leading-none tracking-[0.25em] text-[#d4af37] drop-shadow-lg [text-shadow:0_1px_0_rgba(255,255,255,0.4),0_3px_12px_rgba(0,0,0,0.24),0_0_22px_rgba(212,175,55,0.42)] sm:text-3xl md:text-4xl">
             White Night
           </p>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.5em] text-[#e5c76b] drop-shadow-[0_0_10px_rgba(229,199,107,0.25)] sm:text-sm">
+          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.5em] text-[#e5c76b] drop-shadow-[0_0_10px_rgba(229,199,107,0.25)] sm:text-sm">
             Job
           </p>
         </div>
