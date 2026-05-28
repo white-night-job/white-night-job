@@ -52,6 +52,22 @@
     animation-delay: 600ms;
   }
 
+  .animation-delay-750 {
+    animation-delay: 750ms;
+  }
+
+  .animation-delay-900 {
+    animation-delay: 900ms;
+  }
+
+  .animation-delay-1050 {
+    animation-delay: 1050ms;
+  }
+
+  .animation-delay-1200 {
+    animation-delay: 1200ms;
+  }
+
   .sparkle {
     position: absolute;
     z-index: 1;

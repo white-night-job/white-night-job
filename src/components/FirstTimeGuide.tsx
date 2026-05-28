@@ -103,7 +103,7 @@ export function FirstTimeGuide() {
           </div>
 
           <div
-            id="support-system"
+            id="support-section"
             className="scroll-mt-24 flex items-center gap-3 py-2 text-gold-light/70 sm:scroll-mt-28"
           >
             <span className="h-px flex-1 bg-gold/30" />

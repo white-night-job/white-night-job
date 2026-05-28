@@ -37,8 +37,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <div className="mt-6 space-y-6">
         <section className="space-y-4">
           <Link
-            href="#support-system"
-            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-[linear-gradient(135deg,#fff4bf_0%,#d8ad3d_34%,#9f6d18_58%,#f7dc7a_78%,#b57a1d_100%)] px-5 py-8 text-center shadow-[0_18px_45px_rgba(201,169,98,0.34),0_0_32px_rgba(232,213,163,0.32),inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(201,169,98,0.48),0_0_50px_rgba(232,213,163,0.55),inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8 sm:py-10"
+            href="#support-section"
+            className="animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-[linear-gradient(135deg,#fff3b4_0%,#e6bd52_24%,#9c6716_52%,#f8df79_76%,#b06f16_100%)] px-5 py-8 text-center shadow-[0_18px_45px_rgba(201,169,98,0.34),0_0_32px_rgba(232,213,163,0.32),inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(201,169,98,0.48),0_0_50px_rgba(232,213,163,0.55),inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8 sm:py-10"
           >
             <span
               className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_27%,rgba(255,255,255,0.72)_43%,rgba(255,255,255,0.18)_58%,transparent_100%),radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.58),transparent_16%),radial-gradient(circle_at_78%_72%,rgba(255,255,255,0.36),transparent_18%)] opacity-95"
@@ -49,10 +49,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <span className="sparkle animation-delay-300 left-[20%] bottom-[24%] text-xs">✦</span>
             <span className="sparkle animation-delay-450 right-[23%] bottom-[20%] text-xs">✧</span>
             <span className="sparkle animation-delay-600 left-[48%] top-[10%] text-[10px]">✦</span>
+            <span className="sparkle animation-delay-750 left-[8%] bottom-[12%] text-lg">✦</span>
+            <span className="sparkle animation-delay-900 right-[8%] bottom-[12%] text-lg">✦</span>
+            <span className="sparkle animation-delay-1050 left-[35%] top-[28%] text-[9px]">✧</span>
+            <span className="sparkle animation-delay-1200 right-[35%] top-[30%] text-[9px]">✧</span>
             <span className="absolute -left-7 top-[-20px] h-[calc(100%+40px)] w-3 -rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[14px_0_0_rgba(0,0,0,0.72)] sm:-left-4 sm:w-4" aria-hidden />
             <span className="absolute left-3 top-[-20px] h-[calc(100%+40px)] w-2 -rotate-12 bg-black/70 sm:left-7 sm:w-3" aria-hidden />
             <span className="absolute -right-7 top-[-20px] h-[calc(100%+40px)] w-3 rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[-14px_0_0_rgba(0,0,0,0.72)] sm:-right-4 sm:w-4" aria-hidden />
             <span className="absolute right-3 top-[-20px] h-[calc(100%+40px)] w-2 rotate-12 bg-black/70 sm:right-7 sm:w-3" aria-hidden />
+            <span className="relative mx-auto mb-2 flex items-center justify-center gap-2 text-sm font-bold tracking-[0.25em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:text-base">
+              <span>★</span>
+              <span>★</span>
+              <span className="text-lg sm:text-xl">👑</span>
+              <span>★</span>
+              <span>★</span>
+            </span>
             <span className="relative mx-auto inline-flex [clip-path:polygon(9%_0,91%_0,100%_50%,91%_100%,9%_100%,0_50%)] border border-black/80 bg-gradient-to-r from-black via-[#1c1710] to-black px-8 py-2.5 font-serif text-xl font-bold tracking-wide text-gold-light shadow-[0_10px_26px_rgba(0,0,0,0.34)] sm:px-12 sm:text-2xl">
               業界唯一
             </span>
