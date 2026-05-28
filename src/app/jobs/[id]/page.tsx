@@ -144,6 +144,11 @@ export default function JobDetailPage({
           </p>
           <h1 className="mt-1 font-serif text-xl font-semibold sm:text-2xl">{job.title}</h1>
           <p className="mt-2 text-muted">{job.shopName}</p>
+          {job.description && (
+            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-charcoal sm:text-base">
+              {job.description}
+            </p>
+          )}
           {job.isVerified && <div className="mt-3"><SafetyBadge /></div>}
         </div>
         <div className="space-y-6 px-5 py-6 sm:px-8">
@@ -214,6 +219,12 @@ export default function JobDetailPage({
               </div>
             )}
           </section>
+          <div className="space-y-3">
+            <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
+            {job.phone && (
+              <PhoneApplyButton phone={job.phone} fullWidth size="lg" />
+            )}
+          </div>
           {socialLinks.length > 0 && (
             <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
               <h2 className="mb-3 text-base font-semibold text-charcoal">
@@ -234,7 +245,6 @@ export default function JobDetailPage({
               </div>
             </section>
           )}
-          <p className="leading-relaxed text-muted">{job.description}</p>
           {benefitGroups.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-base font-semibold text-charcoal">待遇</h2>
@@ -275,6 +285,14 @@ export default function JobDetailPage({
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+          {job.description && (
+            <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
+              <h2 className="mb-3 text-base font-semibold text-charcoal">説明文</h2>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
+                {job.description}
+              </p>
             </section>
           )}
           <div className="space-y-3">
