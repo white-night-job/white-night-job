@@ -115,7 +115,7 @@ export function FirstTimeGuide() {
             <p className="font-serif text-xl font-semibold text-gold-light sm:text-2xl">
               業界唯一
               <br />
-              全店舗相談受付実施
+              全掲載店舗相談受付実施
             </p>
 
             <div className="mt-5 space-y-4 text-white/85">
@@ -133,7 +133,7 @@ export function FirstTimeGuide() {
               <p>
                 White Night Jobでは、
                 <br />
-                全店舗相談受付を実施しています。
+                全ての掲載店舗様に相談窓口を設けて頂いております！
               </p>
               <p>
                 「まだ面接に行くのは少し怖いな…」
