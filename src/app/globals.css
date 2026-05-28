@@ -31,4 +31,24 @@
   .shadow-gold {
     box-shadow: 0 4px 24px rgba(201, 169, 98, 0.15);
   }
+
+  .animate-fade-up {
+    animation: fade-up 0.7s ease-out both;
+  }
+
+  .animation-delay-150 {
+    animation-delay: 150ms;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
