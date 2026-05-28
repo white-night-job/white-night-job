@@ -25,6 +25,9 @@ type JobForm = {
   salary: string;
   businessHours: string;
   ageGroup: string;
+  shopAtmosphere: string;
+  customerAgeGroup: string;
+  customerTrend: string;
   benefits: string[];
   otherBenefits: string;
   description: string;
@@ -47,6 +50,9 @@ const emptyForm: JobForm = {
   salary: "",
   businessHours: "",
   ageGroup: "",
+  shopAtmosphere: "",
+  customerAgeGroup: "",
+  customerTrend: "",
   benefits: [],
   otherBenefits: "",
   description: "",
@@ -75,6 +81,9 @@ function toPayload(form: JobForm) {
     salary: form.salary,
     businessHours: form.businessHours,
     ageGroup: form.ageGroup,
+    shopAtmosphere: form.shopAtmosphere || undefined,
+    customerAgeGroup: form.customerAgeGroup || undefined,
+    customerTrend: form.customerTrend || undefined,
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
     description: form.description,
@@ -99,6 +108,9 @@ function toForm(job: Job): JobForm {
     salary: job.salary,
     businessHours: job.businessHours ?? "",
     ageGroup: job.ageGroup ?? "",
+    shopAtmosphere: job.shopAtmosphere ?? "",
+    customerAgeGroup: job.customerAgeGroup ?? "",
+    customerTrend: job.customerTrend ?? "",
     benefits: getKnownBenefits(job.benefits),
     otherBenefits: [
       ...(job.otherBenefits ?? []),
@@ -463,6 +475,51 @@ export default function AdminPage() {
             className={inputClass}
             placeholder="例：キャスト年齢 20代前半〜30代前半"
           />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">お店の基本情報</p>
+            <p className="mt-1 text-xs text-muted">
+              求人詳細ページに表示されます。未入力の項目は表示されません。
+            </p>
+          </div>
+          <div>
+            <label htmlFor="shopAtmosphere" className={labelClass}>
+              お店の雰囲気
+            </label>
+            <input
+              id="shopAtmosphere"
+              value={form.shopAtmosphere}
+              onChange={(event) => setField("shopAtmosphere", event.target.value)}
+              className={inputClass}
+              placeholder="例：落ち着いた雰囲気 / にぎやか"
+            />
+          </div>
+          <div>
+            <label htmlFor="customerAgeGroup" className={labelClass}>
+              お客様の年齢層
+            </label>
+            <input
+              id="customerAgeGroup"
+              value={form.customerAgeGroup}
+              onChange={(event) => setField("customerAgeGroup", event.target.value)}
+              className={inputClass}
+              placeholder="例：20代後半〜40代中心"
+            />
+          </div>
+          <div>
+            <label htmlFor="customerTrend" className={labelClass}>
+              来店傾向
+            </label>
+            <input
+              id="customerTrend"
+              value={form.customerTrend}
+              onChange={(event) => setField("customerTrend", event.target.value)}
+              className={inputClass}
+              placeholder="例：新規多め / 常連多め"
+            />
+          </div>
         </div>
 
         <div>

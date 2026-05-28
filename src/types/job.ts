@@ -33,6 +33,9 @@ export interface JobEntry {
   workHours: string;
   businessHours?: string;
   ageGroup?: string;
+  shopAtmosphere?: string;
+  customerAgeGroup?: string;
+  customerTrend?: string;
   description: string;
   requirements: string[];
   benefits: string[];
@@ -62,6 +65,9 @@ export interface Job {
   workHours: string;
   businessHours?: string;
   ageGroup?: string;
+  shopAtmosphere?: string;
+  customerAgeGroup?: string;
+  customerTrend?: string;
   description: string;
   requirements: string[];
   benefits: string[];

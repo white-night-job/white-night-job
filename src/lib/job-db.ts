@@ -10,6 +10,9 @@ export type JobPayload = {
   description: string;
   businessHours?: string;
   ageGroup?: string;
+  shopAtmosphere?: string;
+  customerAgeGroup?: string;
+  customerTrend?: string;
   imageUrl?: string;
   phone?: string;
   address?: string;
@@ -36,6 +39,9 @@ type JobRow = {
   work_hours: string;
   business_hours: string | null;
   age_group: string | null;
+  shop_atmosphere: string | null;
+  customer_age_group: string | null;
+  customer_trend: string | null;
   description: string;
   requirements: string[] | null;
   benefits: string[] | null;
@@ -66,6 +72,9 @@ export function rowToJob(row: JobRow): Job {
     workHours: row.work_hours,
     businessHours: row.business_hours ?? undefined,
     ageGroup: row.age_group ?? undefined,
+    shopAtmosphere: row.shop_atmosphere ?? undefined,
+    customerAgeGroup: row.customer_age_group ?? undefined,
+    customerTrend: row.customer_trend ?? undefined,
     description: row.description,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
@@ -98,6 +107,9 @@ export function payloadToRow(payload: JobPayload) {
     work_hours: payload.workHours ?? "20:00〜LAST",
     business_hours: payload.businessHours?.trim() || null,
     age_group: payload.ageGroup?.trim() || null,
+    shop_atmosphere: payload.shopAtmosphere?.trim() || null,
+    customer_age_group: payload.customerAgeGroup?.trim() || null,
+    customer_trend: payload.customerTrend?.trim() || null,
     description: payload.description.trim(),
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
@@ -130,6 +142,13 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     description: String(data.description ?? ""),
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
+    shopAtmosphere: data.shopAtmosphere
+      ? String(data.shopAtmosphere)
+      : undefined,
+    customerAgeGroup: data.customerAgeGroup
+      ? String(data.customerAgeGroup)
+      : undefined,
+    customerTrend: data.customerTrend ? String(data.customerTrend) : undefined,
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,

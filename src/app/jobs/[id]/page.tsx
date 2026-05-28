@@ -45,6 +45,16 @@ export default function JobDetailPage({
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
+  const basicInfoItems = [
+    { label: "勤務時間", value: job.workHours },
+    { label: "営業時間", value: job.businessHours },
+    { label: "キャスト年齢", value: job.ageGroup },
+    { label: "お店の雰囲気", value: job.shopAtmosphere },
+    { label: "お客様の年齢層", value: job.customerAgeGroup },
+    { label: "来店傾向", value: job.customerTrend },
+  ].filter(
+    (item): item is { label: string; value: string } => Boolean(item.value),
+  );
   const socialLinks = [
     {
       label: "X",
@@ -114,42 +124,41 @@ export default function JobDetailPage({
         </div>
         <div className="space-y-6 px-5 py-6 sm:px-8">
           <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
-              <p className="text-xs font-medium text-muted">勤務時間</p>
-              <p className="mt-1 text-sm font-medium text-charcoal">{job.workHours}</p>
+          <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
+            <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal">
+              <span className="text-gold-dark">◆</span>
+              お店の基本情報
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {basicInfoItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-gold/20 bg-white px-4 py-3"
+                >
+                  <p className="text-xs font-medium text-muted">{item.label}</p>
+                  <p className="mt-1 text-sm font-medium text-charcoal">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
             </div>
-            {job.businessHours && (
-              <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
-                <p className="text-xs font-medium text-muted">営業時間</p>
-                <p className="mt-1 text-sm font-medium text-charcoal">
-                  {job.businessHours}
-                </p>
+            {job.address && googleMapUrl && (
+              <div className="mt-3 rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                <p className="text-xs font-medium text-muted">住所</p>
+                <a
+                  href={googleMapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 flex min-h-11 flex-col justify-center rounded-xl border border-gold/25 bg-ivory px-3 py-2 text-sm font-medium text-charcoal transition hover:border-gold hover:bg-gold-light/20 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                >
+                  <span>{job.address}</span>
+                  <span className="mt-1 shrink-0 font-semibold text-gold-dark sm:mt-0">
+                    Googleマップで見る →
+                  </span>
+                </a>
               </div>
             )}
-            {job.ageGroup && (
-              <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
-                <p className="text-xs font-medium text-muted">キャスト年齢</p>
-                <p className="mt-1 text-sm font-medium text-charcoal">{job.ageGroup}</p>
-              </div>
-            )}
-          </div>
-          {job.address && googleMapUrl && (
-            <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
-              <p className="text-xs font-medium text-muted">住所</p>
-              <a
-                href={googleMapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex min-h-11 flex-col justify-center rounded-xl border border-gold/25 bg-white px-3 py-2 text-sm font-medium text-charcoal transition hover:border-gold hover:bg-gold-light/20 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-              >
-                <span>{job.address}</span>
-                <span className="mt-1 shrink-0 font-semibold text-gold-dark sm:mt-0">
-                  Googleマップで見る →
-                </span>
-              </a>
-            </div>
-          )}
+          </section>
           {socialLinks.length > 0 && (
             <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
               <h2 className="mb-3 text-base font-semibold text-charcoal">
