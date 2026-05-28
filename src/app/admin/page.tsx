@@ -454,14 +454,14 @@ export default function AdminPage() {
 
         <div>
           <label htmlFor="ageGroup" className={labelClass}>
-            年齢層
+            キャスト年齢
           </label>
           <input
             id="ageGroup"
             value={form.ageGroup}
             onChange={(event) => setField("ageGroup", event.target.value)}
             className={inputClass}
-            placeholder="例：20代前半〜30代前半"
+            placeholder="例：キャスト年齢 20代前半〜30代前半"
           />
         </div>
 

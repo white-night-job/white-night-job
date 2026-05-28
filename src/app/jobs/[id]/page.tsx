@@ -42,6 +42,9 @@ export default function JobDetailPage({
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
+  const googleMapUrl = job.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
+    : null;
   const socialLinks = [
     {
       label: "X",
@@ -126,15 +129,25 @@ export default function JobDetailPage({
             )}
             {job.ageGroup && (
               <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
-                <p className="text-xs font-medium text-muted">年齢層</p>
+                <p className="text-xs font-medium text-muted">キャスト年齢</p>
                 <p className="mt-1 text-sm font-medium text-charcoal">{job.ageGroup}</p>
               </div>
             )}
           </div>
-          {job.address && (
+          {job.address && googleMapUrl && (
             <div className="rounded-2xl border border-gold/20 bg-ivory px-4 py-3">
               <p className="text-xs font-medium text-muted">住所</p>
-              <p className="mt-1 text-sm font-medium text-charcoal">{job.address}</p>
+              <a
+                href={googleMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex min-h-11 flex-col justify-center rounded-xl border border-gold/25 bg-white px-3 py-2 text-sm font-medium text-charcoal transition hover:border-gold hover:bg-gold-light/20 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+              >
+                <span>{job.address}</span>
+                <span className="mt-1 shrink-0 font-semibold text-gold-dark sm:mt-0">
+                  Googleマップで見る →
+                </span>
+              </a>
             </div>
           )}
           {socialLinks.length > 0 && (
