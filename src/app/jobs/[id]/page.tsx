@@ -8,6 +8,15 @@ import { getBenefitCategoryGroups } from "@/data/benefits";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 
+function JobApplyButtons({ job }: { job: Job }) {
+  return (
+    <div className="space-y-3">
+      <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
+      {job.phone && <PhoneApplyButton phone={job.phone} fullWidth size="lg" />}
+    </div>
+  );
+}
+
 export default function JobDetailPage({
   params,
 }: {
@@ -143,10 +152,10 @@ export default function JobDetailPage({
             {formatLocation(job)} · {job.jobType}
           </p>
           <h1 className="mt-1 font-serif text-xl font-semibold sm:text-2xl">{job.title}</h1>
-          <p className="mt-2 text-muted">{job.shopName}</p>
-          {job.description && (
-            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-charcoal sm:text-base">
-              {job.description}
+          <p className="mt-2 font-medium text-charcoal">{job.shopName}</p>
+          {job.introductionText && (
+            <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
+              {job.introductionText}
             </p>
           )}
           {job.isVerified && <div className="mt-3"><SafetyBadge /></div>}
@@ -219,12 +228,7 @@ export default function JobDetailPage({
               </div>
             )}
           </section>
-          <div className="space-y-3">
-            <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
-            {job.phone && (
-              <PhoneApplyButton phone={job.phone} fullWidth size="lg" />
-            )}
-          </div>
+          <JobApplyButtons job={job} />
           {socialLinks.length > 0 && (
             <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
               <h2 className="mb-3 text-base font-semibold text-charcoal">
@@ -287,20 +291,15 @@ export default function JobDetailPage({
               </ul>
             </section>
           )}
-          {job.description && (
+          {job.descriptionText && (
             <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
               <h2 className="mb-3 text-base font-semibold text-charcoal">説明文</h2>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
-                {job.description}
+                {job.descriptionText}
               </p>
             </section>
           )}
-          <div className="space-y-3">
-            <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
-            {job.phone && (
-              <PhoneApplyButton phone={job.phone} fullWidth size="lg" />
-            )}
-          </div>
+          <JobApplyButtons job={job} />
         </div>
       </article>
     </div>

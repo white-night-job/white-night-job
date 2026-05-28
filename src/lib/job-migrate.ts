@@ -21,7 +21,7 @@ export function migrateJobType(value: string): JobType {
 
 export function inferDistrict(job: Partial<Job>): District {
   if (job.district && DISTRICTS.includes(job.district)) return job.district;
-  const text = `${job.description ?? ""} ${job.title ?? ""}`;
+  const text = `${job.introductionText ?? ""} ${job.descriptionText ?? ""} ${job.title ?? ""}`;
   if (text.includes("すすきの")) return "すすきの";
   if (text.includes("琴似")) return "琴似";
   if (text.includes("24条")) return "24条";

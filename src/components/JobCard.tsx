@@ -35,17 +35,16 @@ export function JobCard({ job }: { job: Job }) {
               <h3 className="truncate font-serif text-xl font-semibold text-charcoal">
                 {job.shopName}
               </h3>
+              {job.introductionText && (
+                <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">
+                  {job.introductionText}
+                </p>
+              )}
             </div>
             {job.isVerified && <SafetyBadge size="sm" />}
           </div>
 
-          {job.description && (
-            <p className="mb-3 line-clamp-3 text-sm leading-6 text-muted">
-              {job.description}
-            </p>
-          )}
-
-          <dl className="mt-3 grid gap-2 text-sm text-charcoal">
+          <dl className="grid gap-2 text-sm text-charcoal">
             <div className="rounded-xl border border-gold/15 bg-gold-light/20 px-3 py-2">
               <dt className="text-xs font-semibold text-gold-dark">時給</dt>
               <dd className="mt-0.5 font-bold text-gold-dark">{job.salary}</dd>

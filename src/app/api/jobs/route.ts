@@ -39,6 +39,8 @@ export async function GET(request: Request) {
         job.area,
         job.district,
         job.access,
+        job.introductionText,
+        job.descriptionText,
         ...job.benefits,
         ...(job.otherBenefits ?? []),
       ]

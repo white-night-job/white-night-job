@@ -7,7 +7,8 @@ export type JobPayload = {
   salary: string;
   benefits: string[];
   otherBenefits?: string[];
-  description: string;
+  introductionText?: string;
+  descriptionText?: string;
   businessHours?: string;
   ageGroup?: string;
   customerPersonalityLevel?: number;
@@ -42,7 +43,9 @@ type JobRow = {
   customer_personality_level: number | null;
   customer_age_level: number | null;
   customer_regular_level: number | null;
-  description: string;
+  introduction_text: string | null;
+  description_text: string | null;
+  description: string | null;
   requirements: string[] | null;
   benefits: string[] | null;
   other_benefits: string[] | null;
@@ -75,7 +78,9 @@ export function rowToJob(row: JobRow): Job {
     customerPersonalityLevel: row.customer_personality_level ?? undefined,
     customerAgeLevel: row.customer_age_level ?? undefined,
     customerRegularLevel: row.customer_regular_level ?? undefined,
-    description: row.description,
+    introductionText: row.introduction_text?.trim() || undefined,
+    descriptionText:
+      row.description_text?.trim() || row.description?.trim() || undefined,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
     otherBenefits: row.other_benefits ?? [],
@@ -110,7 +115,9 @@ export function payloadToRow(payload: JobPayload) {
     customer_personality_level: normalizeLevel(payload.customerPersonalityLevel),
     customer_age_level: normalizeLevel(payload.customerAgeLevel),
     customer_regular_level: normalizeLevel(payload.customerRegularLevel),
-    description: payload.description.trim(),
+    introduction_text: payload.introductionText?.trim() || null,
+    description_text: payload.descriptionText?.trim() || null,
+    description: payload.descriptionText?.trim() || null,
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
@@ -139,7 +146,12 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     otherBenefits: Array.isArray(data.otherBenefits)
       ? data.otherBenefits.map(String)
       : [],
-    description: String(data.description ?? ""),
+    introductionText: data.introductionText
+      ? String(data.introductionText)
+      : undefined,
+    descriptionText: data.descriptionText
+      ? String(data.descriptionText)
+      : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: data.customerPersonalityLevel
@@ -174,7 +186,6 @@ export function validateJobPayload(payload: JobPayload): string | null {
   if (!payload.district) return "地区を選択してください。";
   if (!payload.jobType) return "職種を選択してください。";
   if (!payload.salary.trim()) return "時給を入力してください。";
-  if (!payload.description.trim()) return "説明文を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
   return null;
 }

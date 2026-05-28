@@ -30,7 +30,8 @@ type JobForm = {
   customerRegularLevel: string;
   benefits: string[];
   otherBenefits: string;
-  description: string;
+  introductionText: string;
+  descriptionText: string;
   imageUrl: string;
   phone: string;
   address: string;
@@ -55,7 +56,8 @@ const emptyForm: JobForm = {
   customerRegularLevel: "",
   benefits: [],
   otherBenefits: "",
-  description: "",
+  introductionText: "",
+  descriptionText: "",
   imageUrl: "",
   phone: "",
   address: "",
@@ -101,7 +103,8 @@ function toPayload(form: JobForm) {
       : undefined,
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
-    description: form.description,
+    introductionText: form.introductionText || undefined,
+    descriptionText: form.descriptionText || undefined,
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
     address: form.address || undefined,
@@ -135,7 +138,8 @@ function toForm(job: Job): JobForm {
       ...(job.otherBenefits ?? []),
       ...getUncategorizedBenefits(job.benefits),
     ].join("\n"),
-    description: job.description,
+    introductionText: job.introductionText ?? "",
+    descriptionText: job.descriptionText ?? "",
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
     address: job.address ?? "",
@@ -614,19 +618,44 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div>
-          <label htmlFor="description" className={labelClass}>
-            説明
-          </label>
-          <textarea
-            id="description"
-            value={form.description}
-            onChange={(event) => setField("description", event.target.value)}
-            className={inputClass}
-            rows={4}
-            placeholder="お店の雰囲気や仕事内容を入力"
-            required
-          />
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="introductionText" className={labelClass}>
+              紹介文
+            </label>
+            <textarea
+              id="introductionText"
+              value={form.introductionText}
+              onChange={(event) =>
+                setField("introductionText", event.target.value)
+              }
+              className={inputClass}
+              rows={3}
+              placeholder="求人一覧・詳細ページの店名下に表示される短い紹介文"
+            />
+            <p className="mt-1 text-xs text-muted">
+              2〜3行程度の短い文章を入力してください。
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="descriptionText" className={labelClass}>
+              説明文
+            </label>
+            <textarea
+              id="descriptionText"
+              value={form.descriptionText}
+              onChange={(event) =>
+                setField("descriptionText", event.target.value)
+              }
+              className={inputClass}
+              rows={10}
+              placeholder="求人詳細ページの「その他待遇」の下に表示される詳しい説明文"
+            />
+            <p className="mt-1 text-xs text-muted">
+              お店の雰囲気や仕事内容など、詳しく記載できます。
+            </p>
+          </div>
         </div>
 
         <div>
