@@ -25,9 +25,9 @@ type JobForm = {
   salary: string;
   businessHours: string;
   ageGroup: string;
-  shopAtmosphere: string;
-  customerAgeGroup: string;
-  customerTrend: string;
+  customerPersonalityLevel: string;
+  customerAgeLevel: string;
+  customerRegularLevel: string;
   benefits: string[];
   otherBenefits: string;
   description: string;
@@ -50,9 +50,9 @@ const emptyForm: JobForm = {
   salary: "",
   businessHours: "",
   ageGroup: "",
-  shopAtmosphere: "",
-  customerAgeGroup: "",
-  customerTrend: "",
+  customerPersonalityLevel: "",
+  customerAgeLevel: "",
+  customerRegularLevel: "",
   benefits: [],
   otherBenefits: "",
   description: "",
@@ -73,6 +73,15 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-sm font-medium text-charcoal";
 
+const levelOptions = [
+  { value: "", label: "未設定" },
+  { value: "1", label: "1（左寄り）" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3（中央）" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5（右寄り）" },
+];
+
 function toPayload(form: JobForm) {
   return {
     shopName: form.shopName,
@@ -81,9 +90,15 @@ function toPayload(form: JobForm) {
     salary: form.salary,
     businessHours: form.businessHours,
     ageGroup: form.ageGroup,
-    shopAtmosphere: form.shopAtmosphere || undefined,
-    customerAgeGroup: form.customerAgeGroup || undefined,
-    customerTrend: form.customerTrend || undefined,
+    customerPersonalityLevel: form.customerPersonalityLevel
+      ? Number(form.customerPersonalityLevel)
+      : undefined,
+    customerAgeLevel: form.customerAgeLevel
+      ? Number(form.customerAgeLevel)
+      : undefined,
+    customerRegularLevel: form.customerRegularLevel
+      ? Number(form.customerRegularLevel)
+      : undefined,
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
     description: form.description,
@@ -108,9 +123,13 @@ function toForm(job: Job): JobForm {
     salary: job.salary,
     businessHours: job.businessHours ?? "",
     ageGroup: job.ageGroup ?? "",
-    shopAtmosphere: job.shopAtmosphere ?? "",
-    customerAgeGroup: job.customerAgeGroup ?? "",
-    customerTrend: job.customerTrend ?? "",
+    customerPersonalityLevel: job.customerPersonalityLevel
+      ? String(job.customerPersonalityLevel)
+      : "",
+    customerAgeLevel: job.customerAgeLevel ? String(job.customerAgeLevel) : "",
+    customerRegularLevel: job.customerRegularLevel
+      ? String(job.customerRegularLevel)
+      : "",
     benefits: getKnownBenefits(job.benefits),
     otherBenefits: [
       ...(job.otherBenefits ?? []),
@@ -481,44 +500,66 @@ export default function AdminPage() {
           <div>
             <p className="text-sm font-semibold text-gold-dark">お店の基本情報</p>
             <p className="mt-1 text-xs text-muted">
-              求人詳細ページに表示されます。未入力の項目は表示されません。
+              1〜5で選択してください。未設定の項目は表示されません。
             </p>
           </div>
           <div>
-            <label htmlFor="shopAtmosphere" className={labelClass}>
+            <label htmlFor="customerPersonalityLevel" className={labelClass}>
               お店の雰囲気
             </label>
-            <input
-              id="shopAtmosphere"
-              value={form.shopAtmosphere}
-              onChange={(event) => setField("shopAtmosphere", event.target.value)}
+            <select
+              id="customerPersonalityLevel"
+              value={form.customerPersonalityLevel}
+              onChange={(event) =>
+                setField("customerPersonalityLevel", event.target.value)
+              }
               className={inputClass}
-              placeholder="例：落ち着いた雰囲気 / にぎやか"
-            />
+            >
+              {levelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted">1: にぎやか / 5: 落ち着いている</p>
           </div>
           <div>
-            <label htmlFor="customerAgeGroup" className={labelClass}>
+            <label htmlFor="customerAgeLevel" className={labelClass}>
               お客様の年齢層
             </label>
-            <input
-              id="customerAgeGroup"
-              value={form.customerAgeGroup}
-              onChange={(event) => setField("customerAgeGroup", event.target.value)}
+            <select
+              id="customerAgeLevel"
+              value={form.customerAgeLevel}
+              onChange={(event) => setField("customerAgeLevel", event.target.value)}
               className={inputClass}
-              placeholder="例：20代後半〜40代中心"
-            />
+            >
+              {levelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted">1: 若い / 5: 年配</p>
           </div>
           <div>
-            <label htmlFor="customerTrend" className={labelClass}>
+            <label htmlFor="customerRegularLevel" className={labelClass}>
               来店傾向
             </label>
-            <input
-              id="customerTrend"
-              value={form.customerTrend}
-              onChange={(event) => setField("customerTrend", event.target.value)}
+            <select
+              id="customerRegularLevel"
+              value={form.customerRegularLevel}
+              onChange={(event) =>
+                setField("customerRegularLevel", event.target.value)
+              }
               className={inputClass}
-              placeholder="例：新規多め / 常連多め"
-            />
+            >
+              {levelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted">1: 新規 / 5: 常連</p>
           </div>
         </div>
 

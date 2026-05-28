@@ -10,9 +10,9 @@ export type JobPayload = {
   description: string;
   businessHours?: string;
   ageGroup?: string;
-  shopAtmosphere?: string;
-  customerAgeGroup?: string;
-  customerTrend?: string;
+  customerPersonalityLevel?: number;
+  customerAgeLevel?: number;
+  customerRegularLevel?: number;
   imageUrl?: string;
   phone?: string;
   address?: string;
@@ -39,9 +39,9 @@ type JobRow = {
   work_hours: string;
   business_hours: string | null;
   age_group: string | null;
-  shop_atmosphere: string | null;
-  customer_age_group: string | null;
-  customer_trend: string | null;
+  customer_personality_level: number | null;
+  customer_age_level: number | null;
+  customer_regular_level: number | null;
   description: string;
   requirements: string[] | null;
   benefits: string[] | null;
@@ -72,9 +72,9 @@ export function rowToJob(row: JobRow): Job {
     workHours: row.work_hours,
     businessHours: row.business_hours ?? undefined,
     ageGroup: row.age_group ?? undefined,
-    shopAtmosphere: row.shop_atmosphere ?? undefined,
-    customerAgeGroup: row.customer_age_group ?? undefined,
-    customerTrend: row.customer_trend ?? undefined,
+    customerPersonalityLevel: row.customer_personality_level ?? undefined,
+    customerAgeLevel: row.customer_age_level ?? undefined,
+    customerRegularLevel: row.customer_regular_level ?? undefined,
     description: row.description,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
@@ -107,9 +107,9 @@ export function payloadToRow(payload: JobPayload) {
     work_hours: payload.workHours ?? "20:00〜LAST",
     business_hours: payload.businessHours?.trim() || null,
     age_group: payload.ageGroup?.trim() || null,
-    shop_atmosphere: payload.shopAtmosphere?.trim() || null,
-    customer_age_group: payload.customerAgeGroup?.trim() || null,
-    customer_trend: payload.customerTrend?.trim() || null,
+    customer_personality_level: normalizeLevel(payload.customerPersonalityLevel),
+    customer_age_level: normalizeLevel(payload.customerAgeLevel),
+    customer_regular_level: normalizeLevel(payload.customerRegularLevel),
     description: payload.description.trim(),
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
@@ -142,13 +142,15 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     description: String(data.description ?? ""),
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
-    shopAtmosphere: data.shopAtmosphere
-      ? String(data.shopAtmosphere)
+    customerPersonalityLevel: data.customerPersonalityLevel
+      ? Number(data.customerPersonalityLevel)
       : undefined,
-    customerAgeGroup: data.customerAgeGroup
-      ? String(data.customerAgeGroup)
+    customerAgeLevel: data.customerAgeLevel
+      ? Number(data.customerAgeLevel)
       : undefined,
-    customerTrend: data.customerTrend ? String(data.customerTrend) : undefined,
+    customerRegularLevel: data.customerRegularLevel
+      ? Number(data.customerRegularLevel)
+      : undefined,
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
@@ -175,6 +177,11 @@ export function validateJobPayload(payload: JobPayload): string | null {
   if (!payload.description.trim()) return "説明文を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
   return null;
+}
+
+function normalizeLevel(value: number | undefined): number | null {
+  if (!value || Number.isNaN(value)) return null;
+  return Math.min(5, Math.max(1, Math.round(value)));
 }
 
 export function parseBenefits(value: string): string[] {
