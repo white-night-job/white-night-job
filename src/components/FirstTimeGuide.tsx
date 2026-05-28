@@ -102,9 +102,12 @@ export function FirstTimeGuide() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 py-2 text-gold-light/70">
+          <div
+            id="support-system"
+            className="scroll-mt-24 flex items-center gap-3 py-2 text-gold-light/70 sm:scroll-mt-28"
+          >
             <span className="h-px flex-1 bg-gold/30" />
-            <span className="text-xs tracking-[0.25em]">SUPPORT</span>
+            <span className="text-xs tracking-[0.25em]">安心のサポート体制</span>
             <span className="h-px flex-1 bg-gold/30" />
           </div>
 
