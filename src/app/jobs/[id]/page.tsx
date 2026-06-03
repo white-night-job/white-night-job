@@ -298,7 +298,7 @@ export default function JobDetailPage({
           )}
           {job.descriptionText && (
             <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
-              <h2 className="mb-3 text-base font-semibold text-charcoal">説明文</h2>
+              <h2 className="mb-3 text-base font-semibold text-charcoal">どんなお店？</h2>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
                 {job.descriptionText}
               </p>
