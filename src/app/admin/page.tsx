@@ -25,14 +25,25 @@ import {
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
-import { parseBenefits } from "@/lib/job-db";
+import {
+  getDisplayCastVoices,
+  parseBenefits,
+  sanitizeCastVoicesForSave,
+} from "@/lib/job-db";
 import {
   FIXED_AREA,
   JOB_TYPES,
+  type CastVoiceEntry,
   type District,
   type Job,
   type JobType,
 } from "@/types/job";
+
+const emptyCastVoiceEntry = (): CastVoiceEntry => ({
+  name: "",
+  age: "",
+  comment: "",
+});
 
 type JobForm = {
   shopName: string;
@@ -48,7 +59,7 @@ type JobForm = {
   otherBenefits: string;
   introductionText: string;
   descriptionText: string;
-  castVoice: string;
+  castVoices: CastVoiceEntry[];
   imageUrl: string;
   phone: string;
   address: string;
@@ -75,7 +86,7 @@ const emptyForm: JobForm = {
   otherBenefits: "",
   introductionText: "",
   descriptionText: "",
-  castVoice: "",
+  castVoices: [],
   imageUrl: "",
   phone: "",
   address: "",
@@ -123,7 +134,7 @@ function toPayload(form: JobForm) {
     otherBenefits: parseBenefits(form.otherBenefits),
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
-    castVoice: form.castVoice || undefined,
+    castVoices: sanitizeCastVoicesForSave(form.castVoices),
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
     address: form.address || undefined,
@@ -159,7 +170,11 @@ function toForm(job: Job): JobForm {
     ].join("\n"),
     introductionText: job.introductionText ?? "",
     descriptionText: job.descriptionText ?? "",
-    castVoice: job.castVoice ?? "",
+    castVoices: getDisplayCastVoices(job).map((entry) => ({
+      name: entry.name,
+      age: entry.age,
+      comment: entry.comment,
+    })),
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
     address: job.address ?? "",
@@ -338,6 +353,33 @@ export default function AdminPage() {
       benefits: current.benefits.includes(benefit)
         ? current.benefits.filter((item) => item !== benefit)
         : [...current.benefits, benefit],
+    }));
+  }
+
+  function addCastVoice() {
+    setForm((current) => ({
+      ...current,
+      castVoices: [...current.castVoices, emptyCastVoiceEntry()],
+    }));
+  }
+
+  function removeCastVoice(index: number) {
+    setForm((current) => ({
+      ...current,
+      castVoices: current.castVoices.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
+  function updateCastVoice(
+    index: number,
+    key: keyof CastVoiceEntry,
+    value: string,
+  ) {
+    setForm((current) => ({
+      ...current,
+      castVoices: current.castVoices.map((entry, itemIndex) =>
+        itemIndex === index ? { ...entry, [key]: value } : entry,
+      ),
     }));
   }
 
@@ -792,21 +834,104 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <div>
-            <label htmlFor="castVoice" className={labelClass}>
-              入店・在籍キャストの声
-            </label>
-            <textarea
-              id="castVoice"
-              value={form.castVoice}
-              onChange={(event) => setField("castVoice", event.target.value)}
-              className={inputClass}
-              rows={8}
-              placeholder="実際に働いているキャストの感想や雰囲気など（求人詳細の「どんなお店？」の下に表示）"
-            />
-            <p className="mt-1 text-xs text-muted">
-              未入力の場合は求人詳細ページに表示されません。長文でも入力できます。
+          <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className={labelClass}>入店・在籍キャストの声</p>
+              <button
+                type="button"
+                onClick={addCastVoice}
+                className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
+              >
+                キャストの声を追加
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-muted">
+              名前・年齢・コメントを入力してください。すべて空の行は保存されません。
             </p>
+            {form.castVoices.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
+                「キャストの声を追加」から登録できます
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {form.castVoices.map((entry, index) => (
+                  <li
+                    key={`cast-voice-${index}`}
+                    className="rounded-xl border border-gold/25 bg-white p-4 shadow-gold"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-charcoal">
+                        キャスト {index + 1}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => removeCastVoice(index)}
+                        className="rounded-full border border-charcoal/20 px-3 py-1 text-xs font-medium text-muted transition hover:border-charcoal/40 hover:text-charcoal"
+                      >
+                        削除
+                      </button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`cast-name-${index}`}
+                          className={labelClass}
+                        >
+                          名前
+                        </label>
+                        <input
+                          id={`cast-name-${index}`}
+                          type="text"
+                          value={entry.name}
+                          onChange={(event) =>
+                            updateCastVoice(index, "name", event.target.value)
+                          }
+                          className={inputClass}
+                          placeholder="例: りな"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`cast-age-${index}`}
+                          className={labelClass}
+                        >
+                          年齢
+                        </label>
+                        <input
+                          id={`cast-age-${index}`}
+                          type="text"
+                          inputMode="numeric"
+                          value={entry.age}
+                          onChange={(event) =>
+                            updateCastVoice(index, "age", event.target.value)
+                          }
+                          className={inputClass}
+                          placeholder="例: 22"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <label
+                        htmlFor={`cast-comment-${index}`}
+                        className={labelClass}
+                      >
+                        コメント
+                      </label>
+                      <textarea
+                        id={`cast-comment-${index}`}
+                        value={entry.comment}
+                        onChange={(event) =>
+                          updateCastVoice(index, "comment", event.target.value)
+                        }
+                        className={inputClass}
+                        rows={5}
+                        placeholder="例: 未経験で不安でしたが、スタッフさんが優しく教えてくれて安心して働けました。"
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

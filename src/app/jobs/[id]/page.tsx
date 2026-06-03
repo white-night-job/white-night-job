@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
+import { formatCastVoiceAge, getDisplayCastVoices } from "@/lib/job-db";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 
@@ -53,6 +54,7 @@ export default function JobDetailPage({
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
+  const displayCastVoices = getDisplayCastVoices(job);
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
@@ -304,14 +306,39 @@ export default function JobDetailPage({
               </p>
             </section>
           )}
-          {job.castVoice && (
-            <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
-              <h2 className="mb-3 text-base font-semibold text-charcoal">
+          {displayCastVoices.length > 0 && (
+            <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
+              <h2 className="mb-4 text-base font-semibold text-charcoal">
                 入店・在籍キャストの声
               </h2>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
-                {job.castVoice}
-              </p>
+              <ul className="space-y-3">
+                {displayCastVoices.map((entry, index) => {
+                  const ageLabel = formatCastVoiceAge(entry.age);
+                  const hasProfile = Boolean(entry.name || ageLabel);
+
+                  return (
+                    <li
+                      key={`cast-voice-${index}-${entry.name}`}
+                      className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
+                    >
+                      {hasProfile && (
+                        <p className="text-sm font-semibold text-gold-dark sm:text-base">
+                          {entry.name}
+                          {entry.name && ageLabel ? " / " : ""}
+                          {ageLabel}
+                        </p>
+                      )}
+                      <p
+                        className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
+                          hasProfile ? "mt-2" : ""
+                        }`}
+                      >
+                        {entry.comment}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
           )}
           <JobApplyButtons job={job} />

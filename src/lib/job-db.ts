@@ -1,4 +1,10 @@
-import { FIXED_AREA, type District, type Job, type JobType } from "@/types/job";
+import {
+  FIXED_AREA,
+  type CastVoiceEntry,
+  type District,
+  type Job,
+  type JobType,
+} from "@/types/job";
 
 export type JobPayload = {
   shopName: string;
@@ -9,7 +15,7 @@ export type JobPayload = {
   otherBenefits?: string[];
   introductionText?: string;
   descriptionText?: string;
-  castVoice?: string;
+  castVoices?: CastVoiceEntry[];
   businessHours?: string;
   ageGroup?: string;
   customerPersonalityLevel?: number;
@@ -48,6 +54,7 @@ type JobRow = {
   description_text: string | null;
   description: string | null;
   cast_voice: string | null;
+  cast_voices?: unknown;
   requirements: string[] | null;
   benefits: string[] | null;
   other_benefits: string[] | null;
@@ -83,6 +90,7 @@ export function rowToJob(row: JobRow): Job {
     introductionText: row.introduction_text?.trim() || undefined,
     descriptionText:
       row.description_text?.trim() || row.description?.trim() || undefined,
+    castVoices: parseCastVoices(row.cast_voices),
     castVoice: row.cast_voice?.trim() || undefined,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
@@ -121,7 +129,7 @@ export function payloadToRow(payload: JobPayload) {
     introduction_text: payload.introductionText?.trim() || null,
     description_text: payload.descriptionText?.trim() || null,
     description: payload.descriptionText?.trim() || null,
-    cast_voice: payload.castVoice?.trim() || null,
+    cast_voices: sanitizeCastVoicesForSave(payload.castVoices ?? []),
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
@@ -156,7 +164,7 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     descriptionText: data.descriptionText
       ? String(data.descriptionText)
       : undefined,
-    castVoice: data.castVoice ? String(data.castVoice) : undefined,
+    castVoices: normalizeCastVoicesInput(data.castVoices),
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: data.customerPersonalityLevel
@@ -193,6 +201,72 @@ export function validateJobPayload(payload: JobPayload): string | null {
   if (!payload.salary.trim()) return "時給を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
   return null;
+}
+
+export function parseCastVoices(value: unknown): CastVoiceEntry[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const entry: CastVoiceEntry = {
+        name: String(record.name ?? "").trim(),
+        age: String(record.age ?? "").trim(),
+        comment: String(record.comment ?? "").trim(),
+      };
+      if (!entry.name && !entry.age && !entry.comment) return null;
+      return entry;
+    })
+    .filter((entry): entry is CastVoiceEntry => entry !== null);
+}
+
+export function sanitizeCastVoicesForSave(
+  entries: CastVoiceEntry[],
+): CastVoiceEntry[] {
+  return entries
+    .map((entry) => ({
+      name: entry.name.trim(),
+      age: entry.age.trim(),
+      comment: entry.comment.trim(),
+    }))
+    .filter((entry) => entry.name || entry.age || entry.comment);
+}
+
+function normalizeCastVoicesInput(value: unknown): CastVoiceEntry[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const entries = sanitizeCastVoicesForSave(
+    value.map((item) => {
+      const record = (item ?? {}) as Record<string, unknown>;
+      return {
+        name: String(record.name ?? ""),
+        age: String(record.age ?? ""),
+        comment: String(record.comment ?? ""),
+      };
+    }),
+  );
+  return entries;
+}
+
+export function getDisplayCastVoices(
+  job: Pick<Job, "castVoices" | "castVoice">,
+): CastVoiceEntry[] {
+  if (job.castVoices && job.castVoices.length > 0) {
+    return job.castVoices;
+  }
+
+  const legacy = job.castVoice?.trim();
+  if (legacy) {
+    return [{ name: "", age: "", comment: legacy }];
+  }
+
+  return [];
+}
+
+export function formatCastVoiceAge(age: string): string {
+  const trimmed = age.trim();
+  if (!trimmed) return "";
+  return trimmed.endsWith("歳") ? trimmed : `${trimmed}歳`;
 }
 
 function normalizeLevel(value: number | undefined): number | null {

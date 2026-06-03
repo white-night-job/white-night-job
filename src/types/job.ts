@@ -5,6 +5,12 @@ export type Area = typeof FIXED_AREA;
 
 export type District = "すすきの" | "琴似" | "24条" | "手稲";
 
+export type CastVoiceEntry = {
+  name: string;
+  age: string;
+  comment: string;
+};
+
 export type JobType =
   | "ガールズバー"
   | "コンカフェ"
@@ -38,6 +44,8 @@ export interface JobEntry {
   customerRegularLevel?: number;
   introductionText?: string;
   descriptionText?: string;
+  castVoices?: CastVoiceEntry[];
+  /** @deprecated 旧テキスト形式。cast_voices が空のときの表示用 */
   castVoice?: string;
   requirements: string[];
   benefits: string[];
@@ -72,6 +80,8 @@ export interface Job {
   customerRegularLevel?: number;
   introductionText?: string;
   descriptionText?: string;
+  castVoices?: CastVoiceEntry[];
+  /** @deprecated 旧テキスト形式。cast_voices が空のときの表示用 */
   castVoice?: string;
   requirements: string[];
   benefits: string[];
