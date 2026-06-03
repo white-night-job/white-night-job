@@ -33,6 +33,19 @@ export type MonthlyApplicationBucket = {
   total: number;
 };
 
+export type DailyApplicationBucket = {
+  day: number;
+  label: string;
+  line: number;
+  phone: number;
+  total: number;
+};
+
+export type MonthOption = {
+  value: string;
+  label: string;
+};
+
 export const REGION_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "すべて" },
   { value: FIXED_AREA, label: FIXED_AREA },
@@ -112,6 +125,80 @@ export function getJstMonthKey(iso: string): string {
 export function formatMonthLabel(monthKey: string): string {
   const [year, month] = monthKey.split("-");
   return `${year}年${Number(month)}月`;
+}
+
+export function getCurrentJstMonthKey(referenceDate = new Date()): string {
+  const { year, month } = getJstYearMonth(referenceDate);
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+export function getJstDay(iso: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    day: "numeric",
+  }).formatToParts(new Date(iso));
+
+  return Number(parts.find((part) => part.type === "day")?.value ?? "0");
+}
+
+export function getDaysInMonth(monthKey: string): number {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(year, month, 0).getDate();
+}
+
+export function buildSelectableMonthOptions(
+  referenceDate = new Date(),
+): MonthOption[] {
+  return buildLast12MonthKeys(referenceDate)
+    .slice()
+    .reverse()
+    .map((monthKey) => ({
+      value: monthKey,
+      label: formatMonthLabel(monthKey),
+    }));
+}
+
+export function aggregateDailyApplicationsForJob(
+  rows: ApplicationRow[],
+  jobId: string,
+  monthKey: string,
+): DailyApplicationBucket[] {
+  const daysInMonth = getDaysInMonth(monthKey);
+  const buckets: DailyApplicationBucket[] = Array.from(
+    { length: daysInMonth },
+    (_, index) => {
+      const day = index + 1;
+      return {
+        day,
+        label: `${day}日`,
+        line: 0,
+        phone: 0,
+        total: 0,
+      };
+    },
+  );
+
+  for (const row of rows) {
+    if (row.job_id !== jobId) continue;
+    if (row.type !== "line" && row.type !== "phone") continue;
+    if (getJstMonthKey(row.created_at) !== monthKey) continue;
+
+    const day = getJstDay(row.created_at);
+    const bucket = buckets[day - 1];
+    if (!bucket) continue;
+
+    if (row.type === "line") bucket.line += 1;
+    else bucket.phone += 1;
+    bucket.total = bucket.line + bucket.phone;
+  }
+
+  return buckets;
+}
+
+export function hasApplicationsInMonth(
+  buckets: DailyApplicationBucket[],
+): boolean {
+  return buckets.some((bucket) => bucket.total > 0);
 }
 
 export function buildLast12MonthKeys(referenceDate = new Date()): string[] {

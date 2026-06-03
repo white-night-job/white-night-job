@@ -8,12 +8,17 @@ import {
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
+import { DailyApplicationChart } from "@/components/DailyApplicationChart";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import {
+  aggregateDailyApplicationsForJob,
   aggregateMonthlyApplications,
+  buildSelectableMonthOptions,
   emptyApplicationDetail,
   formatApplicationDateTime,
+  formatMonthLabel,
   getApplicationTypeLabel,
+  getCurrentJstMonthKey,
   matchesRegionFilter,
   matchesShopSearch,
   REGION_FILTER_OPTIONS,
@@ -188,9 +193,14 @@ export default function AdminPage() {
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
+  const [selectedDailyMonthKey, setSelectedDailyMonthKey] = useState(() =>
+    getCurrentJstMonthKey(),
+  );
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
+
+  const dailyMonthOptions = useMemo(() => buildSelectableMonthOptions(), []);
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -1004,6 +1014,42 @@ export default function AdminPage() {
           />
         </div>
 
+        <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-charcoal">
+                店舗別 日別応募数
+              </h3>
+              <p className="mt-1 text-xs text-muted">
+                各店舗カードに、選択した月の日別グラフを表示します（日本時間）
+              </p>
+            </div>
+            <div className="w-full sm:w-auto sm:min-w-[12rem]">
+              <label htmlFor="daily-month" className={labelClass}>
+                対象月
+              </label>
+              <select
+                id="daily-month"
+                value={selectedDailyMonthKey}
+                onChange={(event) => setSelectedDailyMonthKey(event.target.value)}
+                className={inputClass}
+              >
+                {dailyMonthOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <p className="mt-3 text-xs font-medium text-gold-dark">
+              {chartFilterDescription} · 対象月:{" "}
+              {formatMonthLabel(selectedDailyMonthKey)}
+            </p>
+          )}
+        </section>
+
         {displayedJobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
             {hasActiveFilters
@@ -1016,6 +1062,11 @@ export default function AdminPage() {
               const detail =
                 applicationDetails[job.id] ?? emptyApplicationDetail();
               const historyOpen = expandedHistoryJobIds.has(job.id);
+              const dailyStats = aggregateDailyApplicationsForJob(
+                applicationRows,
+                job.id,
+                selectedDailyMonthKey,
+              );
 
               return (
                 <li
@@ -1063,6 +1114,14 @@ export default function AdminPage() {
                           </dd>
                         </div>
                       </dl>
+
+                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
+                        <DailyApplicationChart
+                          data={dailyStats}
+                          monthLabel={formatMonthLabel(selectedDailyMonthKey)}
+                          compact
+                        />
+                      </div>
 
                       <button
                         type="button"
