@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import {
+  recordJobApplication,
+  type JobApplicationType,
+} from "@/lib/job-applications";
 
 type ApplyAction = {
   href: string;
@@ -69,27 +73,50 @@ function ConfirmApplyModal({
   );
 }
 
-function useApplyConfirm() {
+const APPLY_CLICK_COOLDOWN_MS = 800;
+
+function useApplyConfirm(
+  jobId?: string,
+  applicationType?: JobApplicationType,
+) {
   const [action, setAction] = useState<ApplyAction | null>(null);
+  const clickGuardRef = useRef(false);
+
+  function openConfirm(nextAction: ApplyAction) {
+    if (clickGuardRef.current) return;
+    clickGuardRef.current = true;
+
+    if (jobId && applicationType) {
+      void recordJobApplication(jobId, applicationType);
+    }
+
+    setAction(nextAction);
+
+    window.setTimeout(() => {
+      clickGuardRef.current = false;
+    }, APPLY_CLICK_COOLDOWN_MS);
+  }
 
   return {
     modal: <ConfirmApplyModal action={action} onClose={() => setAction(null)} />,
-    openConfirm: (nextAction: ApplyAction) => setAction(nextAction),
+    openConfirm,
   };
 }
 
 export function LineApplyButton({
   lineUrl,
+  jobId,
   label = "LINEで相談・応募する",
   fullWidth = false,
   size = "md",
 }: {
   lineUrl: string;
+  jobId?: string;
   label?: string;
   fullWidth?: boolean;
   size?: "sm" | "md" | "lg";
 }) {
-  const { modal, openConfirm } = useApplyConfirm();
+  const { modal, openConfirm } = useApplyConfirm(jobId, "line");
   const sizeClass =
     size === "lg" ? "px-8 py-4 text-lg" : size === "sm" ? "px-4 py-2 text-sm" : "px-6 py-3 text-base";
 
@@ -109,16 +136,18 @@ export function LineApplyButton({
 
 export function PhoneApplyButton({
   phone,
+  jobId,
   label = "電話で相談・応募する",
   fullWidth = false,
   size = "md",
 }: {
   phone: string;
+  jobId?: string;
   label?: string;
   fullWidth?: boolean;
   size?: "sm" | "md" | "lg";
 }) {
-  const { modal, openConfirm } = useApplyConfirm();
+  const { modal, openConfirm } = useApplyConfirm(jobId, "phone");
   const sizeClass =
     size === "lg" ? "px-8 py-4 text-lg" : size === "sm" ? "px-4 py-2 text-sm" : "px-6 py-3 text-base";
   const tel = phone.replace(/[^\d+]/g, "");

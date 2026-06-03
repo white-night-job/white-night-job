@@ -40,6 +40,19 @@ create table if not exists public.jobs (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.job_applications (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references public.jobs(id) on delete cascade,
+  type text not null check (type in ('line', 'phone')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists job_applications_job_id_idx
+  on public.job_applications (job_id);
+
+create index if not exists job_applications_job_id_type_idx
+  on public.job_applications (job_id, type);
+
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
   shop_name text not null,
@@ -65,6 +78,7 @@ before update on public.jobs
 for each row execute function public.set_updated_at();
 
 alter table public.jobs enable row level security;
+alter table public.job_applications enable row level security;
 alter table public.reports enable row level security;
 
 -- このアプリはNext.js API Routeから service_role key で操作します。

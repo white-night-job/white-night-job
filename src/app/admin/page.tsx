@@ -8,6 +8,10 @@ import {
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
+import {
+  emptyApplicationCounts,
+  type JobApplicationCounts,
+} from "@/lib/job-applications";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { parseBenefits } from "@/lib/job-db";
 import {
@@ -169,18 +173,53 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  const editingJob = useMemo(
-    () => jobs.find((job) => job.id === editingId),
-    [editingId, jobs],
-  );
+  const [applicationStats, setApplicationStats] = useState<
+    Record<string, JobApplicationCounts>
+  >({});
+  const [sortByApplications, setSortByApplications] = useState(false);
 
   async function loadJobs() {
-    const data = await readJson<{ jobs: Job[] }>(
-      await fetch("/api/jobs", { cache: "no-store" }),
-    );
+    const jobsResponse = await fetch("/api/jobs", {
+      cache: "no-store",
+      credentials: "include",
+    });
+    const data = await readJson<{
+      jobs: Job[];
+      applicationStats?: Record<string, JobApplicationCounts>;
+    }>(jobsResponse);
     setJobs(data.jobs);
+
+    if (data.applicationStats) {
+      setApplicationStats(data.applicationStats);
+      return;
+    }
+
+    const statsResponse = await fetch("/api/admin/application-stats", {
+      cache: "no-store",
+      credentials: "include",
+    });
+    if (statsResponse.ok) {
+      const statsData = await readJson<{
+        stats: Record<string, JobApplicationCounts>;
+      }>(statsResponse);
+      setApplicationStats(statsData.stats);
+    } else {
+      setApplicationStats({});
+    }
   }
+
+  const displayedJobs = useMemo(() => {
+    const list = [...jobs];
+    if (sortByApplications) {
+      list.sort((a, b) => {
+        const totalA = applicationStats[a.id]?.total ?? 0;
+        const totalB = applicationStats[b.id]?.total ?? 0;
+        if (totalB !== totalA) return totalB - totalA;
+        return a.shopName.localeCompare(b.shopName, "ja");
+      });
+    }
+    return list;
+  }, [applicationStats, jobs, sortByApplications]);
 
   useEffect(() => {
     fetch("/api/admin/session", { cache: "no-store" })
@@ -821,18 +860,42 @@ export default function AdminPage() {
       </form>
 
       <section className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-charcoal">
-          求人一覧（{jobs.length}件）
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-charcoal">
+            求人一覧（{jobs.length}件）
+          </h2>
+          <button
+            type="button"
+            onClick={() => setSortByApplications((current) => !current)}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+              sortByApplications
+                ? "border-gold bg-gold-light/30 text-gold-dark"
+                : "border-gold/40 text-muted hover:text-charcoal"
+            }`}
+          >
+            {sortByApplications ? "合計応募数順 ✓" : "合計応募数順で並べ替え"}
+          </button>
+        </div>
+
+        <div className="mb-3 hidden rounded-xl border border-gold/15 bg-ivory/60 px-4 py-3 text-xs font-medium text-muted sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4">
+          <span>店舗情報</span>
+          <div className="grid w-56 grid-cols-3 gap-2 text-center">
+            <span>LINE応募数</span>
+            <span>電話応募数</span>
+            <span>合計応募数</span>
+          </div>
+        </div>
 
         <ul className="space-y-3">
-          {jobs.map((job) => (
+          {displayedJobs.map((job) => {
+            const counts = applicationStats[job.id] ?? emptyApplicationCounts();
+            return (
             <li
               key={job.id}
               className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-gold-dark">
                     {formatLocation(job)} · {job.jobType}
                   </p>
@@ -842,26 +905,55 @@ export default function AdminPage() {
                     写真: {job.imageUrl ? "設定済み" : "未設定"}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(job)}
-                    className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                  >
-                    編集
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(job)}
-                    disabled={loading}
-                    className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    削除
-                  </button>
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+                  <dl className="grid w-full grid-cols-3 gap-2 rounded-xl border border-gold/20 bg-ivory/40 p-3 text-center sm:w-64">
+                    <div>
+                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
+                        LINE応募数
+                      </dt>
+                      <dd className="mt-1 text-lg font-semibold text-[#047a3b]">
+                        {counts.line}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
+                        電話応募数
+                      </dt>
+                      <dd className="mt-1 text-lg font-semibold text-gold-dark">
+                        {counts.phone}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
+                        合計応募数
+                      </dt>
+                      <dd className="mt-1 text-lg font-semibold text-charcoal">
+                        {counts.total}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="flex gap-2 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(job)}
+                      className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                    >
+                      編集
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(job)}
+                      disabled={loading}
+                      className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      削除
+                    </button>
+                  </div>
                 </div>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
     </div>

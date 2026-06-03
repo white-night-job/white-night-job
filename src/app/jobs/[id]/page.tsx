@@ -11,8 +11,10 @@ import type { Job } from "@/types/job";
 function JobApplyButtons({ job }: { job: Job }) {
   return (
     <div className="space-y-3">
-      <LineApplyButton lineUrl={job.lineUrl} fullWidth size="lg" />
-      {job.phone && <PhoneApplyButton phone={job.phone} fullWidth size="lg" />}
+      <LineApplyButton jobId={job.id} lineUrl={job.lineUrl} fullWidth size="lg" />
+      {job.phone && (
+        <PhoneApplyButton jobId={job.id} phone={job.phone} fullWidth size="lg" />
+      )}
     </div>
   );
 }

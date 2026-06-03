@@ -7,6 +7,12 @@ import {
   rowToJob,
   validateJobPayload,
 } from "@/lib/job-db";
+import {
+  emptyApplicationCounts,
+  fetchApplicationStats,
+  fillApplicationStatsForJobs,
+  type JobApplicationCounts,
+} from "@/lib/job-applications";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -62,7 +68,24 @@ export async function GET(request: Request) {
       return true;
     });
 
-    return NextResponse.json({ jobs: filteredJobs });
+    const isAdmin = await isAdminAuthenticated();
+    let applicationStats: Record<string, JobApplicationCounts> | undefined;
+
+    if (isAdmin) {
+      try {
+        const stats = await fetchApplicationStats(supabase);
+        applicationStats = fillApplicationStatsForJobs(filteredJobs, stats);
+      } catch {
+        applicationStats = Object.fromEntries(
+          filteredJobs.map((job) => [job.id, emptyApplicationCounts()]),
+        );
+      }
+    }
+
+    return NextResponse.json({
+      jobs: filteredJobs,
+      ...(applicationStats ? { applicationStats } : {}),
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の取得に失敗しました。") },
