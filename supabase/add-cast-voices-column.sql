@@ -6,3 +6,5 @@ alter table public.jobs
 add column if not exists cast_voices jsonb default '[]'::jsonb;
 
 comment on column public.jobs.cast_voices is '入店・在籍キャストの声 [{ name, age, comment }]';
+
+-- 実行後に保存エラーが続く場合: Supabase Dashboard → Settings → API → Reload schema cache

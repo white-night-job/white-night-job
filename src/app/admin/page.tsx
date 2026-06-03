@@ -427,6 +427,7 @@ export default function AdminPage() {
         await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify(toPayload(form)),
         }),
       );

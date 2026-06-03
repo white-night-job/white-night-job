@@ -90,7 +90,7 @@ export function rowToJob(row: JobRow): Job {
     introductionText: row.introduction_text?.trim() || undefined,
     descriptionText:
       row.description_text?.trim() || row.description?.trim() || undefined,
-    castVoices: parseCastVoices(row.cast_voices),
+    castVoices: resolveCastVoicesFromRow(row),
     castVoice: row.cast_voice?.trim() || undefined,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
@@ -164,7 +164,10 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     descriptionText: data.descriptionText
       ? String(data.descriptionText)
       : undefined,
-    castVoices: normalizeCastVoicesInput(data.castVoices),
+    castVoices: normalizeCastVoicesInput(
+      data.castVoices ??
+        (data as { cast_voices?: unknown }).cast_voices,
+    ),
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: data.customerPersonalityLevel
@@ -203,20 +206,48 @@ export function validateJobPayload(payload: JobPayload): string | null {
   return null;
 }
 
-export function parseCastVoices(value: unknown): CastVoiceEntry[] {
-  if (!Array.isArray(value)) return [];
+function normalizeCastVoiceRecord(record: Record<string, unknown>): CastVoiceEntry | null {
+  const entry: CastVoiceEntry = {
+    name: String(record.name ?? record.cast_name ?? "").trim(),
+    age: String(record.age ?? "").trim(),
+    comment: String(record.comment ?? "").trim(),
+  };
+  if (!entry.name && !entry.age && !entry.comment) return null;
+  return entry;
+}
 
-  return value
+export function coerceCastVoicesToArray(value: unknown): unknown[] {
+  if (value === null || value === undefined) return [];
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[]") return [];
+    try {
+      return coerceCastVoicesToArray(JSON.parse(trimmed));
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.cast_voices)) return record.cast_voices;
+    if (Array.isArray(record.castVoices)) return record.castVoices;
+    if ("name" in record || "age" in record || "comment" in record) {
+      return [record];
+    }
+  }
+
+  return [];
+}
+
+export function parseCastVoices(value: unknown): CastVoiceEntry[] {
+  return coerceCastVoicesToArray(value)
     .map((item) => {
       if (!item || typeof item !== "object") return null;
-      const record = item as Record<string, unknown>;
-      const entry: CastVoiceEntry = {
-        name: String(record.name ?? "").trim(),
-        age: String(record.age ?? "").trim(),
-        comment: String(record.comment ?? "").trim(),
-      };
-      if (!entry.name && !entry.age && !entry.comment) return null;
-      return entry;
+      return normalizeCastVoiceRecord(item as Record<string, unknown>);
     })
     .filter((entry): entry is CastVoiceEntry => entry !== null);
 }
@@ -233,34 +264,49 @@ export function sanitizeCastVoicesForSave(
     .filter((entry) => entry.name || entry.age || entry.comment);
 }
 
+function resolveCastVoicesFromRow(row: JobRow): CastVoiceEntry[] {
+  const fromJsonColumn = parseCastVoices(row.cast_voices);
+  if (fromJsonColumn.length > 0) return fromJsonColumn;
+
+  const legacyText = row.cast_voice?.trim();
+  if (!legacyText) return [];
+
+  const fromLegacyJson = parseCastVoices(legacyText);
+  if (fromLegacyJson.length > 0) return fromLegacyJson;
+
+  return [];
+}
+
 function normalizeCastVoicesInput(value: unknown): CastVoiceEntry[] | undefined {
-  if (!Array.isArray(value)) return undefined;
+  if (value === undefined) return undefined;
+
   const entries = sanitizeCastVoicesForSave(
-    value.map((item) => {
+    coerceCastVoicesToArray(value).map((item) => {
       const record = (item ?? {}) as Record<string, unknown>;
       return {
-        name: String(record.name ?? ""),
+        name: String(record.name ?? record.cast_name ?? ""),
         age: String(record.age ?? ""),
         comment: String(record.comment ?? ""),
       };
     }),
   );
+
   return entries;
 }
 
 export function getDisplayCastVoices(
   job: Pick<Job, "castVoices" | "castVoice">,
 ): CastVoiceEntry[] {
-  if (job.castVoices && job.castVoices.length > 0) {
-    return job.castVoices;
-  }
+  const fromColumn = parseCastVoices(job.castVoices);
+  if (fromColumn.length > 0) return fromColumn;
 
   const legacy = job.castVoice?.trim();
-  if (legacy) {
-    return [{ name: "", age: "", comment: legacy }];
-  }
+  if (!legacy) return [];
 
-  return [];
+  const fromLegacyJson = parseCastVoices(legacy);
+  if (fromLegacyJson.length > 0) return fromLegacyJson;
+
+  return [{ name: "", age: "", comment: legacy }];
 }
 
 export function formatCastVoiceAge(age: string): string {

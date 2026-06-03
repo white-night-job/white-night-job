@@ -328,13 +328,15 @@ export default function JobDetailPage({
                           {ageLabel}
                         </p>
                       )}
-                      <p
-                        className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
-                          hasProfile ? "mt-2" : ""
-                        }`}
-                      >
-                        {entry.comment}
-                      </p>
+                      {entry.comment && (
+                        <p
+                          className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
+                            hasProfile ? "mt-2" : ""
+                          }`}
+                        >
+                          {entry.comment}
+                        </p>
+                      )}
                     </li>
                   );
                 })}
