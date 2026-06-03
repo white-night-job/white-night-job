@@ -9,8 +9,10 @@ type DailyApplicationLineChartProps = {
 
 const LINE_COLOR = "#06C755";
 const PHONE_COLOR = "#c9a962";
-const TOTAL_COLOR = "rgba(55, 65, 81, 0.45)";
+const TOTAL_COLOR = "#9ca3af";
 
+const LINE_DASH = "7 4";
+const PHONE_DASH = "3 3";
 const CHART_HEIGHT = 168;
 const PADDING = { top: 12, right: 8, bottom: 32, left: 36 };
 
@@ -18,6 +20,25 @@ type SeriesKey = "line" | "phone" | "total";
 
 function getSeriesValue(bucket: DailyApplicationBucket, key: SeriesKey): number {
   return bucket[key];
+}
+
+function getPointX(
+  index: number,
+  dataLength: number,
+  innerWidth: number,
+): number {
+  return (
+    PADDING.left +
+    (dataLength === 1 ? innerWidth / 2 : (index / (dataLength - 1)) * innerWidth)
+  );
+}
+
+function getPointY(
+  value: number,
+  innerHeight: number,
+  maxY: number,
+): number {
+  return PADDING.top + innerHeight - (value / maxY) * innerHeight;
 }
 
 function buildPath(
@@ -31,15 +52,143 @@ function buildPath(
 
   return data
     .map((bucket, index) => {
-      const x =
-        data.length === 1
-          ? innerWidth / 2
-          : (index / (data.length - 1)) * innerWidth;
+      const x = getPointX(index, data.length, innerWidth) - PADDING.left;
       const value = getSeriesValue(bucket, key);
       const y = innerHeight - (value / maxY) * innerHeight;
       return `${index === 0 ? "M" : "L"} ${x + PADDING.left} ${y + PADDING.top}`;
     })
     .join(" ");
+}
+
+function shouldOffsetPhoneMarker(bucket: DailyApplicationBucket): boolean {
+  return bucket.line === bucket.phone;
+}
+
+function getPhoneMarkerOffset(bucket: DailyApplicationBucket): {
+  dx: number;
+  dy: number;
+} {
+  if (!shouldOffsetPhoneMarker(bucket)) {
+    return { dx: 0, dy: 0 };
+  }
+  return { dx: 6, dy: -7 };
+}
+
+type MarkerKind = "line" | "phone" | "total";
+
+function SeriesMarker({
+  kind,
+  cx,
+  cy,
+}: {
+  kind: MarkerKind;
+  cx: number;
+  cy: number;
+}) {
+  const size = 7;
+
+  if (kind === "line") {
+    return (
+      <rect
+        x={cx - size / 2}
+        y={cy - size / 2}
+        width={size}
+        height={size}
+        fill={LINE_COLOR}
+        stroke="#fff"
+        strokeWidth={1}
+      />
+    );
+  }
+
+  if (kind === "phone") {
+    const half = size / 2;
+    return (
+      <polygon
+        points={`${cx},${cy - half} ${cx + half},${cy} ${cx},${cy + half} ${cx - half},${cy}`}
+        fill={PHONE_COLOR}
+        stroke="#fff"
+        strokeWidth={1}
+      />
+    );
+  }
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={size / 2}
+      fill={TOTAL_COLOR}
+      stroke="#fff"
+      strokeWidth={1}
+    />
+  );
+}
+
+function LegendSample({ kind }: { kind: MarkerKind }) {
+  if (kind === "line") {
+    return (
+      <svg width={28} height={12} aria-hidden className="shrink-0">
+        <line
+          x1={0}
+          y1={6}
+          x2={28}
+          y2={6}
+          stroke={LINE_COLOR}
+          strokeWidth={2}
+          strokeDasharray={LINE_DASH}
+        />
+        <rect x={10} y={3.5} width={7} height={7} fill={LINE_COLOR} />
+      </svg>
+    );
+  }
+
+  if (kind === "phone") {
+    return (
+      <svg width={28} height={12} aria-hidden className="shrink-0">
+        <line
+          x1={0}
+          y1={6}
+          x2={28}
+          y2={6}
+          stroke={PHONE_COLOR}
+          strokeWidth={2}
+          strokeDasharray={PHONE_DASH}
+        />
+        <polygon
+          points="14,2 17,6 14,10 11,6"
+          fill={PHONE_COLOR}
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={28} height={12} aria-hidden className="shrink-0">
+      <line
+        x1={0}
+        y1={6}
+        x2={28}
+        y2={6}
+        stroke={TOTAL_COLOR}
+        strokeWidth={1.5}
+      />
+      <circle cx={14} cy={6} r={3.5} fill={TOTAL_COLOR} />
+    </svg>
+  );
+}
+
+function ApplicationTooltip({ bucket }: { bucket: DailyApplicationBucket }) {
+  return (
+    <div className="pointer-events-none absolute top-0 z-10 min-w-[9.5rem] rounded-lg border border-gold/25 bg-white px-3 py-2 text-xs shadow-gold">
+      <p className="font-semibold text-charcoal">{bucket.label}</p>
+      <ol className="mt-1.5 space-y-0.5">
+        <li className="text-[#047a3b]">LINE応募: {bucket.line}件</li>
+        <li className="text-gold-dark">電話応募: {bucket.phone}件</li>
+        <li className="text-muted">合計: {bucket.total}件</li>
+      </ol>
+    </div>
+  );
 }
 
 export function DailyApplicationLineChart({ data }: DailyApplicationLineChartProps) {
@@ -86,6 +235,13 @@ export function DailyApplicationLineChart({ data }: DailyApplicationLineChartPro
   const activeBucket =
     activeDay !== null ? data.find((bucket) => bucket.day === activeDay) : null;
 
+  const tooltipLeft = useMemo(() => {
+    if (!activeBucket) return 4;
+    const index = data.findIndex((bucket) => bucket.day === activeBucket.day);
+    const anchor = getPointX(index, data.length, innerWidth);
+    return Math.min(Math.max(anchor - 56, 4), chartWidth - 120);
+  }, [activeBucket, chartWidth, data, innerWidth]);
+
   if (!hasApplications) {
     return (
       <div className="rounded-xl border border-gold/15 bg-ivory/30 px-3 py-4 text-center text-sm text-muted">
@@ -96,26 +252,17 @@ export function DailyApplicationLineChart({ data }: DailyApplicationLineChartPro
 
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
-        <li className="inline-flex items-center gap-1.5 text-[#047a3b]">
-          <span
-            className="inline-block h-0.5 w-5 rounded-full"
-            style={{ backgroundColor: LINE_COLOR }}
-          />
+      <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium">
+        <li className="inline-flex items-center gap-2 text-[#047a3b]">
+          <LegendSample kind="line" />
           LINE応募
         </li>
-        <li className="inline-flex items-center gap-1.5 text-gold-dark">
-          <span
-            className="inline-block h-0.5 w-5 rounded-full"
-            style={{ backgroundColor: PHONE_COLOR }}
-          />
+        <li className="inline-flex items-center gap-2 text-gold-dark">
+          <LegendSample kind="phone" />
           電話応募
         </li>
-        <li className="inline-flex items-center gap-1.5 text-muted">
-          <span
-            className="inline-block h-0.5 w-5 rounded-full border border-dashed border-charcoal/30"
-            style={{ backgroundColor: TOTAL_COLOR }}
-          />
+        <li className="inline-flex items-center gap-2 text-muted">
+          <LegendSample kind="total" />
           合計
         </li>
       </ul>
@@ -123,37 +270,20 @@ export function DailyApplicationLineChart({ data }: DailyApplicationLineChartPro
       <div className="overflow-x-auto pb-1">
         <div className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
           {activeBucket && (
-            <div
-              className="pointer-events-none absolute top-0 z-10 rounded-lg border border-gold/25 bg-white px-3 py-2 text-center text-xs shadow-gold"
-              style={{
-                left: (() => {
-                  const index = data.findIndex((b) => b.day === activeBucket.day);
-                  const x =
-                    data.length === 1
-                      ? innerWidth / 2
-                      : (index / (data.length - 1)) * innerWidth;
-                  const anchor = PADDING.left + x;
-                  return Math.min(Math.max(anchor - 56, 4), chartWidth - 112);
-                })(),
-              }}
-            >
-              <p className="font-semibold text-charcoal">{activeBucket.label}</p>
-              <p className="mt-0.5 text-[#047a3b]">LINE応募: {activeBucket.line}件</p>
-              <p className="text-gold-dark">電話応募: {activeBucket.phone}件</p>
-              <p className="text-muted">合計: {activeBucket.total}件</p>
+            <div style={{ left: tooltipLeft }} className="absolute">
+              <ApplicationTooltip bucket={activeBucket} />
             </div>
           )}
 
           <svg
             width={chartWidth}
             height={CHART_HEIGHT}
-            className="mt-14 block sm:mt-0"
+            className="mt-[4.75rem] block sm:mt-0"
             role="img"
             aria-label="日別応募数の折れ線グラフ"
           >
             {yTicks.map((tick) => {
-              const y =
-                PADDING.top + innerHeight - (tick / maxY) * innerHeight;
+              const y = getPointY(tick, innerHeight, maxY);
               return (
                 <g key={tick}>
                   <line
@@ -180,31 +310,32 @@ export function DailyApplicationLineChart({ data }: DailyApplicationLineChartPro
               d={totalPath}
               fill="none"
               stroke={TOTAL_COLOR}
-              strokeWidth={2}
-              strokeDasharray="4 3"
+              strokeWidth={1.5}
             />
             <path
               d={phonePath}
               fill="none"
               stroke={PHONE_COLOR}
               strokeWidth={2.5}
+              strokeDasharray={PHONE_DASH}
             />
             <path
               d={linePath}
               fill="none"
               stroke={LINE_COLOR}
               strokeWidth={2.5}
+              strokeDasharray={LINE_DASH}
             />
 
             {data.map((bucket, index) => {
-              const x =
-                PADDING.left +
-                (data.length === 1
-                  ? innerWidth / 2
-                  : (index / (data.length - 1)) * innerWidth);
+              const x = getPointX(index, data.length, innerWidth);
               const isActive = activeDay === bucket.day;
               const hitWidth =
                 data.length > 1 ? innerWidth / (data.length - 1) : innerWidth;
+              const phoneOffset = getPhoneMarkerOffset(bucket);
+              const lineY = getPointY(bucket.line, innerHeight, maxY);
+              const phoneY = getPointY(bucket.phone, innerHeight, maxY);
+              const totalY = getPointY(bucket.total, innerHeight, maxY);
 
               return (
                 <g key={bucket.day}>
@@ -240,42 +371,13 @@ export function DailyApplicationLineChart({ data }: DailyApplicationLineChartPro
                         strokeWidth={1}
                         strokeDasharray="3 3"
                       />
-                      {bucket.line > 0 && (
-                        <circle
-                          cx={x}
-                          cy={
-                            PADDING.top +
-                            innerHeight -
-                            (bucket.line / maxY) * innerHeight
-                          }
-                          r={4}
-                          fill={LINE_COLOR}
-                        />
-                      )}
-                      {bucket.phone > 0 && (
-                        <circle
-                          cx={x}
-                          cy={
-                            PADDING.top +
-                            innerHeight -
-                            (bucket.phone / maxY) * innerHeight
-                          }
-                          r={4}
-                          fill={PHONE_COLOR}
-                        />
-                      )}
-                      {bucket.total > 0 && (
-                        <circle
-                          cx={x}
-                          cy={
-                            PADDING.top +
-                            innerHeight -
-                            (bucket.total / maxY) * innerHeight
-                          }
-                          r={3.5}
-                          fill="#6b7280"
-                        />
-                      )}
+                      <SeriesMarker kind="total" cx={x} cy={totalY} />
+                      <SeriesMarker
+                        kind="phone"
+                        cx={x + phoneOffset.dx}
+                        cy={phoneY + phoneOffset.dy}
+                      />
+                      <SeriesMarker kind="line" cx={x} cy={lineY} />
                     </>
                   )}
                   <text
