@@ -56,13 +56,12 @@ export default function JobDetailPage({
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
+  const unsetLabel = "未設定";
   const basicInfoItems = [
-    { label: "勤務時間", value: job.workHours },
-    { label: "営業時間", value: job.businessHours },
-    { label: "キャスト年齢", value: job.ageGroup },
-  ].filter(
-    (item): item is { label: string; value: string } => Boolean(item.value),
-  );
+    { label: "勤務時間", value: job.workHours || unsetLabel },
+    { label: "営業時間", value: job.businessHours || unsetLabel },
+    { label: "キャスト年齢", value: job.ageGroup || unsetLabel },
+  ];
   const sliderItems = [
     {
       label: "お店の雰囲気",
@@ -82,14 +81,7 @@ export default function JobDetailPage({
       rightLabel: "常連",
       level: job.customerRegularLevel,
     },
-  ].filter(
-    (item): item is {
-      label: string;
-      leftLabel: string;
-      rightLabel: string;
-      level: number;
-    } => Boolean(item.level),
-  );
+  ];
   const socialLinks = [
     {
       label: "X",
@@ -182,40 +174,47 @@ export default function JobDetailPage({
                 </div>
               ))}
             </div>
-            {sliderItems.length > 0 && (
-              <div className="mt-5 space-y-5 rounded-2xl border border-gold/20 bg-white p-4">
-                {sliderItems.map((item) => {
-                  const markerPosition = `${((item.level - 1) / 4) * 100}%`;
-                  return (
-                    <div key={item.label}>
-                      <p className="text-sm font-semibold text-charcoal">
-                        {item.label}
-                      </p>
-                      <div className="relative mt-4 h-8">
-                        <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-zinc-300">
-                          <span className="absolute left-1/4 top-0 h-full w-px bg-white/70" />
-                          <span className="absolute left-1/2 top-0 h-full w-px bg-white/70" />
-                          <span className="absolute left-3/4 top-0 h-full w-px bg-white/70" />
-                        </div>
+            <div className="mt-5 space-y-5 rounded-2xl border border-gold/20 bg-white p-4">
+              {sliderItems.map((item) => {
+                const level = item.level;
+                const hasLevel = typeof level === "number" && level >= 1;
+                const markerPosition = hasLevel
+                  ? `${((level - 1) / 4) * 100}%`
+                  : "50%";
+
+                return (
+                  <div key={item.label}>
+                    <p className="text-sm font-semibold text-charcoal">{item.label}</p>
+                    <div className="relative mt-4 h-8">
+                      <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-zinc-300">
+                        <span className="absolute left-1/4 top-0 h-full w-px bg-white/70" />
+                        <span className="absolute left-1/2 top-0 h-full w-px bg-white/70" />
+                        <span className="absolute left-3/4 top-0 h-full w-px bg-white/70" />
+                      </div>
+                      {hasLevel ? (
                         <span
                           className="absolute top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-gold-light to-gold text-base text-white shadow-[0_0_18px_rgba(201,169,98,0.45)]"
                           style={{ left: markerPosition }}
                         >
                           ★
                         </span>
-                      </div>
-                      <div className="mt-1 flex justify-between text-sm font-semibold text-muted">
-                        <span>{item.leftLabel}</span>
-                        <span>{item.rightLabel}</span>
-                      </div>
+                      ) : (
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-medium text-muted">
+                          {unsetLabel}
+                        </span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-            {job.address && googleMapUrl && (
-              <div className="mt-3 rounded-2xl border border-gold/20 bg-white px-4 py-3">
-                <p className="text-xs font-medium text-muted">住所</p>
+                    <div className="mt-1 flex justify-between text-sm font-semibold text-muted">
+                      <span>{item.leftLabel}</span>
+                      <span>{item.rightLabel}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 rounded-2xl border border-gold/20 bg-white px-4 py-3">
+              <p className="text-xs font-medium text-muted">住所</p>
+              {job.address && googleMapUrl ? (
                 <a
                   href={googleMapUrl}
                   target="_blank"
@@ -227,8 +226,12 @@ export default function JobDetailPage({
                     Googleマップで見る →
                   </span>
                 </a>
-              </div>
-            )}
+              ) : (
+                <p className="mt-1 rounded-xl border border-gold/15 bg-ivory px-3 py-2 text-sm text-muted">
+                  {unsetLabel}
+                </p>
+              )}
+            </div>
           </section>
           <JobApplyButtons job={job} />
           {socialLinks.length > 0 && (
