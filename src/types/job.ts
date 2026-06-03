@@ -38,6 +38,7 @@ export interface JobEntry {
   customerRegularLevel?: number;
   introductionText?: string;
   descriptionText?: string;
+  castVoice?: string;
   requirements: string[];
   benefits: string[];
   otherBenefits?: string[];
@@ -71,6 +72,7 @@ export interface Job {
   customerRegularLevel?: number;
   introductionText?: string;
   descriptionText?: string;
+  castVoice?: string;
   requirements: string[];
   benefits: string[];
   otherBenefits?: string[];

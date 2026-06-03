@@ -9,6 +9,7 @@ export type JobPayload = {
   otherBenefits?: string[];
   introductionText?: string;
   descriptionText?: string;
+  castVoice?: string;
   businessHours?: string;
   ageGroup?: string;
   customerPersonalityLevel?: number;
@@ -46,6 +47,7 @@ type JobRow = {
   introduction_text: string | null;
   description_text: string | null;
   description: string | null;
+  cast_voice: string | null;
   requirements: string[] | null;
   benefits: string[] | null;
   other_benefits: string[] | null;
@@ -81,6 +83,7 @@ export function rowToJob(row: JobRow): Job {
     introductionText: row.introduction_text?.trim() || undefined,
     descriptionText:
       row.description_text?.trim() || row.description?.trim() || undefined,
+    castVoice: row.cast_voice?.trim() || undefined,
     requirements: row.requirements ?? [],
     benefits: row.benefits ?? [],
     otherBenefits: row.other_benefits ?? [],
@@ -118,6 +121,7 @@ export function payloadToRow(payload: JobPayload) {
     introduction_text: payload.introductionText?.trim() || null,
     description_text: payload.descriptionText?.trim() || null,
     description: payload.descriptionText?.trim() || null,
+    cast_voice: payload.castVoice?.trim() || null,
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
@@ -152,6 +156,7 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     descriptionText: data.descriptionText
       ? String(data.descriptionText)
       : undefined,
+    castVoice: data.castVoice ? String(data.castVoice) : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: data.customerPersonalityLevel

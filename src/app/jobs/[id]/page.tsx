@@ -304,6 +304,16 @@ export default function JobDetailPage({
               </p>
             </section>
           )}
+          {job.castVoice && (
+            <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
+              <h2 className="mb-3 text-base font-semibold text-charcoal">
+                入店・在籍キャストの声
+              </h2>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
+                {job.castVoice}
+              </p>
+            </section>
+          )}
           <JobApplyButtons job={job} />
         </div>
       </article>

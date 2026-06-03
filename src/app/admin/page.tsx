@@ -48,6 +48,7 @@ type JobForm = {
   otherBenefits: string;
   introductionText: string;
   descriptionText: string;
+  castVoice: string;
   imageUrl: string;
   phone: string;
   address: string;
@@ -74,6 +75,7 @@ const emptyForm: JobForm = {
   otherBenefits: "",
   introductionText: "",
   descriptionText: "",
+  castVoice: "",
   imageUrl: "",
   phone: "",
   address: "",
@@ -121,6 +123,7 @@ function toPayload(form: JobForm) {
     otherBenefits: parseBenefits(form.otherBenefits),
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
+    castVoice: form.castVoice || undefined,
     imageUrl: form.imageUrl || undefined,
     phone: form.phone || undefined,
     address: form.address || undefined,
@@ -156,6 +159,7 @@ function toForm(job: Job): JobForm {
     ].join("\n"),
     introductionText: job.introductionText ?? "",
     descriptionText: job.descriptionText ?? "",
+    castVoice: job.castVoice ?? "",
     imageUrl: job.imageUrl ?? "",
     phone: job.phone ?? "",
     address: job.address ?? "",
@@ -785,6 +789,23 @@ export default function AdminPage() {
             />
             <p className="mt-1 text-xs text-muted">
               お店の雰囲気や仕事内容など、詳しく記載できます。
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="castVoice" className={labelClass}>
+              入店・在籍キャストの声
+            </label>
+            <textarea
+              id="castVoice"
+              value={form.castVoice}
+              onChange={(event) => setField("castVoice", event.target.value)}
+              className={inputClass}
+              rows={8}
+              placeholder="実際に働いているキャストの感想や雰囲気など（求人詳細の「どんなお店？」の下に表示）"
+            />
+            <p className="mt-1 text-xs text-muted">
+              未入力の場合は求人詳細ページに表示されません。長文でも入力できます。
             </p>
           </div>
         </div>
