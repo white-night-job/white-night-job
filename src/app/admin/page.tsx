@@ -9,8 +9,11 @@ import {
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
 import {
-  emptyApplicationCounts,
-  type JobApplicationCounts,
+  emptyApplicationDetail,
+  formatApplicationDateTime,
+  getApplicationTypeLabel,
+  matchesShopSearch,
+  type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { parseBenefits } from "@/lib/job-db";
@@ -173,10 +176,14 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [applicationStats, setApplicationStats] = useState<
-    Record<string, JobApplicationCounts>
+  const [applicationDetails, setApplicationDetails] = useState<
+    Record<string, JobApplicationDetail>
   >({});
   const [sortByApplications, setSortByApplications] = useState(false);
+  const [shopSearchQuery, setShopSearchQuery] = useState("");
+  const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
+    Set<string>
+  >(new Set());
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -185,12 +192,18 @@ export default function AdminPage() {
     });
     const data = await readJson<{
       jobs: Job[];
-      applicationStats?: Record<string, JobApplicationCounts>;
+      applicationDetails?: Record<string, JobApplicationDetail>;
+      applicationStats?: Record<string, JobApplicationDetail>;
     }>(jobsResponse);
     setJobs(data.jobs);
 
+    if (data.applicationDetails) {
+      setApplicationDetails(data.applicationDetails);
+      return;
+    }
+
     if (data.applicationStats) {
-      setApplicationStats(data.applicationStats);
+      setApplicationDetails(data.applicationStats);
       return;
     }
 
@@ -200,26 +213,38 @@ export default function AdminPage() {
     });
     if (statsResponse.ok) {
       const statsData = await readJson<{
-        stats: Record<string, JobApplicationCounts>;
+        details?: Record<string, JobApplicationDetail>;
+        stats?: Record<string, JobApplicationDetail>;
       }>(statsResponse);
-      setApplicationStats(statsData.stats);
+      setApplicationDetails(statsData.details ?? statsData.stats ?? {});
     } else {
-      setApplicationStats({});
+      setApplicationDetails({});
     }
   }
 
+  function toggleApplicationHistory(jobId: string) {
+    setExpandedHistoryJobIds((current) => {
+      const next = new Set(current);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
+    });
+  }
+
   const displayedJobs = useMemo(() => {
-    const list = [...jobs];
+    let list = jobs.filter((job) => matchesShopSearch(job.shopName, shopSearchQuery));
+
     if (sortByApplications) {
-      list.sort((a, b) => {
-        const totalA = applicationStats[a.id]?.total ?? 0;
-        const totalB = applicationStats[b.id]?.total ?? 0;
+      list = [...list].sort((a, b) => {
+        const totalA = applicationDetails[a.id]?.total ?? 0;
+        const totalB = applicationDetails[b.id]?.total ?? 0;
         if (totalB !== totalA) return totalB - totalA;
         return a.shopName.localeCompare(b.shopName, "ja");
       });
     }
+
     return list;
-  }, [applicationStats, jobs, sortByApplications]);
+  }, [applicationDetails, jobs, shopSearchQuery, sortByApplications]);
 
   useEffect(() => {
     fetch("/api/admin/session", { cache: "no-store" })
@@ -862,7 +887,16 @@ export default function AdminPage() {
       <section className="mt-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-charcoal">
-            求人一覧（{jobs.length}件）
+            求人一覧
+            {shopSearchQuery.trim() ? (
+              <span className="ml-1 text-base font-normal text-muted">
+                （{displayedJobs.length}件 / 全{jobs.length}件）
+              </span>
+            ) : (
+              <span className="ml-1 text-base font-normal text-muted">
+                （{jobs.length}件）
+              </span>
+            )}
           </h2>
           <button
             type="button"
@@ -877,84 +911,138 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <div className="mb-3 hidden rounded-xl border border-gold/15 bg-ivory/60 px-4 py-3 text-xs font-medium text-muted sm:grid sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4">
-          <span>店舗情報</span>
-          <div className="grid w-56 grid-cols-3 gap-2 text-center">
-            <span>LINE応募数</span>
-            <span>電話応募数</span>
-            <span>合計応募数</span>
-          </div>
+        <div className="mb-4">
+          <label htmlFor="shop-search" className={labelClass}>
+            店舗名で検索
+          </label>
+          <input
+            id="shop-search"
+            type="search"
+            value={shopSearchQuery}
+            onChange={(event) => setShopSearchQuery(event.target.value)}
+            placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-muted">
+            ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
+          </p>
         </div>
 
-        <ul className="space-y-3">
-          {displayedJobs.map((job) => {
-            const counts = applicationStats[job.id] ?? emptyApplicationCounts();
-            return (
-            <li
-              key={job.id}
-              className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gold-dark">
-                    {formatLocation(job)} · {job.jobType}
-                  </p>
-                  <p className="mt-1 font-semibold text-charcoal">{job.shopName}</p>
-                  <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    写真: {job.imageUrl ? "設定済み" : "未設定"}
-                  </p>
-                </div>
-                <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
-                  <dl className="grid w-full grid-cols-3 gap-2 rounded-xl border border-gold/20 bg-ivory/40 p-3 text-center sm:w-64">
-                    <div>
-                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
-                        LINE応募数
-                      </dt>
-                      <dd className="mt-1 text-lg font-semibold text-[#047a3b]">
-                        {counts.line}
-                      </dd>
+        {displayedJobs.length === 0 ? (
+          <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
+            {shopSearchQuery.trim()
+              ? "検索条件に一致する店舗がありません。"
+              : "掲載中の求人がありません。"}
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {displayedJobs.map((job) => {
+              const detail =
+                applicationDetails[job.id] ?? emptyApplicationDetail();
+              const historyOpen = expandedHistoryJobIds.has(job.id);
+
+              return (
+                <li
+                  key={job.id}
+                  className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gold-dark">
+                        {formatLocation(job)} · {job.jobType}
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-charcoal">
+                        {job.shopName}
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        写真: {job.imageUrl ? "設定済み" : "未設定"}
+                      </p>
+
+                      <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-medium text-muted">LINE応募数:</dt>
+                          <dd className="font-semibold text-[#047a3b]">
+                            {detail.line}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-medium text-muted">電話応募数:</dt>
+                          <dd className="font-semibold text-gold-dark">
+                            {detail.phone}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-medium text-muted">合計応募数:</dt>
+                          <dd className="font-semibold text-charcoal">
+                            {detail.total}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-medium text-muted">最新応募日:</dt>
+                          <dd className="font-medium text-charcoal">
+                            {detail.latestAt
+                              ? formatApplicationDateTime(detail.latestAt)
+                              : "応募なし"}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleApplicationHistory(job.id)}
+                        className="mt-3 rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
+                      >
+                        {historyOpen ? "応募履歴を閉じる" : "応募履歴を見る"}
+                      </button>
+
+                      {historyOpen && (
+                        <div className="mt-3 rounded-xl border border-gold/20 bg-white px-3 py-3">
+                          <p className="text-xs font-semibold text-gold-dark">
+                            応募履歴
+                          </p>
+                          {detail.history.length === 0 ? (
+                            <p className="mt-2 text-sm text-muted">応募なし</p>
+                          ) : (
+                            <ul className="mt-2 space-y-2">
+                              {detail.history.map((entry, index) => (
+                                <li
+                                  key={`${entry.createdAt}-${entry.type}-${index}`}
+                                  className="rounded-lg border border-gold/15 bg-ivory/50 px-3 py-2 text-sm text-charcoal"
+                                >
+                                  {formatApplicationDateTime(entry.createdAt)}{" "}
+                                  {getApplicationTypeLabel(entry.type)}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
-                        電話応募数
-                      </dt>
-                      <dd className="mt-1 text-lg font-semibold text-gold-dark">
-                        {counts.phone}
-                      </dd>
+
+                    <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(job)}
+                        className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                      >
+                        編集
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(job)}
+                        disabled={loading}
+                        className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                      >
+                        削除
+                      </button>
                     </div>
-                    <div>
-                      <dt className="text-[10px] font-medium text-muted sm:text-xs">
-                        合計応募数
-                      </dt>
-                      <dd className="mt-1 text-lg font-semibold text-charcoal">
-                        {counts.total}
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="flex gap-2 sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(job)}
-                      className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                    >
-                      編集
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(job)}
-                      disabled={loading}
-                      className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                    >
-                      削除
-                    </button>
                   </div>
-                </div>
-              </div>
-            </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
     </div>
   );

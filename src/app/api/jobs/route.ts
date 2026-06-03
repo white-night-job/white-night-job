@@ -8,10 +8,10 @@ import {
   validateJobPayload,
 } from "@/lib/job-db";
 import {
-  emptyApplicationCounts,
-  fetchApplicationStats,
-  fillApplicationStatsForJobs,
-  type JobApplicationCounts,
+  emptyApplicationDetail,
+  fetchApplicationDetails,
+  fillApplicationDetailsForJobs,
+  type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -69,22 +69,24 @@ export async function GET(request: Request) {
     });
 
     const isAdmin = await isAdminAuthenticated();
-    let applicationStats: Record<string, JobApplicationCounts> | undefined;
+    let applicationDetails: Record<string, JobApplicationDetail> | undefined;
 
     if (isAdmin) {
       try {
-        const stats = await fetchApplicationStats(supabase);
-        applicationStats = fillApplicationStatsForJobs(filteredJobs, stats);
+        const details = await fetchApplicationDetails(supabase);
+        applicationDetails = fillApplicationDetailsForJobs(filteredJobs, details);
       } catch {
-        applicationStats = Object.fromEntries(
-          filteredJobs.map((job) => [job.id, emptyApplicationCounts()]),
+        applicationDetails = Object.fromEntries(
+          filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
         );
       }
     }
 
     return NextResponse.json({
       jobs: filteredJobs,
-      ...(applicationStats ? { applicationStats } : {}),
+      ...(applicationDetails
+        ? { applicationDetails, applicationStats: applicationDetails }
+        : {}),
     });
   } catch (error) {
     return NextResponse.json(

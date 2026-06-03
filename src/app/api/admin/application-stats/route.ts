@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import {
-  emptyApplicationCounts,
-  fetchApplicationStats,
-  fillApplicationStatsForJobs,
+  emptyApplicationDetail,
+  fetchApplicationDetails,
+  fillApplicationDetailsForJobs,
 } from "@/lib/job-applications";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
@@ -27,16 +27,14 @@ export async function GET() {
     const jobList = (jobs ?? []).map(rowToJob);
 
     try {
-      const stats = await fetchApplicationStats(supabase);
-      return NextResponse.json({
-        stats: fillApplicationStatsForJobs(jobList, stats),
-      });
+      const details = await fetchApplicationDetails(supabase);
+      const filled = fillApplicationDetailsForJobs(jobList, details);
+      return NextResponse.json({ details: filled, stats: filled });
     } catch {
-      return NextResponse.json({
-        stats: Object.fromEntries(
-          jobList.map((job) => [job.id, emptyApplicationCounts()]),
-        ),
-      });
+      const empty = Object.fromEntries(
+        jobList.map((job) => [job.id, emptyApplicationDetail()]),
+      );
+      return NextResponse.json({ details: empty, stats: empty });
     }
   } catch (error) {
     return NextResponse.json(
