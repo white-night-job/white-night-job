@@ -10,7 +10,9 @@ import {
 import {
   emptyApplicationDetail,
   fetchApplicationDetails,
+  fetchApplicationRows,
   fillApplicationDetailsForJobs,
+  type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { createSupabaseAdmin } from "@/lib/supabase";
@@ -70,22 +72,32 @@ export async function GET(request: Request) {
 
     const isAdmin = await isAdminAuthenticated();
     let applicationDetails: Record<string, JobApplicationDetail> | undefined;
+    let applicationRows: ApplicationRow[] | undefined;
 
     if (isAdmin) {
       try {
-        const details = await fetchApplicationDetails(supabase);
+        const [rows, details] = await Promise.all([
+          fetchApplicationRows(supabase),
+          fetchApplicationDetails(supabase),
+        ]);
         applicationDetails = fillApplicationDetailsForJobs(filteredJobs, details);
+        applicationRows = rows;
       } catch {
         applicationDetails = Object.fromEntries(
           filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
         );
+        applicationRows = [];
       }
     }
 
     return NextResponse.json({
       jobs: filteredJobs,
       ...(applicationDetails
-        ? { applicationDetails, applicationStats: applicationDetails }
+        ? {
+            applicationDetails,
+            applicationStats: applicationDetails,
+            applicationRows,
+          }
         : {}),
     });
   } catch (error) {

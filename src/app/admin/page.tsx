@@ -8,11 +8,16 @@ import {
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
+import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import {
+  aggregateMonthlyApplications,
   emptyApplicationDetail,
   formatApplicationDateTime,
   getApplicationTypeLabel,
+  matchesRegionFilter,
   matchesShopSearch,
+  REGION_FILTER_OPTIONS,
+  type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
@@ -181,6 +186,8 @@ export default function AdminPage() {
   >({});
   const [sortByApplications, setSortByApplications] = useState(false);
   const [shopSearchQuery, setShopSearchQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
@@ -194,16 +201,18 @@ export default function AdminPage() {
       jobs: Job[];
       applicationDetails?: Record<string, JobApplicationDetail>;
       applicationStats?: Record<string, JobApplicationDetail>;
+      applicationRows?: ApplicationRow[];
     }>(jobsResponse);
     setJobs(data.jobs);
 
     if (data.applicationDetails) {
       setApplicationDetails(data.applicationDetails);
-      return;
+    } else if (data.applicationStats) {
+      setApplicationDetails(data.applicationStats);
     }
 
-    if (data.applicationStats) {
-      setApplicationDetails(data.applicationStats);
+    if (data.applicationRows) {
+      setApplicationRows(data.applicationRows);
       return;
     }
 
@@ -215,10 +224,13 @@ export default function AdminPage() {
       const statsData = await readJson<{
         details?: Record<string, JobApplicationDetail>;
         stats?: Record<string, JobApplicationDetail>;
+        applicationRows?: ApplicationRow[];
       }>(statsResponse);
       setApplicationDetails(statsData.details ?? statsData.stats ?? {});
+      setApplicationRows(statsData.applicationRows ?? []);
     } else {
       setApplicationDetails({});
+      setApplicationRows([]);
     }
   }
 
@@ -231,11 +243,46 @@ export default function AdminPage() {
     });
   }
 
+  const hasActiveFilters =
+    shopSearchQuery.trim().length > 0 || regionFilter !== "all";
+
+  const jobsMatchingFilters = useMemo(
+    () =>
+      jobs.filter(
+        (job) =>
+          matchesShopSearch(job.shopName, shopSearchQuery) &&
+          matchesRegionFilter(job, regionFilter),
+      ),
+    [jobs, regionFilter, shopSearchQuery],
+  );
+
+  const filteredJobIds = useMemo(
+    () => new Set(jobsMatchingFilters.map((job) => job.id)),
+    [jobsMatchingFilters],
+  );
+
+  const monthlyApplicationStats = useMemo(
+    () => aggregateMonthlyApplications(applicationRows, filteredJobIds),
+    [applicationRows, filteredJobIds],
+  );
+
+  const chartFilterDescription = useMemo(() => {
+    const parts: string[] = [];
+    if (regionFilter !== "all") {
+      parts.push(`地域: ${REGION_FILTER_OPTIONS.find((o) => o.value === regionFilter)?.label ?? regionFilter}`);
+    }
+    if (shopSearchQuery.trim()) {
+      parts.push(`店舗名: ${shopSearchQuery.trim()}`);
+    }
+    if (parts.length === 0) return "全店舗の応募を表示中";
+    return `${parts.join(" · ")} で絞り込み中`;
+  }, [regionFilter, shopSearchQuery]);
+
   const displayedJobs = useMemo(() => {
-    let list = jobs.filter((job) => matchesShopSearch(job.shopName, shopSearchQuery));
+    const list = [...jobsMatchingFilters];
 
     if (sortByApplications) {
-      list = [...list].sort((a, b) => {
+      list.sort((a, b) => {
         const totalA = applicationDetails[a.id]?.total ?? 0;
         const totalB = applicationDetails[b.id]?.total ?? 0;
         if (totalB !== totalA) return totalB - totalA;
@@ -244,7 +291,7 @@ export default function AdminPage() {
     }
 
     return list;
-  }, [applicationDetails, jobs, shopSearchQuery, sortByApplications]);
+  }, [applicationDetails, jobsMatchingFilters, sortByApplications]);
 
   useEffect(() => {
     fetch("/api/admin/session", { cache: "no-store" })
@@ -888,7 +935,7 @@ export default function AdminPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-charcoal">
             求人一覧
-            {shopSearchQuery.trim() ? (
+            {hasActiveFilters ? (
               <span className="ml-1 text-base font-normal text-muted">
                 （{displayedJobs.length}件 / 全{jobs.length}件）
               </span>
@@ -911,27 +958,56 @@ export default function AdminPage() {
           </button>
         </div>
 
+        <div className="mb-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="region-filter" className={labelClass}>
+              地域で絞り込み
+            </label>
+            <select
+              id="region-filter"
+              value={regionFilter}
+              onChange={(event) => setRegionFilter(event.target.value)}
+              className={inputClass}
+            >
+              {REGION_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted">
+              エリア（{FIXED_AREA}）または地区で絞り込みます。
+            </p>
+          </div>
+          <div>
+            <label htmlFor="shop-search" className={labelClass}>
+              店舗名で検索
+            </label>
+            <input
+              id="shop-search"
+              type="search"
+              value={shopSearchQuery}
+              onChange={(event) => setShopSearchQuery(event.target.value)}
+              placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
+              className={inputClass}
+            />
+            <p className="mt-1 text-xs text-muted">
+              ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
+            </p>
+          </div>
+        </div>
+
         <div className="mb-4">
-          <label htmlFor="shop-search" className={labelClass}>
-            店舗名で検索
-          </label>
-          <input
-            id="shop-search"
-            type="search"
-            value={shopSearchQuery}
-            onChange={(event) => setShopSearchQuery(event.target.value)}
-            placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
-            className={inputClass}
+          <MonthlyApplicationChart
+            data={monthlyApplicationStats}
+            filterDescription={chartFilterDescription}
           />
-          <p className="mt-1 text-xs text-muted">
-            ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
-          </p>
         </div>
 
         {displayedJobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
-            {shopSearchQuery.trim()
-              ? "検索条件に一致する店舗がありません。"
+            {hasActiveFilters
+              ? "検索・絞り込み条件に一致する店舗がありません。"
               : "掲載中の求人がありません。"}
           </div>
         ) : (
@@ -1010,8 +1086,13 @@ export default function AdminPage() {
                                   key={`${entry.createdAt}-${entry.type}-${index}`}
                                   className="rounded-lg border border-gold/15 bg-ivory/50 px-3 py-2 text-sm text-charcoal"
                                 >
-                                  {formatApplicationDateTime(entry.createdAt)}{" "}
-                                  {getApplicationTypeLabel(entry.type)}
+                                  <p className="font-medium">{job.shopName}</p>
+                                  <p className="mt-0.5 text-muted">
+                                    {formatApplicationDateTime(entry.createdAt)}
+                                  </p>
+                                  <p className="mt-0.5 font-medium text-gold-dark">
+                                    {getApplicationTypeLabel(entry.type)}
+                                  </p>
                                 </li>
                               ))}
                             </ul>

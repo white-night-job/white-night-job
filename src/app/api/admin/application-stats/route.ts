@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/api-error";
 import {
   emptyApplicationDetail,
   fetchApplicationDetails,
+  fetchApplicationRows,
   fillApplicationDetailsForJobs,
 } from "@/lib/job-applications";
 import { rowToJob } from "@/lib/job-db";
@@ -27,14 +28,25 @@ export async function GET() {
     const jobList = (jobs ?? []).map(rowToJob);
 
     try {
-      const details = await fetchApplicationDetails(supabase);
+      const [rows, details] = await Promise.all([
+        fetchApplicationRows(supabase),
+        fetchApplicationDetails(supabase),
+      ]);
       const filled = fillApplicationDetailsForJobs(jobList, details);
-      return NextResponse.json({ details: filled, stats: filled });
+      return NextResponse.json({
+        details: filled,
+        stats: filled,
+        applicationRows: rows,
+      });
     } catch {
       const empty = Object.fromEntries(
         jobList.map((job) => [job.id, emptyApplicationDetail()]),
       );
-      return NextResponse.json({ details: empty, stats: empty });
+      return NextResponse.json({
+        details: empty,
+        stats: empty,
+        applicationRows: [],
+      });
     }
   } catch (error) {
     return NextResponse.json(

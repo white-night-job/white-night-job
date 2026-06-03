@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { FIXED_AREA, type District, type Job } from "@/types/job";
 
 export type JobApplicationType = "line" | "phone";
+
+export type ApplicationRow = {
+  job_id: string;
+  type: string;
+  created_at: string;
+};
 
 export type JobApplicationCounts = {
   line: number;
@@ -18,11 +25,22 @@ export type JobApplicationDetail = JobApplicationCounts & {
   history: JobApplicationHistoryItem[];
 };
 
-type ApplicationRow = {
-  job_id: string;
-  type: string;
-  created_at: string;
+export type MonthlyApplicationBucket = {
+  monthKey: string;
+  label: string;
+  line: number;
+  phone: number;
+  total: number;
 };
+
+export const REGION_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: "all", label: "すべて" },
+  { value: FIXED_AREA, label: FIXED_AREA },
+  { value: "すすきの", label: "すすきの" },
+  { value: "琴似", label: "琴似" },
+  { value: "24条", label: "24条" },
+  { value: "手稲", label: "手稲" },
+];
 
 export function emptyApplicationCounts(): JobApplicationCounts {
   return { line: 0, phone: 0, total: 0 };
@@ -62,6 +80,90 @@ export function matchesShopSearch(shopName: string, query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed) return true;
   return normalizeForSearch(shopName).includes(normalizeForSearch(trimmed));
+}
+
+export function matchesRegionFilter(
+  job: Pick<Job, "area" | "district">,
+  regionFilter: string,
+): boolean {
+  if (regionFilter === "all") return true;
+  if (regionFilter === FIXED_AREA) return job.area === FIXED_AREA;
+  return job.district === (regionFilter as District);
+}
+
+function getJstYearMonth(date: Date): { year: number; month: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(date);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value ?? "0"),
+    month: Number(parts.find((part) => part.type === "month")?.value ?? "0"),
+  };
+}
+
+export function getJstMonthKey(iso: string): string {
+  const { year, month } = getJstYearMonth(new Date(iso));
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+export function formatMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-");
+  return `${year}年${Number(month)}月`;
+}
+
+export function buildLast12MonthKeys(referenceDate = new Date()): string[] {
+  const { year, month } = getJstYearMonth(referenceDate);
+  const keys: string[] = [];
+
+  for (let offset = 11; offset >= 0; offset -= 1) {
+    let targetMonth = month - offset;
+    let targetYear = year;
+
+    while (targetMonth < 1) {
+      targetMonth += 12;
+      targetYear -= 1;
+    }
+
+    keys.push(`${targetYear}-${String(targetMonth).padStart(2, "0")}`);
+  }
+
+  return keys;
+}
+
+export function aggregateMonthlyApplications(
+  rows: ApplicationRow[],
+  jobIds: Set<string> | null,
+): MonthlyApplicationBucket[] {
+  const monthKeys = buildLast12MonthKeys();
+  const buckets = new Map<string, MonthlyApplicationBucket>(
+    monthKeys.map((monthKey) => [
+      monthKey,
+      {
+        monthKey,
+        label: formatMonthLabel(monthKey),
+        line: 0,
+        phone: 0,
+        total: 0,
+      },
+    ]),
+  );
+
+  for (const row of rows) {
+    if (jobIds && !jobIds.has(row.job_id)) continue;
+    if (row.type !== "line" && row.type !== "phone") continue;
+
+    const bucket = buckets.get(getJstMonthKey(row.created_at));
+    if (!bucket) continue;
+
+    if (row.type === "line") bucket.line += 1;
+    else bucket.phone += 1;
+    bucket.total = bucket.line + bucket.phone;
+  }
+
+  return monthKeys.map((monthKey) => buckets.get(monthKey)!);
 }
 
 export function buildApplicationDetails(
