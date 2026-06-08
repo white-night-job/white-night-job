@@ -201,6 +201,7 @@ export default function AdminPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [form, setForm] = useState<JobForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -386,6 +387,7 @@ export default function AdminPage() {
   function resetForm() {
     setForm(emptyForm);
     setEditingId(null);
+    setIsAddFormOpen(false);
   }
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
@@ -489,9 +491,12 @@ export default function AdminPage() {
   function handleEdit(job: Job) {
     setEditingId(job.id);
     setForm(toForm(job));
+    setIsAddFormOpen(false);
     setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  const isFormVisible = editingId !== null || isAddFormOpen;
 
   if (checkingSession) {
     return (
@@ -571,13 +576,26 @@ export default function AdminPage() {
         </p>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6"
-      >
-        <h2 className="text-lg font-semibold text-charcoal">
-          {editingId ? "求人を編集" : "求人を追加"}
-        </h2>
+      <section className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+        {!editingId && (
+          <button
+            type="button"
+            onClick={() => setIsAddFormOpen((open) => !open)}
+            aria-expanded={isAddFormOpen}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-ivory/50 px-4 py-3 text-sm font-semibold text-gold-dark transition hover:bg-ivory"
+          >
+            {isAddFormOpen ? "− 求人追加フォームを閉じる" : "＋ 求人を追加"}
+          </button>
+        )}
+
+        {isFormVisible && (
+          <form
+            onSubmit={handleSubmit}
+            className={`space-y-4 ${editingId ? "" : "mt-4"}`}
+          >
+            {editingId && (
+              <h2 className="text-lg font-semibold text-charcoal">求人を編集</h2>
+            )}
 
         <div>
           <label htmlFor="shopName" className={labelClass}>
@@ -1096,7 +1114,9 @@ export default function AdminPage() {
             </button>
           )}
         </div>
-      </form>
+          </form>
+        )}
+      </section>
 
       <section className="mt-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
