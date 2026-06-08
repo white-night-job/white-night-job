@@ -138,10 +138,10 @@ export function JobFilterSearch({
               SHOP SEARCH
             </p>
             <h2 className="font-serif text-lg font-semibold text-charcoal">
-              店舗名・待遇で探す
+              お店を探す
             </h2>
             <p className="mt-1 text-xs text-muted">
-              店舗名、職種、エリア、待遇をまとめて検索できます。
+              ワード、エリア、職種、時給、待遇からお店を絞り込めます。
             </p>
           </div>
           <button
@@ -153,22 +153,74 @@ export function JobFilterSearch({
           </button>
         </div>
 
-        <form onSubmit={handleKeywordSubmit} className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
-            placeholder="例：ロゼッタ、ニュークラ、送迎あり"
-          />
-          <button
-            type="submit"
-            className="min-h-12 rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+        <div>
+          <label htmlFor="shop-keyword" className="mb-2 block text-sm font-semibold text-charcoal">
+            ワード検索
+          </label>
+          <form
+            onSubmit={handleKeywordSubmit}
+            className="grid gap-3 sm:grid-cols-[1fr_auto]"
           >
-            検索する
-          </button>
-        </form>
+            <input
+              id="shop-keyword"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+              placeholder="例：ロゼッタ、ニュークラ、送迎あり"
+            />
+            <button
+              type="submit"
+              className="min-h-12 rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+            >
+              検索する
+            </button>
+          </form>
+        </div>
 
-        <div className="mt-4">
+        <div className="mt-5 rounded-2xl border border-gold/15 bg-ivory/50 p-4">
+          <p className="mb-1 text-xs font-medium text-gold-dark">エリア：札幌（固定）</p>
+          <h3 className="mb-3 text-sm font-semibold text-charcoal">エリア</h3>
+          <div className="flex flex-wrap gap-2">
+            <FilterButton
+              active={draftDistrict === "all"}
+              onClick={() => setDraftDistrict("all")}
+            >
+              すべて
+            </FilterButton>
+            {DISTRICTS.map((d) => (
+              <FilterButton
+                key={d}
+                active={draftDistrict === d}
+                onClick={() => setDraftDistrict(d)}
+              >
+                {d}
+              </FilterButton>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-gold/15 bg-ivory/50 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-charcoal">職種で探す</h3>
+          <div className="flex flex-wrap gap-2">
+            <FilterButton
+              active={draftJobType === "all"}
+              onClick={() => setDraftJobType("all")}
+            >
+              すべて
+            </FilterButton>
+            {JOB_TYPES.map((type) => (
+              <FilterButton
+                key={type}
+                active={draftJobType === type}
+                onClick={() => setDraftJobType(type)}
+              >
+                {type}
+              </FilterButton>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5">
           <label htmlFor="minSalary" className="mb-2 block text-sm font-semibold text-charcoal">
             最低時給
           </label>
@@ -213,41 +265,6 @@ export function JobFilterSearch({
                 })}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-      <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
-        <p className="mb-3 text-sm font-semibold text-charcoal">エリア：札幌（固定）</p>
-        <h2 className="mb-3 text-sm font-semibold text-charcoal">地区で探す</h2>
-        <div className="flex flex-wrap gap-2">
-          <FilterButton active={draftDistrict === "all"} onClick={() => setDraftDistrict("all")}>
-            すべて
-          </FilterButton>
-          {DISTRICTS.map((d) => (
-            <FilterButton
-              key={d}
-              active={draftDistrict === d}
-              onClick={() => setDraftDistrict(d)}
-            >
-              {d}
-            </FilterButton>
-          ))}
-        </div>
-      </section>
-      <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
-        <h2 className="mb-3 text-sm font-semibold text-charcoal">職種で探す</h2>
-        <div className="flex flex-wrap gap-2">
-          <FilterButton active={draftJobType === "all"} onClick={() => setDraftJobType("all")}>
-            すべて
-          </FilterButton>
-          {JOB_TYPES.map((type) => (
-            <FilterButton
-              key={type}
-              active={draftJobType === type}
-              onClick={() => setDraftJobType(type)}
-            >
-              {type}
-            </FilterButton>
           ))}
         </div>
       </section>
