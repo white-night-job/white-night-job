@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
@@ -37,10 +39,14 @@ export async function POST(request: Request, { params }: RouteContext) {
       referrer,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("job_views insert failed:", error.message, { jobId });
+      throw error;
+    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
+    console.error("job views API error:", error);
     return NextResponse.json(
       { message: getErrorMessage(error, "表示回数の記録に失敗しました。") },
       { status: 500 },

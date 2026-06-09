@@ -115,9 +115,14 @@ export function hasViewsInMonth(buckets: DailyViewBucket[]): boolean {
   return buckets.some((bucket) => bucket.views > 0);
 }
 
-export async function fetchViewRows(
+export type FetchViewRowsResult = {
+  rows: ViewRow[];
+  error: string | null;
+};
+
+export async function fetchViewRowsWithStatus(
   supabase: SupabaseClient,
-): Promise<ViewRow[]> {
+): Promise<FetchViewRowsResult> {
   const { data, error } = await supabase
     .from("job_views")
     .select("job_id, created_at")
@@ -125,8 +130,15 @@ export async function fetchViewRows(
 
   if (error) {
     console.error("job_views fetch failed:", error.message);
-    return [];
+    return { rows: [], error: error.message };
   }
 
-  return data ?? [];
+  return { rows: data ?? [], error: null };
+}
+
+export async function fetchViewRows(
+  supabase: SupabaseClient,
+): Promise<ViewRow[]> {
+  const { rows } = await fetchViewRowsWithStatus(supabase);
+  return rows;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
@@ -33,11 +33,6 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params);
   const [job, setJob] = useState<Job | null | undefined>(undefined);
-  const recordedViewRef = useRef(false);
-
-  useEffect(() => {
-    recordedViewRef.current = false;
-  }, [id]);
 
   useEffect(() => {
     const load = () => {
@@ -51,10 +46,9 @@ export default function JobDetailPage({
   }, [id]);
 
   useEffect(() => {
-    if (!job || recordedViewRef.current) return;
-    recordedViewRef.current = true;
-    void recordJobView(job.id);
-  }, [job]);
+    if (!job) return;
+    void recordJobView(id);
+  }, [id, job]);
 
   if (job === undefined) {
     return <div className="mx-auto max-w-3xl p-8"><div className="h-64 animate-pulse rounded-2xl bg-white" /></div>;

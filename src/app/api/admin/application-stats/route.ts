@@ -10,10 +10,12 @@ import {
 import { rowToJob } from "@/lib/job-db";
 import {
   aggregateViewCounts,
-  fetchViewRows,
+  fetchViewRowsWithStatus,
   fillViewCountsForJobs,
 } from "@/lib/job-views";
 import { createSupabaseAdmin } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
@@ -48,15 +50,12 @@ export async function GET() {
       );
     }
 
-    let views: Awaited<ReturnType<typeof fetchViewRows>> = [];
-    let counts: ReturnType<typeof fillViewCountsForJobs> = {};
-
-    try {
-      views = await fetchViewRows(supabase);
-      counts = fillViewCountsForJobs(jobList, aggregateViewCounts(views));
-    } catch {
-      counts = Object.fromEntries(jobList.map((job) => [job.id, 0]));
-    }
+    const { rows: views, error: viewsError } =
+      await fetchViewRowsWithStatus(supabase);
+    const counts = fillViewCountsForJobs(
+      jobList,
+      aggregateViewCounts(views),
+    );
 
     return NextResponse.json({
       details: filled,
@@ -64,6 +63,7 @@ export async function GET() {
       applicationRows: rows,
       viewRows: views,
       viewCounts: counts,
+      ...(viewsError ? { viewFetchError: viewsError } : {}),
     });
   } catch (error) {
     return NextResponse.json(

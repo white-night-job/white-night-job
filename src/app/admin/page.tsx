@@ -30,6 +30,7 @@ import {
   aggregateDailyViewsForJob,
   aggregateMonthlyViews,
   aggregateMonthlyViewsForJob,
+  aggregateViewCounts,
   type ViewRow,
 } from "@/lib/job-views";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
@@ -256,33 +257,8 @@ export default function AdminPage() {
       cache: "no-store",
       credentials: "include",
     });
-    const data = await readJson<{
-      jobs: Job[];
-      applicationDetails?: Record<string, JobApplicationDetail>;
-      applicationStats?: Record<string, JobApplicationDetail>;
-      applicationRows?: ApplicationRow[];
-      viewRows?: ViewRow[];
-      viewCounts?: Record<string, number>;
-    }>(jobsResponse);
-    setJobs(data.jobs);
-
-    if (data.applicationDetails) {
-      setApplicationDetails(data.applicationDetails);
-    } else if (data.applicationStats) {
-      setApplicationDetails(data.applicationStats);
-    }
-
-    if (data.viewRows) {
-      setViewRows(data.viewRows);
-    }
-    if (data.viewCounts) {
-      setViewCounts(data.viewCounts);
-    }
-
-    if (data.applicationRows) {
-      setApplicationRows(data.applicationRows);
-      return;
-    }
+    const jobsData = await readJson<{ jobs: Job[] }>(jobsResponse);
+    setJobs(jobsData.jobs);
 
     const statsResponse = await fetch("/api/admin/application-stats", {
       cache: "no-store",
@@ -300,12 +276,13 @@ export default function AdminPage() {
       setApplicationRows(statsData.applicationRows ?? []);
       setViewRows(statsData.viewRows ?? []);
       setViewCounts(statsData.viewCounts ?? {});
-    } else {
-      setApplicationDetails({});
-      setApplicationRows([]);
-      setViewRows([]);
-      setViewCounts({});
+      return;
     }
+
+    setApplicationDetails({});
+    setApplicationRows([]);
+    setViewRows([]);
+    setViewCounts({});
   }
 
   function toggleApplicationHistory(jobId: string) {
@@ -344,6 +321,11 @@ export default function AdminPage() {
     () => aggregateMonthlyViews(viewRows, filteredJobIds),
     [viewRows, filteredJobIds],
   );
+
+  const resolvedViewCounts = useMemo(() => {
+    const fromRows = aggregateViewCounts(viewRows);
+    return { ...viewCounts, ...fromRows };
+  }, [viewCounts, viewRows]);
 
   const chartFilterDescription = useMemo(() => {
     const parts: string[] = [];
@@ -1456,7 +1438,7 @@ export default function AdminPage() {
                 viewRows,
                 job.id,
               );
-              const viewCount = viewCounts[job.id] ?? 0;
+              const viewCount = resolvedViewCounts[job.id] ?? 0;
 
               return (
                 <li
