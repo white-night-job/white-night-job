@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeaderShopLink } from "@/components/HeaderShopLink";
 import { SITE_NAME } from "@/lib/site";
 
 export function Header() {
@@ -13,7 +14,7 @@ export function Header() {
             {SITE_NAME}
           </span>
         </Link>
-        <nav className="flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted sm:gap-5 sm:text-sm">
+        <nav className="flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted sm:gap-4 sm:text-sm">
           <Link href="/#first-time-guide" className="whitespace-nowrap hover:text-gold-dark">
             初めての方へ
           </Link>
@@ -26,6 +27,7 @@ export function Header() {
           <Link href="/report" className="whitespace-nowrap hover:text-gold-dark">
             ブラック店報告
           </Link>
+          <HeaderShopLink />
         </nav>
       </div>
     </header>
