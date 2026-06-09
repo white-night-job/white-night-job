@@ -16,15 +16,10 @@ function markViewRecorded(jobId: string): void {
   window.sessionStorage.setItem(`job-view-recorded-${jobId}`, String(Date.now()));
 }
 
-function clearViewRecorded(jobId: string): void {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(`job-view-recorded-${jobId}`);
-}
-
 export async function recordJobView(jobId: string): Promise<void> {
-  if (shouldSkipDuplicateView(jobId)) return;
-
-  markViewRecorded(jobId);
+  if (shouldSkipDuplicateView(jobId)) {
+    return;
+  }
 
   try {
     const response = await fetch(`/api/jobs/${jobId}/views`, {
@@ -37,16 +32,17 @@ export async function recordJobView(jobId: string): Promise<void> {
     });
 
     if (!response.ok) {
-      clearViewRecorded(jobId);
-      if (process.env.NODE_ENV !== "production") {
-        const body = await response.text().catch(() => "");
-        console.warn("job view record failed:", response.status, body);
-      }
+      const body = await response.text().catch(() => "");
+      console.error("job view POST failed:", {
+        jobId,
+        status: response.status,
+        body,
+      });
+      return;
     }
+
+    markViewRecorded(jobId);
   } catch (error) {
-    clearViewRecorded(jobId);
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("job view record error:", error);
-    }
+    console.error("job view POST error:", { jobId, error });
   }
 }

@@ -7,15 +7,21 @@ import {
   rowToJob,
   validateJobPayload,
 } from "@/lib/job-db";
+import { insertJobViewRow } from "@/lib/insert-job-view";
 import { createSupabaseAdmin } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
+    const shouldRecordView =
+      new URL(request.url).searchParams.get("recordView") === "1";
+
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
@@ -26,6 +32,18 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
     if (error) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+
+    if (shouldRecordView) {
+      try {
+        await insertJobViewRow(supabase, {
+          jobId: id,
+          userAgent: request.headers.get("user-agent"),
+          referrer: request.headers.get("referer"),
+        });
+      } catch (viewError) {
+        console.error("job_views insert on GET failed:", viewError);
+      }
     }
 
     return NextResponse.json({ job: rowToJob(data) });

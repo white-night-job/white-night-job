@@ -10,7 +10,6 @@ import {
   getDisplayCastVoices,
   getDisplayStoreImages,
 } from "@/lib/job-db";
-import { recordJobView } from "@/lib/job-view-storage";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import type { Job } from "@/types/job";
@@ -35,20 +34,16 @@ export default function JobDetailPage({
   const [job, setJob] = useState<Job | null | undefined>(undefined);
 
   useEffect(() => {
-    const load = () => {
-      fetchJobById(id)
+    const load = (recordView: boolean) => {
+      fetchJobById(id, { recordView })
         .then(setJob)
         .catch(() => setJob(null));
     };
-    load();
-    window.addEventListener(JOBS_UPDATED_EVENT, load);
-    return () => window.removeEventListener(JOBS_UPDATED_EVENT, load);
+    load(true);
+    const onJobsUpdated = () => load(false);
+    window.addEventListener(JOBS_UPDATED_EVENT, onJobsUpdated);
+    return () => window.removeEventListener(JOBS_UPDATED_EVENT, onJobsUpdated);
   }, [id]);
-
-  useEffect(() => {
-    if (!job) return;
-    void recordJobView(id);
-  }, [id, job]);
 
   if (job === undefined) {
     return <div className="mx-auto max-w-3xl p-8"><div className="h-64 animate-pulse rounded-2xl bg-white" /></div>;

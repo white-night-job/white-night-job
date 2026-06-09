@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
+import { insertJobViewRow } from "@/lib/insert-job-view";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -33,16 +34,11 @@ export async function POST(request: Request, { params }: RouteContext) {
       request.headers.get("referer") ??
       (body.referrer?.trim() || null);
 
-    const { error } = await supabase.from("job_views").insert({
-      job_id: jobId,
-      user_agent: userAgent,
+    await insertJobViewRow(supabase, {
+      jobId,
+      userAgent,
       referrer,
     });
-
-    if (error) {
-      console.error("job_views insert failed:", error.message, { jobId });
-      throw error;
-    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
