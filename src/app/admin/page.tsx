@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -210,6 +210,9 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
+  const [draftJobId, setDraftJobId] = useState(() => crypto.randomUUID());
+  const storeImageInputRef = useRef<HTMLInputElement>(null);
   const [applicationDetails, setApplicationDetails] = useState<
     Record<string, JobApplicationDetail>
   >({});
@@ -389,13 +392,6 @@ export default function AdminPage() {
     }));
   }
 
-  function addStoreImage() {
-    setForm((current) => ({
-      ...current,
-      storeImages: [...current.storeImages, ""],
-    }));
-  }
-
   function removeStoreImage(index: number) {
     setForm((current) => ({
       ...current,
@@ -403,19 +399,11 @@ export default function AdminPage() {
     }));
   }
 
-  function updateStoreImage(index: number, value: string) {
-    setForm((current) => ({
-      ...current,
-      storeImages: current.storeImages.map((url, itemIndex) =>
-        itemIndex === index ? value : url,
-      ),
-    }));
-  }
-
   function resetForm() {
     setForm(emptyForm);
     setEditingId(null);
     setIsAddFormOpen(false);
+    setDraftJobId(crypto.randomUUID());
   }
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
@@ -502,6 +490,7 @@ export default function AdminPage() {
       const data = await readJson<{ imageUrl: string }>(
         await fetch("/api/upload", {
           method: "POST",
+          credentials: "include",
           body: formData,
         }),
       );
@@ -513,6 +502,53 @@ export default function AdminPage() {
       );
     } finally {
       setUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleStoreImagesUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingStoreImages(true);
+    setMessage("");
+    const ownerJobId = editingId ?? draftJobId;
+
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("uploadType", "store-image");
+        formData.append("jobId", ownerJobId);
+
+        const data = await readJson<{ imageUrl: string }>(
+          await fetch("/api/upload", {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          }),
+        );
+        uploadedUrls.push(data.imageUrl);
+      }
+
+      setForm((current) => ({
+        ...current,
+        storeImages: [...current.storeImages, ...uploadedUrls],
+      }));
+      setMessage(`${uploadedUrls.length}枚の店内画像をアップロードしました。`);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "店内画像のアップロードに失敗しました。",
+      );
+    } finally {
+      setUploadingStoreImages(false);
+      event.target.value = "";
     }
   }
 
@@ -1004,58 +1040,59 @@ export default function AdminPage() {
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className={labelClass}>店内画像</p>
-            <button
-              type="button"
-              onClick={addStoreImage}
-              className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
-            >
-              画像を追加
-            </button>
-          </div>
+          <p className={labelClass}>店内画像</p>
           <p className="mb-3 text-xs text-muted">
-            求人詳細の「公式SNS」の上に表示されます。画像URLを入力してください（空欄は保存されません）。
+            求人詳細の「公式SNS」の上に表示されます。JPG / PNG / WebP
+            に対応しています。
           </p>
+          <input
+            ref={storeImageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            multiple
+            className="hidden"
+            onChange={handleStoreImagesUpload}
+          />
+          <button
+            type="button"
+            onClick={() => storeImageInputRef.current?.click()}
+            disabled={uploadingStoreImages}
+            className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory disabled:opacity-60"
+          >
+            {uploadingStoreImages ? "アップロード中..." : "写真を選択"}
+          </button>
+          {uploadingStoreImages && (
+            <p className="mt-2 text-xs text-muted">アップロード中...</p>
+          )}
           {form.storeImages.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
-              「画像を追加」から店内画像を登録できます
+            <p className="mt-3 rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
+              「写真を選択」から店内画像を追加できます
             </p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {form.storeImages.map((imageUrl, index) => (
                 <li
-                  key={`store-image-${index}`}
-                  className="rounded-xl border border-gold/25 bg-white p-3 shadow-gold"
+                  key={`${imageUrl}-${index}`}
+                  className="overflow-hidden rounded-xl border border-gold/25 bg-white shadow-gold"
                 >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-charcoal">
-                      店内画像 {index + 1}
+                  <img
+                    src={imageUrl}
+                    alt={`店内画像プレビュー ${index + 1}`}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                  <div className="flex items-center justify-between gap-2 px-2 py-2">
+                    <p className="text-xs font-medium text-muted">
+                      画像 {index + 1}
                     </p>
                     <button
                       type="button"
                       onClick={() => removeStoreImage(index)}
-                      className="rounded-full border border-charcoal/20 px-3 py-1 text-xs font-medium text-muted transition hover:border-charcoal/40 hover:text-charcoal"
+                      disabled={uploadingStoreImages}
+                      className="rounded-full border border-charcoal/20 px-2.5 py-1 text-xs font-medium text-muted transition hover:border-charcoal/40 hover:text-charcoal disabled:opacity-60"
                     >
                       削除
                     </button>
                   </div>
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(event) =>
-                      updateStoreImage(index, event.target.value)
-                    }
-                    className={inputClass}
-                    placeholder="https://example.com/store-image.jpg"
-                  />
-                  {imageUrl.trim() && (
-                    <img
-                      src={imageUrl}
-                      alt={`店内画像プレビュー ${index + 1}`}
-                      className="mt-3 h-32 w-full rounded-xl object-cover"
-                    />
-                  )}
                 </li>
               ))}
             </ul>
@@ -1186,7 +1223,7 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-3 pt-2">
           <button
             type="submit"
-            disabled={loading || uploading}
+            disabled={loading || uploading || uploadingStoreImages}
             className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60"
           >
             {loading ? "保存中..." : editingId ? "更新する" : "保存する"}
