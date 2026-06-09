@@ -11,10 +11,11 @@ export default function ReportPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setLoading(true);
     setMessage("");
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       shopName: String(formData.get("shopName") ?? ""),
       area: String(formData.get("area") ?? ""),
@@ -31,7 +32,7 @@ export default function ReportPage() {
       });
       const data = (await response.json()) as { message?: string };
       if (!response.ok) throw new Error(data.message ?? "送信に失敗しました。");
-      event.currentTarget.reset();
+      form?.reset();
       setMessage(
         "報告を送信しました。内容を保存し、管理者へ通知メールを送りました。ご協力ありがとうございます。",
       );
