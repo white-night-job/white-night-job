@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   normalizeJobPayload,
+  parseShopCredentialsFromBody,
   payloadToRow,
   rowToJob,
   shopCredentialsToRow,
@@ -153,28 +154,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
-    const shopLoginId =
-      body.shopLoginId !== undefined ? String(body.shopLoginId) : undefined;
-    const shopLoginPassword =
-      body.shopLoginPassword !== undefined
-        ? String(body.shopLoginPassword)
-        : undefined;
+    const shopCredentials = parseShopCredentialsFromBody(body);
+    const credentialRow = shopCredentialsToRow(shopCredentials);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
       .insert({
         ...payloadToRow(payload),
-        ...shopCredentialsToRow({
-          shopLoginId,
-          shopLoginPassword,
-          updatePassword: shopLoginPassword !== undefined,
-        }),
+        ...credentialRow,
       })
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("jobs insert failed:", error.message, {
+        credentialKeys: Object.keys(credentialRow),
+      });
+      throw error;
+    }
 
     return NextResponse.json({ job: rowToJob(data) }, { status: 201 });
   } catch (error) {

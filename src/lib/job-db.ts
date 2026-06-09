@@ -116,22 +116,55 @@ export function rowToJob(row: JobRow): Job {
   };
 }
 
-export function shopCredentialsToRow(credentials: {
-  shopLoginId?: string;
-  shopLoginPassword?: string;
-  updatePassword: boolean;
-}) {
+export type ParsedShopCredentials = {
+  shop_login_id?: string | null;
+  shop_login_password?: string;
+  passwordProvided: boolean;
+};
+
+export function parseShopCredentialsFromBody(
+  body: Record<string, unknown>,
+): ParsedShopCredentials {
+  const shopLoginIdValue = body.shop_login_id ?? body.shopLoginId;
+  const shopLoginPasswordValue =
+    body.shop_login_password ?? body.shopLoginPassword;
+
+  const parsed: ParsedShopCredentials = {
+    passwordProvided: false,
+  };
+
+  if (shopLoginIdValue !== undefined) {
+    parsed.shop_login_id = String(shopLoginIdValue).trim() || null;
+  }
+
+  if (
+    shopLoginPasswordValue !== undefined &&
+    String(shopLoginPasswordValue).trim().length > 0
+  ) {
+    parsed.shop_login_password = String(shopLoginPasswordValue).trim();
+    parsed.passwordProvided = true;
+  }
+
+  return parsed;
+}
+
+export function shopCredentialsToRow(
+  credentials: ParsedShopCredentials,
+): {
+  shop_login_id?: string | null;
+  shop_login_password?: string | null;
+} {
   const row: {
     shop_login_id?: string | null;
     shop_login_password?: string | null;
   } = {};
 
-  if (credentials.shopLoginId !== undefined) {
-    row.shop_login_id = credentials.shopLoginId.trim() || null;
+  if (credentials.shop_login_id !== undefined) {
+    row.shop_login_id = credentials.shop_login_id;
   }
 
-  if (credentials.updatePassword) {
-    row.shop_login_password = credentials.shopLoginPassword?.trim() || null;
+  if (credentials.passwordProvided && credentials.shop_login_password) {
+    row.shop_login_password = credentials.shop_login_password;
   }
 
   return row;

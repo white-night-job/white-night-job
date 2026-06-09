@@ -158,9 +158,9 @@ function toPayload(form: JobForm) {
     youtubeUrl: form.youtubeUrl || undefined,
     websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
-    shopLoginId: form.shopLoginId.trim() || undefined,
-    ...(form.shopLoginPassword
-      ? { shopLoginPassword: form.shopLoginPassword }
+    shop_login_id: form.shopLoginId.trim(),
+    ...(form.shopLoginPassword.trim()
+      ? { shop_login_password: form.shopLoginPassword }
       : {}),
   };
 }
@@ -459,10 +459,13 @@ export default function AdminPage() {
           : payload.storeImages && payload.storeImages.length > 0
             ? "（店内画像の保存に失敗した可能性があります。Supabaseの store_images カラムを確認してください）"
             : "";
+      const shopLoginNote = savedJob.shopLoginId
+        ? `（店舗ログインID: ${savedJob.shopLoginId}）`
+        : "";
       setMessage(
         editingId
-          ? `求人を更新しました。${storeImageNote}`
-          : `求人を追加しました。${storeImageNote}`,
+          ? `求人を更新しました。${storeImageNote}${shopLoginNote}`
+          : `求人を追加しました。${storeImageNote}${shopLoginNote}`,
       );
       await loadJobs();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
