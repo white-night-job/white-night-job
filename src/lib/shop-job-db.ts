@@ -8,6 +8,7 @@ import {
 } from "@/lib/job-db";
 
 export type ShopJobPayload = {
+  imageUrl?: string | null;
   salary: string;
   access?: string;
   businessHours?: string;
@@ -28,8 +29,13 @@ export type ShopJobPayload = {
 };
 
 export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
-  const data = body as Partial<ShopJobPayload>;
+  const data = body as Partial<ShopJobPayload> & { image_url?: unknown };
+  const hasImageUrl =
+    data.imageUrl !== undefined || data.image_url !== undefined;
   return {
+    imageUrl: hasImageUrl
+      ? String(data.imageUrl ?? data.image_url ?? "").trim() || null
+      : undefined,
     salary: String(data.salary ?? ""),
     access: data.access ? String(data.access) : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
@@ -69,7 +75,7 @@ export function validateShopJobPayload(payload: ShopJobPayload): string | null {
 }
 
 export function shopPayloadToRow(payload: ShopJobPayload) {
-  return {
+  const row: Record<string, unknown> = {
     salary: payload.salary.trim(),
     access: payload.access?.trim() || null,
     business_hours: payload.businessHours?.trim() || null,
@@ -89,4 +95,10 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     website_url: payload.websiteUrl?.trim() || null,
     line_url: payload.lineUrl.trim(),
   };
+
+  if (payload.imageUrl !== undefined) {
+    row.image_url = payload.imageUrl?.trim() || null;
+  }
+
+  return row;
 }

@@ -36,6 +36,7 @@ type ShopForm = {
   shopName: string;
   district: District;
   jobType: JobType;
+  imageUrl: string;
   salary: string;
   access: string;
   businessHours: string;
@@ -73,6 +74,7 @@ function toForm(job: Job): ShopForm {
     shopName: job.shopName,
     district: job.district,
     jobType: job.jobType,
+    imageUrl: job.imageUrl ?? "",
     salary: job.salary,
     access: job.access ?? "",
     businessHours: job.businessHours ?? "",
@@ -102,6 +104,7 @@ function toForm(job: Job): ShopForm {
 
 function toPayload(form: ShopForm) {
   return {
+    imageUrl: form.imageUrl,
     salary: form.salary,
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
@@ -130,6 +133,7 @@ async function readJson<T>(response: Response): Promise<T> {
 
 export default function ShopDashboardPage() {
   const router = useRouter();
+  const topImageInputRef = useRef<HTMLInputElement>(null);
   const storeImageInputRef = useRef<HTMLInputElement>(null);
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
@@ -141,6 +145,7 @@ export default function ShopDashboardPage() {
   const [viewCount, setViewCount] = useState(0);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadingTopImage, setUploadingTopImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
 
@@ -212,28 +217,85 @@ export default function ShopDashboardPage() {
     router.replace("/shop-login");
   }
 
+  async function persistForm(nextForm: ShopForm) {
+    const { job } = await readJson<{ job: Job }>(
+      await fetch("/api/shop-dashboard/job", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(toPayload(nextForm)),
+      }),
+    );
+    setForm(toForm(job));
+    window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+    return job;
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form) return;
     setLoading(true);
     setMessage("");
     try {
-      const { job } = await readJson<{ job: Job }>(
-        await fetch("/api/shop-dashboard/job", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(toPayload(form)),
-        }),
-      );
-      setForm(toForm(job));
+      await persistForm(form);
       await loadDashboard();
-      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
       setMessage("求人情報を保存しました。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleTopImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    if (!file || !jobId || !form) return;
+    setUploadingTopImage(true);
+    setMessage("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("uploadType", "top-image");
+      formData.append("jobId", jobId);
+      const { imageUrl } = await readJson<{ imageUrl: string }>(
+        await fetch("/api/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }),
+      );
+      await persistForm({ ...form, imageUrl });
+      setMessage("店舗トップ画像をアップロードしました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "店舗トップ画像のアップロードに失敗しました。",
+      );
+    } finally {
+      setUploadingTopImage(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleTopImageRemove() {
+    if (!form || !form.imageUrl) return;
+    if (!window.confirm("店舗トップ画像を削除しますか？")) return;
+    setUploadingTopImage(true);
+    setMessage("");
+    try {
+      await persistForm({ ...form, imageUrl: "" });
+      setMessage("店舗トップ画像を削除しました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "店舗トップ画像の削除に失敗しました。",
+      );
+    } finally {
+      setUploadingTopImage(false);
     }
   }
 
@@ -398,6 +460,51 @@ export default function ShopDashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <p className={labelClass}>店舗トップ画像</p>
+          <p className="mb-3 text-xs text-muted">
+            求人一覧カードと求人詳細ページ最上部に表示するメイン画像です。1枚のみ設定でき、差し替えも可能です。
+          </p>
+          <input
+            ref={topImageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            className="hidden"
+            onChange={handleTopImageUpload}
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => topImageInputRef.current?.click()}
+              disabled={uploadingTopImage}
+              className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark disabled:opacity-60"
+            >
+              {uploadingTopImage ? "処理中..." : "写真を選択"}
+            </button>
+            {form.imageUrl && (
+              <button
+                type="button"
+                onClick={handleTopImageRemove}
+                disabled={uploadingTopImage}
+                className="rounded-full border border-charcoal/20 bg-white px-4 py-2 text-sm font-medium text-muted hover:text-charcoal disabled:opacity-60"
+              >
+                画像を削除
+              </button>
+            )}
+          </div>
+          {form.imageUrl ? (
+            <img
+              src={form.imageUrl}
+              alt="店舗トップ画像プレビュー"
+              className="mt-4 h-40 w-full rounded-xl object-cover"
+            />
+          ) : (
+            <p className="mt-3 rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
+              「写真を選択」から店舗トップ画像を登録できます
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>店舗ギャラリー</p>
           <p className="mb-3 text-xs text-muted">
             求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。
@@ -482,7 +589,7 @@ export default function ShopDashboardPage() {
           </p>
         )}
 
-        <button type="submit" disabled={loading} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
+        <button type="submit" disabled={loading || uploadingTopImage || uploadingStoreImages} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
           {loading ? "保存中..." : "保存する"}
         </button>
       </form>
