@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { createSupabaseAdmin, SHOP_IMAGE_BUCKET } from "@/lib/supabase";
 
@@ -48,15 +49,23 @@ function buildStoragePath(
 }
 
 export async function POST(request: Request) {
-  if (!(await isAdminAuthenticated())) {
+  const formData = await request.formData();
+  const uploadType = String(formData.get("uploadType") ?? "shop");
+  const jobId = String(formData.get("jobId") ?? "").trim() || null;
+
+  const isAdmin = await isAdminAuthenticated();
+  const shopJobId = await getAuthenticatedShopJobId();
+  const canUploadAsShop =
+    shopJobId &&
+    uploadType === "store-image" &&
+    jobId === shopJobId;
+
+  if (!isAdmin && !canUploadAsShop) {
     return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
   }
 
   try {
-    const formData = await request.formData();
     const file = formData.get("file");
-    const uploadType = String(formData.get("uploadType") ?? "shop");
-    const jobId = String(formData.get("jobId") ?? "").trim() || null;
 
     if (!(file instanceof File)) {
       return NextResponse.json(

@@ -5,6 +5,7 @@ import {
   normalizeJobPayload,
   payloadToRow,
   rowToJob,
+  shopCredentialsToRow,
   validateJobPayload,
 } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
@@ -46,16 +47,31 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
   try {
     const { id } = await params;
-    const payload = normalizeJobPayload(await request.json());
+    const body = (await request.json()) as Record<string, unknown>;
+    const payload = normalizeJobPayload(body);
     const validationError = validateJobPayload(payload);
     if (validationError) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
+    const shopLoginId =
+      body.shopLoginId !== undefined ? String(body.shopLoginId) : undefined;
+    const shopLoginPassword =
+      body.shopLoginPassword !== undefined
+        ? String(body.shopLoginPassword)
+        : undefined;
+
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
-      .update(payloadToRow(payload))
+      .update({
+        ...payloadToRow(payload),
+        ...shopCredentialsToRow({
+          shopLoginId,
+          shopLoginPassword,
+          updatePassword: shopLoginPassword !== undefined,
+        }),
+      })
       .eq("id", id)
       .select("*")
       .single();

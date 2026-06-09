@@ -100,6 +100,7 @@ export interface Job {
   websiteUrl?: string;
   lineUrl: string;
   postedAt: string;
+  shopLoginId?: string;
 }
 
 export interface JobFilters {

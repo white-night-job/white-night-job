@@ -5,6 +5,7 @@ import {
   normalizeJobPayload,
   payloadToRow,
   rowToJob,
+  shopCredentialsToRow,
   validateJobPayload,
 } from "@/lib/job-db";
 import {
@@ -145,16 +146,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const payload = normalizeJobPayload(await request.json());
+    const body = (await request.json()) as Record<string, unknown>;
+    const payload = normalizeJobPayload(body);
     const validationError = validateJobPayload(payload);
     if (validationError) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
+    const shopLoginId =
+      body.shopLoginId !== undefined ? String(body.shopLoginId) : undefined;
+    const shopLoginPassword =
+      body.shopLoginPassword !== undefined
+        ? String(body.shopLoginPassword)
+        : undefined;
+
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
-      .insert(payloadToRow(payload))
+      .insert({
+        ...payloadToRow(payload),
+        ...shopCredentialsToRow({
+          shopLoginId,
+          shopLoginPassword,
+          updatePassword: shopLoginPassword !== undefined,
+        }),
+      })
       .select("*")
       .single();
 

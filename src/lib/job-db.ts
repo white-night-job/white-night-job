@@ -72,6 +72,8 @@ type JobRow = {
   website_url: string | null;
   line_url: string;
   posted_at: string;
+  shop_login_id?: string | null;
+  shop_login_password?: string | null;
 };
 
 export function rowToJob(row: JobRow): Job {
@@ -110,7 +112,29 @@ export function rowToJob(row: JobRow): Job {
     websiteUrl: row.website_url ?? undefined,
     lineUrl: row.line_url,
     postedAt: row.posted_at,
+    shopLoginId: row.shop_login_id?.trim() || undefined,
   };
+}
+
+export function shopCredentialsToRow(credentials: {
+  shopLoginId?: string;
+  shopLoginPassword?: string;
+  updatePassword: boolean;
+}) {
+  const row: {
+    shop_login_id?: string | null;
+    shop_login_password?: string | null;
+  } = {};
+
+  if (credentials.shopLoginId !== undefined) {
+    row.shop_login_id = credentials.shopLoginId.trim() || null;
+  }
+
+  if (credentials.updatePassword) {
+    row.shop_login_password = credentials.shopLoginPassword?.trim() || null;
+  }
+
+  return row;
 }
 
 export function payloadToRow(payload: JobPayload) {

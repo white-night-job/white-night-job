@@ -77,6 +77,8 @@ type JobForm = {
   youtubeUrl: string;
   websiteUrl: string;
   lineUrl: string;
+  shopLoginId: string;
+  shopLoginPassword: string;
 };
 
 const emptyForm: JobForm = {
@@ -105,6 +107,8 @@ const emptyForm: JobForm = {
   youtubeUrl: "",
   websiteUrl: "",
   lineUrl: "",
+  shopLoginId: "",
+  shopLoginPassword: "",
 };
 
 const inputClass =
@@ -154,6 +158,10 @@ function toPayload(form: JobForm) {
     youtubeUrl: form.youtubeUrl || undefined,
     websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
+    shopLoginId: form.shopLoginId.trim() || undefined,
+    ...(form.shopLoginPassword
+      ? { shopLoginPassword: form.shopLoginPassword }
+      : {}),
   };
 }
 
@@ -195,6 +203,8 @@ function toForm(job: Job): JobForm {
     youtubeUrl: job.youtubeUrl ?? "",
     websiteUrl: job.websiteUrl ?? "",
     lineUrl: job.lineUrl,
+    shopLoginId: job.shopLoginId ?? "",
+    shopLoginPassword: "",
   };
 }
 
@@ -1245,6 +1255,55 @@ export default function AdminPage() {
           <p className="mt-1 text-xs text-muted">
             入力した場合のみ、求人詳細ページに電話応募ボタンが表示されます。
           </p>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
+            <p className="mt-1 text-xs text-muted">
+              店舗担当者が /shop-login からログインするためのIDとPWです。
+              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="shopLoginId" className={labelClass}>
+                店舗ログインID
+              </label>
+              <input
+                id="shopLoginId"
+                type="text"
+                value={form.shopLoginId}
+                onChange={(event) =>
+                  setField("shopLoginId", event.target.value)
+                }
+                className={inputClass}
+                placeholder="例: rosetta-shop"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="shopLoginPassword" className={labelClass}>
+                店舗ログインPW
+              </label>
+              <input
+                id="shopLoginPassword"
+                type="password"
+                value={form.shopLoginPassword}
+                onChange={(event) =>
+                  setField("shopLoginPassword", event.target.value)
+                }
+                className={inputClass}
+                placeholder={editingId ? "変更時のみ入力" : "初期パスワード"}
+                autoComplete="new-password"
+              />
+              {editingId && (
+                <p className="mt-1 text-xs text-muted">
+                  空欄のまま保存すると、現在のパスワードを維持します。
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div>
