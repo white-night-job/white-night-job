@@ -8,7 +8,6 @@ import {
   getKnownBenefits,
   getUncategorizedBenefits,
 } from "@/data/benefits";
-import { DISTRICTS } from "@/data/districts";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { MonthlyViewChart } from "@/components/MonthlyViewChart";
 import {
@@ -27,7 +26,6 @@ import { JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { aggregateMonthlyViewsForJob, type ViewRow } from "@/lib/job-views";
 import {
   FIXED_AREA,
-  JOB_TYPES,
   type CastVoiceEntry,
   type District,
   type Job,
@@ -66,6 +64,8 @@ const emptyCastVoiceEntry = (): CastVoiceEntry => ({
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
 
+const readonlyInputClass = `${inputClass} cursor-not-allowed bg-zinc-100 text-charcoal`;
+
 const labelClass = "mb-1.5 block text-sm font-medium text-charcoal";
 
 function toForm(job: Job): ShopForm {
@@ -102,9 +102,6 @@ function toForm(job: Job): ShopForm {
 
 function toPayload(form: ShopForm) {
   return {
-    shopName: form.shopName,
-    district: form.district,
-    jobType: form.jobType,
     salary: form.salary,
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
@@ -303,66 +300,49 @@ export default function ShopDashboardPage() {
         </button>
       </div>
 
-      <dl className="mb-6 grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <dt className="text-xs text-muted">LINE応募数</dt>
-          <dd className="text-lg font-semibold text-[#047a3b]">
-            {applicationDetail?.line ?? 0}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted">電話応募数</dt>
-          <dd className="text-lg font-semibold text-gold-dark">
-            {applicationDetail?.phone ?? 0}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted">合計応募数</dt>
-          <dd className="text-lg font-semibold text-charcoal">
-            {applicationDetail?.total ?? 0}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-muted">表示回数</dt>
-          <dd className="text-lg font-semibold text-charcoal">{viewCount}</dd>
-        </div>
-      </dl>
-
-      <div className="mb-6">
-        <MonthlyViewChart data={monthlyViewStats} title="月間表示回数" />
-      </div>
-
-      <div className="mb-8">
-        <MonthlyApplicationChart data={monthlyApplicationStats} />
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+      <form onSubmit={handleSubmit} className="mb-8 space-y-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
         <h2 className="text-lg font-semibold text-charcoal">求人情報の編集</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="shopName" className={labelClass}>店舗名</label>
-            <input id="shopName" value={form.shopName} onChange={(e) => setField("shopName", e.target.value)} className={inputClass} required />
+            <input
+              id="shopName"
+              value={form.shopName}
+              readOnly
+              className={readonlyInputClass}
+              aria-readonly="true"
+            />
           </div>
           <div>
-            <label className={labelClass}>エリア</label>
-            <input value={FIXED_AREA} readOnly className={`${inputClass} bg-zinc-100`} />
+            <label htmlFor="area" className={labelClass}>エリア</label>
+            <input
+              id="area"
+              value={FIXED_AREA}
+              readOnly
+              className={readonlyInputClass}
+              aria-readonly="true"
+            />
           </div>
           <div>
             <label htmlFor="district" className={labelClass}>地区</label>
-            <select id="district" value={form.district} onChange={(e) => setField("district", e.target.value as District)} className={inputClass}>
-              {DISTRICTS.map((district) => (
-                <option key={district} value={district}>{district}</option>
-              ))}
-            </select>
+            <input
+              id="district"
+              value={form.district}
+              readOnly
+              className={readonlyInputClass}
+              aria-readonly="true"
+            />
           </div>
           <div>
             <label htmlFor="jobType" className={labelClass}>職種</label>
-            <select id="jobType" value={form.jobType} onChange={(e) => setField("jobType", e.target.value as JobType)} className={inputClass}>
-              {JOB_TYPES.map((jobType) => (
-                <option key={jobType} value={jobType}>{jobType}</option>
-              ))}
-            </select>
+            <input
+              id="jobType"
+              value={form.jobType}
+              readOnly
+              className={readonlyInputClass}
+              aria-readonly="true"
+            />
           </div>
           <div>
             <label htmlFor="salary" className={labelClass}>時給</label>
@@ -499,6 +479,39 @@ export default function ShopDashboardPage() {
           {loading ? "保存中..." : "保存する"}
         </button>
       </form>
+
+      <section className="space-y-6">
+        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数</h2>
+
+        <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <dt className="text-xs text-muted">LINE応募数</dt>
+            <dd className="text-lg font-semibold text-[#047a3b]">
+              {applicationDetail?.line ?? 0}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">電話応募数</dt>
+            <dd className="text-lg font-semibold text-gold-dark">
+              {applicationDetail?.phone ?? 0}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">合計応募数</dt>
+            <dd className="text-lg font-semibold text-charcoal">
+              {applicationDetail?.total ?? 0}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">表示回数</dt>
+            <dd className="text-lg font-semibold text-charcoal">{viewCount}</dd>
+          </div>
+        </dl>
+
+        <MonthlyViewChart data={monthlyViewStats} title="月間表示回数" />
+
+        <MonthlyApplicationChart data={monthlyApplicationStats} />
+      </section>
 
       <p className="mt-6 text-center text-xs text-muted">
         <Link href="/" className="text-gold-dark hover:underline">トップページへ</Link>

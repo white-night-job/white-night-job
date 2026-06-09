@@ -1,9 +1,4 @@
-import {
-  FIXED_AREA,
-  type CastVoiceEntry,
-  type District,
-  type JobType,
-} from "@/types/job";
+import { type CastVoiceEntry } from "@/types/job";
 import {
   parseBenefits,
   parseCastVoices,
@@ -13,9 +8,6 @@ import {
 } from "@/lib/job-db";
 
 export type ShopJobPayload = {
-  shopName: string;
-  district: District;
-  jobType: JobType;
   salary: string;
   access?: string;
   businessHours?: string;
@@ -38,9 +30,6 @@ export type ShopJobPayload = {
 export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
   const data = body as Partial<ShopJobPayload>;
   return {
-    shopName: String(data.shopName ?? ""),
-    district: data.district as District,
-    jobType: data.jobType as JobType,
     salary: String(data.salary ?? ""),
     access: data.access ? String(data.access) : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
@@ -74,23 +63,13 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
 }
 
 export function validateShopJobPayload(payload: ShopJobPayload): string | null {
-  if (!payload.shopName.trim()) return "店名を入力してください。";
-  if (!payload.district) return "地区を選択してください。";
-  if (!payload.jobType) return "職種を選択してください。";
   if (!payload.salary.trim()) return "時給を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
   return null;
 }
 
 export function shopPayloadToRow(payload: ShopJobPayload) {
-  const shopName = payload.shopName.trim();
-
   return {
-    shop_name: shopName,
-    area: FIXED_AREA,
-    district: payload.district,
-    job_type: payload.jobType,
-    title: `${shopName}｜${payload.jobType}募集`,
     salary: payload.salary.trim(),
     access: payload.access?.trim() || null,
     business_hours: payload.businessHours?.trim() || null,
