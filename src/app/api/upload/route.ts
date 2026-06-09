@@ -23,14 +23,11 @@ function validateImageFile(file: File): string | null {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
   const mimeType = file.type.toLowerCase();
 
-  if (
-    !ALLOWED_EXTENSIONS.has(extension) &&
-    !ALLOWED_IMAGE_TYPES.has(mimeType)
-  ) {
-    return "対応形式は JPG / PNG / WebP です。";
-  }
+  if (ALLOWED_EXTENSIONS.has(extension)) return null;
+  if (ALLOWED_IMAGE_TYPES.has(mimeType)) return null;
+  if (mimeType === "image/pjpeg" || mimeType === "image/x-png") return null;
 
-  return null;
+  return "対応形式は JPG / PNG / WebP です。";
 }
 
 function buildStoragePath(
@@ -94,8 +91,16 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     const { data } = supabase.storage.from(SHOP_IMAGE_BUCKET).getPublicUrl(path);
+    const publicUrl = data.publicUrl?.trim();
 
-    return NextResponse.json({ imageUrl: data.publicUrl });
+    if (!publicUrl) {
+      return NextResponse.json(
+        { message: "公開URLの取得に失敗しました。Storageバケットの設定を確認してください。" },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ imageUrl: publicUrl, publicUrl });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "画像アップロードに失敗しました。") },

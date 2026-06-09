@@ -5,7 +5,11 @@ import { use, useEffect, useState } from "react";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
-import { formatCastVoiceAge, getDisplayCastVoices } from "@/lib/job-db";
+import {
+  formatCastVoiceAge,
+  getDisplayCastVoices,
+  getDisplayStoreImages,
+} from "@/lib/job-db";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import type { Job } from "@/types/job";
@@ -56,6 +60,7 @@ export default function JobDetailPage({
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
   const displayCastVoices = getDisplayCastVoices(job);
+  const displayStoreImages = getDisplayStoreImages(job);
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
@@ -237,9 +242,9 @@ export default function JobDetailPage({
             </div>
           </section>
           <JobApplyButtons job={job} />
-          {(job.storeImages?.length ?? 0) > 0 && (
+          {displayStoreImages.length > 0 && (
             <StoreImagesGallery
-              images={job.storeImages ?? []}
+              images={displayStoreImages}
               shopName={job.shopName}
             />
           )}

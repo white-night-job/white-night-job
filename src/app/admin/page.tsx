@@ -27,6 +27,7 @@ import {
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import {
   getDisplayCastVoices,
+  getDisplayStoreImages,
   parseBenefits,
   sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
@@ -180,7 +181,7 @@ function toForm(job: Job): JobForm {
       comment: entry.comment,
     })),
     imageUrl: job.imageUrl ?? "",
-    storeImages: job.storeImages ?? [],
+    storeImages: getDisplayStoreImages(job),
     phone: job.phone ?? "",
     address: job.address ?? "",
     access: job.access ?? "",
@@ -441,18 +442,36 @@ export default function AdminPage() {
     try {
       const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
       const method = editingId ? "PUT" : "POST";
-      await readJson<{ job: Job }>(
+      const payload = toPayload(form);
+      const { job: savedJob } = await readJson<{ job: Job }>(
         await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(toPayload(form)),
+          body: JSON.stringify(payload),
         }),
       );
-      setMessage(editingId ? "求人を更新しました。" : "求人を追加しました。");
-      resetForm();
+      const savedStoreImageCount = getDisplayStoreImages(savedJob).length;
+      const storeImageNote =
+        savedStoreImageCount > 0
+          ? `（店内画像 ${savedStoreImageCount}枚）`
+          : payload.storeImages && payload.storeImages.length > 0
+            ? "（店内画像の保存に失敗した可能性があります。Supabaseの store_images カラムを確認してください）"
+            : "";
+      setMessage(
+        editingId
+          ? `求人を更新しました。${storeImageNote}`
+          : `求人を追加しました。${storeImageNote}`,
+      );
       await loadJobs();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+      if (editingId) {
+        setEditingId(savedJob.id);
+        setForm(toForm(savedJob));
+        setIsAddFormOpen(false);
+      } else {
+        resetForm();
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
@@ -518,28 +537,58 @@ export default function AdminPage() {
 
     try {
       const uploadedUrls: string[] = [];
+      const failedFiles: string[] = [];
 
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("uploadType", "store-image");
-        formData.append("jobId", ownerJobId);
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("uploadType", "store-image");
+          formData.append("jobId", ownerJobId);
 
-        const data = await readJson<{ imageUrl: string }>(
-          await fetch("/api/upload", {
-            method: "POST",
-            credentials: "include",
-            body: formData,
-          }),
-        );
-        uploadedUrls.push(data.imageUrl);
+          const data = await readJson<{ imageUrl?: string; publicUrl?: string }>(
+            await fetch("/api/upload", {
+              method: "POST",
+              credentials: "include",
+              body: formData,
+            }),
+          );
+          const imageUrl = (data.imageUrl ?? data.publicUrl ?? "").trim();
+          if (!imageUrl) {
+            throw new Error("公開URLの取得に失敗しました。");
+          }
+          uploadedUrls.push(imageUrl);
+        } catch (error) {
+          failedFiles.push(
+            `${file.name}: ${
+              error instanceof Error ? error.message : "アップロード失敗"
+            }`,
+          );
+        }
       }
 
-      setForm((current) => ({
-        ...current,
-        storeImages: [...current.storeImages, ...uploadedUrls],
-      }));
-      setMessage(`${uploadedUrls.length}枚の店内画像をアップロードしました。`);
+      if (uploadedUrls.length > 0) {
+        setForm((current) => ({
+          ...current,
+          storeImages: sanitizeStoreImagesForSave([
+            ...current.storeImages,
+            ...uploadedUrls,
+          ]),
+        }));
+      }
+
+      if (uploadedUrls.length > 0 && failedFiles.length === 0) {
+        setMessage(`${uploadedUrls.length}枚の店内画像をアップロードしました。`);
+      } else if (uploadedUrls.length > 0) {
+        setMessage(
+          `${uploadedUrls.length}枚をアップロードしました。失敗: ${failedFiles.join(" / ")}`,
+        );
+      } else {
+        setMessage(
+          failedFiles.join(" / ") ||
+            "店内画像のアップロードに失敗しました。",
+        );
+      }
     } catch (error) {
       setMessage(
         error instanceof Error

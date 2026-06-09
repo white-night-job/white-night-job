@@ -99,7 +99,7 @@ export function rowToJob(row: JobRow): Job {
     otherBenefits: row.other_benefits ?? [],
     isVerified: row.is_verified,
     imageUrl: row.image_url ?? undefined,
-    storeImages: parseStoreImages(row.store_images),
+    storeImages: getDisplayStoreImages({ storeImages: undefined, store_images: row.store_images }),
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
     access: row.access ?? undefined,
@@ -184,9 +184,10 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       ? Number(data.customerRegularLevel)
       : undefined,
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
-    storeImages: normalizeStoreImagesInput(
-      data.storeImages ?? (data as { store_images?: unknown }).store_images,
-    ),
+    storeImages:
+      normalizeStoreImagesInput(
+        data.storeImages ?? (data as { store_images?: unknown }).store_images,
+      ) ?? [],
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
     access: data.access ? String(data.access) : undefined,
@@ -204,23 +205,44 @@ export function normalizeJobPayload(body: unknown): JobPayload {
   };
 }
 
-export function parseStoreImages(value: unknown): string[] {
+export function coerceStoreImagesToArray(value: unknown): unknown[] {
   if (value === null || value === undefined) return [];
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed || trimmed === "[]") return [];
     try {
-      return parseStoreImages(JSON.parse(trimmed));
+      return coerceStoreImagesToArray(JSON.parse(trimmed));
     } catch {
       return trimmed ? [trimmed] : [];
     }
   }
 
-  if (!Array.isArray(value)) return [];
+  if (Array.isArray(value)) return value;
 
-  return value
-    .map((item) => String(item ?? "").trim())
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.store_images)) return record.store_images;
+    if (Array.isArray(record.storeImages)) return record.storeImages;
+    if (typeof record.url === "string") return [record.url];
+    if (typeof record.imageUrl === "string") return [record.imageUrl];
+  }
+
+  return [];
+}
+
+function normalizeStoreImageItem(item: unknown): string {
+  if (typeof item === "string") return item.trim();
+  if (item && typeof item === "object") {
+    const record = item as Record<string, unknown>;
+    return String(record.url ?? record.imageUrl ?? record.publicUrl ?? "").trim();
+  }
+  return "";
+}
+
+export function parseStoreImages(value: unknown): string[] {
+  return coerceStoreImagesToArray(value)
+    .map((item) => normalizeStoreImageItem(item))
     .filter(Boolean);
 }
 
@@ -228,9 +250,17 @@ export function sanitizeStoreImagesForSave(urls: string[]): string[] {
   return urls.map((url) => url.trim()).filter(Boolean);
 }
 
-function normalizeStoreImagesInput(value: unknown): string[] | undefined {
-  if (value === undefined) return undefined;
+function normalizeStoreImagesInput(value: unknown): string[] {
+  if (value === undefined || value === null) return [];
   return sanitizeStoreImagesForSave(parseStoreImages(value));
+}
+
+export function getDisplayStoreImages(
+  job: Pick<Job, "storeImages"> & { store_images?: unknown },
+): string[] {
+  const fromCamel = parseStoreImages(job.storeImages);
+  if (fromCamel.length > 0) return fromCamel;
+  return parseStoreImages(job.store_images);
 }
 
 export function validateJobPayload(payload: JobPayload): string | null {
