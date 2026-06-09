@@ -7,6 +7,7 @@ import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
 import { formatCastVoiceAge, getDisplayCastVoices } from "@/lib/job-db";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import type { Job } from "@/types/job";
 
 function JobApplyButtons({ job }: { job: Job }) {
@@ -236,6 +237,12 @@ export default function JobDetailPage({
             </div>
           </section>
           <JobApplyButtons job={job} />
+          {(job.storeImages?.length ?? 0) > 0 && (
+            <StoreImagesGallery
+              images={job.storeImages ?? []}
+              shopName={job.shopName}
+            />
+          )}
           {socialLinks.length > 0 && (
             <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
               <h2 className="mb-3 text-base font-semibold text-charcoal">

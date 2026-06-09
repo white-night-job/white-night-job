@@ -22,6 +22,7 @@ export type JobPayload = {
   customerAgeLevel?: number;
   customerRegularLevel?: number;
   imageUrl?: string;
+  storeImages?: string[];
   phone?: string;
   address?: string;
   access?: string;
@@ -55,6 +56,7 @@ type JobRow = {
   description: string | null;
   cast_voice: string | null;
   cast_voices?: unknown;
+  store_images?: unknown;
   requirements: string[] | null;
   benefits: string[] | null;
   other_benefits: string[] | null;
@@ -97,6 +99,7 @@ export function rowToJob(row: JobRow): Job {
     otherBenefits: row.other_benefits ?? [],
     isVerified: row.is_verified,
     imageUrl: row.image_url ?? undefined,
+    storeImages: parseStoreImages(row.store_images),
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
     access: row.access ?? undefined,
@@ -135,6 +138,7 @@ export function payloadToRow(payload: JobPayload) {
     other_benefits: payload.otherBenefits ?? [],
     is_verified: payload.isVerified ?? false,
     image_url: payload.imageUrl?.trim() || null,
+    store_images: sanitizeStoreImagesForSave(payload.storeImages ?? []),
     phone: payload.phone?.trim() || null,
     address: payload.address?.trim() || null,
     access: payload.access?.trim() || null,
@@ -180,6 +184,9 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       ? Number(data.customerRegularLevel)
       : undefined,
     imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
+    storeImages: normalizeStoreImagesInput(
+      data.storeImages ?? (data as { store_images?: unknown }).store_images,
+    ),
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
     access: data.access ? String(data.access) : undefined,
@@ -195,6 +202,35 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       : undefined,
     isVerified: Boolean(data.isVerified ?? false),
   };
+}
+
+export function parseStoreImages(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[]") return [];
+    try {
+      return parseStoreImages(JSON.parse(trimmed));
+    } catch {
+      return trimmed ? [trimmed] : [];
+    }
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => String(item ?? "").trim())
+    .filter(Boolean);
+}
+
+export function sanitizeStoreImagesForSave(urls: string[]): string[] {
+  return urls.map((url) => url.trim()).filter(Boolean);
+}
+
+function normalizeStoreImagesInput(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined;
+  return sanitizeStoreImagesForSave(parseStoreImages(value));
 }
 
 export function validateJobPayload(payload: JobPayload): string | null {

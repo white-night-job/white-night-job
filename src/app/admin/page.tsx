@@ -29,6 +29,7 @@ import {
   getDisplayCastVoices,
   parseBenefits,
   sanitizeCastVoicesForSave,
+  sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import {
   FIXED_AREA,
@@ -61,6 +62,7 @@ type JobForm = {
   descriptionText: string;
   castVoices: CastVoiceEntry[];
   imageUrl: string;
+  storeImages: string[];
   phone: string;
   address: string;
   access: string;
@@ -88,6 +90,7 @@ const emptyForm: JobForm = {
   descriptionText: "",
   castVoices: [],
   imageUrl: "",
+  storeImages: [],
   phone: "",
   address: "",
   access: "",
@@ -136,6 +139,7 @@ function toPayload(form: JobForm) {
     descriptionText: form.descriptionText || undefined,
     castVoices: sanitizeCastVoicesForSave(form.castVoices),
     imageUrl: form.imageUrl || undefined,
+    storeImages: sanitizeStoreImagesForSave(form.storeImages),
     phone: form.phone || undefined,
     address: form.address || undefined,
     access: form.access || undefined,
@@ -176,6 +180,7 @@ function toForm(job: Job): JobForm {
       comment: entry.comment,
     })),
     imageUrl: job.imageUrl ?? "",
+    storeImages: job.storeImages ?? [],
     phone: job.phone ?? "",
     address: job.address ?? "",
     access: job.access ?? "",
@@ -380,6 +385,29 @@ export default function AdminPage() {
       ...current,
       castVoices: current.castVoices.map((entry, itemIndex) =>
         itemIndex === index ? { ...entry, [key]: value } : entry,
+      ),
+    }));
+  }
+
+  function addStoreImage() {
+    setForm((current) => ({
+      ...current,
+      storeImages: [...current.storeImages, ""],
+    }));
+  }
+
+  function removeStoreImage(index: number) {
+    setForm((current) => ({
+      ...current,
+      storeImages: current.storeImages.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
+  function updateStoreImage(index: number, value: string) {
+    setForm((current) => ({
+      ...current,
+      storeImages: current.storeImages.map((url, itemIndex) =>
+        itemIndex === index ? value : url,
       ),
     }));
   }
@@ -972,6 +1000,65 @@ export default function AdminPage() {
               alt="アップロード済み店舗写真"
               className="mt-3 h-40 w-full rounded-xl object-cover"
             />
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className={labelClass}>店内画像</p>
+            <button
+              type="button"
+              onClick={addStoreImage}
+              className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
+            >
+              画像を追加
+            </button>
+          </div>
+          <p className="mb-3 text-xs text-muted">
+            求人詳細の「公式SNS」の上に表示されます。画像URLを入力してください（空欄は保存されません）。
+          </p>
+          {form.storeImages.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
+              「画像を追加」から店内画像を登録できます
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {form.storeImages.map((imageUrl, index) => (
+                <li
+                  key={`store-image-${index}`}
+                  className="rounded-xl border border-gold/25 bg-white p-3 shadow-gold"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-charcoal">
+                      店内画像 {index + 1}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => removeStoreImage(index)}
+                      className="rounded-full border border-charcoal/20 px-3 py-1 text-xs font-medium text-muted transition hover:border-charcoal/40 hover:text-charcoal"
+                    >
+                      削除
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(event) =>
+                      updateStoreImage(index, event.target.value)
+                    }
+                    className={inputClass}
+                    placeholder="https://example.com/store-image.jpg"
+                  />
+                  {imageUrl.trim() && (
+                    <img
+                      src={imageUrl}
+                      alt={`店内画像プレビュー ${index + 1}`}
+                      className="mt-3 h-32 w-full rounded-xl object-cover"
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
