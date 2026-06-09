@@ -123,6 +123,10 @@ export async function fetchViewRows(
     .select("job_id, created_at")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("job_views fetch failed:", error.message);
+    return [];
+  }
+
   return data ?? [];
 }

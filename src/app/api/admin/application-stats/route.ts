@@ -32,33 +32,39 @@ export async function GET() {
 
     const jobList = (jobs ?? []).map(rowToJob);
 
+    let rows: Awaited<ReturnType<typeof fetchApplicationRows>> = [];
+    let filled: ReturnType<typeof fillApplicationDetailsForJobs> = {};
+
     try {
-      const [rows, details, views] = await Promise.all([
+      const [fetchedRows, details] = await Promise.all([
         fetchApplicationRows(supabase),
         fetchApplicationDetails(supabase),
-        fetchViewRows(supabase),
       ]);
-      const filled = fillApplicationDetailsForJobs(jobList, details);
-      const counts = fillViewCountsForJobs(jobList, aggregateViewCounts(views));
-      return NextResponse.json({
-        details: filled,
-        stats: filled,
-        applicationRows: rows,
-        viewRows: views,
-        viewCounts: counts,
-      });
+      rows = fetchedRows;
+      filled = fillApplicationDetailsForJobs(jobList, details);
     } catch {
-      const empty = Object.fromEntries(
+      filled = Object.fromEntries(
         jobList.map((job) => [job.id, emptyApplicationDetail()]),
       );
-      return NextResponse.json({
-        details: empty,
-        stats: empty,
-        applicationRows: [],
-        viewRows: [],
-        viewCounts: Object.fromEntries(jobList.map((job) => [job.id, 0])),
-      });
     }
+
+    let views: Awaited<ReturnType<typeof fetchViewRows>> = [];
+    let counts: ReturnType<typeof fillViewCountsForJobs> = {};
+
+    try {
+      views = await fetchViewRows(supabase);
+      counts = fillViewCountsForJobs(jobList, aggregateViewCounts(views));
+    } catch {
+      counts = Object.fromEntries(jobList.map((job) => [job.id, 0]));
+    }
+
+    return NextResponse.json({
+      details: filled,
+      stats: filled,
+      applicationRows: rows,
+      viewRows: views,
+      viewCounts: counts,
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "応募数の取得に失敗しました。") },

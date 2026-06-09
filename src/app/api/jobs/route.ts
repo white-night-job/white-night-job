@@ -84,23 +84,27 @@ export async function GET(request: Request) {
 
     if (isAdmin) {
       try {
-        const [rows, details, views] = await Promise.all([
+        const [rows, details] = await Promise.all([
           fetchApplicationRows(supabase),
           fetchApplicationDetails(supabase),
-          fetchViewRows(supabase),
         ]);
         applicationDetails = fillApplicationDetailsForJobs(filteredJobs, details);
         applicationRows = rows;
+      } catch {
+        applicationDetails = Object.fromEntries(
+          filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
+        );
+        applicationRows = [];
+      }
+
+      try {
+        const views = await fetchViewRows(supabase);
         viewRows = views;
         viewCounts = fillViewCountsForJobs(
           filteredJobs,
           aggregateViewCounts(views),
         );
       } catch {
-        applicationDetails = Object.fromEntries(
-          filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
-        );
-        applicationRows = [];
         viewRows = [];
         viewCounts = Object.fromEntries(
           filteredJobs.map((job) => [job.id, 0]),
