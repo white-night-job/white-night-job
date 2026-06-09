@@ -8,6 +8,11 @@ import {
   fillApplicationDetailsForJobs,
 } from "@/lib/job-applications";
 import { rowToJob } from "@/lib/job-db";
+import {
+  aggregateViewCounts,
+  fetchViewRows,
+  fillViewCountsForJobs,
+} from "@/lib/job-views";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET() {
@@ -28,15 +33,19 @@ export async function GET() {
     const jobList = (jobs ?? []).map(rowToJob);
 
     try {
-      const [rows, details] = await Promise.all([
+      const [rows, details, views] = await Promise.all([
         fetchApplicationRows(supabase),
         fetchApplicationDetails(supabase),
+        fetchViewRows(supabase),
       ]);
       const filled = fillApplicationDetailsForJobs(jobList, details);
+      const counts = fillViewCountsForJobs(jobList, aggregateViewCounts(views));
       return NextResponse.json({
         details: filled,
         stats: filled,
         applicationRows: rows,
+        viewRows: views,
+        viewCounts: counts,
       });
     } catch {
       const empty = Object.fromEntries(
@@ -46,6 +55,8 @@ export async function GET() {
         details: empty,
         stats: empty,
         applicationRows: [],
+        viewRows: [],
+        viewCounts: Object.fromEntries(jobList.map((job) => [job.id, 0])),
       });
     }
   } catch (error) {

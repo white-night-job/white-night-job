@@ -15,6 +15,12 @@ import {
   type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
+import {
+  aggregateViewCounts,
+  fetchViewRows,
+  fillViewCountsForJobs,
+  type ViewRow,
+} from "@/lib/job-views";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -73,20 +79,32 @@ export async function GET(request: Request) {
     const isAdmin = await isAdminAuthenticated();
     let applicationDetails: Record<string, JobApplicationDetail> | undefined;
     let applicationRows: ApplicationRow[] | undefined;
+    let viewRows: ViewRow[] | undefined;
+    let viewCounts: Record<string, number> | undefined;
 
     if (isAdmin) {
       try {
-        const [rows, details] = await Promise.all([
+        const [rows, details, views] = await Promise.all([
           fetchApplicationRows(supabase),
           fetchApplicationDetails(supabase),
+          fetchViewRows(supabase),
         ]);
         applicationDetails = fillApplicationDetailsForJobs(filteredJobs, details);
         applicationRows = rows;
+        viewRows = views;
+        viewCounts = fillViewCountsForJobs(
+          filteredJobs,
+          aggregateViewCounts(views),
+        );
       } catch {
         applicationDetails = Object.fromEntries(
           filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
         );
         applicationRows = [];
+        viewRows = [];
+        viewCounts = Object.fromEntries(
+          filteredJobs.map((job) => [job.id, 0]),
+        );
       }
     }
 
@@ -97,6 +115,8 @@ export async function GET(request: Request) {
             applicationDetails,
             applicationStats: applicationDetails,
             applicationRows,
+            viewRows,
+            viewCounts,
           }
         : {}),
     });

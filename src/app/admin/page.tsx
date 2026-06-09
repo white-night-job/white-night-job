@@ -9,7 +9,9 @@ import {
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
 import { DailyApplicationLineChart } from "@/components/DailyApplicationLineChart";
+import { DailyViewLineChart } from "@/components/DailyViewLineChart";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
+import { MonthlyViewChart } from "@/components/MonthlyViewChart";
 import {
   aggregateDailyApplicationsForJob,
   aggregateMonthlyApplications,
@@ -24,6 +26,12 @@ import {
   type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
+import {
+  aggregateDailyViewsForJob,
+  aggregateMonthlyViews,
+  aggregateMonthlyViewsForJob,
+  type ViewRow,
+} from "@/lib/job-views";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import {
   getDisplayCastVoices,
@@ -221,6 +229,8 @@ export default function AdminPage() {
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
+  const [viewRows, setViewRows] = useState<ViewRow[]>([]);
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [dailyMonthByJobId, setDailyMonthByJobId] = useState<
     Record<string, string>
   >({});
@@ -251,6 +261,8 @@ export default function AdminPage() {
       applicationDetails?: Record<string, JobApplicationDetail>;
       applicationStats?: Record<string, JobApplicationDetail>;
       applicationRows?: ApplicationRow[];
+      viewRows?: ViewRow[];
+      viewCounts?: Record<string, number>;
     }>(jobsResponse);
     setJobs(data.jobs);
 
@@ -258,6 +270,13 @@ export default function AdminPage() {
       setApplicationDetails(data.applicationDetails);
     } else if (data.applicationStats) {
       setApplicationDetails(data.applicationStats);
+    }
+
+    if (data.viewRows) {
+      setViewRows(data.viewRows);
+    }
+    if (data.viewCounts) {
+      setViewCounts(data.viewCounts);
     }
 
     if (data.applicationRows) {
@@ -274,12 +293,18 @@ export default function AdminPage() {
         details?: Record<string, JobApplicationDetail>;
         stats?: Record<string, JobApplicationDetail>;
         applicationRows?: ApplicationRow[];
+        viewRows?: ViewRow[];
+        viewCounts?: Record<string, number>;
       }>(statsResponse);
       setApplicationDetails(statsData.details ?? statsData.stats ?? {});
       setApplicationRows(statsData.applicationRows ?? []);
+      setViewRows(statsData.viewRows ?? []);
+      setViewCounts(statsData.viewCounts ?? {});
     } else {
       setApplicationDetails({});
       setApplicationRows([]);
+      setViewRows([]);
+      setViewCounts({});
     }
   }
 
@@ -313,6 +338,11 @@ export default function AdminPage() {
   const monthlyApplicationStats = useMemo(
     () => aggregateMonthlyApplications(applicationRows, filteredJobIds),
     [applicationRows, filteredJobIds],
+  );
+
+  const monthlyViewStats = useMemo(
+    () => aggregateMonthlyViews(viewRows, filteredJobIds),
+    [viewRows, filteredJobIds],
   );
 
   const chartFilterDescription = useMemo(() => {
@@ -1364,12 +1394,33 @@ export default function AdminPage() {
           />
         </div>
 
+        <div className="mb-4">
+          <MonthlyViewChart
+            data={monthlyViewStats}
+            filterDescription={chartFilterDescription}
+          />
+        </div>
+
         <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
           <h3 className="text-base font-semibold text-charcoal">
             店舗別 日別応募数
           </h3>
           <p className="mt-1 text-xs text-muted">
             各店舗カードで月を選び、日別の折れ線グラフを確認できます（日本時間）
+          </p>
+          {hasActiveFilters && (
+            <p className="mt-3 text-xs font-medium text-gold-dark">
+              {chartFilterDescription}
+            </p>
+          )}
+        </section>
+
+        <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
+          <h3 className="text-base font-semibold text-charcoal">
+            店舗別 表示回数
+          </h3>
+          <p className="mt-1 text-xs text-muted">
+            各店舗カードで月別・日別の表示回数グラフを確認できます（日本時間）
           </p>
           {hasActiveFilters && (
             <p className="mt-3 text-xs font-medium text-gold-dark">
@@ -1396,6 +1447,16 @@ export default function AdminPage() {
                 job.id,
                 jobDailyMonthKey,
               );
+              const dailyViewStats = aggregateDailyViewsForJob(
+                viewRows,
+                job.id,
+                jobDailyMonthKey,
+              );
+              const monthlyViewStatsForJob = aggregateMonthlyViewsForJob(
+                viewRows,
+                job.id,
+              );
+              const viewCount = viewCounts[job.id] ?? 0;
 
               return (
                 <li
@@ -1432,6 +1493,12 @@ export default function AdminPage() {
                           <dt className="font-medium text-muted">合計応募数:</dt>
                           <dd className="font-semibold text-charcoal">
                             {detail.total}
+                          </dd>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-medium text-muted">表示回数:</dt>
+                          <dd className="font-semibold text-charcoal">
+                            {viewCount}
                           </dd>
                         </div>
                         <div className="flex flex-wrap gap-x-2">
@@ -1473,6 +1540,48 @@ export default function AdminPage() {
                           </div>
                         </div>
                         <DailyApplicationLineChart data={dailyStats} />
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
+                        <p className="mb-3 text-xs font-medium text-gold-dark">
+                          月別表示回数
+                        </p>
+                        <MonthlyViewChart
+                          data={monthlyViewStatsForJob}
+                          title="月別表示回数"
+                          compact
+                        />
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
+                        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                          <p className="text-xs font-medium text-gold-dark">
+                            日別表示回数（折れ線）
+                          </p>
+                          <div className="w-full sm:w-auto sm:min-w-[10rem]">
+                            <label
+                              htmlFor={`daily-view-month-${job.id}`}
+                              className={labelClass}
+                            >
+                              対象月
+                            </label>
+                            <select
+                              id={`daily-view-month-${job.id}`}
+                              value={jobDailyMonthKey}
+                              onChange={(event) =>
+                                setJobDailyMonthKey(job.id, event.target.value)
+                              }
+                              className={inputClass}
+                            >
+                              {dailyMonthOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <DailyViewLineChart data={dailyViewStats} />
                       </div>
 
                       <button

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
@@ -10,6 +10,7 @@ import {
   getDisplayCastVoices,
   getDisplayStoreImages,
 } from "@/lib/job-db";
+import { recordJobView } from "@/lib/job-view-storage";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import type { Job } from "@/types/job";
@@ -32,6 +33,11 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params);
   const [job, setJob] = useState<Job | null | undefined>(undefined);
+  const recordedViewRef = useRef(false);
+
+  useEffect(() => {
+    recordedViewRef.current = false;
+  }, [id]);
 
   useEffect(() => {
     const load = () => {
@@ -43,6 +49,12 @@ export default function JobDetailPage({
     window.addEventListener(JOBS_UPDATED_EVENT, load);
     return () => window.removeEventListener(JOBS_UPDATED_EVENT, load);
   }, [id]);
+
+  useEffect(() => {
+    if (!job || recordedViewRef.current) return;
+    recordedViewRef.current = true;
+    void recordJobView(job.id);
+  }, [job]);
 
   if (job === undefined) {
     return <div className="mx-auto max-w-3xl p-8"><div className="h-64 animate-pulse rounded-2xl bg-white" /></div>;
