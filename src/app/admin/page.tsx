@@ -8,18 +8,14 @@ import {
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
-import { DailyApplicationLineChart } from "@/components/DailyApplicationLineChart";
-import { DailyViewLineChart } from "@/components/DailyViewLineChart";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { MonthlyViewChart } from "@/components/MonthlyViewChart";
 import {
-  aggregateDailyApplicationsForJob,
   aggregateMonthlyApplications,
-  buildSelectableMonthOptions,
+  aggregateMonthlyApplicationsForJob,
   emptyApplicationDetail,
   formatApplicationDateTime,
   getApplicationTypeLabel,
-  getCurrentJstMonthKey,
   matchesRegionFilter,
   matchesShopSearch,
   REGION_FILTER_OPTIONS,
@@ -27,7 +23,6 @@ import {
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import {
-  aggregateDailyViewsForJob,
   aggregateMonthlyViews,
   aggregateMonthlyViewsForJob,
   aggregateViewCounts,
@@ -232,25 +227,9 @@ export default function AdminPage() {
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
   const [viewRows, setViewRows] = useState<ViewRow[]>([]);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
-  const [dailyMonthByJobId, setDailyMonthByJobId] = useState<
-    Record<string, string>
-  >({});
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
-
-  const dailyMonthOptions = useMemo(() => buildSelectableMonthOptions(), []);
-
-  function getJobDailyMonthKey(jobId: string): string {
-    return dailyMonthByJobId[jobId] ?? getCurrentJstMonthKey();
-  }
-
-  function setJobDailyMonthKey(jobId: string, monthKey: string) {
-    setDailyMonthByJobId((previous) => ({
-      ...previous,
-      [jobId]: monthKey,
-    }));
-  }
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -1370,39 +1349,25 @@ export default function AdminPage() {
         </div>
 
         <div className="mb-4">
-          <MonthlyApplicationChart
-            data={monthlyApplicationStats}
-            filterDescription={chartFilterDescription}
-          />
-        </div>
-
-        <div className="mb-4">
           <MonthlyViewChart
             data={monthlyViewStats}
             filterDescription={chartFilterDescription}
           />
         </div>
 
-        <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
-          <h3 className="text-base font-semibold text-charcoal">
-            店舗別 日別応募数
-          </h3>
-          <p className="mt-1 text-xs text-muted">
-            各店舗カードで月を選び、日別の折れ線グラフを確認できます（日本時間）
-          </p>
-          {hasActiveFilters && (
-            <p className="mt-3 text-xs font-medium text-gold-dark">
-              {chartFilterDescription}
-            </p>
-          )}
-        </section>
+        <div className="mb-4">
+          <MonthlyApplicationChart
+            data={monthlyApplicationStats}
+            filterDescription={chartFilterDescription}
+          />
+        </div>
 
         <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
           <h3 className="text-base font-semibold text-charcoal">
-            店舗別 表示回数
+            店舗別 月別グラフ
           </h3>
           <p className="mt-1 text-xs text-muted">
-            各店舗カードで月別・日別の表示回数グラフを確認できます（日本時間）
+            各店舗カードで直近12ヶ月の表示回数・応募数の推移を確認できます（日本時間）
           </p>
           {hasActiveFilters && (
             <p className="mt-3 text-xs font-medium text-gold-dark">
@@ -1423,21 +1388,12 @@ export default function AdminPage() {
               const detail =
                 applicationDetails[job.id] ?? emptyApplicationDetail();
               const historyOpen = expandedHistoryJobIds.has(job.id);
-              const jobDailyMonthKey = getJobDailyMonthKey(job.id);
-              const dailyStats = aggregateDailyApplicationsForJob(
-                applicationRows,
-                job.id,
-                jobDailyMonthKey,
-              );
-              const dailyViewStats = aggregateDailyViewsForJob(
-                viewRows,
-                job.id,
-                jobDailyMonthKey,
-              );
               const monthlyViewStatsForJob = aggregateMonthlyViewsForJob(
                 viewRows,
                 job.id,
               );
+              const monthlyApplicationStatsForJob =
+                aggregateMonthlyApplicationsForJob(applicationRows, job.id);
               const viewCount = resolvedViewCounts[job.id] ?? 0;
 
               return (
@@ -1494,76 +1450,18 @@ export default function AdminPage() {
                       </dl>
 
                       <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
-                        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-                          <p className="text-xs font-medium text-gold-dark">
-                            日別応募数（折れ線）
-                          </p>
-                          <div className="w-full sm:w-auto sm:min-w-[10rem]">
-                            <label
-                              htmlFor={`daily-month-${job.id}`}
-                              className={labelClass}
-                            >
-                              対象月
-                            </label>
-                            <select
-                              id={`daily-month-${job.id}`}
-                              value={jobDailyMonthKey}
-                              onChange={(event) =>
-                                setJobDailyMonthKey(job.id, event.target.value)
-                              }
-                              className={inputClass}
-                            >
-                              {dailyMonthOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <DailyApplicationLineChart data={dailyStats} />
-                      </div>
-
-                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
-                        <p className="mb-3 text-xs font-medium text-gold-dark">
-                          月別表示回数
-                        </p>
                         <MonthlyViewChart
                           data={monthlyViewStatsForJob}
-                          title="月別表示回数"
+                          title="月別表示回数（折れ線）"
                           compact
                         />
                       </div>
 
                       <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
-                        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-                          <p className="text-xs font-medium text-gold-dark">
-                            日別表示回数（折れ線）
-                          </p>
-                          <div className="w-full sm:w-auto sm:min-w-[10rem]">
-                            <label
-                              htmlFor={`daily-view-month-${job.id}`}
-                              className={labelClass}
-                            >
-                              対象月
-                            </label>
-                            <select
-                              id={`daily-view-month-${job.id}`}
-                              value={jobDailyMonthKey}
-                              onChange={(event) =>
-                                setJobDailyMonthKey(job.id, event.target.value)
-                              }
-                              className={inputClass}
-                            >
-                              {dailyMonthOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <DailyViewLineChart data={dailyViewStats} />
+                        <MonthlyApplicationChart
+                          data={monthlyApplicationStatsForJob}
+                          compact
+                        />
                       </div>
 
                       <button

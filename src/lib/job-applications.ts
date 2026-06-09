@@ -253,6 +253,16 @@ export function aggregateMonthlyApplications(
   return monthKeys.map((monthKey) => buckets.get(monthKey)!);
 }
 
+export function aggregateMonthlyApplicationsForJob(
+  rows: ApplicationRow[],
+  jobId: string,
+): MonthlyApplicationBucket[] {
+  return aggregateMonthlyApplications(
+    rows.filter((row) => row.job_id === jobId),
+    null,
+  );
+}
+
 export function buildApplicationDetails(
   rows: ApplicationRow[],
 ): Record<string, JobApplicationDetail> {
