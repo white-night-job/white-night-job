@@ -28,14 +28,8 @@ export async function fetchJobs(filters?: JobFilters): Promise<Job[]> {
   return data.jobs;
 }
 
-export async function fetchJobById(
-  id: string,
-  options?: { recordView?: boolean },
-): Promise<Job | null> {
-  const query = options?.recordView ? "?recordView=1" : "";
-  const response = await fetch(`/api/jobs/${id}${query}`, {
-    cache: "no-store",
-  });
+export async function fetchJobById(id: string): Promise<Job | null> {
+  const response = await fetch(`/api/jobs/${id}`, { cache: "no-store" });
   if (response.status === 404) return null;
   const data = await readJson<{ job: Job }>(response);
   return data.job;

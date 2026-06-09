@@ -40,6 +40,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       referrer,
     });
 
+    console.info("job_views insert ok:", { jobId });
+
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
     console.error("job views API error:", error);
