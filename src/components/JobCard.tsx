@@ -10,7 +10,7 @@ export function JobCard({ job }: { job: Job }) {
         {job.imageUrl ? (
           <img
             src={job.imageUrl}
-            alt={`${job.shopName}の店舗写真`}
+            alt={`${job.shopName}の店舗トップ画像`}
             className="h-52 w-full object-cover sm:h-56"
           />
         ) : (

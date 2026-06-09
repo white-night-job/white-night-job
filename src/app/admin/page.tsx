@@ -455,9 +455,9 @@ export default function AdminPage() {
       const savedStoreImageCount = getDisplayStoreImages(savedJob).length;
       const storeImageNote =
         savedStoreImageCount > 0
-          ? `（店内画像 ${savedStoreImageCount}枚）`
+          ? `（店舗ギャラリー ${savedStoreImageCount}枚）`
           : payload.storeImages && payload.storeImages.length > 0
-            ? "（店内画像の保存に失敗した可能性があります。Supabaseの store_images カラムを確認してください）"
+            ? "（店舗ギャラリーの保存に失敗した可能性があります。Supabaseの store_images カラムを確認してください）"
             : "";
       const shopLoginNote = savedJob.shopLoginId
         ? `（店舗ログインID: ${savedJob.shopLoginId}）`
@@ -518,7 +518,7 @@ export default function AdminPage() {
         }),
       );
       setField("imageUrl", data.imageUrl);
-      setMessage("店舗写真をアップロードしました。");
+      setMessage("店舗トップ画像をアップロードしました。");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "画像アップロードに失敗しました。",
@@ -582,7 +582,7 @@ export default function AdminPage() {
       }
 
       if (uploadedUrls.length > 0 && failedFiles.length === 0) {
-        setMessage(`${uploadedUrls.length}枚の店内画像をアップロードしました。`);
+        setMessage(`${uploadedUrls.length}枚の店舗ギャラリー画像を追加しました。`);
       } else if (uploadedUrls.length > 0) {
         setMessage(
           `${uploadedUrls.length}枚をアップロードしました。失敗: ${failedFiles.join(" / ")}`,
@@ -590,14 +590,14 @@ export default function AdminPage() {
       } else {
         setMessage(
           failedFiles.join(" / ") ||
-            "店内画像のアップロードに失敗しました。",
+            "店舗ギャラリー画像の追加に失敗しました。",
         );
       }
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "店内画像のアップロードに失敗しました。",
+          : "店舗ギャラリー画像の追加に失敗しました。",
       );
     } finally {
       setUploadingStoreImages(false);
@@ -667,7 +667,7 @@ export default function AdminPage() {
             求人管理
           </h1>
           <p className="mt-1 text-sm text-muted">
-            求人情報と店舗写真はSupabaseに保存されます。
+            求人情報と画像はSupabaseに保存されます。
           </p>
         </div>
         <div className="flex gap-2">
@@ -1071,32 +1071,37 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div>
-          <label htmlFor="imageFile" className={labelClass}>
-            店舗写真アップロード
-          </label>
+        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <p className={labelClass}>店舗トップ画像</p>
+          <p className="mb-3 text-xs text-muted">
+            求人一覧カードと求人詳細ページ最上部に表示するメイン画像です。1枚のみ設定でき、差し替えも可能です。
+          </p>
           <input
             id="imageFile"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
             onChange={handleImageUpload}
-            className={inputClass}
+            className="hidden"
           />
-          {uploading && <p className="mt-1 text-xs text-muted">アップロード中...</p>}
+          <label
+            htmlFor="imageFile"
+            className={`inline-flex cursor-pointer rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory ${uploading ? "pointer-events-none opacity-60" : ""}`}
+          >
+            {uploading ? "アップロード中..." : "画像アップロード"}
+          </label>
           {form.imageUrl && (
             <img
               src={form.imageUrl}
-              alt="アップロード済み店舗写真"
-              className="mt-3 h-40 w-full rounded-xl object-cover"
+              alt="店舗トップ画像プレビュー"
+              className="mt-4 h-40 w-full rounded-xl object-cover"
             />
           )}
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
-          <p className={labelClass}>店内画像</p>
+          <p className={labelClass}>店舗ギャラリー</p>
           <p className="mb-3 text-xs text-muted">
-            求人詳細の「公式SNS」の上に表示されます。JPG / PNG / WebP
-            に対応しています。
+            求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。JPG / PNG / WebP に対応しています。
           </p>
           <input
             ref={storeImageInputRef}
@@ -1112,14 +1117,14 @@ export default function AdminPage() {
             disabled={uploadingStoreImages}
             className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory disabled:opacity-60"
           >
-            {uploadingStoreImages ? "アップロード中..." : "写真を選択"}
+            {uploadingStoreImages ? "追加中..." : "画像追加"}
           </button>
           {uploadingStoreImages && (
-            <p className="mt-2 text-xs text-muted">アップロード中...</p>
+            <p className="mt-2 text-xs text-muted">追加中...</p>
           )}
           {form.storeImages.length === 0 ? (
             <p className="mt-3 rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
-              「写真を選択」から店内画像を追加できます
+              「画像追加」から店舗ギャラリーに写真を登録できます
             </p>
           ) : (
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -1130,7 +1135,7 @@ export default function AdminPage() {
                 >
                   <img
                     src={imageUrl}
-                    alt={`店内画像プレビュー ${index + 1}`}
+                    alt={`店舗ギャラリー ${index + 1}`}
                     className="aspect-[4/3] w-full object-cover"
                   />
                   <div className="flex items-center justify-between gap-2 px-2 py-2">
@@ -1473,7 +1478,7 @@ export default function AdminPage() {
                       </p>
                       <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
                       <p className="mt-0.5 text-xs text-muted">
-                        写真: {job.imageUrl ? "設定済み" : "未設定"}
+                        店舗トップ画像: {job.imageUrl ? "設定済み" : "未設定"}
                       </p>
 
                       <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">

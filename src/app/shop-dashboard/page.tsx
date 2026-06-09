@@ -263,7 +263,7 @@ export default function ShopDashboardPage() {
       setField("storeImages", [...form.storeImages, ...uploadedUrls]);
     } catch (error) {
       setMessage(
-        error instanceof Error ? error.message : "画像アップロードに失敗しました。",
+        error instanceof Error ? error.message : "店舗ギャラリー画像の追加に失敗しました。",
       );
     } finally {
       setUploadingStoreImages(false);
@@ -398,16 +398,23 @@ export default function ShopDashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
-          <p className={labelClass}>店内画像</p>
+          <p className={labelClass}>店舗ギャラリー</p>
+          <p className="mb-3 text-xs text-muted">
+            求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。
+          </p>
           <input ref={storeImageInputRef} type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={handleStoreImagesUpload} />
           <button type="button" onClick={() => storeImageInputRef.current?.click()} disabled={uploadingStoreImages} className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark">
-            {uploadingStoreImages ? "アップロード中..." : "写真を選択"}
+            {uploadingStoreImages ? "追加中..." : "画像追加"}
           </button>
-          {form.storeImages.length > 0 && (
+          {form.storeImages.length === 0 ? (
+            <p className="mt-3 rounded-xl border border-dashed border-gold/25 bg-white px-3 py-4 text-center text-sm text-muted">
+              「画像追加」から店舗ギャラリーに写真を登録できます
+            </p>
+          ) : (
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {form.storeImages.map((imageUrl, index) => (
                 <li key={`${imageUrl}-${index}`} className="overflow-hidden rounded-xl border border-gold/25 bg-white">
-                  <img src={imageUrl} alt={`店内画像 ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                  <img src={imageUrl} alt={`店舗ギャラリー ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
                   <button type="button" onClick={() => setField("storeImages", form.storeImages.filter((_, i) => i !== index))} className="w-full px-2 py-2 text-xs text-muted hover:text-charcoal">削除</button>
                 </li>
               ))}

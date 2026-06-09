@@ -138,7 +138,7 @@ export default function JobDetailPage({
         {job.imageUrl ? (
           <img
             src={job.imageUrl}
-            alt={`${job.shopName}の店舗写真`}
+            alt={`${job.shopName}の店舗トップ画像`}
             className="h-64 w-full rounded-t-2xl object-cover sm:h-80"
           />
         ) : (

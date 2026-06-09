@@ -45,7 +45,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
   return (
     <>
       <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-4 sm:p-5">
-        <h2 className="mb-3 text-base font-semibold text-charcoal">店内画像</h2>
+        <h2 className="mb-3 text-base font-semibold text-charcoal">店舗ギャラリー</h2>
         <div className="-mx-1 overflow-x-auto px-1 pb-1">
           <ul className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {images.map((imageUrl, index) => (
@@ -58,7 +58,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
-                    alt={`${shopName}の店内画像 ${index + 1}`}
+                    alt={`${shopName}の店舗ギャラリー ${index + 1}`}
                     className="aspect-[4/3] w-full object-cover transition group-hover:scale-[1.02]"
                     loading="lazy"
                   />
@@ -77,7 +77,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="店内画像の拡大表示"
+          aria-label="店舗ギャラリーの拡大表示"
           onClick={() => setActiveIndex(null)}
         >
           <button
@@ -125,7 +125,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[activeIndex]}
-            alt={`${shopName}の店内画像 ${activeIndex + 1}`}
+            alt={`${shopName}の店舗ギャラリー ${activeIndex + 1}`}
             className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           />
