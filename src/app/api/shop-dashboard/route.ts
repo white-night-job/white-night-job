@@ -8,6 +8,12 @@ import {
 import { rowToJob } from "@/lib/job-db";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
+  calculateDistrictRank,
+  countTodayBoosts,
+  DAILY_BOOST_LIMIT,
+  fetchBoostStatsForJobs,
+} from "@/lib/shop-boosts";
+import {
   aggregateViewCounts,
   fetchViewRows,
   type ViewRow,
@@ -59,13 +65,49 @@ export async function GET() {
       history: [],
     };
     const viewCount = aggregateViewCounts(viewRows)[jobId] ?? 0;
+    const job = rowToJob(jobRow);
+
+    let districtRank = 1;
+    let districtTotal = 1;
+    let boostRemaining = DAILY_BOOST_LIMIT;
+    const boostLimit = DAILY_BOOST_LIMIT;
+
+    try {
+      const { data: districtRows, error: districtError } = await supabase
+        .from("jobs")
+        .select("id, created_at")
+        .eq("published", true)
+        .eq("district", job.district);
+
+      if (districtError) throw districtError;
+
+      const districtJobs = districtRows ?? [];
+      const boostMap = await fetchBoostStatsForJobs(
+        supabase,
+        districtJobs.map((row) => row.id),
+      );
+      const rankInfo = calculateDistrictRank(jobId, districtJobs, boostMap);
+      districtRank = rankInfo.rank;
+      districtTotal = rankInfo.total;
+
+      const todayBoostCount = await countTodayBoosts(supabase, jobId);
+      boostRemaining = Math.max(0, DAILY_BOOST_LIMIT - todayBoostCount);
+    } catch {
+      districtRank = 1;
+      districtTotal = 1;
+      boostRemaining = DAILY_BOOST_LIMIT;
+    }
 
     return NextResponse.json({
-      job: rowToJob(jobRow),
+      job,
       applicationRows,
       viewRows,
       applicationDetail: detail,
       viewCount,
+      districtRank,
+      districtTotal,
+      boostRemaining,
+      boostLimit,
     });
   } catch (error) {
     return NextResponse.json(

@@ -144,10 +144,17 @@ export default function ShopDashboardPage() {
     useState<JobApplicationDetail | null>(null);
   const [viewCount, setViewCount] = useState(0);
   const [message, setMessage] = useState("");
+  const [boostMessage, setBoostMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [boostLoading, setBoostLoading] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [uploadingTopImage, setUploadingTopImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [districtRank, setDistrictRank] = useState(1);
+  const [districtTotal, setDistrictTotal] = useState(1);
+  const [boostRemaining, setBoostRemaining] = useState(5);
+  const [boostLimit, setBoostLimit] = useState(5);
 
   async function loadDashboard() {
     const data = await readJson<{
@@ -156,6 +163,10 @@ export default function ShopDashboardPage() {
       viewRows: ViewRow[];
       applicationDetail: JobApplicationDetail;
       viewCount: number;
+      districtRank: number;
+      districtTotal: number;
+      boostRemaining: number;
+      boostLimit: number;
     }>(
       await fetch("/api/shop-dashboard", {
         cache: "no-store",
@@ -168,6 +179,10 @@ export default function ShopDashboardPage() {
     setViewRows(data.viewRows);
     setApplicationDetail(data.applicationDetail);
     setViewCount(data.viewCount);
+    setDistrictRank(data.districtRank ?? 1);
+    setDistrictTotal(data.districtTotal ?? 1);
+    setBoostRemaining(data.boostRemaining ?? 5);
+    setBoostLimit(data.boostLimit ?? 5);
     setAuthenticated(true);
   }
 
@@ -215,6 +230,52 @@ export default function ShopDashboardPage() {
   async function handleLogout() {
     await fetch("/api/shop-logout", { method: "POST", credentials: "include" });
     router.replace("/shop-login");
+  }
+
+  async function handleBoost() {
+    if (!jobId || boostRemaining <= 0) return;
+    setBoostLoading(true);
+    setBoostMessage("");
+    try {
+      const response = await fetch("/api/shop-dashboard/boost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ jobId }),
+      });
+      const data = (await response.json()) as {
+        message?: string;
+        districtRank?: number;
+        districtTotal?: number;
+        boostRemaining?: number;
+        boostLimit?: number;
+      };
+
+      if (!response.ok) {
+        if (typeof data.boostRemaining === "number") {
+          setBoostRemaining(data.boostRemaining);
+        }
+        if (typeof data.boostLimit === "number") {
+          setBoostLimit(data.boostLimit);
+        }
+        throw new Error(data.message ?? "上位表示の適用に失敗しました。");
+      }
+
+      setDistrictRank(data.districtRank ?? districtRank);
+      setDistrictTotal(data.districtTotal ?? districtTotal);
+      setBoostRemaining(data.boostRemaining ?? boostRemaining);
+      setBoostLimit(data.boostLimit ?? boostLimit);
+      setBoostMessage(data.message ?? "上位表示を適用しました。");
+      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+    } catch (error) {
+      setBoostMessage(
+        error instanceof Error
+          ? error.message
+          : "上位表示の適用に失敗しました。",
+      );
+    } finally {
+      setBoostLoading(false);
+    }
   }
 
   async function persistForm(nextForm: ShopForm) {
@@ -362,9 +423,38 @@ export default function ShopDashboardPage() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-8 space-y-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
-        <h2 className="text-lg font-semibold text-charcoal">求人情報の編集</h2>
+      {message && (
+        <p
+          className={`mb-4 rounded-xl px-3 py-2 text-sm ${
+            message.includes("保存しました") ||
+            message.includes("アップロードしました") ||
+            message.includes("削除しました")
+              ? "border border-green-200 bg-green-50 text-green-800"
+              : "border border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {message}
+        </p>
+      )}
 
+      <div className="mb-8 overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold">
+        <button
+          type="button"
+          onClick={() => setIsFormOpen((current) => !current)}
+          className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-ivory/60 sm:px-6"
+          aria-expanded={isFormOpen}
+        >
+          <span className="text-lg font-semibold text-charcoal">求人情報の編集</span>
+          <span className="text-sm text-gold-dark" aria-hidden="true">
+            {isFormOpen ? "▲" : "▼"}
+          </span>
+        </button>
+
+        {isFormOpen && (
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6 border-t border-gold/15 px-5 py-5 sm:px-6 sm:py-6"
+          >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="shopName" className={labelClass}>店舗名</label>
@@ -583,16 +673,58 @@ export default function ShopDashboardPage() {
           </div>
         </div>
 
-        {message && (
-          <p className={`rounded-xl px-3 py-2 text-sm ${message.includes("保存しました") ? "border border-green-200 bg-green-50 text-green-800" : "border border-red-200 bg-red-50 text-red-700"}`}>
-            {message}
-          </p>
-        )}
-
         <button type="submit" disabled={loading || uploadingTopImage || uploadingStoreImages} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
           {loading ? "保存中..." : "保存する"}
         </button>
-      </form>
+          </form>
+        )}
+      </div>
+
+      <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-gold-light/90">
+              {form.district}エリア内 表示順位
+            </p>
+            <p className="mt-1 font-serif text-3xl font-semibold text-white">
+              {districtRank}
+              <span className="ml-1 text-lg font-medium text-gold-light">位</span>
+            </p>
+            <p className="mt-1 text-xs text-gold-light/70">
+              全{districtTotal}店舗中（本日の上位表示・更新順で算出）
+            </p>
+          </div>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <button
+              type="button"
+              onClick={handleBoost}
+              disabled={boostLoading || boostRemaining <= 0}
+              className="rounded-full border border-gold/50 bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-charcoal shadow-gold transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {boostLoading ? "適用中..." : "上位表示する"}
+            </button>
+            <p className="text-center text-xs text-gold-light/80 sm:text-right">
+              本日の残り: {boostRemaining}回 / {boostLimit}回
+            </p>
+          </div>
+        </div>
+        {boostMessage && (
+          <p
+            className={`mt-4 rounded-xl px-3 py-2 text-sm ${
+              boostMessage.includes("使い切り") || boostMessage.includes("失敗")
+                ? "border border-red-300/40 bg-red-950/40 text-red-100"
+                : "border border-gold/30 bg-black/20 text-gold-light"
+            }`}
+          >
+            {boostMessage}
+          </p>
+        )}
+        {boostRemaining <= 0 && !boostMessage && (
+          <p className="mt-4 rounded-xl border border-red-300/40 bg-red-950/40 px-3 py-2 text-sm text-red-100">
+            本日の上位表示回数を使い切りました
+          </p>
+        )}
+      </section>
 
       <section className="space-y-6">
         <h2 className="text-lg font-semibold text-charcoal">応募・表示回数</h2>

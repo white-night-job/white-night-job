@@ -23,6 +23,10 @@ import {
   fillViewCountsForJobs,
   type ViewRow,
 } from "@/lib/job-views";
+import {
+  compareJobsForListing,
+  fetchBoostStatsForJobs,
+} from "@/lib/shop-boosts";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -47,7 +51,11 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    const jobs = (data ?? []).map(rowToJob);
+    const rows = data ?? [];
+    const createdAtMap = Object.fromEntries(
+      rows.map((row) => [row.id, String(row.created_at)]),
+    );
+    const jobs = rows.map(rowToJob);
     const filteredJobs = jobs.filter((job) => {
       const searchableText = [
         job.shopName,
@@ -78,6 +86,20 @@ export async function GET(request: Request) {
       return true;
     });
 
+    const boostMap = await fetchBoostStatsForJobs(
+      supabase,
+      filteredJobs.map((job) => job.id),
+    );
+    const sortedJobs = [...filteredJobs].sort((a, b) =>
+      compareJobsForListing(
+        a.id,
+        b.id,
+        boostMap,
+        createdAtMap[a.id] ?? a.postedAt,
+        createdAtMap[b.id] ?? b.postedAt,
+      ),
+    );
+
     const isAdmin = await isAdminAuthenticated();
     let applicationDetails: Record<string, JobApplicationDetail> | undefined;
     let applicationRows: ApplicationRow[] | undefined;
@@ -90,11 +112,11 @@ export async function GET(request: Request) {
           fetchApplicationRows(supabase),
           fetchApplicationDetails(supabase),
         ]);
-        applicationDetails = fillApplicationDetailsForJobs(filteredJobs, details);
+        applicationDetails = fillApplicationDetailsForJobs(sortedJobs, details);
         applicationRows = rows;
       } catch {
         applicationDetails = Object.fromEntries(
-          filteredJobs.map((job) => [job.id, emptyApplicationDetail()]),
+          sortedJobs.map((job) => [job.id, emptyApplicationDetail()]),
         );
         applicationRows = [];
       }
@@ -103,19 +125,19 @@ export async function GET(request: Request) {
         const views = await fetchViewRows(supabase);
         viewRows = views;
         viewCounts = fillViewCountsForJobs(
-          filteredJobs,
+          sortedJobs,
           aggregateViewCounts(views),
         );
       } catch {
         viewRows = [];
         viewCounts = Object.fromEntries(
-          filteredJobs.map((job) => [job.id, 0]),
+          sortedJobs.map((job) => [job.id, 0]),
         );
       }
     }
 
     return NextResponse.json({
-      jobs: filteredJobs,
+      jobs: sortedJobs,
       ...(applicationDetails
         ? {
             applicationDetails,
