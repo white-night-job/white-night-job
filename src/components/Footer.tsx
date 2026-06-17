@@ -18,6 +18,9 @@ export function Footer() {
           <Link href="/privacy" className="hover:text-gold-dark">
             プライバシーポリシー
           </Link>
+          <Link href="/legal" className="hover:text-gold-dark">
+            特定商取引法に基づく表記
+          </Link>
           <Link href="/admin" className="hover:text-gold-dark">
             求人管理
           </Link>
