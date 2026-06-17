@@ -24,7 +24,6 @@ const footerSections = [
     links: [
       { href: "/terms-user", label: "利用規約（求職者）" },
       { href: "/privacy", label: "プライバシーポリシー" },
-      { href: "/report", label: "ブラック店報告" },
       { href: "/report", label: "お問い合わせ" },
     ],
   },
