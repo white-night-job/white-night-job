@@ -9,7 +9,6 @@ const footerSections = [
       { href: "/jobs", label: "求人一覧" },
       { href: "/#shop-search", label: "店舗を探す" },
       { href: "/report", label: "ブラック店報告" },
-      { href: "/shop-login", label: "店舗ログイン" },
     ],
   },
   {
