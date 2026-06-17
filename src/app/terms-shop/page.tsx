@@ -3,7 +3,7 @@ import { LegalDocument } from "@/components/LegalDocument";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "利用規約（掲載店舗）",
+  title: "掲載店舗向け利用規約",
   description: `${SITE_NAME}の掲載店舗向け利用規約です。`,
 };
 
@@ -12,7 +12,7 @@ const UPDATED_AT = "2026年6月18日";
 export default function TermsShopPage() {
   return (
     <LegalDocument
-      title="利用規約（掲載店舗）"
+      title="掲載店舗向け利用規約"
       description={`${SITE_NAME}へ求人掲載する店舗向けの利用条件です。`}
       updatedAt={UPDATED_AT}
       sections={[

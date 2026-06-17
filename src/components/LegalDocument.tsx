@@ -51,10 +51,10 @@ export function LegalDocument({
 
       <nav className="mt-8 flex flex-wrap gap-4 text-sm text-muted">
         <Link href="/terms-user" className="hover:text-gold-dark">
-          利用規約（求職者）
+          求職者向け利用規約
         </Link>
         <Link href="/terms-shop" className="hover:text-gold-dark">
-          利用規約（掲載店舗）
+          掲載店舗向け利用規約
         </Link>
         <Link href="/privacy" className="hover:text-gold-dark">
           プライバシーポリシー

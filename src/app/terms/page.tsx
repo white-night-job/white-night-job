@@ -31,7 +31,7 @@ export default function TermsPage() {
           className="block rounded-xl border border-gold/25 bg-ivory/40 px-4 py-4 transition hover:border-gold/40 hover:bg-ivory"
         >
           <p className="font-serif text-lg font-semibold text-charcoal">
-            利用規約（求職者）
+            求職者向け利用規約
           </p>
           <p className="mt-1 text-sm text-muted">
             求人の閲覧・応募・相談・ブラック店舗報告など、求職者向けの利用条件です。
@@ -42,7 +42,7 @@ export default function TermsPage() {
           className="block rounded-xl border border-gold/25 bg-ivory/40 px-4 py-4 transition hover:border-gold/40 hover:bg-ivory"
         >
           <p className="font-serif text-lg font-semibold text-charcoal">
-            利用規約（掲載店舗）
+            掲載店舗向け利用規約
           </p>
           <p className="mt-1 text-sm text-muted">
             求人掲載・料金・ログイン情報管理・上位表示機能など、掲載店舗向けの利用条件です。
