@@ -1,200 +1,54 @@
 import type { Metadata } from "next";
-import { LegalDocument } from "@/components/LegalDocument";
+import Link from "next/link";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "利用規約",
-  description: `${SITE_NAME}の利用規約です。`,
+  description: `${SITE_NAME}の利用規約ページ一覧です。`,
 };
-
-const UPDATED_AT = "2026年6月3日";
 
 export default function TermsPage() {
   return (
-    <LegalDocument
-      title="利用規約"
-      description={`本利用規約（以下「本規約」）は、${SITE_NAME}（以下「当サイト」）の利用条件を定めるものです。当サイトをご利用いただく前に、本規約をよくお読みください。`}
-      updatedAt={UPDATED_AT}
-      sections={[
-        {
-          id: "overview",
-          title: "1. サービス概要",
-          content: (
-            <>
-              <p>
-                {SITE_NAME}
-                は、札幌エリアを中心とした夜職・ナイトワークの求人情報を掲載・閲覧するためのウェブサービスです。
-              </p>
-              <p>
-                当サイトは、求職者の方が安心して求人情報を探せる環境の提供、および掲載店舗の情報発信を支援することを目的としています。
-              </p>
-              <p>
-                当サイトの利用者は、本規約に同意したものとみなされます。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "job-listing",
-          title: "2. 求人掲載について",
-          content: (
-            <>
-              <p>
-                当サイトに掲載される求人情報は、管理者による審査・登録、または店舗担当者による管理画面からの更新によって公開されます。
-              </p>
-              <p>
-                掲載店舗は、店舗名・勤務条件・待遇・連絡先等の情報について、正確かつ最新の内容を維持する責任を負います。虚偽・誇大・誤解を招く表示は禁止します。
-              </p>
-              <p>
-                管理者は、掲載内容が本規約に違反する場合、事前の通知なく掲載の停止・修正・削除を行うことがあります。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "application",
-          title: "3. 応募について",
-          content: (
-            <>
-              <p>
-                求職者の方は、各求人ページに記載されたLINE URL・電話番号等を通じて、掲載店舗へ直接応募することができます。
-              </p>
-              <p>
-                応募の可否、面接・採用の条件、労働条件の詳細等は、求職者と掲載店舗との間で直接決定されるものであり、当サイトは応募の仲介・雇用契約の成立には関与しません。
-              </p>
-              <p>
-                当サイトは、応募数・表示回数等の統計情報を記録する場合があります。これらはサービス改善および店舗向けダッシュボード表示のために利用されます。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "black-report",
-          title: "4. ブラック店舗報告について",
-          content: (
-            <>
-              <p>
-                当サイトでは、未払い・パワハラ・違法営業等、問題のある店舗に関する報告フォームを提供しています。
-              </p>
-              <p>
-                報告者は、故意に虚偽の内容を送信しないものとします。報告内容は管理者が確認し、必要に応じて掲載内容の見直し・停止等の対応を行います。
-              </p>
-              <p>
-                報告の受理・調査結果・対応内容について、個別の回答や結果の開示を保証するものではありません。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "shop-login",
-          title: "5. 店舗ログインについて",
-          content: (
-            <>
-              <p>
-                掲載店舗には、管理者が発行する店舗ログインID・パスワードにより、店舗ダッシュボードへアクセスできます。
-              </p>
-              <p>
-                店舗担当者は、ログイン情報を適切に管理し、第三者への貸与・共有を行わないものとします。ログイン情報の漏えい・不正利用により生じた損害について、当サイトは責任を負いません。
-              </p>
-              <p>
-                店舗ダッシュボードでは、自店舗の求人情報の一部（店舗名・エリア・地区・職種を除く）を編集できます。編集権限は当該店舗に限定されます。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "boost",
-          title: "6. 上位表示機能について",
-          content: (
-            <>
-              <p>
-                店舗ダッシュボードでは、同一地区内の求人一覧において自店舗を上位に表示する「上位表示」機能を利用できます。
-              </p>
-              <p>
-                上位表示は1日あたり5回まで利用可能です（日本標準時の日付でリセット）。利用回数・表示順位は当サイトの仕様に従い、予告なく変更される場合があります。
-              </p>
-              <p>
-                上位表示は一時的な表示順の調整であり、掲載の継続・応募数・採用結果等を保証するものではありません。不正な手段による操作は禁止します。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "prohibited",
-          title: "7. 禁止事項",
-          content: (
-            <>
-              <p>利用者は、以下の行為を行ってはなりません。</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>法令または公序良俗に違反する行為</li>
-                <li>虚偽の求人情報・報告内容の投稿</li>
-                <li>他の利用者・掲載店舗・第三者の権利を侵害する行為</li>
-                <li>当サイトの運営を妨害する行為、不正アクセス・スクレイピング等</li>
-                <li>他店舗のアカウント・上位表示機能の不正利用</li>
-                <li>わいせつ・差別的・暴力的な内容の投稿</li>
-                <li>その他、当サイトが不適切と判断する行為</li>
-              </ul>
-            </>
-          ),
-        },
-        {
-          id: "disclaimer",
-          title: "8. 免責事項",
-          content: (
-            <>
-              <p>
-                当サイトは、掲載情報の正確性・完全性・有用性について保証しません。求人情報は掲載店舗の責任において提供されるものです。
-              </p>
-              <p>
-                当サイトの利用、または利用できなかったことにより生じた損害について、当サイトは故意または重過失がある場合を除き、一切の責任を負いません。
-              </p>
-              <p>
-                外部サービス（LINE・SNS・電話等）を通じた応募・連絡に関するトラブルについて、当サイトは関与しません。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "suspension",
-          title: "9. サービス停止",
-          content: (
-            <>
-              <p>
-                当サイトは、システム保守・障害対応・法令対応その他やむを得ない事由により、事前の通知なくサービスの全部または一部を停止・中断することがあります。
-              </p>
-              <p>
-                利用者が本規約に違反した場合、当サイトは当該利用者のアクセス制限・掲載停止等の措置を講じることができます。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "changes",
-          title: "10. 規約変更",
-          content: (
-            <>
-              <p>
-                当サイトは、必要に応じて本規約を変更することがあります。変更後の規約は、当サイト上に掲載した時点で効力を生じます。
-              </p>
-              <p>
-                変更後も当サイトを継続して利用した場合、変更後の規約に同意したものとみなします。
-              </p>
-            </>
-          ),
-        },
-        {
-          id: "governing-law",
-          title: "11. 準拠法",
-          content: (
-            <>
-              <p>本規約の解釈および適用は、日本法に準拠します。</p>
-              <p>
-                当サイトに関する紛争については、当サイト運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。
-              </p>
-            </>
-          ),
-        },
-      ]}
-    />
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mb-8">
+        <Link
+          href="/"
+          className="mb-4 inline-block text-sm text-muted hover:text-gold-dark"
+        >
+          ← トップページへ
+        </Link>
+        <h1 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
+          利用規約
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          {SITE_NAME}の利用規約は、利用者区分ごとに分かれています。該当する規約をご確認ください。
+        </p>
+      </div>
+
+      <section className="space-y-4 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-8">
+        <Link
+          href="/terms-user"
+          className="block rounded-xl border border-gold/25 bg-ivory/40 px-4 py-4 transition hover:border-gold/40 hover:bg-ivory"
+        >
+          <p className="font-serif text-lg font-semibold text-charcoal">
+            利用規約（求職者）
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            求人の閲覧・応募・相談・ブラック店舗報告など、求職者向けの利用条件です。
+          </p>
+        </Link>
+        <Link
+          href="/terms-shop"
+          className="block rounded-xl border border-gold/25 bg-ivory/40 px-4 py-4 transition hover:border-gold/40 hover:bg-ivory"
+        >
+          <p className="font-serif text-lg font-semibold text-charcoal">
+            利用規約（掲載店舗）
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            求人掲載・料金・ログイン情報管理・上位表示機能など、掲載店舗向けの利用条件です。
+          </p>
+        </Link>
+      </section>
+    </div>
   );
 }

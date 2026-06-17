@@ -12,8 +12,11 @@ export function Footer() {
           <Link href="/report" className="hover:text-gold-dark">
             ブラック店報告
           </Link>
-          <Link href="/terms" className="hover:text-gold-dark">
-            利用規約
+          <Link href="/terms-user" className="hover:text-gold-dark">
+            利用規約（求職者）
+          </Link>
+          <Link href="/terms-shop" className="hover:text-gold-dark">
+            利用規約（掲載店舗）
           </Link>
           <Link href="/privacy" className="hover:text-gold-dark">
             プライバシーポリシー
