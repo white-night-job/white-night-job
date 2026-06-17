@@ -41,16 +41,7 @@ export default function LegalPage() {
         {
           id: "email",
           title: "メールアドレス",
-          content: (
-            <p>
-              <a
-                href="mailto:comsia.info@gmail.com"
-                className="text-gold-dark hover:underline"
-              >
-                comsia.info@gmail.com
-              </a>
-            </p>
-          ),
+          content: <p>comsia.info@gmail.com</p>,
         },
         {
           id: "price",
