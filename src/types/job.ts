@@ -53,6 +53,10 @@ export interface JobEntry {
   isVerified: boolean;
   imageUrl?: string;
   storeImages?: string[];
+  recruiterName?: string;
+  recruiterTitle?: string;
+  recruiterImage?: string;
+  recruiterMessage?: string;
   phone?: string;
   address?: string;
   access?: string;
@@ -90,6 +94,10 @@ export interface Job {
   isVerified: boolean;
   imageUrl?: string;
   storeImages?: string[];
+  recruiterName?: string;
+  recruiterTitle?: string;
+  recruiterImage?: string;
+  recruiterMessage?: string;
   phone?: string;
   address?: string;
   access?: string;

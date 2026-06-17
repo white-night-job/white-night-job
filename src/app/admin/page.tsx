@@ -66,6 +66,10 @@ type JobForm = {
   introductionText: string;
   descriptionText: string;
   castVoices: CastVoiceEntry[];
+  recruiterName: string;
+  recruiterTitle: string;
+  recruiterImage: string;
+  recruiterMessage: string;
   imageUrl: string;
   storeImages: string[];
   phone: string;
@@ -96,6 +100,10 @@ const emptyForm: JobForm = {
   introductionText: "",
   descriptionText: "",
   castVoices: [],
+  recruiterName: "",
+  recruiterTitle: "",
+  recruiterImage: "",
+  recruiterMessage: "",
   imageUrl: "",
   storeImages: [],
   phone: "",
@@ -147,6 +155,10 @@ function toPayload(form: JobForm) {
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
     castVoices: sanitizeCastVoicesForSave(form.castVoices),
+    recruiterName: form.recruiterName || undefined,
+    recruiterTitle: form.recruiterTitle || undefined,
+    recruiterImage: form.recruiterImage || undefined,
+    recruiterMessage: form.recruiterMessage || undefined,
     imageUrl: form.imageUrl || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     phone: form.phone || undefined,
@@ -192,6 +204,10 @@ function toForm(job: Job): JobForm {
       age: entry.age,
       comment: entry.comment,
     })),
+    recruiterName: job.recruiterName ?? "",
+    recruiterTitle: job.recruiterTitle ?? "",
+    recruiterImage: job.recruiterImage ?? "",
+    recruiterMessage: job.recruiterMessage ?? "",
     imageUrl: job.imageUrl ?? "",
     storeImages: getDisplayStoreImages(job),
     phone: job.phone ?? "",
@@ -226,8 +242,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
+  const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [draftJobId, setDraftJobId] = useState(() => crypto.randomUUID());
   const storeImageInputRef = useRef<HTMLInputElement>(null);
+  const recruiterImageInputRef = useRef<HTMLInputElement>(null);
   const [applicationDetails, setApplicationDetails] = useState<
     Record<string, JobApplicationDetail>
   >({});
@@ -525,6 +543,41 @@ export default function AdminPage() {
       );
     } finally {
       setUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleRecruiterImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingRecruiterImage(true);
+    setMessage("");
+    const ownerJobId = editingId ?? draftJobId;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("uploadType", "recruiter-image");
+      formData.append("jobId", ownerJobId);
+      const data = await readJson<{ imageUrl: string }>(
+        await fetch("/api/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }),
+      );
+      setField("recruiterImage", data.imageUrl);
+      setMessage("採用担当者の顔写真をアップロードしました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "採用担当者の顔写真アップロードに失敗しました。",
+      );
+    } finally {
+      setUploadingRecruiterImage(false);
       event.target.value = "";
     }
   }
@@ -1069,6 +1122,102 @@ export default function AdminPage() {
               </ul>
             )}
           </div>
+
+          <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+            <p className={labelClass}>採用担当からのメッセージ</p>
+            <p className="mb-4 text-xs text-muted">
+              求人詳細ページの「入店・在籍キャストの声」の下に表示されます。
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="recruiterName" className={labelClass}>
+                  採用担当者名
+                </label>
+                <input
+                  id="recruiterName"
+                  type="text"
+                  value={form.recruiterName}
+                  onChange={(event) =>
+                    setField("recruiterName", event.target.value)
+                  }
+                  className={inputClass}
+                  placeholder="例: 田中 花子"
+                />
+              </div>
+              <div>
+                <label htmlFor="recruiterTitle" className={labelClass}>
+                  役職
+                </label>
+                <input
+                  id="recruiterTitle"
+                  type="text"
+                  value={form.recruiterTitle}
+                  onChange={(event) =>
+                    setField("recruiterTitle", event.target.value)
+                  }
+                  className={inputClass}
+                  placeholder="例: 店長 / 採用担当 / オーナー"
+                  list="recruiter-title-options"
+                />
+                <datalist id="recruiter-title-options">
+                  <option value="店長" />
+                  <option value="採用担当" />
+                  <option value="オーナー" />
+                  <option value="マネージャー" />
+                </datalist>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className={labelClass}>顔写真</p>
+              <input
+                ref={recruiterImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                onChange={handleRecruiterImageUpload}
+              />
+              <button
+                type="button"
+                onClick={() => recruiterImageInputRef.current?.click()}
+                disabled={uploadingRecruiterImage}
+                className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory disabled:opacity-60"
+              >
+                {uploadingRecruiterImage ? "アップロード中..." : "写真を選択"}
+              </button>
+              {form.recruiterImage && (
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                  <img
+                    src={form.recruiterImage}
+                    alt="採用担当者プレビュー"
+                    className="h-24 w-24 rounded-full border-4 border-gold/30 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setField("recruiterImage", "")}
+                    disabled={uploadingRecruiterImage}
+                    className="rounded-full border border-charcoal/20 px-3 py-1.5 text-xs font-medium text-muted hover:text-charcoal"
+                  >
+                    写真を削除
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="mt-4">
+              <label htmlFor="recruiterMessage" className={labelClass}>
+                採用担当からのメッセージ
+              </label>
+              <textarea
+                id="recruiterMessage"
+                value={form.recruiterMessage}
+                onChange={(event) =>
+                  setField("recruiterMessage", event.target.value)
+                }
+                rows={6}
+                className={inputClass}
+                placeholder="応募を迷っている方へのメッセージを入力してください"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
@@ -1330,7 +1479,7 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-3 pt-2">
           <button
             type="submit"
-            disabled={loading || uploading || uploadingStoreImages}
+            disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
             className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60"
           >
             {loading ? "保存中..." : editingId ? "更新する" : "保存する"}

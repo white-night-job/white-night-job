@@ -23,6 +23,10 @@ export type JobPayload = {
   customerRegularLevel?: number;
   imageUrl?: string;
   storeImages?: string[];
+  recruiterName?: string;
+  recruiterTitle?: string;
+  recruiterImage?: string;
+  recruiterMessage?: string;
   phone?: string;
   address?: string;
   access?: string;
@@ -62,6 +66,10 @@ type JobRow = {
   other_benefits: string[] | null;
   is_verified: boolean;
   image_url: string | null;
+  recruiter_name: string | null;
+  recruiter_title: string | null;
+  recruiter_image: string | null;
+  recruiter_message: string | null;
   phone: string | null;
   address: string | null;
   access: string | null;
@@ -102,6 +110,10 @@ export function rowToJob(row: JobRow): Job {
     isVerified: row.is_verified,
     imageUrl: row.image_url ?? undefined,
     storeImages: getDisplayStoreImages({ storeImages: undefined, store_images: row.store_images }),
+    recruiterName: row.recruiter_name?.trim() || undefined,
+    recruiterTitle: row.recruiter_title?.trim() || undefined,
+    recruiterImage: row.recruiter_image?.trim() || undefined,
+    recruiterMessage: row.recruiter_message?.trim() || undefined,
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
     access: row.access ?? undefined,
@@ -170,6 +182,26 @@ export function shopCredentialsToRow(
   return row;
 }
 
+function readOptionalString(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const trimmed = String(value).trim();
+  return trimmed || undefined;
+}
+
+export function hasRecruiterContent(
+  job: Pick<
+    Job,
+    "recruiterName" | "recruiterTitle" | "recruiterImage" | "recruiterMessage"
+  >,
+): boolean {
+  return Boolean(
+    job.recruiterName?.trim() ||
+      job.recruiterTitle?.trim() ||
+      job.recruiterImage?.trim() ||
+      job.recruiterMessage?.trim(),
+  );
+}
+
 export function payloadToRow(payload: JobPayload) {
   const shopName = payload.shopName.trim();
 
@@ -196,6 +228,10 @@ export function payloadToRow(payload: JobPayload) {
     is_verified: payload.isVerified ?? false,
     image_url: payload.imageUrl?.trim() || null,
     store_images: sanitizeStoreImagesForSave(payload.storeImages ?? []),
+    recruiter_name: payload.recruiterName?.trim() || null,
+    recruiter_title: payload.recruiterTitle?.trim() || null,
+    recruiter_image: payload.recruiterImage?.trim() || null,
+    recruiter_message: payload.recruiterMessage?.trim() || null,
     phone: payload.phone?.trim() || null,
     address: payload.address?.trim() || null,
     access: payload.access?.trim() || null,
@@ -245,6 +281,19 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       normalizeStoreImagesInput(
         data.storeImages ?? (data as { store_images?: unknown }).store_images,
       ) ?? [],
+    recruiterName: readOptionalString(
+      data.recruiterName ?? (data as { recruiter_name?: unknown }).recruiter_name,
+    ),
+    recruiterTitle: readOptionalString(
+      data.recruiterTitle ?? (data as { recruiter_title?: unknown }).recruiter_title,
+    ),
+    recruiterImage: readOptionalString(
+      data.recruiterImage ?? (data as { recruiter_image?: unknown }).recruiter_image,
+    ),
+    recruiterMessage: readOptionalString(
+      data.recruiterMessage ??
+        (data as { recruiter_message?: unknown }).recruiter_message,
+    ),
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,
     access: data.access ? String(data.access) : undefined,

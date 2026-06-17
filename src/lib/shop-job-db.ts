@@ -17,6 +17,10 @@ export type ShopJobPayload = {
   descriptionText?: string;
   castVoices?: CastVoiceEntry[];
   storeImages?: string[];
+  recruiterName?: string;
+  recruiterTitle?: string;
+  recruiterImage?: string | null;
+  recruiterMessage?: string;
   benefits: string[];
   otherBenefits?: string[];
   phone?: string;
@@ -54,6 +58,30 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
         data.storeImages ?? (data as { store_images?: unknown }).store_images,
       ),
     ),
+    recruiterName: data.recruiterName
+      ? String(data.recruiterName)
+      : (data as { recruiter_name?: unknown }).recruiter_name
+        ? String((data as { recruiter_name?: unknown }).recruiter_name)
+        : undefined,
+    recruiterTitle: data.recruiterTitle
+      ? String(data.recruiterTitle)
+      : (data as { recruiter_title?: unknown }).recruiter_title
+        ? String((data as { recruiter_title?: unknown }).recruiter_title)
+        : undefined,
+    recruiterImage:
+      data.recruiterImage !== undefined ||
+      (data as { recruiter_image?: unknown }).recruiter_image !== undefined
+        ? String(
+            data.recruiterImage ??
+              (data as { recruiter_image?: unknown }).recruiter_image ??
+              "",
+          ).trim() || null
+        : undefined,
+    recruiterMessage: data.recruiterMessage
+      ? String(data.recruiterMessage)
+      : (data as { recruiter_message?: unknown }).recruiter_message
+        ? String((data as { recruiter_message?: unknown }).recruiter_message)
+        : undefined,
     benefits: Array.isArray(data.benefits) ? data.benefits.map(String) : [],
     otherBenefits: Array.isArray(data.otherBenefits)
       ? data.otherBenefits.map(String)
@@ -85,6 +113,9 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     description: payload.descriptionText?.trim() || null,
     cast_voices: sanitizeCastVoicesForSave(payload.castVoices ?? []),
     store_images: sanitizeStoreImagesForSave(payload.storeImages ?? []),
+    recruiter_name: payload.recruiterName?.trim() || null,
+    recruiter_title: payload.recruiterTitle?.trim() || null,
+    recruiter_message: payload.recruiterMessage?.trim() || null,
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
     phone: payload.phone?.trim() || null,
@@ -98,6 +129,10 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
 
   if (payload.imageUrl !== undefined) {
     row.image_url = payload.imageUrl?.trim() || null;
+  }
+
+  if (payload.recruiterImage !== undefined) {
+    row.recruiter_image = payload.recruiterImage?.trim() || null;
   }
 
   return row;

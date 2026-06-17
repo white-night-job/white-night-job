@@ -51,6 +51,12 @@ function buildStoragePath(
     return `top-images/${ownerId}/${Date.now()}-${safeName}.${safeExtension}`;
   }
 
+  if (uploadType === "recruiter-image") {
+    const ownerId = jobId?.trim() || randomUUID();
+    const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
+    return `recruiters/${ownerId}/${Date.now()}-${safeName}.${safeExtension}`;
+  }
+
   return `shops/${randomUUID()}.${safeExtension}`;
 }
 
@@ -64,7 +70,9 @@ export async function POST(request: Request) {
   const canUploadAsShop =
     shopJobId &&
     jobId === shopJobId &&
-    (uploadType === "store-image" || uploadType === "top-image");
+    (uploadType === "store-image" ||
+      uploadType === "top-image" ||
+      uploadType === "recruiter-image");
 
   if (!isAdmin && !canUploadAsShop) {
     return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });

@@ -44,6 +44,10 @@ type ShopForm = {
   introductionText: string;
   descriptionText: string;
   castVoices: CastVoiceEntry[];
+  recruiterName: string;
+  recruiterTitle: string;
+  recruiterImage: string;
+  recruiterMessage: string;
   storeImages: string[];
   benefits: string[];
   otherBenefits: string;
@@ -86,6 +90,10 @@ function toForm(job: Job): ShopForm {
       age: entry.age,
       comment: entry.comment,
     })),
+    recruiterName: job.recruiterName ?? "",
+    recruiterTitle: job.recruiterTitle ?? "",
+    recruiterImage: job.recruiterImage ?? "",
+    recruiterMessage: job.recruiterMessage ?? "",
     storeImages: getDisplayStoreImages(job),
     benefits: getKnownBenefits(job.benefits),
     otherBenefits: [
@@ -112,6 +120,10 @@ function toPayload(form: ShopForm) {
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
     castVoices: sanitizeCastVoicesForSave(form.castVoices),
+    recruiterName: form.recruiterName || undefined,
+    recruiterTitle: form.recruiterTitle || undefined,
+    recruiterImage: form.recruiterImage,
+    recruiterMessage: form.recruiterMessage || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
@@ -134,6 +146,7 @@ async function readJson<T>(response: Response): Promise<T> {
 export default function ShopDashboardPage() {
   const router = useRouter();
   const topImageInputRef = useRef<HTMLInputElement>(null);
+  const recruiterImageInputRef = useRef<HTMLInputElement>(null);
   const storeImageInputRef = useRef<HTMLInputElement>(null);
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
@@ -149,6 +162,7 @@ export default function ShopDashboardPage() {
   const [boostLoading, setBoostLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [uploadingTopImage, setUploadingTopImage] = useState(false);
+  const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [districtRank, setDistrictRank] = useState(1);
@@ -360,6 +374,57 @@ export default function ShopDashboardPage() {
     }
   }
 
+  async function handleRecruiterImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    if (!file || !jobId || !form) return;
+    setUploadingRecruiterImage(true);
+    setMessage("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("uploadType", "recruiter-image");
+      formData.append("jobId", jobId);
+      const { imageUrl } = await readJson<{ imageUrl: string }>(
+        await fetch("/api/upload", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }),
+      );
+      await persistForm({ ...form, recruiterImage: imageUrl });
+      setMessage("採用担当者の顔写真をアップロードしました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "採用担当者の顔写真のアップロードに失敗しました。",
+      );
+    } finally {
+      setUploadingRecruiterImage(false);
+      event.target.value = "";
+    }
+  }
+
+  async function handleRecruiterImageRemove() {
+    if (!form || !form.recruiterImage) return;
+    setUploadingRecruiterImage(true);
+    setMessage("");
+    try {
+      await persistForm({ ...form, recruiterImage: "" });
+      setMessage("採用担当者の顔写真を削除しました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "採用担当者の顔写真の削除に失敗しました。",
+      );
+    } finally {
+      setUploadingRecruiterImage(false);
+    }
+  }
+
   async function handleStoreImagesUpload(
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
@@ -550,6 +615,90 @@ export default function ShopDashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <p className={labelClass}>採用担当からのメッセージ</p>
+          <p className="mb-4 text-xs text-muted">
+            求人詳細ページの「入店・在籍キャストの声」の下に表示されます。
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="recruiterName" className={labelClass}>採用担当者名</label>
+              <input
+                id="recruiterName"
+                value={form.recruiterName}
+                onChange={(e) => setField("recruiterName", e.target.value)}
+                className={inputClass}
+                placeholder="例: 田中 花子"
+              />
+            </div>
+            <div>
+              <label htmlFor="recruiterTitle" className={labelClass}>役職</label>
+              <input
+                id="recruiterTitle"
+                value={form.recruiterTitle}
+                onChange={(e) => setField("recruiterTitle", e.target.value)}
+                className={inputClass}
+                placeholder="例: 店長 / 採用担当"
+                list="shop-recruiter-title-options"
+              />
+              <datalist id="shop-recruiter-title-options">
+                <option value="店長" />
+                <option value="採用担当" />
+                <option value="オーナー" />
+                <option value="マネージャー" />
+              </datalist>
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className={labelClass}>顔写真</p>
+            <input
+              ref={recruiterImageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              className="hidden"
+              onChange={handleRecruiterImageUpload}
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => recruiterImageInputRef.current?.click()}
+                disabled={uploadingRecruiterImage}
+                className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark disabled:opacity-60"
+              >
+                {uploadingRecruiterImage ? "処理中..." : "写真を選択"}
+              </button>
+              {form.recruiterImage && (
+                <button
+                  type="button"
+                  onClick={handleRecruiterImageRemove}
+                  disabled={uploadingRecruiterImage}
+                  className="rounded-full border border-charcoal/20 bg-white px-4 py-2 text-sm font-medium text-muted hover:text-charcoal disabled:opacity-60"
+                >
+                  写真を削除
+                </button>
+              )}
+            </div>
+            {form.recruiterImage && (
+              <img
+                src={form.recruiterImage}
+                alt="採用担当者プレビュー"
+                className="mt-4 h-24 w-24 rounded-full border-4 border-gold/30 object-cover"
+              />
+            )}
+          </div>
+          <div className="mt-4">
+            <label htmlFor="recruiterMessage" className={labelClass}>採用担当からのメッセージ</label>
+            <textarea
+              id="recruiterMessage"
+              value={form.recruiterMessage}
+              onChange={(e) => setField("recruiterMessage", e.target.value)}
+              rows={6}
+              className={inputClass}
+              placeholder="応募を迷っている方へのメッセージを入力してください"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>店舗トップ画像</p>
           <p className="mb-3 text-xs text-muted">
             求人一覧カードと求人詳細ページ最上部に表示するメイン画像です。1枚のみ設定でき、差し替えも可能です。
@@ -673,7 +822,7 @@ export default function ShopDashboardPage() {
           </div>
         </div>
 
-        <button type="submit" disabled={loading || uploadingTopImage || uploadingStoreImages} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
+        <button type="submit" disabled={loading || uploadingTopImage || uploadingRecruiterImage || uploadingStoreImages} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
           {loading ? "保存中..." : "保存する"}
         </button>
           </form>
