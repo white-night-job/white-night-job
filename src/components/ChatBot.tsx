@@ -190,6 +190,10 @@ export function ChatBot() {
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const recommendTitleRefs = useRef<Map<string, HTMLParagraphElement>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mobileKeyboardLayout, setMobileKeyboardLayout] = useState({
+    bottomInset: 0,
+    panelHeight: 0,
+  });
 
   const scrollToAnchor = useCallback(
     (anchor: { kind: "ai-reply" | "recommendations"; messageId: string }) => {
@@ -223,6 +227,43 @@ export function ChatBot() {
       saveState({ step, selectedAreas, messages });
     }
   }, [step, selectedAreas, messages, hydrated]);
+
+  useEffect(() => {
+    if (!open) {
+      setMobileKeyboardLayout({ bottomInset: 0, panelHeight: 0 });
+      return;
+    }
+
+    const updateMobileKeyboardLayout = () => {
+      const visualViewport = window.visualViewport;
+      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+
+      if (!visualViewport || !isMobile) {
+        setMobileKeyboardLayout({ bottomInset: 0, panelHeight: 0 });
+        return;
+      }
+
+      const bottomInset = Math.max(
+        0,
+        window.innerHeight - visualViewport.height - visualViewport.offsetTop,
+      );
+      const panelHeight = Math.min(Math.max(visualViewport.height - 12, 280), 560);
+
+      setMobileKeyboardLayout({ bottomInset, panelHeight });
+    };
+
+    updateMobileKeyboardLayout();
+    const visualViewport = window.visualViewport;
+    visualViewport?.addEventListener("resize", updateMobileKeyboardLayout);
+    visualViewport?.addEventListener("scroll", updateMobileKeyboardLayout);
+    window.addEventListener("resize", updateMobileKeyboardLayout);
+
+    return () => {
+      visualViewport?.removeEventListener("resize", updateMobileKeyboardLayout);
+      visualViewport?.removeEventListener("scroll", updateMobileKeyboardLayout);
+      window.removeEventListener("resize", updateMobileKeyboardLayout);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!scrollAnchor || loading) return;
@@ -447,10 +488,26 @@ export function ChatBot() {
         />
       )}
 
-      <div className="fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-4 max-sm:right-4 sm:bottom-6 sm:right-6 sm:left-auto">
+      <div
+        className={`fixed right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-4 max-sm:right-4 sm:bottom-6 sm:right-6 sm:left-auto ${
+          mobileKeyboardLayout.bottomInset > 0 ? "" : "bottom-4"
+        }`}
+        style={
+          mobileKeyboardLayout.bottomInset > 0
+            ? { bottom: mobileKeyboardLayout.bottomInset }
+            : undefined
+        }
+      >
         {open && (
           <div
-            className="flex h-[min(75vh,560px)] w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:w-[min(100vw-2rem,380px)]"
+            className={`flex w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:h-[min(75dvh,560px)] sm:w-[min(100vw-2rem,380px)] ${
+              mobileKeyboardLayout.panelHeight > 0 ? "" : "h-[min(75dvh,560px)]"
+            }`}
+            style={
+              mobileKeyboardLayout.panelHeight > 0
+                ? { height: mobileKeyboardLayout.panelHeight }
+                : undefined
+            }
             role="dialog"
             aria-label="White Night相談Bot"
           >
@@ -610,7 +667,7 @@ export function ChatBot() {
                 )}
 
                 <form
-                  className="flex gap-2 border-t border-gold/20 bg-white p-3"
+                  className="chat-bot-field flex shrink-0 gap-2 border-t border-gold/20 bg-white p-3"
                   onSubmit={(event) => {
                     event.preventDefault();
                     void sendMessage(input);
@@ -623,12 +680,13 @@ export function ChatBot() {
                     onChange={(event) => setInput(event.target.value)}
                     placeholder="メッセージを入力..."
                     disabled={loading}
-                    className="min-w-0 flex-1 rounded-full border border-gold/30 bg-ivory px-4 py-2 text-sm outline-none focus:border-gold"
+                    className="min-w-0 flex-1 rounded-full border border-gold/30 bg-ivory px-4 py-2.5 text-base outline-none focus:border-gold"
+                    style={{ fontSize: 16 }}
                   />
                   <button
                     type="submit"
                     disabled={loading || !input.trim()}
-                    className="shrink-0 rounded-full bg-gold px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    className="shrink-0 rounded-full bg-gold px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
                   >
                     送信
                   </button>
