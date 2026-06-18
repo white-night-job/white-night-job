@@ -48,6 +48,7 @@ type ShopForm = {
   recruiterTitle: string;
   recruiterImage: string;
   recruiterMessage: string;
+  chatRecommendComment: string;
   storeImages: string[];
   benefits: string[];
   otherBenefits: string;
@@ -94,6 +95,7 @@ function toForm(job: Job): ShopForm {
     recruiterTitle: job.recruiterTitle ?? "",
     recruiterImage: job.recruiterImage ?? "",
     recruiterMessage: job.recruiterMessage ?? "",
+    chatRecommendComment: job.chatRecommend?.comment ?? "",
     storeImages: getDisplayStoreImages(job),
     benefits: getKnownBenefits(job.benefits),
     otherBenefits: [
@@ -124,6 +126,7 @@ function toPayload(form: ShopForm) {
     recruiterTitle: form.recruiterTitle || undefined,
     recruiterImage: form.recruiterImage,
     recruiterMessage: form.recruiterMessage || undefined,
+    chatRecommendComment: form.chatRecommendComment || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
@@ -696,6 +699,24 @@ export default function ShopDashboardPage() {
               placeholder="応募を迷っている方へのメッセージを入力してください"
             />
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <p className="text-sm font-semibold text-gold-dark">チャットおすすめコメント</p>
+          <p className="mt-1 mb-3 text-xs text-muted">
+            White Night相談Botでおすすめ表示される際のコメントです。おすすめ対象のON/OFFと優先度は管理者が設定します。
+          </p>
+          <label htmlFor="chatRecommendComment" className={labelClass}>
+            おすすめコメント
+          </label>
+          <textarea
+            id="chatRecommendComment"
+            value={form.chatRecommendComment}
+            onChange={(e) => setField("chatRecommendComment", e.target.value)}
+            rows={4}
+            className={inputClass}
+            placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
+          />
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">

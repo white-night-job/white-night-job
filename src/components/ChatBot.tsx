@@ -3,8 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createInitialSession, getWelcomeMessage, FAQ_QUICK_REPLIES } from "@/lib/chat/engine";
-import type { ChatRecommendation, ChatSession } from "@/lib/chat/types";
+import {
+  FAQ_QUICK_REPLIES,
+  getWelcomeMessage,
+} from "@/lib/chat/system-prompt";
+import type { ChatRecommendation } from "@/lib/chat/types";
+
+const STORAGE_KEY = "white-night-chat-history";
+const MAX_STORED_MESSAGES = 50;
 
 type ChatMessage = {
   id: string;
@@ -13,8 +19,43 @@ type ChatMessage = {
   recommendations?: ChatRecommendation[];
 };
 
+type StoredChat = {
+  messages: ChatMessage[];
+};
+
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createWelcomeMessage(): ChatMessage {
+  return {
+    id: createId(),
+    role: "bot",
+    content: getWelcomeMessage(),
+  };
+}
+
+function loadStoredMessages(): ChatMessage[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredChat;
+    if (!Array.isArray(parsed.messages) || parsed.messages.length === 0) {
+      return null;
+    }
+    return parsed.messages.slice(-MAX_STORED_MESSAGES);
+  } catch {
+    return null;
+  }
+}
+
+function saveMessages(messages: ChatMessage[]) {
+  if (typeof window === "undefined") return;
+  const payload: StoredChat = {
+    messages: messages.slice(-MAX_STORED_MESSAGES),
+  };
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
 function RecommendationCard({ item }: { item: ChatRecommendation }) {
@@ -51,9 +92,8 @@ export function ChatBot() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<ChatSession>(createInitialSession);
-  const [quickReplies, setQuickReplies] = useState<string[]>(FAQ_QUICK_REPLIES);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,21 +102,20 @@ export function ChatBot() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading, scrollToBottom]);
+    const stored = loadStoredMessages();
+    setMessages(stored ?? [createWelcomeMessage()]);
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
-    if (open && messages.length === 0) {
-      setMessages([
-        {
-          id: createId(),
-          role: "bot",
-          content: getWelcomeMessage(),
-        },
-      ]);
-      setQuickReplies(FAQ_QUICK_REPLIES);
+    if (hydrated) {
+      saveMessages(messages);
     }
-  }, [open, messages.length]);
+  }, [messages, hydrated]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading, scrollToBottom]);
 
   useEffect(() => {
     if (open) {
@@ -85,19 +124,33 @@ export function ChatBot() {
     }
   }, [open]);
 
+  const resetConversation = useCallback(() => {
+    const welcome = [createWelcomeMessage()];
+    setMessages(welcome);
+    saveMessages(welcome);
+    setInput("");
+  }, []);
+
   const sendMessage = useCallback(
-    async (text: string, action?: "start_recommend") => {
+    async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed && !action) return;
+      if (!trimmed || loading) return;
 
       setLoading(true);
-      setQuickReplies([]);
 
       const userMessage: ChatMessage = {
         id: createId(),
         role: "user",
-        content: trimmed || "おすすめ店舗を探す",
+        content: trimmed,
       };
+
+      const historyForApi = [...messages, userMessage]
+        .filter((message) => message.role === "user" || message.role === "bot")
+        .map((message) => ({
+          role: message.role === "bot" ? ("assistant" as const) : ("user" as const),
+          content: message.content,
+        }));
+
       setMessages((current) => [...current, userMessage]);
       setInput("");
 
@@ -105,29 +158,18 @@ export function ChatBot() {
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: trimmed,
-            session,
-            action:
-              action ??
-              (trimmed.includes("おすすめ") ? ("start_recommend" as const) : undefined),
-          }),
+          body: JSON.stringify({ messages: historyForApi }),
         });
 
         const data = (await response.json()) as {
           reply?: string;
-          session?: ChatSession;
           recommendations?: ChatRecommendation[];
-          quickReplies?: string[];
           message?: string;
         };
 
         if (!response.ok) {
           throw new Error(data.message ?? "送信に失敗しました。");
         }
-
-        if (data.session) setSession(data.session);
-        if (data.quickReplies) setQuickReplies(data.quickReplies);
 
         setMessages((current) => [
           ...current,
@@ -147,15 +189,14 @@ export function ChatBot() {
             content:
               error instanceof Error
                 ? error.message
-                : "通信エラーが発生しました。しばらくしてからお試しください。",
+                : "うまく回答できませんでした。時間をおいてもう一度お試しください",
           },
         ]);
-        setQuickReplies(FAQ_QUICK_REPLIES);
       } finally {
         setLoading(false);
       }
     },
-    [session],
+    [loading, messages],
   );
 
   if (pathname.startsWith("/admin")) {
@@ -172,10 +213,10 @@ export function ChatBot() {
         />
       )}
 
-      <div className="fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+      <div className="fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-4 max-sm:right-4 sm:bottom-6 sm:right-6 sm:left-auto">
         {open && (
           <div
-            className="flex h-[min(70vh,520px)] w-[min(100vw-2rem,360px)] flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl"
+            className="flex h-[min(70vh,520px)] w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:w-[min(100vw-2rem,360px)]"
             role="dialog"
             aria-label="White Night相談Bot"
           >
@@ -184,16 +225,26 @@ export function ChatBot() {
                 <p className="text-sm font-semibold">White Night相談Bot</p>
                 <p className="text-xs text-white/80">夜職の不安・おすすめ店舗相談</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-full p-1.5 hover:bg-white/15"
-                aria-label="チャットを閉じる"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={resetConversation}
+                  className="rounded-full px-2 py-1 text-xs hover:bg-white/15"
+                  title="会話をリセット"
+                >
+                  リセット
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-full p-1.5 hover:bg-white/15"
+                  aria-label="チャットを閉じる"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto px-3 py-4">
@@ -230,20 +281,15 @@ export function ChatBot() {
               <div ref={messagesEndRef} />
             </div>
 
-            {quickReplies.length > 0 && (
+            {!loading && (
               <div className="border-t border-gold/15 px-3 py-2">
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {quickReplies.map((reply) => (
+                  {FAQ_QUICK_REPLIES.map((reply) => (
                     <button
                       key={reply}
                       type="button"
                       disabled={loading}
-                      onClick={() =>
-                        sendMessage(
-                          reply,
-                          reply.includes("おすすめ") ? "start_recommend" : undefined,
-                        )
-                      }
+                      onClick={() => void sendMessage(reply)}
                       className="shrink-0 rounded-full border border-gold/30 bg-white px-3 py-1.5 text-xs text-charcoal hover:border-gold disabled:opacity-50"
                     >
                       {reply}
@@ -283,7 +329,7 @@ export function ChatBot() {
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
+          className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
           aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
           aria-expanded={open}
         >

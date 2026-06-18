@@ -7,6 +7,10 @@ export function getHourlySalary(salary: string): number | null {
   return match ? Number(match[0]) : null;
 }
 
+function hasBenefit(job: ChatJob, benefit: string): boolean {
+  return job.benefits.includes(benefit);
+}
+
 function buildReason(job: ChatJob, prefs: ChatPreferences, scoreDetails: string[]): string {
   if (job.chatRecommend.comment?.trim()) {
     return job.chatRecommend.comment.trim();
@@ -70,19 +74,25 @@ function scoreJob(
     }
   }
 
-  if (prefs.experience === "beginner" && job.chatRecommend.beginner) {
-    score += 20;
-    details.push("未経験向け");
+  if (prefs.experience === "beginner") {
+    if (job.chatRecommend.beginner || hasBenefit(job, "未経験者大歓迎")) {
+      score += 20;
+      details.push("未経験向け");
+    }
   }
 
-  if (prefs.alcoholOk === false && job.chatRecommend.noAlcoholOk) {
-    score += 20;
-    details.push("お酒NG可");
+  if (prefs.alcoholOk === false) {
+    if (job.chatRecommend.noAlcoholOk || hasBenefit(job, "お酒飲めなくてもOK")) {
+      score += 20;
+      details.push("お酒NG可");
+    }
   }
 
-  if (prefs.wantsShuttle && job.chatRecommend.shuttle) {
-    score += 15;
-    details.push("送迎あり");
+  if (prefs.wantsShuttle) {
+    if (job.chatRecommend.shuttle || hasBenefit(job, "送迎あり")) {
+      score += 15;
+      details.push("送迎あり");
+    }
   }
 
   if (prefs.privacyConcern && job.chatRecommend.privacy) {
@@ -90,31 +100,72 @@ function scoreJob(
     details.push("身バレ配慮");
   }
 
-  if (job.chatRecommend.highSalary) {
-    score += 5;
-  }
-  if (job.chatRecommend.relaxed) {
-    score += 3;
-  }
-  if (job.chatRecommend.highEarning) {
-    score += 3;
+  if (prefs.wantsWeeklyOnce && hasBenefit(job, "週1出勤OK")) {
+    score += 12;
+    details.push("週1出勤OK");
   }
 
-  if (messageKeywords.includes("alcohol") && job.chatRecommend.noAlcoholOk) {
-    score += 25;
-    if (!details.includes("お酒NG可")) details.push("お酒NG可");
+  if (prefs.wantsDailyPay && hasBenefit(job, "日払いOK")) {
+    score += 12;
+    details.push("日払いOK");
   }
-  if (messageKeywords.includes("beginner") && job.chatRecommend.beginner) {
-    score += 25;
-    if (!details.includes("未経験向け")) details.push("未経験向け");
+
+  if (prefs.noQuota && hasBenefit(job, "ノルマなし")) {
+    score += 12;
+    details.push("ノルマなし");
   }
-  if (messageKeywords.includes("shuttle") && job.chatRecommend.shuttle) {
-    score += 15;
-    if (!details.includes("送迎あり")) details.push("送迎あり");
+
+  if (prefs.noPenalty && hasBenefit(job, "罰金なし")) {
+    score += 12;
+    details.push("罰金なし");
+  }
+
+  if (prefs.daysPerWeek && prefs.daysPerWeek <= 2 && hasBenefit(job, "週1出勤OK")) {
+    score += 8;
+    if (!details.includes("週1出勤OK")) details.push("週1出勤OK");
+  }
+
+  if (job.chatRecommend.highSalary) score += 5;
+  if (job.chatRecommend.relaxed) score += 3;
+  if (job.chatRecommend.highEarning) score += 3;
+
+  if (messageKeywords.includes("alcohol")) {
+    if (job.chatRecommend.noAlcoholOk || hasBenefit(job, "お酒飲めなくてもOK")) {
+      score += 25;
+      if (!details.includes("お酒NG可")) details.push("お酒NG可");
+    }
+  }
+  if (messageKeywords.includes("beginner")) {
+    if (job.chatRecommend.beginner || hasBenefit(job, "未経験者大歓迎")) {
+      score += 25;
+      if (!details.includes("未経験向け")) details.push("未経験向け");
+    }
+  }
+  if (messageKeywords.includes("shuttle")) {
+    if (job.chatRecommend.shuttle || hasBenefit(job, "送迎あり")) {
+      score += 15;
+      if (!details.includes("送迎あり")) details.push("送迎あり");
+    }
   }
   if (messageKeywords.includes("privacy") && job.chatRecommend.privacy) {
     score += 15;
     if (!details.includes("身バレ配慮")) details.push("身バレ配慮");
+  }
+  if (messageKeywords.includes("weeklyOnce") && hasBenefit(job, "週1出勤OK")) {
+    score += 15;
+    if (!details.includes("週1出勤OK")) details.push("週1出勤OK");
+  }
+  if (messageKeywords.includes("dailyPay") && hasBenefit(job, "日払いOK")) {
+    score += 15;
+    if (!details.includes("日払いOK")) details.push("日払いOK");
+  }
+  if (messageKeywords.includes("noQuota") && hasBenefit(job, "ノルマなし")) {
+    score += 15;
+    if (!details.includes("ノルマなし")) details.push("ノルマなし");
+  }
+  if (messageKeywords.includes("noPenalty") && hasBenefit(job, "罰金なし")) {
+    score += 15;
+    if (!details.includes("罰金なし")) details.push("罰金なし");
   }
 
   return { score, details };
@@ -127,6 +178,10 @@ function extractMessageKeywords(message: string): string[] {
   if (/未経験|はじめて|初めて|初心者/.test(normalized)) keywords.push("beginner");
   if (/送迎/.test(normalized)) keywords.push("shuttle");
   if (/身バレ|バレ|プライバシー/.test(normalized)) keywords.push("privacy");
+  if (/週1|週１/.test(normalized)) keywords.push("weeklyOnce");
+  if (/日払い/.test(normalized)) keywords.push("dailyPay");
+  if (/ノルマなし|ノルマ無/.test(normalized)) keywords.push("noQuota");
+  if (/罰金なし|罰金無/.test(normalized)) keywords.push("noPenalty");
   return keywords;
 }
 
@@ -201,6 +256,18 @@ export function preferencesFromQuery(
 
   const privacyConcern = searchParams.get("privacyConcern");
   if (privacyConcern === "true") prefs.privacyConcern = true;
+
+  const wantsWeeklyOnce = searchParams.get("wantsWeeklyOnce");
+  if (wantsWeeklyOnce === "true") prefs.wantsWeeklyOnce = true;
+
+  const wantsDailyPay = searchParams.get("wantsDailyPay");
+  if (wantsDailyPay === "true") prefs.wantsDailyPay = true;
+
+  const noQuota = searchParams.get("noQuota");
+  if (noQuota === "true") prefs.noQuota = true;
+
+  const noPenalty = searchParams.get("noPenalty");
+  if (noPenalty === "true") prefs.noPenalty = true;
 
   return prefs;
 }

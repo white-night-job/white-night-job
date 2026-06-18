@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
-import { LINE_GUIDANCE } from "@/lib/chat/faq-responder";
+const LINE_GUIDANCE =
+  "気になる店舗があれば、求人ページからLINEで気軽に相談できます。";
 import {
   matchRecommendations,
   preferencesFromQuery,

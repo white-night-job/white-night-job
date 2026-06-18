@@ -7,14 +7,10 @@ export type ChatPreferences = {
   daysPerWeek?: number;
   wantsShuttle?: boolean;
   privacyConcern?: boolean;
-};
-
-export type ChatSessionMode = "idle" | "collecting" | "done";
-
-export type ChatSession = {
-  mode: ChatSessionMode;
-  step: number;
-  preferences: ChatPreferences;
+  wantsWeeklyOnce?: boolean;
+  wantsDailyPay?: boolean;
+  noQuota?: boolean;
+  noPenalty?: boolean;
 };
 
 export type ChatRecommendation = {
@@ -36,6 +32,7 @@ export type ChatJob = {
   jobType: string;
   salary: string;
   lineUrl: string;
+  benefits: string[];
   chatRecommend: {
     enabled: boolean;
     priority: number;
@@ -50,16 +47,12 @@ export type ChatJob = {
   };
 };
 
-export type ChatResponse = {
-  reply: string;
-  session: ChatSession;
-  recommendations?: ChatRecommendation[];
-  quickReplies?: string[];
+export type ChatApiMessage = {
+  role: "user" | "assistant";
+  content: string;
 };
 
-export type ChatRequest = {
-  message: string;
-  session: ChatSession;
-  action?: "start_recommend";
-  jobs: ChatJob[];
+export type ChatApiResponse = {
+  reply: string;
+  recommendations: ChatRecommendation[];
 };
