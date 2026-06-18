@@ -1,5 +1,6 @@
 export type ChatPreferences = {
   district?: string;
+  districts?: string[];
   jobType?: string;
   minSalary?: number;
   experience?: "beginner" | "experienced";
@@ -22,6 +23,7 @@ export type ChatRecommendation = {
   salary: string;
   reason: string;
   lineUrl: string;
+  imageUrl?: string;
 };
 
 export type ChatJob = {
@@ -32,6 +34,8 @@ export type ChatJob = {
   jobType: string;
   salary: string;
   lineUrl: string;
+  imageUrl?: string;
+  postedAt: string;
   benefits: string[];
   chatRecommend: {
     enabled: boolean;

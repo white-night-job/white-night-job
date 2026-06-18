@@ -5,20 +5,7 @@ import {
   isOpenAiConfigured,
   type ChatCompletionMessage,
 } from "@/lib/chat/ai-responder";
-import {
-  extractPreferencesFromMessages,
-  isGenericRecommendRequest,
-  preferencesToSearchText,
-  shouldIncludeRecommendations,
-} from "@/lib/chat/preference-extractor";
-import {
-  matchPriorityRecommendations,
-  matchRecommendations,
-} from "@/lib/chat/recommendations";
-import { jobToChatJob } from "@/lib/chat-recommend-db";
 import type { ChatApiMessage, ChatApiResponse } from "@/lib/chat/types";
-import { rowToJob } from "@/lib/job-db";
-import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -26,17 +13,6 @@ const MAX_MESSAGES = 30;
 const UNCONFIGURED_REPLY = "現在チャット機能の準備中です";
 const ERROR_REPLY =
   "うまく回答できませんでした。時間をおいてもう一度お試しください";
-
-async function fetchPublishedChatJobs() {
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*")
-    .eq("published", true);
-
-  if (error) throw error;
-  return (data ?? []).map((row) => jobToChatJob(rowToJob(row)));
-}
 
 function sanitizeMessages(messages: unknown): ChatApiMessage[] {
   if (!Array.isArray(messages)) return [];
@@ -53,17 +29,47 @@ function sanitizeMessages(messages: unknown): ChatApiMessage[] {
     .slice(-MAX_MESSAGES);
 }
 
-function toCompletionMessages(messages: ChatApiMessage[]): ChatCompletionMessage[] {
-  return messages.map((message) => ({
+function sanitizeSelectedAreas(areas: unknown): string[] {
+  if (!Array.isArray(areas)) return [];
+  return areas
+    .map((area) => String(area).trim())
+    .filter((area) => area.length > 0);
+}
+
+function toCompletionMessages(
+  messages: ChatApiMessage[],
+  selectedAreas: string[],
+): ChatCompletionMessage[] {
+  const completionMessages = messages.map((message) => ({
     role: message.role,
     content: message.content.trim(),
   }));
+
+  if (selectedAreas.length > 0) {
+    return [
+      {
+        role: "user" as const,
+        content: `（システム情報：ユーザーが選択した希望エリアは「${selectedAreas.join("、")}」です。このエリアを前提に回答してください。）`,
+      },
+      {
+        role: "assistant" as const,
+        content: "承知しました。選択エリアを踏まえてご案内します。",
+      },
+      ...completionMessages,
+    ];
+  }
+
+  return completionMessages;
 }
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { messages?: unknown };
+    const body = (await request.json()) as {
+      messages?: unknown;
+      selectedAreas?: unknown;
+    };
     const messages = sanitizeMessages(body.messages);
+    const selectedAreas = sanitizeSelectedAreas(body.selectedAreas);
 
     if (messages.length === 0) {
       return NextResponse.json(
@@ -80,8 +86,7 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
-    const jobs = await fetchPublishedChatJobs();
-    const completionMessages = toCompletionMessages(messages);
+    const completionMessages = toCompletionMessages(messages, selectedAreas);
 
     let reply: string;
     try {
@@ -95,18 +100,9 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
-    const prefs = extractPreferencesFromMessages(messages);
-    const searchText = preferencesToSearchText(messages);
-    const includeRecommendations = shouldIncludeRecommendations(messages, prefs);
-    const recommendations = includeRecommendations
-      ? isGenericRecommendRequest(messages) && Object.keys(prefs).length === 0
-        ? matchPriorityRecommendations(jobs, 5)
-        : matchRecommendations(jobs, prefs, searchText, 5)
-      : [];
-
     const response: ChatApiResponse = {
       reply,
-      recommendations,
+      recommendations: [],
     };
 
     return NextResponse.json(response);

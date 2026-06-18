@@ -1,3 +1,5 @@
+import type { BoostStatsMap } from "@/lib/shop-boosts";
+import { jobMatchesSelectedAreas } from "./area-options";
 import type { ChatJob, ChatPreferences, ChatRecommendation } from "./types";
 
 export function getHourlySalary(salary: string): number | null {
@@ -32,6 +34,30 @@ function buildReason(job: ChatJob, prefs: ChatPreferences, scoreDetails: string[
     : "White Nightおすすめの店舗です";
 }
 
+function jobToRecommendation(
+  job: ChatJob,
+  prefs: ChatPreferences,
+  details: string[],
+): ChatRecommendation {
+  return {
+    id: job.id,
+    shopName: job.shopName,
+    area: job.area,
+    district: job.district,
+    jobType: job.jobType,
+    salary: job.salary,
+    reason: buildReason(job, prefs, details),
+    lineUrl: job.lineUrl,
+    imageUrl: job.imageUrl,
+  };
+}
+
+function getBoostBonus(boostMap: BoostStatsMap, jobId: string): number {
+  const stats = boostMap[jobId];
+  if (!stats) return 0;
+  return stats.todayCount * 30 + (stats.latestBoostAt ? 5 : 0);
+}
+
 export function matchPriorityRecommendations(
   jobs: ChatJob[],
   limit = 5,
@@ -51,6 +77,7 @@ export function matchPriorityRecommendations(
         job.chatRecommend.comment?.trim() ||
         "White Nightおすすめの優先店舗です",
       lineUrl: job.lineUrl,
+      imageUrl: job.imageUrl,
     }));
 }
 
@@ -235,16 +262,104 @@ export function matchRecommendations(
         }))
         .sort((a, b) => b.score - a.score);
 
-  return results.slice(0, limit).map(({ job, details }) => ({
-    id: job.id,
-    shopName: job.shopName,
-    area: job.area,
-    district: job.district,
-    jobType: job.jobType,
-    salary: job.salary,
-    reason: buildReason(job, prefs, details),
-    lineUrl: job.lineUrl,
-  }));
+  return results.slice(0, limit).map(({ job, details }) =>
+    jobToRecommendation(job, prefs, details),
+  );
+}
+
+export function matchRecommendationsForAreas(
+  jobs: ChatJob[],
+  selectedAreas: string[],
+  prefs: ChatPreferences,
+  message: string,
+  boostMap: BoostStatsMap,
+  limit = 10,
+): ChatRecommendation[] {
+  if (selectedAreas.length === 0) return [];
+
+  const areaPrefs: ChatPreferences = {
+    ...prefs,
+    districts: selectedAreas.filter((area) => area !== "札幌全域"),
+  };
+  const messageKeywords = extractMessageKeywords(message);
+  const areaJobs = jobs.filter((job) =>
+    jobMatchesSelectedAreas(job.district, selectedAreas),
+  );
+
+  const scoreEntry = (job: ChatJob, requireEnabled: boolean) => {
+    if (requireEnabled && !job.chatRecommend.enabled) {
+      return { job, score: -1, details: [] as string[] };
+    }
+
+    const basePrefs = areaPrefs;
+    const { score, details } = scoreJob(
+      { ...job, chatRecommend: { ...job.chatRecommend, enabled: true } },
+      basePrefs,
+      messageKeywords,
+    );
+    let total = score + getBoostBonus(boostMap, job.id);
+
+    if (
+      !selectedAreas.includes("札幌全域") &&
+      selectedAreas.includes(job.district)
+    ) {
+      total += 20;
+      if (!details.includes(`${job.district}エリア`)) {
+        details.push(`${job.district}エリア`);
+      }
+    }
+
+    if (!requireEnabled && !job.chatRecommend.enabled) {
+      total = Math.max(total - 50, 0);
+    }
+
+    return { job, score: total, details };
+  };
+
+  const enabledScored = areaJobs
+    .map((job) => scoreEntry(job, true))
+    .filter((item) => item.score >= 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const boostDiff =
+        getBoostBonus(boostMap, b.job.id) - getBoostBonus(boostMap, a.job.id);
+      if (boostDiff !== 0) return boostDiff;
+      return (
+        new Date(b.job.postedAt).getTime() - new Date(a.job.postedAt).getTime()
+      );
+    });
+
+  const usedIds = new Set<string>();
+  const results: Array<{ job: ChatJob; details: string[] }> = [];
+
+  for (const item of enabledScored) {
+    if (results.length >= limit) break;
+    usedIds.add(item.job.id);
+    results.push({ job: item.job, details: item.details });
+  }
+
+  if (results.length < limit) {
+    const fillers = areaJobs
+      .filter((job) => !usedIds.has(job.id))
+      .map((job) => scoreEntry(job, false))
+      .filter((item) => item.score >= 0)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (
+          new Date(b.job.postedAt).getTime() -
+          new Date(a.job.postedAt).getTime()
+        );
+      });
+
+    for (const item of fillers) {
+      if (results.length >= limit) break;
+      results.push({ job: item.job, details: item.details });
+    }
+  }
+
+  return results.map(({ job, details }) =>
+    jobToRecommendation(job, areaPrefs, details),
+  );
 }
 
 export function preferencesFromQuery(

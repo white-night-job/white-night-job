@@ -52,6 +52,8 @@ export function jobToChatJob(job: Job): ChatJob {
     jobType: job.jobType,
     salary: job.salary,
     lineUrl: job.lineUrl,
+    imageUrl: job.imageUrl,
+    postedAt: job.postedAt,
     benefits: [...job.benefits, ...(job.otherBenefits ?? [])],
     chatRecommend: chat,
   };
