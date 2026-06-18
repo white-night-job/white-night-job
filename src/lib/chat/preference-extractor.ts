@@ -98,7 +98,11 @@ export function shouldIncludeRecommendations(
     [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
   const allUserText = joinUserMessages(messages);
 
-  if (/おすすめ|紹介して|店舗.*(教え|探|紹介)|求人.*(教え|探)|マッチ|ぴったり|合う店/.test(lastUser)) {
+  if (
+    /おすすめ|紹介して|お店.*(教え|ある|は)|店舗.*(教え|探|紹介)|求人.*(教え|探)|マッチ|ぴったり|合う店/.test(
+      lastUser,
+    )
+  ) {
     return true;
   }
 
@@ -114,4 +118,13 @@ export function preferencesToSearchText(
   messages: Array<{ role: string; content: string }>,
 ): string {
   return joinUserMessages(messages);
+}
+
+/** 条件指定なしのおすすめ依頼（優先度順で紹介） */
+export function isGenericRecommendRequest(
+  messages: Array<{ role: string; content: string }>,
+): boolean {
+  const lastUser =
+    [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  return /おすすめ.*(お店|店舗)|お店.*おすすめ|おすすめを(教え|紹介)/.test(lastUser);
 }

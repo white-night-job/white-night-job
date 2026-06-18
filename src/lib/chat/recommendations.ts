@@ -29,7 +29,29 @@ function buildReason(job: ChatJob, prefs: ChatPreferences, scoreDetails: string[
 
   return parts.length > 0
     ? `${parts.join("、")}の条件にマッチしています`
-    : "あなたの条件に近いお店です";
+    : "White Nightおすすめの店舗です";
+}
+
+export function matchPriorityRecommendations(
+  jobs: ChatJob[],
+  limit = 5,
+): ChatRecommendation[] {
+  return jobs
+    .filter((job) => job.chatRecommend.enabled)
+    .sort((a, b) => b.chatRecommend.priority - a.chatRecommend.priority)
+    .slice(0, limit)
+    .map((job) => ({
+      id: job.id,
+      shopName: job.shopName,
+      area: job.area,
+      district: job.district,
+      jobType: job.jobType,
+      salary: job.salary,
+      reason:
+        job.chatRecommend.comment?.trim() ||
+        "White Nightおすすめの優先店舗です",
+      lineUrl: job.lineUrl,
+    }));
 }
 
 function scoreJob(

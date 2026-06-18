@@ -7,10 +7,14 @@ import {
 } from "@/lib/chat/ai-responder";
 import {
   extractPreferencesFromMessages,
+  isGenericRecommendRequest,
   preferencesToSearchText,
   shouldIncludeRecommendations,
 } from "@/lib/chat/preference-extractor";
-import { matchRecommendations } from "@/lib/chat/recommendations";
+import {
+  matchPriorityRecommendations,
+  matchRecommendations,
+} from "@/lib/chat/recommendations";
 import { jobToChatJob } from "@/lib/chat-recommend-db";
 import type { ChatApiMessage, ChatApiResponse } from "@/lib/chat/types";
 import { rowToJob } from "@/lib/job-db";
@@ -93,8 +97,11 @@ export async function POST(request: Request) {
 
     const prefs = extractPreferencesFromMessages(messages);
     const searchText = preferencesToSearchText(messages);
-    const recommendations = shouldIncludeRecommendations(messages, prefs)
-      ? matchRecommendations(jobs, prefs, searchText, 5)
+    const includeRecommendations = shouldIncludeRecommendations(messages, prefs);
+    const recommendations = includeRecommendations
+      ? isGenericRecommendRequest(messages) && Object.keys(prefs).length === 0
+        ? matchPriorityRecommendations(jobs, 5)
+        : matchRecommendations(jobs, prefs, searchText, 5)
       : [];
 
     const response: ChatApiResponse = {

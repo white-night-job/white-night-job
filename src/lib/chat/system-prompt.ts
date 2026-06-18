@@ -24,5 +24,5 @@ export function getWelcomeMessage(): string {
 export const FAQ_QUICK_REPLIES = [
   "未経験でも働ける？",
   "お酒飲めなくても大丈夫？",
-  "おすすめ店舗を教えて",
+  "おすすめのお店は？",
 ];
