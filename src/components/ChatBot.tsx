@@ -30,12 +30,35 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function createAreaStartMessage(areas: string[]): ChatMessage {
+const CHAT_START_MESSAGE = "夜職についてお気軽にご質問ください。";
+
+function createAreaStartMessage(): ChatMessage {
   return {
     id: createId(),
     role: "bot",
-    content: `選択エリア: ${areas.join("、")}\n\n夜職についてお気軽にご質問ください。回答後に「おすすめ店舗を表示する」から、条件に合う店舗をご覧いただけます。`,
+    content: CHAT_START_MESSAGE,
   };
+}
+
+function hasAiConversationReply(messages: ChatMessage[]): boolean {
+  let userMessageCount = 0;
+
+  for (const message of messages) {
+    if (message.role === "user") {
+      userMessageCount++;
+      continue;
+    }
+
+    if (message.role !== "bot" || userMessageCount === 0) continue;
+    if (message.recommendations && message.recommendations.length > 0) continue;
+    if (message.content === CHAT_START_MESSAGE) continue;
+    if (message.content === "先に希望エリアを選択してください") continue;
+    if (message.content.startsWith("エリアを「")) continue;
+
+    return true;
+  }
+
+  return false;
 }
 
 function loadStoredState(): StoredChatState {
@@ -158,7 +181,7 @@ export function ChatBot() {
       stored.messages.length > 0
         ? stored.messages
         : stored.step === "chat"
-          ? [createAreaStartMessage(stored.selectedAreas)]
+          ? [createAreaStartMessage()]
           : [],
     );
     setHydrated(true);
@@ -196,14 +219,14 @@ export function ChatBot() {
     setStep("chat");
     setMessages((current) => {
       if (current.length === 0) {
-        return [createAreaStartMessage(areas)];
+        return [createAreaStartMessage()];
       }
       return [
         ...current,
         {
           id: createId(),
           role: "bot",
-          content: `エリアを「${areas.join("、")}」に変更しました。このエリアでおすすめ店舗をご案内できます。`,
+          content: `エリアを「${areas.join("、")}」に変更しました。`,
         },
       ];
     });
@@ -333,10 +356,8 @@ export function ChatBot() {
           role: "bot",
           content:
             recommendations.length > 0
-              ? data.message ??
-                `${recommendations.length}件のおすすめ店舗です。気になるお店は求人詳細やLINEからご相談ください。`
-              : data.message ??
-                "条件に合うおすすめ店舗が見つかりませんでした。エリアやご希望を変えてお試しください。",
+              ? `ご希望のエリアで${recommendations.length}件見つかりました。`
+              : "条件に合う店舗が見つかりませんでした。エリアやご希望を変えてお試しください。",
           recommendations,
         },
       ]);
@@ -356,6 +377,8 @@ export function ChatBot() {
       setLoading(false);
     }
   }, [goToAreaSelection, loading, messages, selectedAreas]);
+
+  const canShowRecommendButton = hasAiConversationReply(messages);
 
   if (pathname.startsWith("/admin")) {
     return null;
@@ -384,7 +407,7 @@ export function ChatBot() {
                 <p className="truncate text-xs text-white/80">
                   {step === "chat" && selectedAreas.length > 0
                     ? `エリア: ${selectedAreas.join("、")}`
-                    : "夜職の不安・おすすめ店舗相談"}
+                    : "夜職の相談"}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
@@ -480,35 +503,37 @@ export function ChatBot() {
 
                 {!loading && (
                   <div className="space-y-2 border-t border-gold/15 px-3 py-2">
-                    <div className="flex flex-col gap-2">
+                    {canShowRecommendButton && (
                       <button
                         type="button"
                         onClick={() => void showRecommendations()}
-                        className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+                        className="w-full rounded-xl border border-gold/25 bg-white px-4 py-2.5 text-sm text-charcoal hover:border-gold/50 hover:bg-ivory"
                       >
                         おすすめ店舗を表示する
                       </button>
-                      <button
-                        type="button"
-                        onClick={goToAreaSelection}
-                        className="w-full rounded-full border border-gold/40 bg-white px-4 py-2 text-xs font-medium text-gold-dark hover:bg-ivory"
-                      >
-                        エリアを変更する
-                      </button>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      {FAQ_QUICK_REPLIES.map((reply) => (
-                        <button
-                          key={reply}
-                          type="button"
-                          disabled={loading}
-                          onClick={() => void sendMessage(reply)}
-                          className="shrink-0 rounded-full border border-gold/30 bg-white px-3 py-1.5 text-xs text-charcoal hover:border-gold disabled:opacity-50"
-                        >
-                          {reply}
-                        </button>
-                      ))}
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={goToAreaSelection}
+                      className="w-full py-1 text-xs text-muted hover:text-charcoal"
+                    >
+                      エリアを変更する
+                    </button>
+                    {!canShowRecommendButton && (
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {FAQ_QUICK_REPLIES.map((reply) => (
+                          <button
+                            key={reply}
+                            type="button"
+                            disabled={loading}
+                            onClick={() => void sendMessage(reply)}
+                            className="shrink-0 rounded-full border border-gold/30 bg-white px-3 py-1.5 text-xs text-charcoal hover:border-gold disabled:opacity-50"
+                          >
+                            {reply}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
