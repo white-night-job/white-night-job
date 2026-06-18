@@ -39,7 +39,7 @@ export function ReportForm() {
           type="text"
           required
           placeholder="例：Club ○○"
-          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
+          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
         />
       </div>
 
@@ -52,7 +52,7 @@ export function ReportForm() {
           name="area"
           type="text"
           placeholder="例：六本木"
-          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
+          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function ReportForm() {
           id="category"
           name="category"
           required
-          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
+          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
         >
           <option value="">選択してください</option>
           <option value="unpaid">未払い・給与トラブル</option>
@@ -85,7 +85,7 @@ export function ReportForm() {
           required
           rows={5}
           placeholder="具体的な状況をご記入ください（個人情報は伏せても構いません）"
-          className="w-full resize-y rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
+          className="w-full resize-y rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
         />
       </div>
 
@@ -98,7 +98,7 @@ export function ReportForm() {
           name="contact"
           type="email"
           placeholder="返信が必要な場合のみ"
-          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
+          className="w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/20"
         />
       </div>
 

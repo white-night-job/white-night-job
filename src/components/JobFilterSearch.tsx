@@ -165,7 +165,7 @@ export function JobFilterSearch({
               id="shop-keyword"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+              className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
               placeholder="例：ロゼッタ、ニュークラ、送迎あり"
             />
             <button
@@ -228,7 +228,7 @@ export function JobFilterSearch({
             id="minSalary"
             value={draftMinSalary}
             onChange={(event) => setDraftMinSalary(event.target.value)}
-            className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+            className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
           >
             {SALARY_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>

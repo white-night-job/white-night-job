@@ -140,7 +140,7 @@ const emptyForm: JobForm = {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
+  "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
 
 const labelClass = "mb-1.5 block text-sm font-medium text-charcoal";
 
