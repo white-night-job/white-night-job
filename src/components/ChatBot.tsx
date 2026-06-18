@@ -165,12 +165,25 @@ export function ChatBot() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [scrollAnchor, setScrollAnchor] = useState<{
+    kind: "ai-reply" | "recommendations";
+    messageId: string;
+  } | null>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const recommendTitleRefs = useRef<Map<string, HTMLParagraphElement>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const scrollToAnchor = useCallback(
+    (anchor: { kind: "ai-reply" | "recommendations"; messageId: string }) => {
+      const element =
+        anchor.kind === "recommendations"
+          ? recommendTitleRefs.current.get(anchor.messageId)
+          : messageRefs.current.get(anchor.messageId);
+
+      element?.scrollIntoView({ behavior: "smooth", block: "start" });
+    },
+    [],
+  );
 
   useEffect(() => {
     const stored = loadStoredState();
@@ -194,11 +207,21 @@ export function ChatBot() {
   }, [step, selectedAreas, messages, hydrated]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading, step, scrollToBottom]);
+    if (!scrollAnchor || loading) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        scrollToAnchor(scrollAnchor);
+        setScrollAnchor(null);
+      }, 80);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [scrollAnchor, loading, messages, scrollToAnchor]);
 
   useEffect(() => {
-    if (open && step === "chat") {
+    if (!open || step !== "chat") return;
+    if (window.matchMedia("(pointer: fine)").matches) {
       const timer = window.setTimeout(() => inputRef.current?.focus(), 200);
       return () => window.clearTimeout(timer);
     }
@@ -283,19 +306,22 @@ export function ChatBot() {
           throw new Error(data.message ?? "送信に失敗しました。");
         }
 
+        const botMessageId = createId();
         setMessages((current) => [
           ...current,
           {
-            id: createId(),
+            id: botMessageId,
             role: "bot",
             content: data.reply ?? "申し訳ありません。もう一度お試しください。",
           },
         ]);
+        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
       } catch (error) {
+        const botMessageId = createId();
         setMessages((current) => [
           ...current,
           {
-            id: createId(),
+            id: botMessageId,
             role: "bot",
             content:
               error instanceof Error
@@ -303,6 +329,7 @@ export function ChatBot() {
                 : "うまく回答できませんでした。時間をおいてもう一度お試しください",
           },
         ]);
+        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
       } finally {
         setLoading(false);
       }
@@ -348,11 +375,12 @@ export function ChatBot() {
       }
 
       const recommendations = data.recommendations ?? [];
+      const botMessageId = createId();
 
       setMessages((current) => [
         ...current,
         {
-          id: createId(),
+          id: botMessageId,
           role: "bot",
           content:
             recommendations.length > 0
@@ -361,11 +389,17 @@ export function ChatBot() {
           recommendations,
         },
       ]);
+      if (recommendations.length > 0) {
+        setScrollAnchor({ kind: "recommendations", messageId: botMessageId });
+      } else {
+        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
+      }
     } catch (error) {
+      const botMessageId = createId();
       setMessages((current) => [
         ...current,
         {
-          id: createId(),
+          id: botMessageId,
           role: "bot",
           content:
             error instanceof Error
@@ -373,6 +407,7 @@ export function ChatBot() {
               : "おすすめ店舗の取得に失敗しました。時間をおいてもう一度お試しください。",
         },
       ]);
+      setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
     } finally {
       setLoading(false);
     }
@@ -471,7 +506,14 @@ export function ChatBot() {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                      ref={(element) => {
+                        if (element) {
+                          messageRefs.current.set(message.id, element);
+                        } else {
+                          messageRefs.current.delete(message.id);
+                        }
+                      }}
+                      className={`scroll-mt-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
                         className={`max-w-full rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap sm:max-w-[92%] ${
@@ -483,6 +525,18 @@ export function ChatBot() {
                         {message.content}
                         {message.recommendations && message.recommendations.length > 0 && (
                           <div className="mt-3 flex flex-col gap-3">
+                            <p
+                              ref={(element) => {
+                                if (element) {
+                                  recommendTitleRefs.current.set(message.id, element);
+                                } else {
+                                  recommendTitleRefs.current.delete(message.id);
+                                }
+                              }}
+                              className="scroll-mt-2 text-sm font-semibold text-charcoal"
+                            >
+                              おすすめ店舗
+                            </p>
                             {message.recommendations.map((item) => (
                               <RecommendationCard key={item.id} item={item} />
                             ))}
@@ -498,7 +552,6 @@ export function ChatBot() {
                       </div>
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
 
                 {!loading && (
