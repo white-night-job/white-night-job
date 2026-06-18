@@ -1,3 +1,4 @@
+import { rowToChatRecommend } from "@/lib/chat-recommend-db";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -82,6 +83,16 @@ type JobRow = {
   posted_at: string;
   shop_login_id?: string | null;
   shop_login_password?: string | null;
+  chat_recommend_enabled?: boolean | null;
+  chat_recommend_priority?: number | null;
+  chat_recommend_comment?: string | null;
+  chat_recommend_beginner?: boolean | null;
+  chat_recommend_no_alcohol_ok?: boolean | null;
+  chat_recommend_shuttle?: boolean | null;
+  chat_recommend_privacy?: boolean | null;
+  chat_recommend_high_salary?: boolean | null;
+  chat_recommend_relaxed?: boolean | null;
+  chat_recommend_high_earning?: boolean | null;
 };
 
 export function rowToJob(row: JobRow): Job {
@@ -125,6 +136,7 @@ export function rowToJob(row: JobRow): Job {
     lineUrl: row.line_url,
     postedAt: row.posted_at,
     shopLoginId: row.shop_login_id?.trim() || undefined,
+    chatRecommend: rowToChatRecommend(row),
   };
 }
 

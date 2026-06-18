@@ -83,6 +83,16 @@ type JobForm = {
   lineUrl: string;
   shopLoginId: string;
   shopLoginPassword: string;
+  chatRecommendEnabled: boolean;
+  chatRecommendPriority: string;
+  chatRecommendComment: string;
+  chatRecommendBeginner: boolean;
+  chatRecommendNoAlcoholOk: boolean;
+  chatRecommendShuttle: boolean;
+  chatRecommendPrivacy: boolean;
+  chatRecommendHighSalary: boolean;
+  chatRecommendRelaxed: boolean;
+  chatRecommendHighEarning: boolean;
 };
 
 const emptyForm: JobForm = {
@@ -117,6 +127,16 @@ const emptyForm: JobForm = {
   lineUrl: "",
   shopLoginId: "",
   shopLoginPassword: "",
+  chatRecommendEnabled: true,
+  chatRecommendPriority: "0",
+  chatRecommendComment: "",
+  chatRecommendBeginner: false,
+  chatRecommendNoAlcoholOk: false,
+  chatRecommendShuttle: false,
+  chatRecommendPrivacy: false,
+  chatRecommendHighSalary: false,
+  chatRecommendRelaxed: false,
+  chatRecommendHighEarning: false,
 };
 
 const inputClass =
@@ -174,6 +194,16 @@ function toPayload(form: JobForm) {
     ...(form.shopLoginPassword.trim()
       ? { shop_login_password: form.shopLoginPassword }
       : {}),
+    chat_recommend_enabled: form.chatRecommendEnabled,
+    chat_recommend_priority: Number(form.chatRecommendPriority) || 0,
+    chat_recommend_comment: form.chatRecommendComment.trim() || undefined,
+    chat_recommend_beginner: form.chatRecommendBeginner,
+    chat_recommend_no_alcohol_ok: form.chatRecommendNoAlcoholOk,
+    chat_recommend_shuttle: form.chatRecommendShuttle,
+    chat_recommend_privacy: form.chatRecommendPrivacy,
+    chat_recommend_high_salary: form.chatRecommendHighSalary,
+    chat_recommend_relaxed: form.chatRecommendRelaxed,
+    chat_recommend_high_earning: form.chatRecommendHighEarning,
   };
 }
 
@@ -221,6 +251,16 @@ function toForm(job: Job): JobForm {
     lineUrl: job.lineUrl,
     shopLoginId: job.shopLoginId ?? "",
     shopLoginPassword: "",
+    chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
+    chatRecommendPriority: String(job.chatRecommend?.priority ?? 0),
+    chatRecommendComment: job.chatRecommend?.comment ?? "",
+    chatRecommendBeginner: job.chatRecommend?.beginner ?? false,
+    chatRecommendNoAlcoholOk: job.chatRecommend?.noAlcoholOk ?? false,
+    chatRecommendShuttle: job.chatRecommend?.shuttle ?? false,
+    chatRecommendPrivacy: job.chatRecommend?.privacy ?? false,
+    chatRecommendHighSalary: job.chatRecommend?.highSalary ?? false,
+    chatRecommendRelaxed: job.chatRecommend?.relaxed ?? false,
+    chatRecommendHighEarning: job.chatRecommend?.highEarning ?? false,
   };
 }
 
@@ -1412,6 +1452,85 @@ export default function AdminPage() {
           <p className="mt-1 text-xs text-muted">
             入力した場合のみ、求人詳細ページに電話応募ボタンが表示されます。
           </p>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">チャットおすすめ設定</p>
+            <p className="mt-1 text-xs text-muted">
+              White Night相談Botでおすすめ表示する店舗の設定です。
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.chatRecommendEnabled}
+              onChange={(event) =>
+                setField("chatRecommendEnabled", event.target.checked)
+              }
+              className="rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            おすすめ対象にする
+          </label>
+
+          <div>
+            <label htmlFor="chatRecommendPriority" className={labelClass}>
+              おすすめ優先度（数値が大きいほど上位）
+            </label>
+            <input
+              id="chatRecommendPriority"
+              type="number"
+              value={form.chatRecommendPriority}
+              onChange={(event) =>
+                setField("chatRecommendPriority", event.target.value)
+              }
+              className={inputClass}
+              min={0}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="chatRecommendComment" className={labelClass}>
+              おすすめコメント
+            </label>
+            <textarea
+              id="chatRecommendComment"
+              value={form.chatRecommendComment}
+              onChange={(event) =>
+                setField("chatRecommendComment", event.target.value)
+              }
+              className={`${inputClass} min-h-[80px]`}
+              placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
+            />
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                ["chatRecommendBeginner", "未経験向け"],
+                ["chatRecommendNoAlcoholOk", "お酒NG可"],
+                ["chatRecommendShuttle", "送迎あり"],
+                ["chatRecommendPrivacy", "身バレ配慮あり"],
+                ["chatRecommendHighSalary", "高時給推し"],
+                ["chatRecommendRelaxed", "ゆるく働ける"],
+                ["chatRecommendHighEarning", "しっかり稼げる"],
+              ] as const
+            ).map(([field, label]) => (
+              <label
+                key={field}
+                className="flex items-center gap-2 text-sm text-charcoal"
+              >
+                <input
+                  type="checkbox"
+                  checked={form[field]}
+                  onChange={(event) => setField(field, event.target.checked)}
+                  className="rounded border-gold/40 text-gold focus:ring-gold/30"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">

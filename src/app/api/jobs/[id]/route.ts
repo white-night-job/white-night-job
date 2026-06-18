@@ -9,6 +9,10 @@ import {
   shopCredentialsToRow,
   validateJobPayload,
 } from "@/lib/job-db";
+import {
+  chatRecommendToRow,
+  parseChatRecommendFromBody,
+} from "@/lib/chat-recommend-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +61,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
     const shopCredentials = parseShopCredentialsFromBody(body);
     const credentialRow = shopCredentialsToRow(shopCredentials);
+    const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -64,6 +69,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       .update({
         ...payloadToRow(payload),
         ...credentialRow,
+        ...chatRecommendRow,
       })
       .eq("id", id)
       .select("*")

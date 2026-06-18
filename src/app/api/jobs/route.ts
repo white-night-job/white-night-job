@@ -10,6 +10,10 @@ import {
   validateJobPayload,
 } from "@/lib/job-db";
 import {
+  chatRecommendToRow,
+  parseChatRecommendFromBody,
+} from "@/lib/chat-recommend-db";
+import {
   emptyApplicationDetail,
   fetchApplicationDetails,
   fetchApplicationRows,
@@ -178,6 +182,7 @@ export async function POST(request: Request) {
 
     const shopCredentials = parseShopCredentialsFromBody(body);
     const credentialRow = shopCredentialsToRow(shopCredentials);
+    const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -185,6 +190,7 @@ export async function POST(request: Request) {
       .insert({
         ...payloadToRow(payload),
         ...credentialRow,
+        ...chatRecommendRow,
       })
       .select("*")
       .single();

@@ -68,6 +68,19 @@ export interface JobEntry {
   postedAt: string;
 }
 
+export type ChatRecommendSettings = {
+  enabled: boolean;
+  priority: number;
+  comment?: string;
+  beginner: boolean;
+  noAlcoholOk: boolean;
+  shuttle: boolean;
+  privacy: boolean;
+  highSalary: boolean;
+  relaxed: boolean;
+  highEarning: boolean;
+};
+
 export interface Job {
   id: string;
   shopId?: ShopId;
@@ -109,6 +122,7 @@ export interface Job {
   lineUrl: string;
   postedAt: string;
   shopLoginId?: string;
+  chatRecommend?: ChatRecommendSettings;
 }
 
 export interface JobFilters {
