@@ -184,7 +184,7 @@ export function ChatBot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [scrollAnchor, setScrollAnchor] = useState<{
-    kind: "ai-reply" | "recommendations";
+    kind: "user-question" | "recommendations";
     messageId: string;
   } | null>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -199,7 +199,7 @@ export function ChatBot() {
   } | null>(null);
 
   const scrollToAnchor = useCallback(
-    (anchor: { kind: "ai-reply" | "recommendations"; messageId: string }) => {
+    (anchor: { kind: "user-question" | "recommendations"; messageId: string }) => {
       const container = messagesContainerRef.current;
       const element =
         anchor.kind === "recommendations"
@@ -321,7 +321,8 @@ export function ChatBot() {
   }, [open, isMobile]);
 
   useEffect(() => {
-    if (!scrollAnchor || loading) return;
+    if (!scrollAnchor) return;
+    if (loading && scrollAnchor.kind !== "user-question") return;
 
     const frameId = window.requestAnimationFrame(() => {
       window.setTimeout(() => {
@@ -400,6 +401,7 @@ export function ChatBot() {
 
       setMessages((current) => [...current, userMessage]);
       setInput("");
+      setScrollAnchor({ kind: "user-question", messageId: userMessage.id });
 
       try {
         const response = await fetch("/api/chat", {
@@ -429,7 +431,7 @@ export function ChatBot() {
             content: data.reply ?? "申し訳ありません。もう一度お試しください。",
           },
         ]);
-        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
+        setScrollAnchor({ kind: "user-question", messageId: userMessage.id });
       } catch (error) {
         const botMessageId = createId();
         setMessages((current) => [
@@ -443,7 +445,7 @@ export function ChatBot() {
                 : "うまく回答できませんでした。時間をおいてもう一度お試しください",
           },
         ]);
-        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
+        setScrollAnchor({ kind: "user-question", messageId: userMessage.id });
       } finally {
         setLoading(false);
       }
@@ -506,7 +508,7 @@ export function ChatBot() {
       if (recommendations.length > 0) {
         setScrollAnchor({ kind: "recommendations", messageId: botMessageId });
       } else {
-        setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
+        setScrollAnchor({ kind: "user-question", messageId: botMessageId });
       }
     } catch (error) {
       const botMessageId = createId();
@@ -521,7 +523,7 @@ export function ChatBot() {
               : "おすすめ店舗の取得に失敗しました。時間をおいてもう一度お試しください。",
         },
       ]);
-      setScrollAnchor({ kind: "ai-reply", messageId: botMessageId });
+      setScrollAnchor({ kind: "user-question", messageId: botMessageId });
     } finally {
       setLoading(false);
     }
@@ -705,7 +707,6 @@ export function ChatBot() {
                   className="chat-bot-field flex shrink-0 gap-2 border-t border-gold/20 bg-white p-3"
                   onSubmit={(event) => {
                     event.preventDefault();
-                    void sendMessage(input);
                   }}
                 >
                   <input
@@ -714,12 +715,11 @@ export function ChatBot() {
                     enterKeyHint="send"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    onFocus={() => {
-                      if (!isMobile) return;
-                      const lockedY = bodyScrollLockRef.current;
-                      window.requestAnimationFrame(() => {
-                        window.scrollTo(0, lockedY);
-                      });
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                        event.preventDefault();
+                        void sendMessage(input);
+                      }
                     }}
                     placeholder="メッセージを入力..."
                     disabled={loading}
@@ -727,8 +727,9 @@ export function ChatBot() {
                     style={{ fontSize: 16 }}
                   />
                   <button
-                    type="submit"
+                    type="button"
                     disabled={loading || !input.trim()}
+                    onClick={() => void sendMessage(input)}
                     className="shrink-0 rounded-full bg-gold px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
                   >
                     送信
