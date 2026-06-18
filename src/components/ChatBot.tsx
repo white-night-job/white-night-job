@@ -189,20 +189,34 @@ export function ChatBot() {
   } | null>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const recommendTitleRefs = useRef<Map<string, HTMLParagraphElement>>(new Map());
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [mobileKeyboardLayout, setMobileKeyboardLayout] = useState({
-    bottomInset: 0,
-    panelHeight: 0,
-  });
+  const bodyScrollLockRef = useRef(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobilePanelStyle, setMobilePanelStyle] = useState<{
+    top: number;
+    height: number;
+  } | null>(null);
 
   const scrollToAnchor = useCallback(
     (anchor: { kind: "ai-reply" | "recommendations"; messageId: string }) => {
+      const container = messagesContainerRef.current;
       const element =
         anchor.kind === "recommendations"
           ? recommendTitleRefs.current.get(anchor.messageId)
           : messageRefs.current.get(anchor.messageId);
 
-      element?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!element || !container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const nextTop =
+        container.scrollTop + (elementRect.top - containerRect.top) - 8;
+
+      container.scrollTo({
+        top: Math.max(0, nextTop),
+        behavior: "smooth",
+      });
     },
     [],
   );
@@ -229,41 +243,82 @@ export function ChatBot() {
   }, [step, selectedAreas, messages, hydrated]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+    updateIsMobile();
+    mediaQuery.addEventListener("change", updateIsMobile);
+    return () => mediaQuery.removeEventListener("change", updateIsMobile);
+  }, []);
+
+  useEffect(() => {
     if (!open) {
-      setMobileKeyboardLayout({ bottomInset: 0, panelHeight: 0 });
       return;
     }
 
-    const updateMobileKeyboardLayout = () => {
-      const visualViewport = window.visualViewport;
-      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    bodyScrollLockRef.current = window.scrollY;
+    const { style } = document.body;
+    const previous = {
+      overflow: style.overflow,
+      position: style.position,
+      top: style.top,
+      left: style.left,
+      right: style.right,
+      width: style.width,
+    };
 
-      if (!visualViewport || !isMobile) {
-        setMobileKeyboardLayout({ bottomInset: 0, panelHeight: 0 });
+    style.overflow = "hidden";
+    style.position = "fixed";
+    style.top = `-${bodyScrollLockRef.current}px`;
+    style.left = "0";
+    style.right = "0";
+    style.width = "100%";
+
+    return () => {
+      style.overflow = previous.overflow;
+      style.position = previous.position;
+      style.top = previous.top;
+      style.left = previous.left;
+      style.right = previous.right;
+      style.width = previous.width;
+      window.scrollTo(0, bodyScrollLockRef.current);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !isMobile) {
+      setMobilePanelStyle(null);
+      return;
+    }
+
+    const updateMobilePanelStyle = () => {
+      const visualViewport = window.visualViewport;
+      if (!visualViewport) {
+        setMobilePanelStyle(null);
         return;
       }
 
-      const bottomInset = Math.max(
-        0,
-        window.innerHeight - visualViewport.height - visualViewport.offsetTop,
+      const top = Math.max(visualViewport.offsetTop + 8, 8);
+      const height = Math.min(
+        visualViewport.height - 16,
+        Math.min(window.innerHeight * 0.8, visualViewport.height - 16),
       );
-      const panelHeight = Math.min(Math.max(visualViewport.height - 12, 280), 560);
 
-      setMobileKeyboardLayout({ bottomInset, panelHeight });
+      setMobilePanelStyle({
+        top,
+        height: Math.max(height, 280),
+      });
     };
 
-    updateMobileKeyboardLayout();
+    updateMobilePanelStyle();
     const visualViewport = window.visualViewport;
-    visualViewport?.addEventListener("resize", updateMobileKeyboardLayout);
-    visualViewport?.addEventListener("scroll", updateMobileKeyboardLayout);
-    window.addEventListener("resize", updateMobileKeyboardLayout);
+    visualViewport?.addEventListener("resize", updateMobilePanelStyle);
+    window.addEventListener("orientationchange", updateMobilePanelStyle);
 
     return () => {
-      visualViewport?.removeEventListener("resize", updateMobileKeyboardLayout);
-      visualViewport?.removeEventListener("scroll", updateMobileKeyboardLayout);
-      window.removeEventListener("resize", updateMobileKeyboardLayout);
+      visualViewport?.removeEventListener("resize", updateMobilePanelStyle);
+      window.removeEventListener("orientationchange", updateMobilePanelStyle);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   useEffect(() => {
     if (!scrollAnchor || loading) return;
@@ -474,43 +529,20 @@ export function ChatBot() {
 
   const showFaqQuickReplies = !hasAiConversationReply(messages);
 
-  if (pathname.startsWith("/admin")) {
-    return null;
-  }
-
-  return (
-    <>
-      {open && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/20 sm:bg-transparent"
-          onClick={() => setOpen(false)}
-          aria-hidden
-        />
-      )}
-
-      <div
-        className={`fixed right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-4 max-sm:right-4 sm:bottom-6 sm:right-6 sm:left-auto ${
-          mobileKeyboardLayout.bottomInset > 0 ? "" : "bottom-4"
-        }`}
-        style={
-          mobileKeyboardLayout.bottomInset > 0
-            ? { bottom: mobileKeyboardLayout.bottomInset }
-            : undefined
-        }
-      >
-        {open && (
-          <div
-            className={`flex w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:h-[min(75dvh,560px)] sm:w-[min(100vw-2rem,380px)] ${
-              mobileKeyboardLayout.panelHeight > 0 ? "" : "h-[min(75dvh,560px)]"
-            }`}
-            style={
-              mobileKeyboardLayout.panelHeight > 0
-                ? { height: mobileKeyboardLayout.panelHeight }
-                : undefined
-            }
-            role="dialog"
-            aria-label="White Night相談Bot"
-          >
+  const chatPanel = open ? (
+    <div
+      className={`flex w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:h-[min(75dvh,560px)] sm:w-[min(100vw-2rem,380px)] ${
+        isMobile ? "h-full min-h-0" : "h-[min(75dvh,560px)]"
+      }`}
+      style={
+        isMobile
+          ? { maxHeight: "calc(100dvh - 24px)" }
+          : undefined
+      }
+      role="dialog"
+      aria-label="White Night相談Bot"
+      onClick={(event) => event.stopPropagation()}
+    >
             <div className="flex items-center justify-between border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-white">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">White Night相談Bot</p>
@@ -543,7 +575,7 @@ export function ChatBot() {
             </div>
 
             {step === "area" ? (
-              <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5">
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5">
                 <p className="text-sm font-medium text-charcoal">
                   まず希望エリアを選んでください。複数選択できます。
                 </p>
@@ -577,7 +609,10 @@ export function ChatBot() {
               </div>
             ) : (
               <>
-                <div className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4">
+                <div
+                  ref={messagesContainerRef}
+                  className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4"
+                >
                   {messages.map((message, messageIndex) => (
                     <div
                       key={message.id}
@@ -676,8 +711,16 @@ export function ChatBot() {
                   <input
                     ref={inputRef}
                     type="text"
+                    enterKeyHint="send"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
+                    onFocus={() => {
+                      if (!isMobile) return;
+                      const lockedY = bodyScrollLockRef.current;
+                      window.requestAnimationFrame(() => {
+                        window.scrollTo(0, lockedY);
+                      });
+                    }}
                     placeholder="メッセージを入力..."
                     disabled={loading}
                     className="min-w-0 flex-1 rounded-full border border-gold/30 bg-ivory px-4 py-2.5 text-base outline-none focus:border-gold"
@@ -693,31 +736,74 @@ export function ChatBot() {
                 </form>
               </>
             )}
-          </div>
-        )}
+    </div>
+  ) : null;
 
-        <button
-          type="button"
-          onClick={() => setOpen((current) => !current)}
-          className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
-          aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
-          aria-expanded={open}
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/20 sm:bg-transparent"
+          onClick={() => setOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      {open && isMobile && (
+        <div
+          className="fixed z-[70] sm:hidden"
+          style={
+            mobilePanelStyle
+              ? {
+                  top: mobilePanelStyle.top,
+                  left: 12,
+                  right: 12,
+                  height: mobilePanelStyle.height,
+                }
+              : {
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  height: "min(80dvh, calc(100dvh - 24px))",
+                  maxHeight: "calc(100dvh - 24px)",
+                }
+          }
         >
-          {open ? (
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          ) : (
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-          )}
-        </button>
+          {chatPanel}
+        </div>
+      )}
+
+      <div className="fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-auto sm:bottom-6 sm:right-6">
+        {open && !isMobile && chatPanel}
+
+        {(!open || !isMobile) && (
+          <button
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
+            aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
+            aria-expanded={open}
+          >
+            {open ? (
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
     </>
   );
