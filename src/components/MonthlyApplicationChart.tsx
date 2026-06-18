@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useChartScrollToEnd } from "@/hooks/useChartScrollToEnd";
 import type { MonthlyApplicationBucket } from "@/lib/job-applications";
 
 type MonthlyApplicationChartProps = {
@@ -162,6 +163,19 @@ export function MonthlyApplicationChart({
   const chartWidth = compact
     ? Math.max(480, data.length * 56)
     : Math.max(720, data.length * 64);
+  const scrollKey = useMemo(
+    () =>
+      hasApplications
+        ? data
+            .map(
+              (bucket) =>
+                `${bucket.monthKey}:${bucket.line}:${bucket.phone}:${bucket.total}`,
+            )
+            .join("|")
+        : "",
+    [data, hasApplications],
+  );
+  const chartScrollRef = useChartScrollToEnd(scrollKey);
   const innerWidth = chartWidth - PADDING.left - PADDING.right;
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
@@ -227,7 +241,7 @@ export function MonthlyApplicationChart({
         </li>
       </ul>
 
-      <div className="overflow-x-auto pb-1">
+      <div ref={chartScrollRef} className="overflow-x-auto pb-1">
         <div className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
           {activeBucket && (
             <div

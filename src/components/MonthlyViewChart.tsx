@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useChartScrollToEnd } from "@/hooks/useChartScrollToEnd";
 import type { MonthlyViewBucket } from "@/lib/job-views";
 
 type MonthlyViewChartProps = {
@@ -26,6 +27,14 @@ export function MonthlyViewChart({
   const chartWidth = compact
     ? Math.max(480, data.length * 56)
     : Math.max(720, data.length * 64);
+  const scrollKey = useMemo(
+    () =>
+      hasViews
+        ? data.map((bucket) => `${bucket.monthKey}:${bucket.views}`).join("|")
+        : "",
+    [data, hasViews],
+  );
+  const chartScrollRef = useChartScrollToEnd(scrollKey);
   const innerWidth = chartWidth - PADDING.left - PADDING.right;
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
@@ -81,7 +90,7 @@ export function MonthlyViewChart({
         </li>
       </ul>
 
-      <div className="overflow-x-auto pb-1">
+      <div ref={chartScrollRef} className="overflow-x-auto pb-1">
         <div className="relative" style={{ width: chartWidth, minWidth: "100%" }}>
           {activeBucket && (
             <div
