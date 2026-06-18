@@ -61,6 +61,24 @@ function hasAiConversationReply(messages: ChatMessage[]): boolean {
   return false;
 }
 
+function shouldShowRecommendLink(
+  message: ChatMessage,
+  messages: ChatMessage[],
+  messageIndex: number,
+): boolean {
+  if (message.role !== "bot") return false;
+  if (message.recommendations && message.recommendations.length > 0) return false;
+  if (message.content === CHAT_START_MESSAGE) return false;
+  if (message.content === "先に希望エリアを選択してください") return false;
+  if (message.content.startsWith("エリアを「")) return false;
+
+  const hasPriorUser = messages
+    .slice(0, messageIndex)
+    .some((item) => item.role === "user");
+
+  return hasPriorUser;
+}
+
 function loadStoredState(): StoredChatState {
   if (typeof window === "undefined") {
     return { step: "area", selectedAreas: [], messages: [] };
@@ -413,7 +431,7 @@ export function ChatBot() {
     }
   }, [goToAreaSelection, loading, messages, selectedAreas]);
 
-  const canShowRecommendButton = hasAiConversationReply(messages);
+  const showFaqQuickReplies = !hasAiConversationReply(messages);
 
   if (pathname.startsWith("/admin")) {
     return null;
@@ -503,7 +521,7 @@ export function ChatBot() {
             ) : (
               <>
                 <div className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4">
-                  {messages.map((message) => (
+                  {messages.map((message, messageIndex) => (
                     <div
                       key={message.id}
                       ref={(element) => {
@@ -523,6 +541,16 @@ export function ChatBot() {
                         }`}
                       >
                         {message.content}
+                        {shouldShowRecommendLink(message, messages, messageIndex) && (
+                          <button
+                            type="button"
+                            onClick={() => void showRecommendations()}
+                            disabled={loading}
+                            className="mt-3 inline-flex min-h-[44px] items-center py-1 text-sm font-medium text-gold-dark no-underline transition hover:underline disabled:opacity-50"
+                          >
+                            条件に合う店舗を見る →
+                          </button>
+                        )}
                         {message.recommendations && message.recommendations.length > 0 && (
                           <div className="mt-3 flex flex-col gap-3">
                             <p
@@ -556,15 +584,6 @@ export function ChatBot() {
 
                 {!loading && (
                   <div className="space-y-2 border-t border-gold/15 px-3 py-2">
-                    {canShowRecommendButton && (
-                      <button
-                        type="button"
-                        onClick={() => void showRecommendations()}
-                        className="w-full rounded-xl border border-gold/25 bg-white px-4 py-2.5 text-sm text-charcoal hover:border-gold/50 hover:bg-ivory"
-                      >
-                        おすすめ店舗を表示する
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={goToAreaSelection}
@@ -572,7 +591,7 @@ export function ChatBot() {
                     >
                       エリアを変更する
                     </button>
-                    {!canShowRecommendButton && (
+                    {showFaqQuickReplies && (
                       <div className="flex gap-2 overflow-x-auto pb-1">
                         {FAQ_QUICK_REPLIES.map((reply) => (
                           <button
