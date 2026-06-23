@@ -15,15 +15,13 @@ export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) 
         className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_27%,rgba(255,255,255,0.72)_43%,rgba(255,255,255,0.18)_58%,transparent_100%),radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.58),transparent_16%),radial-gradient(circle_at_78%_72%,rgba(255,255,255,0.36),transparent_18%)] opacity-95"
         aria-hidden
       />
-      <span className="sparkle left-[12%] top-[18%]">✦</span>
-      <span className="sparkle animation-delay-150 right-[14%] top-[16%] text-sm">✧</span>
-      <span className="sparkle animation-delay-300 left-[20%] bottom-[24%] text-xs">✦</span>
-      <span className="sparkle animation-delay-450 right-[23%] bottom-[20%] text-xs">✧</span>
-      <span className="sparkle animation-delay-600 left-[48%] top-[10%] text-[10px]">✦</span>
-      <span className="sparkle animation-delay-750 left-[8%] bottom-[12%] text-lg">✦</span>
-      <span className="sparkle animation-delay-900 right-[8%] bottom-[12%] text-lg">✦</span>
-      <span className="sparkle animation-delay-1050 left-[35%] top-[28%] text-[9px]">✧</span>
-      <span className="sparkle animation-delay-1200 right-[35%] top-[30%] text-[9px]">✧</span>
+      <span className="sparkle left-[6%] top-[20%]">✦</span>
+      <span className="sparkle animation-delay-150 right-[6%] top-[18%] text-sm">✧</span>
+      <span className="sparkle animation-delay-300 left-[10%] bottom-[22%] text-xs">✦</span>
+      <span className="sparkle animation-delay-450 right-[10%] bottom-[20%] text-xs">✧</span>
+      <span className="sparkle animation-delay-600 left-[48%] top-[12%] text-[10px]">✦</span>
+      <span className="sparkle animation-delay-1050 left-[32%] top-[30%] text-[9px]">✧</span>
+      <span className="sparkle animation-delay-1200 right-[32%] top-[32%] text-[9px]">✧</span>
       <span
         className="absolute -left-7 top-[-12px] h-[calc(100%+24px)] w-3 -rotate-12 bg-gradient-to-b from-black via-[#15110b] to-black shadow-[14px_0_0_rgba(0,0,0,0.72)] sm:-left-4 sm:w-4"
         aria-hidden
@@ -41,34 +39,34 @@ export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) 
         aria-hidden
       />
 
-      <span className="absolute left-1/2 top-1 flex -translate-x-1/2 items-center justify-center gap-1 text-[9px] font-bold leading-none tracking-[0.2em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:top-1.5 sm:gap-1.5 sm:text-[10px]">
-        <span>★</span>
-        <span>★</span>
-        <span className="font-serif text-[11px] text-[#7b4f0b] sm:text-xs">♛</span>
-        <span>★</span>
-        <span>★</span>
-      </span>
+      <div className="relative z-10 flex h-full w-[88%] max-w-full flex-col items-center justify-center gap-1 sm:w-[86%]">
+        <span className="flex shrink-0 items-center justify-center gap-1.5 text-[10px] font-bold leading-none tracking-[0.22em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:gap-2 sm:text-xs">
+          <span>★</span>
+          <span>★</span>
+          <span className="font-serif text-sm text-[#7b4f0b] sm:text-base">♛</span>
+          <span>★</span>
+          <span>★</span>
+        </span>
 
-      <div className="relative flex h-full w-full flex-col items-center justify-center gap-0 text-center leading-none">
-        <div className="flex flex-col items-center gap-0 leading-none">
-          <span className="relative inline-flex items-center justify-center">
+        <div className="flex w-full flex-col items-center gap-0.5 text-center sm:gap-1">
+          <span className="relative flex w-full max-w-[17.5rem] items-center justify-center sm:max-w-[21rem]">
             <span
-              className="absolute -left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_4px_10px_rgba(0,0,0,0.35)] sm:-left-3 sm:h-5 sm:w-5"
+              className="absolute -left-4 top-1/2 h-6 w-6 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:-left-5 sm:h-7 sm:w-7"
               aria-hidden
             />
             <span
-              className="absolute -right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 bg-black [clip-path:polygon(0_0,100%_50%,0_100%)] shadow-[0_4px_10px_rgba(0,0,0,0.35)] sm:-right-3 sm:h-5 sm:w-5"
+              className="absolute -right-4 top-1/2 h-6 w-6 -translate-y-1/2 bg-black [clip-path:polygon(0_0,100%_50%,0_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:-right-5 sm:h-7 sm:w-7"
               aria-hidden
             />
-            <span className="relative z-10 inline-flex items-center justify-center border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-3.5 py-0 font-serif text-xs font-black leading-none tracking-[0.14em] text-gold-light shadow-[0_8px_18px_rgba(0,0,0,0.42)] before:absolute before:inset-x-3.5 before:top-0 before:h-px before:bg-white/30 sm:px-5 sm:text-sm">
+            <span className="relative z-10 flex w-full min-w-0 items-center justify-center border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-8 py-1 font-serif text-sm font-black leading-snug tracking-[0.16em] text-gold-light shadow-[0_10px_24px_rgba(0,0,0,0.42)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-white/30 sm:px-12 sm:text-base">
               業界唯一
             </span>
           </span>
 
-          <span className="font-serif text-sm font-black leading-none tracking-[0.08em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55)] sm:text-base">
+          <span className="w-full font-serif text-base font-black leading-snug tracking-[0.1em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_6px_rgba(0,0,0,0.12)] sm:text-lg">
             全掲載店舗
           </span>
-          <span className="font-serif text-sm font-black leading-none tracking-[0.08em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55)] sm:text-base">
+          <span className="w-full font-serif text-base font-black leading-snug tracking-[0.1em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_6px_rgba(0,0,0,0.12)] sm:text-lg">
             相談受付実施
           </span>
         </div>
