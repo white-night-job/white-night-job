@@ -1,17 +1,15 @@
 import Link from "next/link";
+import { TOP_CTA_PROMO_LAYOUT } from "@/components/top-cta-styles";
 
 type SupportPromoBannerProps = {
   className?: string;
 };
 
-const PROMO_CTA_LAYOUT =
-  "flex flex-col items-center justify-center px-5 py-3.5 text-center sm:px-8 sm:py-4";
-
 export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) {
   return (
     <Link
       href="#support-section"
-      className={`animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-[linear-gradient(135deg,#fff3b4_0%,#e6bd52_24%,#9c6716_52%,#f8df79_76%,#b06f16_100%)] shadow-[0_18px_45px_rgba(201,169,98,0.34),0_0_32px_rgba(232,213,163,0.32),inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(201,169,98,0.48),0_0_50px_rgba(232,213,163,0.55),inset_0_1px_0_rgba(255,255,255,0.75)] ${PROMO_CTA_LAYOUT} ${className}`}
+      className={`animate-fade-up group relative block overflow-hidden rounded-3xl border border-gold-dark/40 bg-[linear-gradient(135deg,#fff3b4_0%,#e6bd52_24%,#9c6716_52%,#f8df79_76%,#b06f16_100%)] shadow-[0_18px_45px_rgba(201,169,98,0.34),0_0_32px_rgba(232,213,163,0.32),inset_0_1px_0_rgba(255,255,255,0.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(201,169,98,0.48),0_0_50px_rgba(232,213,163,0.55),inset_0_1px_0_rgba(255,255,255,0.75)] ${TOP_CTA_PROMO_LAYOUT} ${className}`}
     >
       <span
         className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.18)_27%,rgba(255,255,255,0.72)_43%,rgba(255,255,255,0.18)_58%,transparent_100%),radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.58),transparent_16%),radial-gradient(circle_at_78%_72%,rgba(255,255,255,0.36),transparent_18%)] opacity-95"
@@ -43,7 +41,7 @@ export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) 
         aria-hidden
       />
 
-      <div className="relative flex w-full flex-col items-center gap-1.5">
+      <div className="relative flex w-full flex-col items-center gap-0.5">
         <span className="flex items-center justify-center gap-1.5 text-[10px] font-bold leading-none tracking-[0.24em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:gap-2 sm:text-xs">
           <span>★</span>
           <span>★</span>
@@ -54,7 +52,7 @@ export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) 
           <span>★</span>
         </span>
 
-        <div className="flex w-full flex-col items-center gap-1 text-center">
+        <div className="flex w-full flex-col items-center gap-0 text-center">
           <span className="relative inline-flex items-center justify-center">
             <span
               className="absolute -left-3 top-1/2 h-5 w-5 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:-left-3.5 sm:h-6 sm:w-6"
