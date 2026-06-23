@@ -302,13 +302,22 @@ export function JobFilterSearch({
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="min-h-12 w-full rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-base font-semibold text-gold-light shadow-sm hover:bg-black sm:min-h-11 sm:text-sm"
-            >
-              条件をリセット
-            </button>
+            <div className="flex flex-col gap-3 pt-1">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="min-h-12 w-full rounded-full border border-gold/40 bg-ivory px-6 py-3 text-base font-semibold text-gold-dark hover:bg-gold-light/20 sm:min-h-11 sm:text-sm"
+              >
+                条件をリセット
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSearch()}
+                className="min-h-12 w-full rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-base font-semibold text-gold-light shadow-sm hover:bg-black sm:min-h-11 sm:text-sm"
+              >
+                検索する
+              </button>
+            </div>
           </div>
         )}
       </section>
