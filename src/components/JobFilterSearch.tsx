@@ -31,7 +31,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+      className={`rounded-full px-4 py-2.5 text-sm font-medium transition-all ${
         active
           ? "bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
           : "border border-gold/30 bg-ivory text-muted hover:border-gold hover:text-gold-dark"
@@ -64,6 +64,7 @@ export function JobFilterSearch({
   const [draftJobType, setDraftJobType] = useState(currentJobType);
   const [draftMinSalary, setDraftMinSalary] = useState(currentMinSalary);
   const [draftBenefits, setDraftBenefits] = useState<string[]>(currentBenefits);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     setKeyword(currentQuery);
@@ -71,7 +72,16 @@ export function JobFilterSearch({
     setDraftJobType(currentJobType);
     setDraftMinSalary(currentMinSalary);
     setDraftBenefits(currentBenefitsKey ? currentBenefitsKey.split(",") : []);
+
+    const hasAdvancedFilters =
+      Boolean(currentQuery) ||
+      currentMinSalary !== "all" ||
+      currentBenefits.length > 0;
+    if (hasAdvancedFilters) {
+      setShowAdvanced(true);
+    }
   }, [
+    currentBenefits.length,
     currentBenefitsKey,
     currentDistrict,
     currentJobType,
@@ -104,6 +114,7 @@ export function JobFilterSearch({
     setDraftJobType("all");
     setDraftMinSalary("all");
     setDraftBenefits([]);
+    setShowAdvanced(false);
   }
 
   function handleSearch(event?: React.FormEvent<HTMLFormElement>) {
@@ -132,7 +143,7 @@ export function JobFilterSearch({
         id="shop-search"
         className="scroll-mt-24 rounded-3xl border border-gold/25 bg-white p-4 shadow-[0_10px_35px_rgba(33,29,24,0.08)] sm:scroll-mt-28 sm:p-6"
       >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-gold-dark">
               SHOP SEARCH
@@ -141,7 +152,7 @@ export function JobFilterSearch({
               お店を探す
             </h2>
             <p className="mt-1 text-xs text-muted">
-              ワード、エリア、職種、時給、待遇からお店を絞り込めます。
+              エリアと職種でさっと探せます。細かい条件は「詳しく選ぶ」から。
             </p>
           </div>
           <button
@@ -153,142 +164,163 @@ export function JobFilterSearch({
           </button>
         </div>
 
-        <div>
-          <label htmlFor="shop-keyword" className="mb-2 block text-sm font-semibold text-charcoal">
-            ワード検索
-          </label>
-          <form
-            onSubmit={handleKeywordSubmit}
-            className="grid gap-3 sm:grid-cols-[1fr_auto]"
-          >
-            <input
-              id="shop-keyword"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
-              placeholder="例：ロゼッタ、ニュークラ、送迎あり"
-            />
-            <button
-              type="submit"
-              className="min-h-12 rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
-            >
-              検索する
-            </button>
-          </form>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-gold/15 bg-ivory/50 p-4">
-          <p className="mb-1 text-xs font-medium text-gold-dark">エリア：札幌（固定）</p>
-          <h3 className="mb-3 text-sm font-semibold text-charcoal">エリア</h3>
-          <div className="flex flex-wrap gap-2">
-            <FilterButton
-              active={draftDistrict === "all"}
-              onClick={() => setDraftDistrict("all")}
-            >
-              すべて
-            </FilterButton>
-            {DISTRICTS.map((d) => (
+        <div className="flex flex-col gap-5">
+          <div className="rounded-2xl border border-gold/15 bg-ivory/50 p-4">
+            <p className="mb-1 text-xs font-medium text-gold-dark">エリア：札幌（固定）</p>
+            <h3 className="mb-3 text-sm font-semibold text-charcoal">エリア</h3>
+            <div className="flex flex-wrap gap-2">
               <FilterButton
-                key={d}
-                active={draftDistrict === d}
-                onClick={() => setDraftDistrict(d)}
+                active={draftDistrict === "all"}
+                onClick={() => setDraftDistrict("all")}
               >
-                {d}
+                すべて
               </FilterButton>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-gold/15 bg-ivory/50 p-4">
-          <h3 className="mb-3 text-sm font-semibold text-charcoal">職種で探す</h3>
-          <div className="flex flex-wrap gap-2">
-            <FilterButton
-              active={draftJobType === "all"}
-              onClick={() => setDraftJobType("all")}
-            >
-              すべて
-            </FilterButton>
-            {JOB_TYPES.map((type) => (
-              <FilterButton
-                key={type}
-                active={draftJobType === type}
-                onClick={() => setDraftJobType(type)}
-              >
-                {type}
-              </FilterButton>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5">
-          <label htmlFor="minSalary" className="mb-2 block text-sm font-semibold text-charcoal">
-            最低時給
-          </label>
-          <select
-            id="minSalary"
-            value={draftMinSalary}
-            onChange={(event) => setDraftMinSalary(event.target.value)}
-            className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
-          >
-            {SALARY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          <p className="text-sm font-semibold text-charcoal">待遇で絞り込む</p>
-          {BENEFIT_SEARCH_CATEGORIES.map((category) => (
-            <div key={category.title} className="rounded-2xl border border-gold/15 bg-ivory/70 p-3">
-              <p className="mb-2 text-xs font-semibold tracking-wide text-gold-dark">
-                {category.title}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {category.items.map((benefit) => {
-                  const selected = draftBenefits.includes(benefit);
-                  return (
-                    <button
-                      key={benefit}
-                      type="button"
-                      onClick={() => toggleBenefit(benefit)}
-                      className={`rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-all sm:text-sm ${
-                        selected
-                          ? "border-gold bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
-                          : "border-gold/30 bg-white text-muted hover:border-gold hover:bg-gold-light/20 hover:text-gold-dark"
-                      }`}
-                    >
-                      {benefit}
-                    </button>
-                  );
-                })}
-              </div>
+              {DISTRICTS.map((d) => (
+                <FilterButton
+                  key={d}
+                  active={draftDistrict === d}
+                  onClick={() => setDraftDistrict(d)}
+                >
+                  {d}
+                </FilterButton>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
-      <div className="grid gap-3 rounded-2xl border border-gold/25 bg-white p-4 shadow-[0_8px_24px_rgba(33,29,24,0.06)] sm:grid-cols-[1fr_auto] sm:p-5">
-        <p className="text-xs leading-relaxed text-muted sm:self-center">
-          条件を選んだら「検索する」を押すと、求人一覧に反映されます。
-        </p>
-        <div className="grid gap-2 sm:grid-cols-2">
+          </div>
+
+          <div className="rounded-2xl border border-gold/15 bg-ivory/50 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-charcoal">職種で探す</h3>
+            <div className="flex flex-wrap gap-2">
+              <FilterButton
+                active={draftJobType === "all"}
+                onClick={() => setDraftJobType("all")}
+              >
+                すべて
+              </FilterButton>
+              {JOB_TYPES.map((type) => (
+                <FilterButton
+                  key={type}
+                  active={draftJobType === type}
+                  onClick={() => setDraftJobType(type)}
+                >
+                  {type}
+                </FilterButton>
+              ))}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => handleSearch()}
-            className="min-h-12 rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+            className="min-h-12 w-full rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-base font-semibold text-gold-light shadow-sm hover:bg-black sm:min-h-11 sm:text-sm"
           >
             検索する
           </button>
+        </div>
+
+        <div className="mt-5">
           <button
             type="button"
-            onClick={resetFilters}
-            className="min-h-12 rounded-full border border-gold/40 bg-ivory px-6 py-3 text-sm font-semibold text-gold-dark hover:bg-gold-light/20"
+            onClick={() => setShowAdvanced((current) => !current)}
+            aria-expanded={showAdvanced}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-gold/35 bg-ivory px-4 py-2.5 text-sm font-semibold text-gold-dark transition hover:bg-gold-light/20"
           >
-            リセット
+            詳しく選ぶ
+            <svg
+              className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </div>
-      </div>
+
+        {showAdvanced && (
+          <div className="mt-5 space-y-5 border-t border-gold/15 pt-5">
+            <div>
+              <label htmlFor="shop-keyword" className="mb-2 block text-sm font-semibold text-charcoal">
+                ワード検索
+              </label>
+              <form
+                onSubmit={handleKeywordSubmit}
+                className="grid gap-3 sm:grid-cols-[1fr_auto]"
+              >
+                <input
+                  id="shop-keyword"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  className="min-h-12 rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+                  placeholder="例：ロゼッタ、ニュークラ、送迎あり"
+                />
+                <button
+                  type="submit"
+                  className="min-h-12 rounded-full border border-gold/40 bg-ivory px-6 py-3 text-sm font-semibold text-gold-dark hover:bg-gold-light/20"
+                >
+                  ワードで検索
+                </button>
+              </form>
+            </div>
+
+            <div>
+              <label htmlFor="minSalary" className="mb-2 block text-sm font-semibold text-charcoal">
+                最低時給
+              </label>
+              <select
+                id="minSalary"
+                value={draftMinSalary}
+                onChange={(event) => setDraftMinSalary(event.target.value)}
+                className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+              >
+                {SALARY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-charcoal">待遇で絞り込む</p>
+              {BENEFIT_SEARCH_CATEGORIES.map((category) => (
+                <div key={category.title} className="rounded-2xl border border-gold/15 bg-ivory/70 p-3">
+                  <p className="mb-2 text-xs font-semibold tracking-wide text-gold-dark">
+                    {category.title}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {category.items.map((benefit) => {
+                      const selected = draftBenefits.includes(benefit);
+                      return (
+                        <button
+                          key={benefit}
+                          type="button"
+                          onClick={() => toggleBenefit(benefit)}
+                          className={`rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-all sm:text-sm ${
+                            selected
+                              ? "border-gold bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
+                              : "border-gold/30 bg-white text-muted hover:border-gold hover:bg-gold-light/20 hover:text-gold-dark"
+                          }`}
+                        >
+                          {benefit}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleSearch()}
+              className="min-h-12 w-full rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-base font-semibold text-gold-light shadow-sm hover:bg-black sm:min-h-11 sm:text-sm"
+            >
+              この条件で検索する
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
