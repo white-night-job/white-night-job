@@ -143,25 +143,16 @@ export function JobFilterSearch({
         id="shop-search"
         className="scroll-mt-24 rounded-3xl border border-gold/25 bg-white p-4 shadow-[0_10px_35px_rgba(33,29,24,0.08)] sm:scroll-mt-28 sm:p-6"
       >
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-gold-dark">
-              SHOP SEARCH
-            </p>
-            <h2 className="font-serif text-lg font-semibold text-charcoal">
-              お店を探す
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              エリアと職種でさっと探せます。細かい条件は「詳しく選ぶ」から。
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="rounded-full border border-gold/50 bg-charcoal px-4 py-2 text-xs font-semibold text-gold-light shadow-sm hover:bg-black"
-          >
-            条件をリセット
-          </button>
+        <div className="mb-5">
+          <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-gold-dark">
+            SHOP SEARCH
+          </p>
+          <h2 className="font-serif text-lg font-semibold text-charcoal">
+            お店を探す
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            エリアと職種でさっと探せます。細かい条件は「詳しく探す」から。
+          </p>
         </div>
 
         <div className="flex flex-col gap-5">
@@ -224,7 +215,7 @@ export function JobFilterSearch({
             aria-expanded={showAdvanced}
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-gold/35 bg-ivory px-4 py-2.5 text-sm font-semibold text-gold-dark transition hover:bg-gold-light/20"
           >
-            詳しく選ぶ
+            詳しく探す
             <svg
               className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
               fill="none"
@@ -313,10 +304,10 @@ export function JobFilterSearch({
 
             <button
               type="button"
-              onClick={() => handleSearch()}
+              onClick={resetFilters}
               className="min-h-12 w-full rounded-full border border-gold/50 bg-charcoal px-6 py-3 text-base font-semibold text-gold-light shadow-sm hover:bg-black sm:min-h-11 sm:text-sm"
             >
-              この条件で検索する
+              条件をリセット
             </button>
           </div>
         )}
