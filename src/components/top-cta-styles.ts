@@ -3,4 +3,4 @@ export const TOP_CTA_CARD_HEIGHT =
 
 export const TOP_CTA_CARD_LAYOUT = `${TOP_CTA_CARD_HEIGHT} py-3.5 sm:py-4`;
 
-export const TOP_CTA_PROMO_LAYOUT = `${TOP_CTA_CARD_HEIGHT} py-0.5 sm:py-1`;
+export const TOP_CTA_PROMO_LAYOUT = `${TOP_CTA_CARD_HEIGHT} py-0`;

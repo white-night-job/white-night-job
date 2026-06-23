@@ -41,36 +41,34 @@ export function SupportPromoBanner({ className = "" }: SupportPromoBannerProps) 
         aria-hidden
       />
 
-      <div className="relative flex w-full flex-col items-center gap-0.5">
-        <span className="flex items-center justify-center gap-1.5 text-[10px] font-bold leading-none tracking-[0.24em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:gap-2 sm:text-xs">
-          <span>★</span>
-          <span>★</span>
-          <span className="font-serif text-sm text-[#7b4f0b] drop-shadow-[0_0_8px_rgba(123,79,11,0.22)] sm:text-base">
-            ♛
-          </span>
-          <span>★</span>
-          <span>★</span>
-        </span>
+      <span className="absolute left-1/2 top-1 flex -translate-x-1/2 items-center justify-center gap-1 text-[9px] font-bold leading-none tracking-[0.2em] text-[#7b4f0b] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:top-1.5 sm:gap-1.5 sm:text-[10px]">
+        <span>★</span>
+        <span>★</span>
+        <span className="font-serif text-[11px] text-[#7b4f0b] sm:text-xs">♛</span>
+        <span>★</span>
+        <span>★</span>
+      </span>
 
-        <div className="flex w-full flex-col items-center gap-0 text-center">
+      <div className="relative flex h-full w-full flex-col items-center justify-center gap-0 text-center leading-none">
+        <div className="flex flex-col items-center gap-0 leading-none">
           <span className="relative inline-flex items-center justify-center">
             <span
-              className="absolute -left-3 top-1/2 h-5 w-5 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:-left-3.5 sm:h-6 sm:w-6"
+              className="absolute -left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 bg-black [clip-path:polygon(100%_0,0_50%,100%_100%)] shadow-[0_4px_10px_rgba(0,0,0,0.35)] sm:-left-3 sm:h-5 sm:w-5"
               aria-hidden
             />
             <span
-              className="absolute -right-3 top-1/2 h-5 w-5 -translate-y-1/2 bg-black [clip-path:polygon(0_0,100%_50%,0_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.35)] sm:-right-3.5 sm:h-6 sm:w-6"
+              className="absolute -right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 bg-black [clip-path:polygon(0_0,100%_50%,0_100%)] shadow-[0_4px_10px_rgba(0,0,0,0.35)] sm:-right-3 sm:h-5 sm:w-5"
               aria-hidden
             />
-            <span className="relative z-10 inline-flex items-center justify-center border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-5 py-0.5 font-serif text-base font-black tracking-[0.16em] text-gold-light shadow-[0_10px_24px_rgba(0,0,0,0.42)] before:absolute before:inset-x-5 before:top-0 before:h-px before:bg-white/30 sm:px-7 sm:text-lg">
+            <span className="relative z-10 inline-flex items-center justify-center border border-black/80 bg-[linear-gradient(180deg,#2b2418_0%,#050505_44%,#1a140d_100%)] px-3.5 py-0 font-serif text-xs font-black leading-none tracking-[0.14em] text-gold-light shadow-[0_8px_18px_rgba(0,0,0,0.42)] before:absolute before:inset-x-3.5 before:top-0 before:h-px before:bg-white/30 sm:px-5 sm:text-sm">
               業界唯一
             </span>
           </span>
 
-          <span className="font-serif text-[1.35rem] font-black leading-tight tracking-[0.12em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_6px_rgba(0,0,0,0.14)] sm:text-[1.75rem]">
+          <span className="font-serif text-sm font-black leading-none tracking-[0.08em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55)] sm:text-base">
             全掲載店舗
           </span>
-          <span className="font-serif text-[1.35rem] font-black leading-tight tracking-[0.12em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55),0_2px_6px_rgba(0,0,0,0.14)] sm:text-[1.75rem]">
+          <span className="font-serif text-sm font-black leading-none tracking-[0.08em] text-black [text-shadow:0_1px_0_rgba(255,255,255,0.55)] sm:text-base">
             相談受付実施
           </span>
         </div>
