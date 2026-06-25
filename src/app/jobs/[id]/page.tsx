@@ -71,11 +71,6 @@ export default function JobDetailPage({
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
   const unsetLabel = "未設定";
-  const basicInfoItems = [
-    { label: "勤務時間", value: job.workHours || unsetLabel },
-    { label: "営業時間", value: job.businessHours || unsetLabel },
-    { label: "キャスト年齢", value: job.ageGroup || unsetLabel },
-  ];
   const sliderItems = [
     {
       label: "お店の雰囲気",
@@ -175,18 +170,43 @@ export default function JobDetailPage({
               <span className="text-gold-dark">◆</span>
               お店の基本情報
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {basicInfoItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-gold/20 bg-white px-4 py-3"
-                >
-                  <p className="text-xs font-medium text-muted">{item.label}</p>
-                  <p className="mt-1 text-sm font-medium text-charcoal">
-                    {item.value}
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                <p className="text-xs font-medium text-muted">営業時間</p>
+                <p className="mt-1 text-sm font-medium text-charcoal">
+                  {job.businessHours || unsetLabel}
+                </p>
+              </div>
+              {job.address && googleMapUrl && (
+                <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                  <p className="text-xs font-medium text-muted">住所</p>
+                  <a
+                    href={googleMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 flex min-h-11 flex-col justify-center rounded-xl border border-gold/25 bg-ivory px-3 py-2 text-sm font-medium text-charcoal transition hover:border-gold hover:bg-gold-light/20 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                  >
+                    <span>{job.address}</span>
+                    <span className="mt-1 shrink-0 font-semibold text-gold-dark sm:mt-0">
+                      Googleマップで見る →
+                    </span>
+                  </a>
+                </div>
+              )}
+              {job.access && (
+                <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                  <p className="text-xs font-medium text-muted">アクセス</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-charcoal">
+                    {job.access}
                   </p>
                 </div>
-              ))}
+              )}
+              <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                <p className="text-xs font-medium text-muted">キャスト年齢</p>
+                <p className="mt-1 text-sm font-medium text-charcoal">
+                  {job.ageGroup || unsetLabel}
+                </p>
+              </div>
             </div>
             <div className="mt-5 space-y-5 rounded-2xl border border-gold/20 bg-white p-4">
               {sliderItems.map((item) => {
@@ -225,26 +245,6 @@ export default function JobDetailPage({
                   </div>
                 );
               })}
-            </div>
-            <div className="mt-3 rounded-2xl border border-gold/20 bg-white px-4 py-3">
-              <p className="text-xs font-medium text-muted">住所</p>
-              {job.address && googleMapUrl ? (
-                <a
-                  href={googleMapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 flex min-h-11 flex-col justify-center rounded-xl border border-gold/25 bg-ivory px-3 py-2 text-sm font-medium text-charcoal transition hover:border-gold hover:bg-gold-light/20 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-                >
-                  <span>{job.address}</span>
-                  <span className="mt-1 shrink-0 font-semibold text-gold-dark sm:mt-0">
-                    Googleマップで見る →
-                  </span>
-                </a>
-              ) : (
-                <p className="mt-1 rounded-xl border border-gold/15 bg-ivory px-3 py-2 text-sm text-muted">
-                  {unsetLabel}
-                </p>
-              )}
             </div>
           </section>
           <JobApplyButtons job={job} />

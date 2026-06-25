@@ -50,24 +50,22 @@ export function JobCard({ job }: { job: Job }) {
               <dd className="mt-0.5 font-bold text-gold-dark">{job.salary}</dd>
             </div>
             <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-              <dt className="text-xs font-semibold text-gold-dark">アクセス</dt>
+              <dt className="text-xs font-semibold text-gold-dark">営業時間</dt>
               <dd className="mt-0.5 line-clamp-1 text-muted">
-                {job.access || job.address || "詳細ページでご確認ください"}
+                {job.businessHours || "応相談"}
               </dd>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
+            {job.address && (
               <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-                <dt className="text-xs font-semibold text-gold-dark">営業時間</dt>
-                <dd className="mt-0.5 line-clamp-1 text-muted">
-                  {job.businessHours || "応相談"}
-                </dd>
+                <dt className="text-xs font-semibold text-gold-dark">住所</dt>
+                <dd className="mt-0.5 line-clamp-2 text-muted">{job.address}</dd>
               </div>
-              <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-                <dt className="text-xs font-semibold text-gold-dark">キャスト年齢</dt>
-                <dd className="mt-0.5 line-clamp-1 text-muted">
-                  {job.ageGroup || "詳細ページで確認"}
-                </dd>
-              </div>
+            )}
+            <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
+              <dt className="text-xs font-semibold text-gold-dark">キャスト年齢</dt>
+              <dd className="mt-0.5 line-clamp-1 text-muted">
+                {job.ageGroup || "詳細ページで確認"}
+              </dd>
             </div>
           </dl>
 
