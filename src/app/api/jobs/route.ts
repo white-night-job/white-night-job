@@ -59,7 +59,10 @@ export async function GET(request: Request) {
     const createdAtMap = Object.fromEntries(
       rows.map((row) => [row.id, String(row.created_at)]),
     );
-    const jobs = rows.map(rowToJob);
+    const isAdmin = await isAdminAuthenticated();
+    const jobs = rows.map((row) =>
+      rowToJob(row, { includeShopLoginPassword: isAdmin }),
+    );
     const filteredJobs = jobs.filter((job) => {
       const searchableText = [
         job.shopName,
@@ -104,7 +107,6 @@ export async function GET(request: Request) {
       ),
     );
 
-    const isAdmin = await isAdminAuthenticated();
     let applicationDetails: Record<string, JobApplicationDetail> | undefined;
     let applicationRows: ApplicationRow[] | undefined;
     let viewRows: ViewRow[] | undefined;
@@ -202,7 +204,10 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    return NextResponse.json({ job: rowToJob(data) }, { status: 201 });
+    return NextResponse.json(
+      { job: rowToJob(data, { includeShopLoginPassword: true }) },
+      { status: 201 },
+    );
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の保存に失敗しました。") },

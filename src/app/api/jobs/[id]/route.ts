@@ -83,7 +83,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
       throw error;
     }
 
-    return NextResponse.json({ job: rowToJob(data) });
+    return NextResponse.json({
+      job: rowToJob(data, { includeShopLoginPassword: true }),
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の更新に失敗しました。") },

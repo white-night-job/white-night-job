@@ -122,6 +122,8 @@ export interface Job {
   lineUrl: string;
   postedAt: string;
   shopLoginId?: string;
+  /** 管理画面のみ。公開APIでは返さない */
+  shopLoginPassword?: string;
   chatRecommend?: ChatRecommendSettings;
 }
 

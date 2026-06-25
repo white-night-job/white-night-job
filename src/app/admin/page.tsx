@@ -250,7 +250,7 @@ function toForm(job: Job): JobForm {
     websiteUrl: job.websiteUrl ?? "",
     lineUrl: job.lineUrl,
     shopLoginId: job.shopLoginId ?? "",
-    shopLoginPassword: "",
+    shopLoginPassword: job.shopLoginPassword ?? "",
     chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
     chatRecommendPriority: String(job.chatRecommend?.priority ?? 0),
     chatRecommendComment: job.chatRecommend?.comment ?? "",
@@ -806,55 +806,6 @@ export default function AdminPage() {
             {editingId && (
               <h2 className="text-lg font-semibold text-charcoal">求人を編集</h2>
             )}
-
-        <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">
-          <div>
-            <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
-            <p className="mt-1 text-xs text-muted">
-              店舗担当者が /shop-login からログインするためのIDとPWです。
-              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="shopLoginId" className={labelClass}>
-                店舗ログインID
-              </label>
-              <input
-                id="shopLoginId"
-                type="text"
-                value={form.shopLoginId}
-                onChange={(event) =>
-                  setField("shopLoginId", event.target.value)
-                }
-                className={inputClass}
-                placeholder="例: rosetta-shop"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="shopLoginPassword" className={labelClass}>
-                店舗ログインPW
-              </label>
-              <input
-                id="shopLoginPassword"
-                type="password"
-                value={form.shopLoginPassword}
-                onChange={(event) =>
-                  setField("shopLoginPassword", event.target.value)
-                }
-                className={inputClass}
-                placeholder={editingId ? "変更時のみ入力" : "初期パスワード"}
-                autoComplete="new-password"
-              />
-              {editingId && (
-                <p className="mt-1 text-xs text-muted">
-                  空欄のまま保存すると、現在のパスワードを維持します。
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
 
         <div>
           <label htmlFor="shopName" className={labelClass}>
@@ -1503,18 +1454,18 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal/[0.08] via-[#2b2112]/[0.05] to-gold/10 p-4 sm:p-5">
-          <div>
-            <h3 className="text-base font-semibold text-charcoal sm:text-lg">
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
               チャットおすすめ設定
             </h3>
-            <p className="mt-1 text-xs text-muted sm:text-sm">
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
               White Night相談Botでおすすめ表示する店舗の設定です。
             </p>
           </div>
 
-          <div className="space-y-4 rounded-xl border border-gold/20 bg-white/70 p-4 backdrop-blur-[1px]">
-            <label className="flex items-start gap-3 text-sm text-charcoal sm:items-center">
+          <div className="space-y-4 rounded-xl border border-white/15 bg-white/10 p-4">
+            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
               <input
                 type="checkbox"
                 checked={form.chatRecommendEnabled}
@@ -1524,15 +1475,18 @@ export default function AdminPage() {
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
               />
               <span>
-                <span className="font-medium">チャットおすすめON/OFF</span>
-                <span className="mt-0.5 block text-xs text-muted">
+                <span className="font-medium text-gold-light">チャットおすすめON/OFF</span>
+                <span className="mt-0.5 block text-xs text-white/70">
                   オンにすると相談Botのおすすめ候補に含まれます
                 </span>
               </span>
             </label>
 
             <div>
-              <label htmlFor="chatRecommendPriority" className={labelClass}>
+              <label
+                htmlFor="chatRecommendPriority"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
                 おすすめ優先順位
               </label>
               <input
@@ -1546,13 +1500,16 @@ export default function AdminPage() {
                 className={inputClass}
                 min={0}
               />
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-white/65">
                 数値が大きいほど上位に表示されます
               </p>
             </div>
 
             <div>
-              <label htmlFor="chatRecommendComment" className={labelClass}>
+              <label
+                htmlFor="chatRecommendComment"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
                 おすすめコメント
               </label>
               <textarea
@@ -1568,7 +1525,7 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-medium text-muted">おすすめタグ</p>
+            <p className="mb-2 text-xs font-medium text-gold-light/90">おすすめタグ</p>
             <div className="grid gap-2 sm:grid-cols-2">
             {(
               [
@@ -1583,7 +1540,7 @@ export default function AdminPage() {
             ).map(([field, label]) => (
               <label
                 key={field}
-                className="flex items-center gap-2 text-sm text-charcoal"
+                className="flex items-center gap-2 text-sm text-white/90"
               >
                 <input
                   type="checkbox"
@@ -1609,6 +1566,56 @@ export default function AdminPage() {
             className={inputClass}
             placeholder="例：北海道札幌市中央区南○条西○丁目"
           />
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
+            <p className="mt-1 text-xs text-muted">
+              店舗担当者が /shop-login からログインするためのIDとPWです。
+              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="shopLoginId" className={labelClass}>
+                店舗ログインID
+              </label>
+              <input
+                id="shopLoginId"
+                type="text"
+                value={form.shopLoginId}
+                onChange={(event) =>
+                  setField("shopLoginId", event.target.value)
+                }
+                className={inputClass}
+                placeholder="例: rosetta-shop"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="shopLoginPassword" className={labelClass}>
+                店舗ログインPW
+              </label>
+              <input
+                id="shopLoginPassword"
+                type="text"
+                value={form.shopLoginPassword}
+                onChange={(event) =>
+                  setField("shopLoginPassword", event.target.value)
+                }
+                className={inputClass}
+                placeholder={editingId ? "未設定の場合は空欄" : "初期パスワード"}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {editingId && (
+                <p className="mt-1 text-xs text-muted">
+                  空欄のまま保存すると、現在のパスワードを維持します。
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2">

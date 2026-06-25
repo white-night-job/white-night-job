@@ -32,7 +32,7 @@ export async function GET() {
 
     if (jobsError) throw jobsError;
 
-    const jobList = (jobs ?? []).map(rowToJob);
+    const jobList = (jobs ?? []).map((row) => rowToJob(row));
 
     let rows: Awaited<ReturnType<typeof fetchApplicationRows>> = [];
     let filled: ReturnType<typeof fillApplicationDetailsForJobs> = {};

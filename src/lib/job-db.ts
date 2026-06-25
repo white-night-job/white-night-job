@@ -95,7 +95,11 @@ type JobRow = {
   chat_recommend_high_earning?: boolean | null;
 };
 
-export function rowToJob(row: JobRow): Job {
+type RowToJobOptions = {
+  includeShopLoginPassword?: boolean;
+};
+
+export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
   return {
     id: row.id,
     shopName: row.shop_name,
@@ -136,6 +140,11 @@ export function rowToJob(row: JobRow): Job {
     lineUrl: row.line_url,
     postedAt: row.posted_at,
     shopLoginId: row.shop_login_id?.trim() || undefined,
+    ...(options?.includeShopLoginPassword
+      ? {
+          shopLoginPassword: row.shop_login_password?.trim() || undefined,
+        }
+      : {}),
     chatRecommend: rowToChatRecommend(row),
   };
 }
