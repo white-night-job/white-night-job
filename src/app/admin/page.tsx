@@ -807,6 +807,55 @@ export default function AdminPage() {
               <h2 className="text-lg font-semibold text-charcoal">求人を編集</h2>
             )}
 
+        <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
+            <p className="mt-1 text-xs text-muted">
+              店舗担当者が /shop-login からログインするためのIDとPWです。
+              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="shopLoginId" className={labelClass}>
+                店舗ログインID
+              </label>
+              <input
+                id="shopLoginId"
+                type="text"
+                value={form.shopLoginId}
+                onChange={(event) =>
+                  setField("shopLoginId", event.target.value)
+                }
+                className={inputClass}
+                placeholder="例: rosetta-shop"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="shopLoginPassword" className={labelClass}>
+                店舗ログインPW
+              </label>
+              <input
+                id="shopLoginPassword"
+                type="password"
+                value={form.shopLoginPassword}
+                onChange={(event) =>
+                  setField("shopLoginPassword", event.target.value)
+                }
+                className={inputClass}
+                placeholder={editingId ? "変更時のみ入力" : "初期パスワード"}
+                autoComplete="new-password"
+              />
+              {editingId && (
+                <p className="mt-1 text-xs text-muted">
+                  空欄のまま保存すると、現在のパスワードを維持します。
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="shopName" className={labelClass}>
             店名
@@ -1454,58 +1503,73 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
+        <div className="space-y-4 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal/[0.08] via-[#2b2112]/[0.05] to-gold/10 p-4 sm:p-5">
           <div>
-            <p className="text-sm font-semibold text-gold-dark">チャットおすすめ設定</p>
-            <p className="mt-1 text-xs text-muted">
+            <h3 className="text-base font-semibold text-charcoal sm:text-lg">
+              チャットおすすめ設定
+            </h3>
+            <p className="mt-1 text-xs text-muted sm:text-sm">
               White Night相談Botでおすすめ表示する店舗の設定です。
             </p>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.chatRecommendEnabled}
-              onChange={(event) =>
-                setField("chatRecommendEnabled", event.target.checked)
-              }
-              className="rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            おすすめ対象にする
-          </label>
-
-          <div>
-            <label htmlFor="chatRecommendPriority" className={labelClass}>
-              おすすめ優先度（数値が大きいほど上位）
+          <div className="space-y-4 rounded-xl border border-gold/20 bg-white/70 p-4 backdrop-blur-[1px]">
+            <label className="flex items-start gap-3 text-sm text-charcoal sm:items-center">
+              <input
+                type="checkbox"
+                checked={form.chatRecommendEnabled}
+                onChange={(event) =>
+                  setField("chatRecommendEnabled", event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
+              />
+              <span>
+                <span className="font-medium">チャットおすすめON/OFF</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  オンにすると相談Botのおすすめ候補に含まれます
+                </span>
+              </span>
             </label>
-            <input
-              id="chatRecommendPriority"
-              type="number"
-              value={form.chatRecommendPriority}
-              onChange={(event) =>
-                setField("chatRecommendPriority", event.target.value)
-              }
-              className={inputClass}
-              min={0}
-            />
+
+            <div>
+              <label htmlFor="chatRecommendPriority" className={labelClass}>
+                おすすめ優先順位
+              </label>
+              <input
+                id="chatRecommendPriority"
+                type="number"
+                inputMode="numeric"
+                value={form.chatRecommendPriority}
+                onChange={(event) =>
+                  setField("chatRecommendPriority", event.target.value)
+                }
+                className={inputClass}
+                min={0}
+              />
+              <p className="mt-1 text-xs text-muted">
+                数値が大きいほど上位に表示されます
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="chatRecommendComment" className={labelClass}>
+                おすすめコメント
+              </label>
+              <textarea
+                id="chatRecommendComment"
+                value={form.chatRecommendComment}
+                onChange={(event) =>
+                  setField("chatRecommendComment", event.target.value)
+                }
+                className={`${inputClass} min-h-[96px]`}
+                placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="chatRecommendComment" className={labelClass}>
-              おすすめコメント
-            </label>
-            <textarea
-              id="chatRecommendComment"
-              value={form.chatRecommendComment}
-              onChange={(event) =>
-                setField("chatRecommendComment", event.target.value)
-              }
-              className={`${inputClass} min-h-[80px]`}
-              placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
-            />
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2">
+            <p className="mb-2 text-xs font-medium text-muted">おすすめタグ</p>
+            <div className="grid gap-2 sm:grid-cols-2">
             {(
               [
                 ["chatRecommendBeginner", "未経験向け"],
@@ -1530,54 +1594,6 @@ export default function AdminPage() {
                 {label}
               </label>
             ))}
-          </div>
-        </div>
-
-        <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
-          <div>
-            <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
-            <p className="mt-1 text-xs text-muted">
-              店舗担当者が /shop-login からログインするためのIDとPWです。
-              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="shopLoginId" className={labelClass}>
-                店舗ログインID
-              </label>
-              <input
-                id="shopLoginId"
-                type="text"
-                value={form.shopLoginId}
-                onChange={(event) =>
-                  setField("shopLoginId", event.target.value)
-                }
-                className={inputClass}
-                placeholder="例: rosetta-shop"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="shopLoginPassword" className={labelClass}>
-                店舗ログインPW
-              </label>
-              <input
-                id="shopLoginPassword"
-                type="password"
-                value={form.shopLoginPassword}
-                onChange={(event) =>
-                  setField("shopLoginPassword", event.target.value)
-                }
-                className={inputClass}
-                placeholder={editingId ? "変更時のみ入力" : "初期パスワード"}
-                autoComplete="new-password"
-              />
-              {editingId && (
-                <p className="mt-1 text-xs text-muted">
-                  空欄のまま保存すると、現在のパスワードを維持します。
-                </p>
-              )}
             </div>
           </div>
         </div>
