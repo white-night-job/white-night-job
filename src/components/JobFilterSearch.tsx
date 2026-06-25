@@ -149,7 +149,7 @@ export function JobFilterSearch({
             お店を探す
           </h2>
           <p className="mt-1 text-xs text-muted">
-            エリア・職種・最低時給でさっと探せます。細かい条件は「詳しく探す」から。
+            エリア・職種・時給でさっと探せます。細かい条件は「詳しく探す」から。
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export function JobFilterSearch({
 
           <div className="rounded-2xl border border-gold/15 bg-ivory/50 p-4">
             <label htmlFor="minSalary" className="mb-3 block text-sm font-semibold text-charcoal">
-              最低時給
+              時給
             </label>
             <select
               id="minSalary"
