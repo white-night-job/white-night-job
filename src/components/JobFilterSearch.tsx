@@ -74,9 +74,7 @@ export function JobFilterSearch({
     setDraftBenefits(currentBenefitsKey ? currentBenefitsKey.split(",") : []);
 
     const hasAdvancedFilters =
-      Boolean(currentQuery) ||
-      currentMinSalary !== "all" ||
-      currentBenefits.length > 0;
+      Boolean(currentQuery) || currentBenefits.length > 0;
     if (hasAdvancedFilters) {
       setShowAdvanced(true);
     }
@@ -151,7 +149,7 @@ export function JobFilterSearch({
             お店を探す
           </h2>
           <p className="mt-1 text-xs text-muted">
-            エリアと職種でさっと探せます。細かい条件は「詳しく探す」から。
+            エリア・職種・最低時給でさっと探せます。細かい条件は「詳しく探す」から。
           </p>
         </div>
 
@@ -197,6 +195,24 @@ export function JobFilterSearch({
                 </FilterButton>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-gold/15 bg-ivory/50 p-4">
+            <label htmlFor="minSalary" className="mb-3 block text-sm font-semibold text-charcoal">
+              最低時給
+            </label>
+            <select
+              id="minSalary"
+              value={draftMinSalary}
+              onChange={(event) => setDraftMinSalary(event.target.value)}
+              className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+            >
+              {SALARY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
@@ -252,24 +268,6 @@ export function JobFilterSearch({
                   ワードで検索
                 </button>
               </form>
-            </div>
-
-            <div>
-              <label htmlFor="minSalary" className="mb-2 block text-sm font-semibold text-charcoal">
-                最低時給
-              </label>
-              <select
-                id="minSalary"
-                value={draftMinSalary}
-                onChange={(event) => setDraftMinSalary(event.target.value)}
-                className="min-h-12 w-full rounded-2xl border border-gold/30 bg-ivory px-4 py-3 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
-              >
-                {SALARY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="space-y-4">
