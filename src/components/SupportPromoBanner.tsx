@@ -7,6 +7,31 @@ type SupportPromoBannerProps = {
   standalone?: boolean;
 };
 
+function CrownIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M4 17h16M6 17l1.2-7.2 3.3 3.6 2.5-6.2 2.5 6.2 3.3-3.6L18 17"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 17v1.5c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V17"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function SupportPromoBanner({
   className = "",
   embedded = false,
@@ -17,18 +42,20 @@ export function SupportPromoBanner({
     return (
       <Link
         href="#support-section"
-        className={`group flex min-h-[3.25rem] w-full items-center justify-center px-4 py-3 transition hover:opacity-90 sm:min-h-[3.5rem] sm:px-6 ${className}`}
+        className={`hero-promo-plate group flex min-h-[4.25rem] w-full items-center justify-center gap-3 px-5 py-4 transition hover:opacity-95 sm:min-h-[4.5rem] sm:gap-4 sm:px-6 sm:py-5 ${className}`}
       >
-        <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:gap-4">
-          <span className="font-serif text-xs font-bold tracking-[0.2em] text-[#D4BC8E] sm:text-sm">
+        <CrownIcon className="h-5 w-5 shrink-0 text-[#c9ad7a]/85 sm:h-6 sm:w-6" />
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-[9px] font-medium tracking-[0.28em] text-[#c4a574]/65 sm:text-[10px]">
             業界唯一
           </span>
-          <span className="hidden h-4 w-px bg-white/25 sm:block" aria-hidden />
-          <span className="font-serif text-sm font-semibold tracking-wide text-white sm:text-base">
+          <span className="font-serif text-[15px] font-semibold tracking-[0.06em] text-white sm:text-lg">
             全掲載店舗 相談受付実施
           </span>
         </div>
-        <span className="sr-only">不安や疑問を事前に相談できる、安心のサポート体制。詳しく見る</span>
+        <span className="sr-only">
+          不安や疑問を事前に相談できる、安心のサポート体制。詳しく見る
+        </span>
       </Link>
     );
   }

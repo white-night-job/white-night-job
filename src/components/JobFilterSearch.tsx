@@ -35,12 +35,30 @@ function FilterButton({
   onClick,
   children,
   isPremium = false,
+  reservation = false,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
   isPremium?: boolean;
+  reservation?: boolean;
 }) {
+  if (reservation) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
+          active
+            ? "border border-[#c4a574]/55 bg-[#faf7f2] text-[#111111]"
+            : "border border-transparent text-[#111111]/65 hover:border-[#111111]/08 hover:bg-[#111111]/[0.02]"
+        }`}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -58,16 +76,77 @@ function FilterButton({
   );
 }
 
-function ChevronDown({ open }: { open: boolean }) {
+function ChevronDown({
+  open,
+  reservation = false,
+}: {
+  open: boolean;
+  reservation?: boolean;
+}) {
   return (
     <svg
-      className={`h-4 w-4 shrink-0 text-gold transition-transform ${open ? "rotate-180" : ""}`}
+      className={`shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""} ${
+        reservation ? "h-3.5 w-3.5 text-[#111111]/30" : "h-4 w-4 text-gold"
+      }`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
       aria-hidden
     >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={reservation ? 1.25 : 2}
+        d="M6 9l6 6 6-6"
+      />
+    </svg>
+  );
+}
+
+function PickerIcon({
+  kind,
+}: {
+  kind: "district" | "jobType" | "minSalary";
+}) {
+  const paths = {
+    district: (
+      <>
+        <path
+          d="M12 21s-5.5-4.35-5.5-9a5.5 5.5 0 1111 0c0 4.65-5.5 9-5.5 9z"
+          strokeWidth="1.25"
+        />
+        <circle cx="12" cy="12" r="1.75" strokeWidth="1.25" />
+      </>
+    ),
+    jobType: (
+      <path
+        d="M8 7V5.5A1.5 1.5 0 019.5 4h5A1.5 1.5 0 0116 5.5V7M6 7h12v11.5A1.5 1.5 0 0116.5 20h-9A1.5 1.5 0 016 18.5V7z"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+    minSalary: (
+      <>
+        <circle cx="12" cy="12" r="7.25" strokeWidth="1.25" />
+        <path
+          d="M12 8.25v7.5M9.75 10.5c0-1 1-1.5 2.25-1.5s2.25.5 2.25 1.5-1 1.5-2.25 1.5-2.25.5-2.25 1.5 1 1.5 2.25 1.5 2.25-.5 2.25-1.5"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+        />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className="h-3.5 w-3.5 shrink-0 text-[#111111]/28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      aria-hidden
+    >
+      {paths[kind]}
     </svg>
   );
 }
@@ -79,6 +158,8 @@ function CompactPickerRow({
   onToggle,
   children,
   isPremium = false,
+  reservation = false,
+  iconKind,
 }: {
   label: string;
   value: string;
@@ -86,7 +167,38 @@ function CompactPickerRow({
   onToggle: () => void;
   children: React.ReactNode;
   isPremium?: boolean;
+  reservation?: boolean;
+  iconKind?: "district" | "jobType" | "minSalary";
 }) {
+  if (reservation) {
+    return (
+      <div className="reservation-picker-row border-b border-[#111111]/06 last:border-b-0">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex min-h-9 w-full items-center justify-between gap-3 py-2 text-left"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            {iconKind && <PickerIcon kind={iconKind} />}
+            <span className="shrink-0 text-[11px] font-medium tracking-[0.12em] text-[#111111]/45">
+              {label}
+            </span>
+          </span>
+          <span className="flex min-w-0 items-center justify-end gap-2 text-[13px] font-normal text-[#111111]">
+            <span className="truncate">{value}</span>
+            <ChevronDown open={open} reservation />
+          </span>
+        </button>
+        {open && (
+          <div className="reservation-picker-panel mb-2 rounded-sm border border-[#111111]/08 bg-[#fafafa] p-2.5">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`border-b last:border-b-0 ${isPremium ? "border-gold/30" : "border-gold/15"}`}>
       <button
@@ -274,7 +386,7 @@ export function JobFilterSearch({
 
   const searchBody = (
     <>
-      <div className={`relative ${inPlate ? "mb-2" : "mb-3"}`}>
+      <div className={`relative ${inPlate ? "mb-4" : "mb-3"}`}>
         {!inPlate && (
           <p
             className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
@@ -297,16 +409,23 @@ export function JobFilterSearch({
         >
           お店を探す
         </h2>
+        {inPlate && (
+          <p className="mt-1 text-[11px] tracking-[0.08em] text-[#111111]/40">
+            条件を選んで検索
+          </p>
+        )}
       </div>
 
       <div
         ref={pickerRef}
-        className={`relative rounded-lg px-3 py-1 ${
+        className={`relative ${
           inPlate
-            ? "bg-transparent"
-            : isPremium || embedded
-              ? "rounded-xl border border-gold/50 bg-white/80 shadow-luxury-sm"
-              : "border border-gold/25 bg-ivory/80"
+            ? "hero-reservation-fields space-y-0 px-0.5"
+            : `rounded-lg px-3 py-1 ${
+                isPremium || embedded
+                  ? "rounded-xl border border-gold/50 bg-white/80 shadow-luxury-sm"
+                  : "border border-gold/25 bg-ivory/80"
+              }`
         }`}
       >
           <CompactPickerRow
@@ -315,12 +434,15 @@ export function JobFilterSearch({
             open={openPicker === "district"}
             onToggle={() => togglePicker("district")}
             isPremium={isPremium || embedded || inPlate}
+            reservation={inPlate}
+            iconKind="district"
           >
-            <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+            <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
               <FilterButton
                 active={draftDistrict === "all"}
                 onClick={() => selectDistrict("all")}
                 isPremium={isPremium || embedded || inPlate}
+                reservation={inPlate}
               >
                 すべて
               </FilterButton>
@@ -330,6 +452,7 @@ export function JobFilterSearch({
                   active={draftDistrict === district}
                   onClick={() => selectDistrict(district)}
                   isPremium={isPremium || embedded || inPlate}
+                  reservation={inPlate}
                 >
                   {district}
                 </FilterButton>
@@ -343,12 +466,15 @@ export function JobFilterSearch({
             open={openPicker === "jobType"}
             onToggle={() => togglePicker("jobType")}
             isPremium={isPremium || embedded || inPlate}
+            reservation={inPlate}
+            iconKind="jobType"
           >
-            <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
+            <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
               <FilterButton
                 active={draftJobType === "all"}
                 onClick={() => selectJobType("all")}
                 isPremium={isPremium || embedded || inPlate}
+                reservation={inPlate}
               >
                 すべて
               </FilterButton>
@@ -358,6 +484,7 @@ export function JobFilterSearch({
                   active={draftJobType === type}
                   onClick={() => selectJobType(type)}
                   isPremium={isPremium || embedded || inPlate}
+                  reservation={inPlate}
                 >
                   {type}
                 </FilterButton>
@@ -371,17 +498,23 @@ export function JobFilterSearch({
             open={openPicker === "minSalary"}
             onToggle={() => togglePicker("minSalary")}
             isPremium={isPremium || embedded || inPlate}
+            reservation={inPlate}
+            iconKind="minSalary"
           >
-            <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+            <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
               {SALARY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => selectMinSalary(option.value)}
-                  className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                    draftMinSalary === option.value
-                      ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
-                      : "text-charcoal hover:bg-champagne/40"
+                  className={`rounded-sm px-2.5 py-2 text-left text-xs font-medium transition ${
+                    inPlate
+                      ? draftMinSalary === option.value
+                        ? "border border-[#c4a574]/50 bg-[#faf7f2] text-[#111111]"
+                        : "text-[#111111]/65 hover:bg-[#111111]/[0.03]"
+                      : draftMinSalary === option.value
+                        ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+                        : "text-charcoal hover:bg-champagne/40"
                   }`}
                 >
                   {option.label}
@@ -394,7 +527,11 @@ export function JobFilterSearch({
         <button
           type="button"
           onClick={() => handleSearch()}
-          className={`relative mt-3 min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryMetalBtn}`}
+          className={`relative w-full ${luxuryMetalBtn} ${
+            inPlate
+              ? "mt-5 min-h-10 rounded-sm px-5 py-2 text-[13px] tracking-[0.06em]"
+              : "mt-3 min-h-11 rounded-full px-5 py-2.5 text-sm"
+          }`}
         >
           検索する
         </button>
@@ -406,26 +543,40 @@ export function JobFilterSearch({
             setOpenPicker(null);
           }}
           aria-expanded={showAdvanced}
-          className={`mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+          className={`flex w-full items-center justify-center gap-1.5 transition ${
             inPlate
-              ? "border-[#111111]/10 bg-white text-[#111111]/80 hover:bg-white/90"
-              : embedded
-                ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
-                : isPremium
-                  ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
-                  : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
+              ? "mt-3 min-h-8 rounded-sm border-0 bg-transparent px-2 py-1 text-[12px] font-medium tracking-wide text-[#111111]/50 hover:text-[#111111]/75"
+              : `min-h-10 rounded-full border px-4 py-2 text-sm font-semibold ${
+                  embedded
+                    ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
+                    : isPremium
+                      ? "mt-2 border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
+                      : "mt-2 border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
+                }`
           }`}
         >
           詳しく探す
-          <ChevronDown open={showAdvanced} />
+          <ChevronDown open={showAdvanced} reservation={inPlate} />
         </button>
 
         {showAdvanced && (
-          <div className={`relative mt-4 space-y-4 border-t pt-4 ${isPremium ? "border-gold/40" : "border-gold/30"}`}>
+          <div
+            className={`relative mt-5 space-y-4 border-t pt-5 ${
+              inPlate
+                ? "border-[#111111]/06"
+                : isPremium
+                  ? "border-gold/40"
+                  : "border-gold/30"
+            }`}
+          >
             <div>
               <label
                 htmlFor="shop-keyword"
-                className="mb-2 block text-sm font-semibold text-charcoal"
+                className={`mb-2 block font-medium ${
+                  inPlate
+                    ? "text-[11px] tracking-[0.1em] text-[#111111]/45"
+                    : "text-sm font-semibold text-charcoal"
+                }`}
               >
                 ワード検索
               </label>
@@ -433,26 +584,46 @@ export function JobFilterSearch({
                 id="shop-keyword"
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                className={`min-h-11 w-full ${isPremium ? luxuryPremiumInput : "rounded-2xl border border-gold/30 bg-ivory px-4 py-2.5 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"}`}
+                className={
+                  inPlate
+                    ? "min-h-9 w-full rounded-sm border border-[#111111]/10 bg-white px-3 py-2 text-[13px] text-[#111111] outline-none transition placeholder:text-[#111111]/30 focus:border-[#c4a574]/45 focus:ring-1 focus:ring-[#c4a574]/15"
+                    : `min-h-11 w-full ${isPremium ? luxuryPremiumInput : "rounded-2xl border border-gold/30 bg-ivory px-4 py-2.5 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"}`
+                }
                 placeholder="例：ロゼッタ、ニュークラ、送迎あり"
               />
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-charcoal">待遇で絞り込む</p>
+              <p
+                className={`font-medium ${
+                  inPlate
+                    ? "text-[11px] tracking-[0.1em] text-[#111111]/45"
+                    : "text-sm font-semibold text-charcoal"
+                }`}
+              >
+                待遇で絞り込む
+              </p>
               {BENEFIT_SEARCH_CATEGORIES.map((category) => (
                 <div
                   key={category.title}
-                  className={`rounded-2xl border p-3 ${
-                    isPremium
-                      ? "border-gold/35 bg-white/80"
-                      : "border-gold/15 bg-ivory/70"
+                  className={`rounded-sm border p-3 ${
+                    inPlate
+                      ? "border-[#111111]/06 bg-[#fafafa]"
+                      : isPremium
+                        ? "border-gold/35 bg-white/80"
+                        : "border-gold/15 bg-ivory/70"
                   }`}
                 >
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-gold-dark">
+                  <p
+                    className={`mb-2 font-medium ${
+                      inPlate
+                        ? "text-[10px] tracking-[0.1em] text-[#111111]/40"
+                        : "text-xs font-semibold tracking-wide text-gold-dark"
+                    }`}
+                  >
                     {category.title}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {category.items.map((benefit) => {
                       const selected = draftBenefits.includes(benefit);
                       return (
@@ -460,12 +631,16 @@ export function JobFilterSearch({
                           key={benefit}
                           type="button"
                           onClick={() => toggleBenefit(benefit)}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
-                            selected
-                              ? "border-gold bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
-                              : isPremium
-                                ? "border-gold/40 bg-white text-muted hover:border-gold hover:bg-champagne/30 hover:text-gold-dark"
-                                : "border-gold/35 bg-white text-muted hover:border-gold hover:bg-gold/5 hover:text-gold-dark"
+                          className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                            inPlate
+                              ? selected
+                                ? "border-[#c4a574]/55 bg-[#faf7f2] text-[#111111]"
+                                : "border-transparent text-[#111111]/60 hover:border-[#111111]/08 hover:bg-[#111111]/[0.02]"
+                              : selected
+                                ? "border-gold bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+                                : isPremium
+                                  ? "border-gold/40 bg-white text-muted hover:border-gold hover:bg-champagne/30 hover:text-gold-dark"
+                                  : "border-gold/35 bg-white text-muted hover:border-gold hover:bg-gold/5 hover:text-gold-dark"
                           }`}
                         >
                           {benefit}
@@ -481,10 +656,14 @@ export function JobFilterSearch({
               <button
                 type="button"
                 onClick={resetFilters}
-                className={`min-h-11 w-full rounded-full border px-5 py-2.5 text-sm font-semibold ${
-                  isPremium
-                    ? "border-gold/50 bg-white/70 text-gold-dark hover:bg-champagne/30"
-                    : "border-gold/40 bg-ivory text-gold-dark hover:bg-gold-light/20"
+                className={`w-full font-medium ${
+                  inPlate
+                    ? "min-h-9 rounded-sm border border-[#111111]/10 bg-white px-5 py-2 text-[12px] text-[#111111]/55 hover:bg-[#111111]/[0.02]"
+                    : `min-h-11 rounded-full border px-5 py-2.5 text-sm font-semibold ${
+                        isPremium
+                          ? "border-gold/50 bg-white/70 text-gold-dark hover:bg-champagne/30"
+                          : "border-gold/40 bg-ivory text-gold-dark hover:bg-gold-light/20"
+                      }`
                 }`}
               >
                 条件をリセット
@@ -492,7 +671,11 @@ export function JobFilterSearch({
               <button
                 type="button"
                 onClick={() => handleSearch()}
-                className={`min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryMetalBtn}`}
+                className={`w-full ${luxuryMetalBtn} ${
+                  inPlate
+                    ? "min-h-10 rounded-sm px-5 py-2 text-[13px] tracking-[0.06em]"
+                    : "min-h-11 rounded-full px-5 py-2.5 text-sm"
+                }`}
               >
                 検索する
               </button>
@@ -504,7 +687,10 @@ export function JobFilterSearch({
 
   if (embedded) {
     return (
-      <div id="shop-search" className="relative scroll-mt-24 sm:scroll-mt-28">
+      <div
+        id="shop-search"
+        className={`relative scroll-mt-24 sm:scroll-mt-28 ${inPlate ? "hero-reservation-form" : ""}`}
+      >
         {searchBody}
       </div>
     );

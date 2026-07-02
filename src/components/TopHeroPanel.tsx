@@ -31,8 +31,10 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
             <p className="hero-brand-sub mt-1 font-serif uppercase">Job</p>
           </div>
 
-          <p className="hero-desc mx-auto mt-2 max-w-md px-1">
-            審査済みの優良店のみ厳選。ブラック店は報告フォームからご連絡ください。
+          <p className="hero-desc mx-auto mt-2 max-w-xs px-1">
+            審査済み店舗のみ掲載。
+            <br />
+            ブラック店舗は報告フォームへ。
           </p>
         </div>
 
