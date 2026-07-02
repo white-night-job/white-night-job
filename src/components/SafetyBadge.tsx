@@ -2,34 +2,40 @@ export function SafetyBadge({
   size = "md",
   variant = "default",
 }: {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   variant?: "default" | "hero";
 }) {
   const sizeClass =
-    size === "sm" ? "h-4 w-4 text-[9px]" : size === "lg" ? "h-10 w-10 text-sm" : "h-7 w-7 text-xs";
+    size === "xs"
+      ? "h-3.5 w-3.5 text-[8px]"
+      : size === "sm"
+        ? "h-4 w-4 text-[9px]"
+        : size === "lg"
+          ? "h-10 w-10 text-sm"
+          : "h-7 w-7 text-xs";
 
   const isHero = variant === "hero";
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 ${
+      className={`inline-flex items-center gap-0.5 rounded-sm px-1 py-px ${
         isHero
-          ? "border-[#E4D4BC]/50 bg-[#111111]/75 backdrop-blur-sm"
-          : "border-gold/40 bg-gradient-to-r from-gold-light/30 to-white"
+          ? "hero-safety-badge"
+          : "rounded-full border border-gold/40 bg-gradient-to-r from-gold-light/30 to-white px-1.5 py-0.5"
       }`}
     >
       <span
-        className={`inline-flex items-center justify-center rounded-full font-bold text-white ${sizeClass} ${
+        className={`inline-flex items-center justify-center rounded-sm font-bold ${sizeClass} ${
           isHero
-            ? "bg-gradient-to-br from-[#C4A574] to-[#8B6F3E]"
-            : "bg-gradient-to-br from-gold to-gold-dark"
+            ? "bg-[#8b6f3e]/18 text-[#5a4828]"
+            : "rounded-full bg-gradient-to-br from-gold to-gold-dark text-white"
         }`}
       >
         ✓
       </span>
       <span
-        className={`text-[10px] font-medium sm:text-xs ${
-          isHero ? "text-[#F5F0E8]" : "text-gold-dark"
+        className={`font-medium ${
+          isHero ? "text-[9px] text-[#3d3020]/85" : "text-[10px] text-gold-dark sm:text-xs"
         }`}
       >
         安心認証

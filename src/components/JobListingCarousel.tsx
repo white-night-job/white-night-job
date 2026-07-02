@@ -55,7 +55,10 @@ export function JobListingCarousel({
 
   return (
     <section className="listing-section space-y-4">
-      <h2 className={sectionHeading(theme)}>{title}</h2>
+      <h2 className={sectionHeading(theme)}>
+        <span className="heading-ornament" aria-hidden />
+        {title}
+      </h2>
 
       {!ready ? (
         <div className="-mx-4 overflow-hidden px-4">

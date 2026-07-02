@@ -86,11 +86,18 @@
   .btn-gold-metal {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #8b6f3e 0%, #a8894a 38%, #c4a574 58%, #d4bc8e 72%, #a8894a 100%);
+    border: 1px solid rgba(196, 165, 116, 0.65);
+    background: linear-gradient(
+      180deg,
+      #f5ede0 0%,
+      #e8dcc8 28%,
+      #d9c59a 58%,
+      #c9ad7a 100%
+    );
     box-shadow:
-      0 4px 16px rgba(17, 17, 17, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      inset 0 -1px 0 rgba(70, 52, 28, 0.25);
+      0 3px 12px rgba(17, 17, 17, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.65),
+      inset 0 -1px 0 rgba(139, 111, 62, 0.15);
     transition: all 0.2s ease;
   }
 
@@ -110,10 +117,10 @@
   }
 
   .btn-gold-metal:hover {
-    background: linear-gradient(135deg, #a8894a 0%, #c4a574 45%, #e4d4bc 100%);
+    background: linear-gradient(180deg, #faf7f2 0%, #ede0c8 35%, #dcc99a 70%, #c9ad7a 100%);
     box-shadow:
-      0 6px 20px rgba(17, 17, 17, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      0 4px 16px rgba(17, 17, 17, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75);
   }
 
   .btn-gold-metal:hover::after,
@@ -199,27 +206,34 @@
   }
 
   .first-view {
-    padding-top: 0.25rem;
+    padding-top: 0;
+    margin-top: -0.125rem;
+  }
+
+  .hero-safety-badge {
+    border: 1px solid rgba(139, 111, 62, 0.22);
+    background: rgba(255, 255, 255, 0.38);
   }
 
   .hero-unified-plate {
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
-    padding: 0.875rem 0.875rem 1rem;
-    border: 1px solid rgba(196, 165, 116, 0.5);
+    padding: 0.75rem 0.875rem 0.875rem;
+    border: 1px solid rgba(217, 197, 154, 0.55);
     background: linear-gradient(
       168deg,
-      #e8dcc8 0%,
-      #d4bc8e 18%,
-      #c4a574 42%,
-      #a8894a 68%,
-      #8b6f3e 100%
+      #faf8f4 0%,
+      #f5efe3 14%,
+      #ede4d0 32%,
+      #e2d4b8 55%,
+      #d4c08e 78%,
+      #c9b27a 100%
     );
     box-shadow:
-      0 14px 44px rgba(17, 17, 17, 0.09),
-      inset 0 1px 0 rgba(255, 255, 255, 0.42),
-      inset 0 -3px 10px rgba(55, 40, 20, 0.18);
+      0 12px 40px rgba(17, 17, 17, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      inset 0 -2px 8px rgba(100, 80, 45, 0.1);
   }
 
   .hero-unified-plate::before {
@@ -229,22 +243,37 @@
     border-radius: inherit;
     background: linear-gradient(
       125deg,
-      rgba(255, 255, 255, 0.22) 0%,
-      transparent 38%,
-      transparent 72%,
-      rgba(17, 17, 17, 0.04) 100%
+      rgba(255, 255, 255, 0.45) 0%,
+      transparent 42%,
+      transparent 78%,
+      rgba(17, 17, 17, 0.02) 100%
     );
+    pointer-events: none;
+  }
+
+  .hero-unified-plate::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: calc(1rem - 1px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     pointer-events: none;
   }
 
   @media (min-width: 640px) {
     .hero-unified-plate {
-      padding: 1.125rem 1.125rem 1.25rem;
+      padding: 1rem 1.125rem 1.125rem;
       border-radius: 1.125rem;
+    }
+
+    .hero-unified-plate::after {
+      border-radius: calc(1.125rem - 1px);
     }
   }
 
   .hero-plate-header {
+    position: relative;
+    z-index: 1;
     max-height: 32vh;
     display: flex;
     flex-direction: column;
@@ -260,12 +289,12 @@
   }
 
   .hero-title {
-    color: #ffffff;
+    color: #2a2218;
     font-weight: 700;
     font-size: clamp(0.9rem, 3.5vw, 1.05rem);
     line-height: 1.38;
     letter-spacing: 0.04em;
-    text-shadow: 0 1px 3px rgba(17, 17, 17, 0.4);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
   }
 
   @media (min-width: 640px) {
@@ -282,46 +311,49 @@
   }
 
   .hero-brand-logo {
-    font-size: clamp(1.875rem, 7vw, 2.25rem);
-    font-weight: 900;
-    letter-spacing: 0.14em;
+    font-size: clamp(2.25rem, 9vw, 2.875rem);
+    font-weight: 800;
+    letter-spacing: 0.06em;
     color: #111111;
-    text-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.45),
-      0 2px 4px rgba(17, 17, 17, 0.2);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+    font-feature-settings: "palt" 1;
   }
 
   @media (min-width: 640px) {
     .hero-brand-logo {
-      font-size: 2.75rem;
+      font-size: 3.375rem;
+      letter-spacing: 0.07em;
     }
   }
 
   @media (min-width: 768px) {
     .hero-brand-logo {
-      font-size: 3.25rem;
+      font-size: 3.875rem;
+      letter-spacing: 0.08em;
     }
   }
 
   .hero-brand-sub {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 700;
-    letter-spacing: 0.58em;
+    letter-spacing: 0.42em;
     color: #111111;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    font-feature-settings: "palt" 1;
   }
 
   @media (min-width: 640px) {
     .hero-brand-sub {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.45em;
     }
   }
 
   .hero-desc {
     font-size: 0.6875rem;
     line-height: 1.5;
-    color: rgba(255, 255, 255, 0.88);
-    text-shadow: 0 1px 2px rgba(17, 17, 17, 0.3);
+    color: rgba(42, 34, 24, 0.78);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
   @media (min-width: 640px) {
@@ -332,6 +364,7 @@
 
   .hero-search-unit {
     position: relative;
+    z-index: 1;
     border-radius: 0.75rem;
     padding: 0.75rem 0.875rem 0.875rem;
     background: rgba(255, 255, 255, 0.94);
@@ -355,21 +388,55 @@
   }
 
   .listing-section {
-    padding-top: 0.5rem;
+    padding-top: 1.25rem;
+    padding-bottom: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .listing-section {
+      padding-top: 1.75rem;
+      padding-bottom: 1rem;
+    }
   }
 
   .listing-section-heading {
     display: flex;
     align-items: center;
     gap: 0.875rem;
-    margin-bottom: 0.25rem;
-    padding-top: 0.5rem;
+    margin-bottom: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.875rem;
+    border-bottom: 1px solid rgba(196, 165, 116, 0.35);
+  }
+
+  .listing-section-heading::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(196, 165, 116, 0.35), transparent);
+  }
+
+  .listing-section-heading .heading-ornament {
+    display: block;
+    height: 4px;
+    width: 4px;
+    flex-shrink: 0;
+    rotate: 45deg;
+    background: #c4a574;
+    opacity: 0.7;
   }
 
   .hero-promo-card {
     border-radius: 0.625rem;
-    background: #111111;
-    box-shadow: 0 8px 28px rgba(17, 17, 17, 0.1);
+    border: 1px solid rgba(196, 165, 116, 0.22);
+    background: linear-gradient(
+      135deg,
+      #111111 0%,
+      #15120e 35%,
+      #1f1a12 65%,
+      #2a2218 100%
+    );
+    box-shadow: 0 8px 28px rgba(17, 17, 17, 0.12);
   }
 }
 

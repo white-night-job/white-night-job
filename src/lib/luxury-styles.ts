@@ -29,8 +29,7 @@ export const luxurySectionHeading = [
 export const luxuryPremiumHeading = [
   "listing-section-heading",
   "font-serif text-xl font-semibold tracking-wide text-[#111111] sm:text-2xl",
-  "before:block before:h-6 before:w-px before:shrink-0 before:bg-gradient-to-b",
-  "before:from-[#8B6F3E] before:via-[#C4A574] before:to-[#E4D4BC]",
+  "before:block before:h-5 before:w-px before:shrink-0 before:bg-[#C4A574]",
 ].join(" ");
 
 export const luxuryDarkSectionHeading = luxuryPremiumHeading;

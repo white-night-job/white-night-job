@@ -20,7 +20,7 @@ export function SupportPromoBanner({
         className={`group flex min-h-[3.25rem] w-full items-center justify-center px-4 py-3 transition hover:opacity-90 sm:min-h-[3.5rem] sm:px-6 ${className}`}
       >
         <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:gap-4">
-          <span className="font-serif text-xs font-bold tracking-[0.2em] text-[#C4A574] sm:text-sm">
+          <span className="font-serif text-xs font-bold tracking-[0.2em] text-[#D4BC8E] sm:text-sm">
             業界唯一
           </span>
           <span className="hidden h-4 w-px bg-white/25 sm:block" aria-hidden />
