@@ -1,10 +1,9 @@
 import { Suspense } from "react";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
-import { Hero } from "@/components/Hero";
+import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopPageShell } from "@/components/TopPageShell";
 import { SupportConsultationSection } from "@/components/SupportConsultationSection";
-import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
@@ -34,17 +33,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <TopPageShell>
-      <Hero />
+      <TopHeroPanel initialFilters={filters} />
 
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
-        <SupportPromoBanner />
-
         <Suspense
           fallback={
             <div className="h-48 animate-pulse rounded-2xl border border-[#b8a876]/40 bg-gradient-to-br from-[#f5f2eb] to-[#d4c9a8]" />
           }
         >
-          <TopJobDiscovery initialFilters={filters} />
+          <TopJobDiscovery />
         </Suspense>
 
         <SupportConsultationSection />

@@ -421,6 +421,19 @@
     color: rgba(250, 249, 247, 0.94);
     text-shadow: 0 1px 4px rgba(17, 17, 17, 0.75);
   }
+
+  .hero-panel-divider {
+    height: 1px;
+    margin: 2rem 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 201, 168, 0.45) 20%,
+      rgba(250, 249, 247, 0.35) 50%,
+      rgba(212, 201, 168, 0.45) 80%,
+      transparent 100%
+    );
+  }
 }
 
 @keyframes fade-up {

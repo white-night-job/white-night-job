@@ -131,6 +131,7 @@ type JobFilterSearchProps = {
   onApply: (filters: JobFilters) => void;
   resultsPath?: string;
   theme?: LuxuryTheme;
+  embedded?: boolean;
 };
 
 export function JobFilterSearch({
@@ -138,6 +139,7 @@ export function JobFilterSearch({
   onApply,
   resultsPath,
   theme = "light",
+  embedded = false,
 }: JobFilterSearchProps) {
   const isPremium = isPremiumTheme(theme);
   const router = useRouter();
@@ -268,46 +270,49 @@ export function JobFilterSearch({
     SALARY_OPTIONS.find((option) => option.value === draftMinSalary)?.label ??
     "指定なし";
 
-  return (
-    <div className="space-y-4">
-      <section
-        id="shop-search"
-        className={`relative scroll-mt-24 overflow-hidden rounded-3xl p-4 sm:scroll-mt-28 sm:p-5 ${
-          isPremium ? luxuryPremiumPanel : luxuryCardSurface
-        }`}
-      >
-        {isPremium && (
-          <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-45" aria-hidden />
-        )}
-        <div className="relative mb-3">
-          <p className="mb-0.5 text-xs font-semibold tracking-[0.2em] text-gold-dark">
-            SHOP SEARCH
-          </p>
-          <h2 className={isPremium ? sectionHeading(theme) : luxurySectionHeading}>
-            お店を探す
-          </h2>
-        </div>
-
-        <div
-          ref={pickerRef}
-          className={`relative rounded-2xl border px-3 py-1 ${
-            isPremium
-              ? "border-gold/50 bg-white/75 shadow-luxury-sm"
-              : "border-gold/25 bg-ivory/80"
+  const searchBody = (
+    <>
+      <div className="relative mb-3">
+        <p
+          className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
+            embedded ? "text-[#e8e0cc]" : "text-gold-dark"
           }`}
         >
+          SHOP SEARCH
+        </p>
+        <h2
+          className={
+            embedded
+              ? "font-serif text-lg font-semibold text-white sm:text-xl"
+              : isPremium
+                ? sectionHeading(theme)
+                : luxurySectionHeading
+          }
+        >
+          お店を探す
+        </h2>
+      </div>
+
+      <div
+        ref={pickerRef}
+        className={`relative rounded-2xl border px-3 py-1 ${
+          isPremium || embedded
+            ? "border-gold/50 bg-white/80 shadow-luxury-sm"
+            : "border-gold/25 bg-ivory/80"
+        }`}
+      >
           <CompactPickerRow
             label="エリア"
             value={districtLabel}
             open={openPicker === "district"}
             onToggle={() => togglePicker("district")}
-            isPremium={isPremium}
+            isPremium={isPremium || embedded}
           >
             <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
               <FilterButton
                 active={draftDistrict === "all"}
                 onClick={() => selectDistrict("all")}
-                isPremium={isPremium}
+                isPremium={isPremium || embedded}
               >
                 すべて
               </FilterButton>
@@ -316,7 +321,7 @@ export function JobFilterSearch({
                   key={district}
                   active={draftDistrict === district}
                   onClick={() => selectDistrict(district)}
-                  isPremium={isPremium}
+                  isPremium={isPremium || embedded}
                 >
                   {district}
                 </FilterButton>
@@ -329,13 +334,13 @@ export function JobFilterSearch({
             value={jobTypeLabel}
             open={openPicker === "jobType"}
             onToggle={() => togglePicker("jobType")}
-            isPremium={isPremium}
+            isPremium={isPremium || embedded}
           >
             <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
               <FilterButton
                 active={draftJobType === "all"}
                 onClick={() => selectJobType("all")}
-                isPremium={isPremium}
+                isPremium={isPremium || embedded}
               >
                 すべて
               </FilterButton>
@@ -344,7 +349,7 @@ export function JobFilterSearch({
                   key={type}
                   active={draftJobType === type}
                   onClick={() => selectJobType(type)}
-                  isPremium={isPremium}
+                  isPremium={isPremium || embedded}
                 >
                   {type}
                 </FilterButton>
@@ -357,7 +362,7 @@ export function JobFilterSearch({
             value={salaryLabel}
             open={openPicker === "minSalary"}
             onToggle={() => togglePicker("minSalary")}
-            isPremium={isPremium}
+            isPremium={isPremium || embedded}
           >
             <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
               {SALARY_OPTIONS.map((option) => (
@@ -394,9 +399,11 @@ export function JobFilterSearch({
           }}
           aria-expanded={showAdvanced}
           className={`mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-            isPremium
-              ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
-              : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
+            embedded
+              ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
+              : isPremium
+                ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
+                : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
           }`}
         >
           詳しく探す
@@ -482,6 +489,29 @@ export function JobFilterSearch({
             </div>
           </div>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div id="shop-search" className="relative scroll-mt-24 sm:scroll-mt-28">
+        {searchBody}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <section
+        id="shop-search"
+        className={`relative scroll-mt-24 overflow-hidden rounded-3xl p-4 sm:scroll-mt-28 sm:p-5 ${
+          isPremium ? luxuryPremiumPanel : luxuryCardSurface
+        }`}
+      >
+        {isPremium && (
+          <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-45" aria-hidden />
+        )}
+        <div className="relative">{searchBody}</div>
       </section>
     </div>
   );
