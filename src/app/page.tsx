@@ -7,7 +7,7 @@ import { TopPageShell } from "@/components/TopPageShell";
 import { SupportConsultationSection } from "@/components/SupportConsultationSection";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import { TOP_CTA_CARD_LAYOUT } from "@/components/top-cta-styles";
-import { luxuryDarkCard, luxuryMetalBtn } from "@/lib/luxury-styles";
+import { luxuryMetalBtn, luxuryPremiumCard } from "@/lib/luxury-styles";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
@@ -44,10 +44,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <SupportPromoBanner />
           <Link
             href="#first-time-guide"
-            className={`animate-fade-up animation-delay-150 group relative block overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-luxury-glow ${luxuryDarkCard} ${TOP_CTA_CARD_LAYOUT}`}
+            className={`animate-fade-up animation-delay-150 group relative block overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-luxury-glow ${luxuryPremiumCard} ${TOP_CTA_CARD_LAYOUT}`}
           >
-            <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-50" aria-hidden />
-            <span className="relative block text-sm font-semibold text-gold-mid">
+            <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-55" aria-hidden />
+            <span className="relative block text-sm font-semibold text-gold-dark">
               初めてでも安心して探せます
             </span>
             <span
@@ -60,14 +60,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <Suspense
           fallback={
-            <div className="h-48 animate-pulse rounded-2xl border border-gold/30 bg-charcoal/50" />
+            <div className="h-48 animate-pulse rounded-2xl border border-gold/40 bg-gradient-to-br from-white to-champagne" />
           }
         >
           <TopJobDiscovery initialFilters={filters} />
         </Suspense>
 
         <SupportConsultationSection />
-
         <FirstTimeGuide />
       </div>
     </TopPageShell>

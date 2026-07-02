@@ -1,6 +1,6 @@
 /** White Night Job — ラグジュアリー共通スタイル */
 
-export type LuxuryTheme = "light" | "dark";
+export type LuxuryTheme = "light" | "dark" | "premium";
 
 export const luxuryGoldGradient =
   "bg-gradient-to-r from-gold-dark via-gold to-gold-mid";
@@ -10,13 +10,12 @@ export const luxuryGoldGradientHover =
 
 export const luxuryMetalBtn = [
   "btn-gold-metal",
-  "font-semibold text-void",
+  "relative overflow-hidden",
+  "font-semibold text-charcoal",
   "transition-all duration-200 active:scale-[0.99]",
 ].join(" ");
 
-export const luxuryBtnPrimary = [
-  luxuryMetalBtn,
-].join(" ");
+export const luxuryBtnPrimary = luxuryMetalBtn;
 
 export const luxuryBtnPrimaryOnDark = luxuryMetalBtn;
 
@@ -27,7 +26,7 @@ export const luxurySectionHeading = [
   "before:bg-gradient-to-b before:from-gold-dark before:via-gold before:to-gold-mid",
 ].join(" ");
 
-export const luxuryDarkSectionHeading = [
+export const luxuryPremiumHeading = [
   "flex items-center gap-3",
   "font-serif text-lg font-semibold sm:text-xl",
   "text-gradient-gold",
@@ -35,39 +34,72 @@ export const luxuryDarkSectionHeading = [
   "before:bg-gradient-to-b before:from-gold-dark before:via-gold-mid before:to-gold-light",
 ].join(" ");
 
+export const luxuryDarkSectionHeading = luxuryPremiumHeading;
+
 export const luxuryCardSurface = [
-  "border border-gold/35",
-  "bg-gradient-to-br from-ivory via-[#FFF9EE] to-[#F8F0DC]",
+  "relative overflow-hidden",
+  "border border-gold/45",
+  "bg-gradient-to-br from-white via-ivory to-champagne",
   "shadow-luxury",
 ].join(" ");
 
-export const luxuryDarkCard = [
-  "border border-gold/50",
-  "bg-gradient-to-br from-charcoal via-[#141210] to-void",
-  "shadow-luxury",
+export const luxuryPremiumCard = [
+  "relative overflow-hidden",
+  "border border-gold/55",
+  "bg-gradient-to-br from-white via-ivory via-50% to-[#F5E4B8]",
+  "shadow-luxury-lg",
+  "after:pointer-events-none after:absolute after:inset-0",
+  "after:bg-[linear-gradient(135deg,rgba(255,255,255,0.65)_0%,transparent_45%,rgba(249,231,165,0.25)_100%)]",
 ].join(" ");
 
-export const luxurySectionDivider = "border-t border-gold/30";
+export const luxuryPremiumPanel = [
+  "relative overflow-hidden",
+  "border-2 border-gold/60",
+  "bg-gradient-to-br from-white via-ivory to-[#F3DFA8]",
+  "shadow-luxury-lg",
+  "after:pointer-events-none after:absolute after:inset-0",
+  "after:bg-[linear-gradient(120deg,rgba(255,255,255,0.75)_0%,transparent_42%,rgba(230,193,90,0.3)_100%)]",
+].join(" ");
+
+export const luxuryDarkCard = luxuryPremiumCard;
+
+export const luxurySectionDivider = "border-t border-gold/35";
 
 export const luxuryDarkSectionDivider = "border-t border-gold/40";
 
-export const luxuryImageFrame = "ring-1 ring-gold/40 ring-inset";
+export const luxuryImageFrame =
+  "overflow-hidden rounded-xl ring-2 ring-gold/50 ring-inset shadow-image-3d";
 
-export const luxuryDarkImageFrame =
-  "rounded-xl ring-2 ring-gold/45 ring-inset overflow-hidden";
+export const luxuryDarkImageFrame = luxuryImageFrame;
+
+export const luxuryPremiumImageFrame = luxuryImageFrame;
 
 export const luxuryIconGold = "text-gold-mid";
 
-export const luxuryDarkInput = [
-  "rounded-2xl border border-gold/40 bg-void/80",
-  "px-4 py-2.5 text-base text-white/90",
-  "outline-none focus:border-gold-mid focus:ring-2 focus:ring-gold/25",
+export const luxurySalaryBadge = [
+  "inline-block rounded-full border border-gold/55",
+  "bg-gradient-to-r from-gold-dark via-gold to-gold-mid",
+  "px-2 py-0.5 font-bold text-white shadow-metal",
 ].join(" ");
 
+export const luxuryDarkInput = [
+  "rounded-2xl border border-gold/40 bg-white/90",
+  "px-4 py-2.5 text-base text-charcoal",
+  "outline-none focus:border-gold focus:ring-2 focus:ring-gold/25",
+].join(" ");
+
+export const luxuryPremiumInput = luxuryDarkInput;
+
 export function sectionHeading(theme: LuxuryTheme = "light") {
-  return theme === "dark" ? luxuryDarkSectionHeading : luxurySectionHeading;
+  if (theme === "premium" || theme === "dark") return luxuryPremiumHeading;
+  return luxurySectionHeading;
 }
 
 export function cardSurface(theme: LuxuryTheme = "light") {
-  return theme === "dark" ? luxuryDarkCard : luxuryCardSurface;
+  if (theme === "premium" || theme === "dark") return luxuryPremiumCard;
+  return luxuryCardSurface;
+}
+
+export function isPremiumTheme(theme: LuxuryTheme = "light") {
+  return theme === "premium" || theme === "dark";
 }

@@ -1,10 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  luxuryDarkSectionHeading,
-  type LuxuryTheme,
-} from "@/lib/luxury-styles";
+import { sectionHeading, type LuxuryTheme } from "@/lib/luxury-styles";
 import { fetchListingJobs, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 import { CompactJobCard } from "./CompactJobCard";
@@ -23,7 +20,7 @@ export function JobListingCarousel({
   const [jobs, setJobs] = useState<Job[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const isDark = theme === "dark";
+  const isPremium = theme === "premium" || theme === "dark";
   const badge = kind === "new" ? "new" : "pickup";
 
   const load = useCallback(() => {
@@ -48,19 +45,17 @@ export function JobListingCarousel({
     return () => window.removeEventListener(JOBS_UPDATED_EVENT, onUpdate);
   }, [load]);
 
-  const skeletonClass = isDark
-    ? "h-56 animate-pulse rounded-2xl border border-gold/30 bg-charcoal/60"
+  const skeletonClass = isPremium
+    ? "h-56 animate-pulse rounded-2xl border border-gold/40 bg-gradient-to-br from-white to-champagne"
     : "h-56 animate-pulse rounded-2xl border border-gold/20 bg-white";
 
-  const emptyClass = isDark
-    ? "rounded-2xl border border-gold/35 bg-charcoal/80 px-4 py-8 text-center text-sm text-white/60"
+  const emptyClass = isPremium
+    ? "rounded-2xl border border-gold/40 bg-gradient-to-br from-white to-ivory px-4 py-8 text-center text-sm text-muted"
     : "rounded-2xl border border-gold/20 bg-white px-4 py-8 text-center text-sm text-muted";
 
   return (
     <section className="space-y-2">
-      <h2 className={isDark ? luxuryDarkSectionHeading : "text-lg font-semibold text-charcoal sm:text-xl"}>
-        {title}
-      </h2>
+      <h2 className={sectionHeading(theme)}>{title}</h2>
 
       {!ready ? (
         <div className="-mx-4 overflow-hidden px-4">
@@ -71,7 +66,7 @@ export function JobListingCarousel({
           </div>
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-red-400/40 bg-void/80 px-4 py-8 text-center text-sm text-red-300">
+        <div className="rounded-2xl border border-red-300/60 bg-white/90 px-4 py-8 text-center text-sm text-red-700">
           {error}
         </div>
       ) : jobs.length === 0 ? (

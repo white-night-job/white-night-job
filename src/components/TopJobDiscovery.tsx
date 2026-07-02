@@ -16,15 +16,15 @@ export function TopJobDiscovery({ initialFilters }: TopJobDiscoveryProps) {
         appliedFilters={initialFilters}
         onApply={() => {}}
         resultsPath="/jobs"
-        theme="dark"
+        theme="premium"
       />
 
       <div className={`${luxuryDarkSectionDivider} pt-5`}>
-        <JobListingCarousel title="新着店舗一覧" kind="new" theme="dark" />
+        <JobListingCarousel title="新着店舗一覧" kind="new" theme="premium" />
       </div>
 
       <div className={`${luxuryDarkSectionDivider} pt-5`}>
-        <JobListingCarousel title="PICK UP店舗" kind="pickup" theme="dark" />
+        <JobListingCarousel title="PICK UP店舗" kind="pickup" theme="premium" />
       </div>
     </div>
   );

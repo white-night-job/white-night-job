@@ -36,83 +36,120 @@
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, #8e6a13 0%, #e0b84b 45%, #f9e27d 100%);
+    background: linear-gradient(135deg, #8a6510 0%, #c89a2a 42%, #e6c15a 72%, #f9e7a5 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .shadow-gold {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 28px rgba(200, 154, 42, 0.14);
+    box-shadow:
+      0 14px 44px rgba(42, 30, 8, 0.14),
+      0 0 28px rgba(200, 154, 42, 0.2);
   }
 
   .bg-luxury-page {
-    background: linear-gradient(
-      165deg,
-      #0d0d0d 0%,
-      #1b1b1b 28%,
-      #14100a 52%,
-      #1b1b1b 78%,
-      #0d0d0d 100%
-    );
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 38%, rgba(249, 231, 165, 0.55) 0%, transparent 58%),
+      radial-gradient(ellipse 45% 35% at 12% 58%, rgba(42, 30, 8, 0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 30% at 88% 48%, rgba(17, 17, 17, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 72% 72%, rgba(230, 193, 90, 0.22) 0%, transparent 38%),
+      linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #fffdf8 14%,
+        #f9e7a5 32%,
+        #e6c15a 44%,
+        #2a1e08 50%,
+        #111111 54%,
+        #2a1e08 58%,
+        #e6c15a 68%,
+        #f9e7a5 82%,
+        #fffdf8 94%,
+        #ffffff 100%
+      );
   }
 
   .bg-gradient-gold {
-    background: linear-gradient(135deg, #8e6a13 0%, #c89a2a 50%, #f9e27d 100%);
+    background: linear-gradient(135deg, #8a6510 0%, #c89a2a 50%, #f9e7a5 100%);
   }
 
   .bg-gradient-gold-metal {
     background: linear-gradient(
       135deg,
-      #8e6a13 0%,
-      #c89a2a 35%,
-      #e0b84b 55%,
-      #c89a2a 75%,
-      #8e6a13 100%
+      #8a6510 0%,
+      #c89a2a 32%,
+      #e6c15a 52%,
+      #f9e7a5 62%,
+      #c89a2a 78%,
+      #8a6510 100%
     );
   }
 
   .bg-gradient-gold-soft {
-    background: linear-gradient(
-      145deg,
-      #1b1b1b 0%,
-      #141210 45%,
-      #0d0d0d 100%
-    );
+    background: linear-gradient(145deg, #ffffff 0%, #fffdf8 40%, #f9e7a5 100%);
   }
 
   .luxury-shimmer {
     background: linear-gradient(
       115deg,
       transparent 0%,
-      rgba(249, 226, 125, 0.08) 40%,
-      rgba(249, 226, 125, 0.22) 50%,
-      rgba(249, 226, 125, 0.08) 60%,
+      rgba(249, 231, 165, 0.12) 38%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(249, 231, 165, 0.12) 62%,
       transparent 100%
     );
   }
 
   .btn-gold-metal {
-    background: linear-gradient(135deg, #8e6a13 0%, #c89a2a 40%, #e0b84b 60%, #f9e27d 100%);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #8a6510 0%, #c89a2a 38%, #e6c15a 58%, #f9e7a5 72%, #c89a2a 100%);
     box-shadow:
-      0 4px 20px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(249, 226, 125, 0.55);
+      0 6px 24px rgba(42, 30, 8, 0.2),
+      0 4px 14px rgba(200, 154, 42, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 rgba(138, 101, 16, 0.3);
     transition: all 0.2s ease;
   }
 
+  .btn-gold-metal::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.55) 48%,
+      transparent 100%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.55s ease;
+    pointer-events: none;
+  }
+
   .btn-gold-metal:hover {
-    background: linear-gradient(135deg, #c89a2a 0%, #e0b84b 45%, #f9e27d 100%);
+    background: linear-gradient(135deg, #c89a2a 0%, #e6c15a 45%, #f9e7a5 100%);
     box-shadow:
-      0 6px 28px rgba(200, 154, 42, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      0 8px 32px rgba(200, 154, 42, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  }
+
+  .btn-gold-metal:hover::after,
+  .btn-gold-metal:active::after {
+    transform: translateX(120%);
   }
 
   .btn-gold-metal:active {
-    box-shadow: 0 0 32px rgba(249, 226, 125, 0.5);
+    box-shadow:
+      0 0 36px rgba(249, 231, 165, 0.55),
+      0 6px 20px rgba(200, 154, 42, 0.3);
   }
 
   .header-glow-line {
-    box-shadow: 0 1px 0 rgba(249, 226, 125, 0.35), 0 4px 24px rgba(200, 154, 42, 0.2);
+    box-shadow:
+      0 1px 0 rgba(200, 154, 42, 0.45),
+      0 4px 20px rgba(200, 154, 42, 0.12);
   }
 
   .border-gradient-gold {
@@ -158,18 +195,26 @@
   .sparkle {
     position: absolute;
     z-index: 1;
-    color: rgba(249, 226, 125, 0.85);
+    color: rgba(230, 193, 90, 0.9);
     text-shadow:
-      0 0 6px rgba(249, 226, 125, 0.8),
-      0 0 14px rgba(224, 184, 75, 0.5);
+      0 0 6px rgba(249, 231, 165, 0.85),
+      0 0 14px rgba(200, 154, 42, 0.45);
     animation: sparkle-twinkle 2.4s ease-in-out infinite;
   }
 
   .luxury-particle {
     position: absolute;
     border-radius: 9999px;
-    background: radial-gradient(circle, rgba(249, 226, 125, 0.35) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(249, 231, 165, 0.4) 0%, transparent 70%);
+    filter: blur(1px);
     animation: sparkle-twinkle 3s ease-in-out infinite;
+  }
+
+  .luxury-glow-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(48px);
+    pointer-events: none;
   }
 }
 

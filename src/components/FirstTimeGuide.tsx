@@ -1,3 +1,5 @@
+import { luxuryPremiumCard } from "@/lib/luxury-styles";
+
 const concerns = [
   "本当に安全なお店なのか分からない",
   "求人内容と実際が違いそう",
@@ -24,26 +26,27 @@ export function FirstTimeGuide() {
   return (
     <section
       id="first-time-guide"
-      className="scroll-mt-20 relative overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#18130b] to-[#2b2112] px-5 py-8 text-white shadow-gold sm:px-8 sm:py-10 md:px-10"
+      className={`relative scroll-mt-20 overflow-hidden px-5 py-8 sm:px-8 sm:py-10 md:px-10 ${luxuryPremiumCard}`}
     >
+      <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-45" aria-hidden />
       <div
-        className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gold/20 blur-3xl"
+        className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-champagne/50 blur-3xl"
         aria-hidden
       />
       <div
-        className="absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-gold-light/10 blur-3xl"
+        className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-gold-mid/20 blur-3xl"
         aria-hidden
       />
 
       <div className="relative">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gold-light/80">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gold-dark">
           Guide
         </p>
-        <h2 className="font-serif text-2xl font-semibold text-gold-light sm:text-3xl">
+        <h2 className="font-serif text-2xl font-semibold text-gradient-gold sm:text-3xl">
           初めての方へ
         </h2>
 
-        <div className="mt-6 space-y-6 text-sm leading-8 text-white/85 sm:text-base sm:leading-9">
+        <div className="mt-6 space-y-6 text-sm leading-8 text-charcoal sm:text-base sm:leading-9">
           <p>
             White Night Jobは、
             <br />
@@ -56,9 +59,9 @@ export function FirstTimeGuide() {
               {concerns.map((item) => (
                 <li
                   key={item}
-                  className="rounded-2xl border border-gold/20 bg-white/5 px-4 py-3 text-white/90"
+                  className="rounded-2xl border border-gold/30 bg-white/80 px-4 py-3 text-charcoal shadow-luxury-sm"
                 >
-                  <span className="mr-2 text-gold-light">・</span>
+                  <span className="mr-2 text-gold-dark">・</span>
                   {item}
                 </li>
               ))}
@@ -77,7 +80,7 @@ export function FirstTimeGuide() {
               {supports.map((item) => (
                 <li
                   key={item}
-                  className="rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 font-medium text-gold-light"
+                  className="rounded-2xl border border-gold/45 bg-gradient-to-r from-champagne/60 to-gold-light/40 px-4 py-3 font-medium text-gold-dark shadow-luxury-sm"
                 >
                   <span className="mr-2">・</span>
                   {item}
@@ -86,7 +89,7 @@ export function FirstTimeGuide() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-gold/30 bg-black/20 p-5 sm:p-6">
+          <div className="rounded-2xl border border-gold/45 bg-gradient-to-br from-white to-champagne p-5 shadow-luxury-sm sm:p-6">
             <p>
               「夜職＝怖い」ではなく、
               <br />
@@ -95,13 +98,12 @@ export function FirstTimeGuide() {
             <p className="mt-4">
               そんな思いで運営しています。
             </p>
-            <p className="mt-4 text-gold-light">
+            <p className="mt-4 font-semibold text-gold-dark">
               まずは気になるお店を、
               <br />
               ゆっくり探してみてください。
             </p>
           </div>
-
         </div>
       </div>
     </section>
