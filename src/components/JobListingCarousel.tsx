@@ -7,13 +7,11 @@ import { CompactJobCard } from "./CompactJobCard";
 
 type JobListingCarouselProps = {
   title: string;
-  description: string;
   kind: "new" | "pickup";
 };
 
 export function JobListingCarousel({
   title,
-  description,
   kind,
 }: JobListingCarouselProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -43,11 +41,8 @@ export function JobListingCarousel({
   }, [load]);
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold text-charcoal sm:text-xl">{title}</h2>
-        <p className="mt-1 text-xs text-muted sm:text-sm">{description}</p>
-      </div>
+    <section className="space-y-2">
+      <h2 className="text-lg font-semibold text-charcoal sm:text-xl">{title}</h2>
 
       {!ready ? (
         <div className="-mx-4 overflow-hidden px-4">

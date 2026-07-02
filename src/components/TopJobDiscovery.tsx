@@ -19,13 +19,11 @@ export function TopJobDiscovery({ initialFilters }: TopJobDiscoveryProps) {
 
       <JobListingCarousel
         title="新着店舗一覧"
-        description="掲載から1ヶ月以内の店舗をピックアップしています。"
         kind="new"
       />
 
       <JobListingCarousel
         title="PICK UP店舗"
-        description="高額プランでピックアップ掲載中の店舗です。"
         kind="pickup"
       />
     </div>
