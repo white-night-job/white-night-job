@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { href: "/report", label: "ブラック店報告" },
 ] as const;
 
-export function HeaderMenu() {
+export function HeaderMenu({ variant = "light" }: { variant?: "light" | "dark" }) {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -66,6 +66,8 @@ export function HeaderMenu() {
   const shopLabel = shopAuthenticated ? "店舗管理" : "店舗ログイン";
   const hideShopLink = pathname.startsWith("/admin");
 
+  const isDark = variant === "dark";
+
   return (
     <div ref={menuRef} className="relative shrink-0">
       <button
@@ -74,7 +76,11 @@ export function HeaderMenu() {
         aria-expanded={open}
         aria-controls="site-header-menu"
         aria-label="メニュー"
-        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-gold/45 bg-gradient-to-br from-ivory to-[#FFF9EE] px-3 text-sm font-semibold text-gold-dark shadow-luxury-sm transition hover:border-gold hover:shadow-luxury sm:min-w-[5.5rem] sm:px-4"
+        className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-metal transition hover:shadow-luxury-glow sm:min-w-[5.5rem] sm:px-4 ${
+          isDark
+            ? "border-gold-mid/55 bg-gradient-gold-metal text-void hover:border-gold-light"
+            : "border-gold/45 bg-gradient-to-br from-ivory to-[#FFF9EE] text-gold-dark hover:border-gold"
+        }`}
       >
         <svg
           className="h-5 w-5 shrink-0 text-gold"
@@ -103,15 +109,23 @@ export function HeaderMenu() {
           />
           <nav
             id="site-header-menu"
-            className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-gold/30 bg-white shadow-[0_12px_40px_rgba(26,26,26,0.14)]"
+            className={`absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border shadow-luxury ${
+              isDark
+                ? "border-gold/45 bg-gradient-to-br from-charcoal to-void"
+                : "border-gold/30 bg-white"
+            }`}
           >
-            <ul className="divide-y divide-gold/15 py-1">
+            <ul className="divide-y divide-gold/20 py-1">
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="flex min-h-12 items-center px-4 py-3 text-sm font-medium text-charcoal transition hover:bg-ivory hover:text-gold-dark"
+                    className={`flex min-h-12 items-center px-4 py-3 text-sm font-medium transition ${
+                      isDark
+                        ? "text-white/85 hover:bg-gold/10 hover:text-gold-light"
+                        : "text-charcoal hover:bg-ivory hover:text-gold-dark"
+                    }`}
                   >
                     {item.label}
                   </Link>

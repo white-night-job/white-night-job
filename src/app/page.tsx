@@ -3,10 +3,11 @@ import Link from "next/link";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { Hero } from "@/components/Hero";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
+import { TopPageShell } from "@/components/TopPageShell";
 import { SupportConsultationSection } from "@/components/SupportConsultationSection";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import { TOP_CTA_CARD_LAYOUT } from "@/components/top-cta-styles";
-import { luxuryCardSurface } from "@/lib/luxury-styles";
+import { luxuryDarkCard, luxuryMetalBtn } from "@/lib/luxury-styles";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
@@ -35,26 +36,33 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+    <TopPageShell>
       <Hero />
 
-      <div className="mt-6 space-y-6">
-        <section className="space-y-4">
+      <div className="mt-4 space-y-4">
+        <section className="space-y-3">
           <SupportPromoBanner />
           <Link
             href="#first-time-guide"
-            className={`animate-fade-up animation-delay-150 group block rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface} ${TOP_CTA_CARD_LAYOUT}`}
+            className={`animate-fade-up animation-delay-150 group relative block overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-luxury-glow ${luxuryDarkCard} ${TOP_CTA_CARD_LAYOUT}`}
           >
-            <span className="block text-sm font-semibold text-gold-dark">
+            <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-50" aria-hidden />
+            <span className="relative block text-sm font-semibold text-gold-mid">
               初めてでも安心して探せます
             </span>
-            <span className="mt-1 block font-serif text-lg font-semibold text-charcoal sm:text-xl">
-              🔰 初めてご利用される方はこちら
+            <span
+              className={`relative mt-1 inline-flex w-full items-center justify-center rounded-full px-4 py-2.5 font-serif text-base font-semibold sm:text-lg ${luxuryMetalBtn}`}
+            >
+              初めてご利用される方はこちら
             </span>
           </Link>
         </section>
 
-        <Suspense fallback={<div className="h-52 animate-pulse rounded-2xl bg-white" />}>
+        <Suspense
+          fallback={
+            <div className="h-48 animate-pulse rounded-2xl border border-gold/30 bg-charcoal/50" />
+          }
+        >
           <TopJobDiscovery initialFilters={filters} />
         </Suspense>
 
@@ -62,6 +70,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <FirstTimeGuide />
       </div>
-    </div>
+    </TopPageShell>
   );
 }
