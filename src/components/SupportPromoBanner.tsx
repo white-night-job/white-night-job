@@ -6,6 +6,7 @@ type SupportPromoBannerProps = {
   className?: string;
   embedded?: boolean;
   inset?: boolean;
+  standalone?: boolean;
 };
 
 function PromoContent() {
@@ -49,7 +50,22 @@ export function SupportPromoBanner({
   className = "",
   embedded = false,
   inset = false,
+  standalone = false,
 }: SupportPromoBannerProps) {
+  if (standalone) {
+    return (
+      <Link
+        href="#support-section"
+        className={`group block px-4 py-3 transition hover:opacity-95 sm:px-5 sm:py-4 ${TOP_CTA_PROMO_LAYOUT} ${className}`}
+      >
+        <div className="relative z-10 flex w-full flex-col items-center justify-center gap-0.5 sm:gap-1">
+          <PromoContent />
+        </div>
+        <span className="sr-only">不安や疑問を事前に相談できる、安心のサポート体制。詳しく見る</span>
+      </Link>
+    );
+  }
+
   if (embedded && inset) {
     return (
       <Link
