@@ -19,6 +19,10 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
             優良認定店専門サイト
           </h1>
 
+          <p className="hero-desc mx-auto mt-2 max-w-md px-1 text-sm leading-relaxed sm:mt-2.5 sm:text-base">
+            審査済みの優良店のみ厳選。ブラック店は報告フォームからご連絡ください。
+          </p>
+
           <div className="hero-brand mt-3 sm:mt-4">
             <p className="font-serif text-[1.75rem] font-black leading-none tracking-[0.12em] sm:text-[2.5rem] md:text-[2.875rem]">
               White Night
@@ -40,10 +44,6 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
           />
         </div>
       </div>
-
-      <p className="hero-desc mx-auto mt-5 max-w-md text-center text-sm leading-relaxed sm:mt-6 sm:text-base">
-        審査済みの優良店のみ厳選。ブラック店は報告フォームからご連絡ください。
-      </p>
 
       <div className="hero-promo-card mx-auto mt-8 w-full max-w-2xl sm:mt-10">
         <SupportPromoBanner standalone />

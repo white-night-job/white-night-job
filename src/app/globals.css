@@ -49,14 +49,7 @@
   }
 
   .bg-luxury-page {
-    background: linear-gradient(
-      180deg,
-      #E8D48B 0%,
-      #F0E4B8 18%,
-      #F7F2E6 42%,
-      #FBFAF8 68%,
-      #FFFFFF 100%
-    );
+    background: #ffffff;
   }
 
   .bg-gradient-gold {
@@ -276,7 +269,8 @@
   }
 
   .hero-desc {
-    color: rgba(17, 17, 17, 0.72);
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 3px rgba(17, 17, 17, 0.35);
   }
 
   .hero-promo-card {
