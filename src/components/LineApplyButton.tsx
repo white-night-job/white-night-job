@@ -5,6 +5,7 @@ import {
   recordJobApplication,
   type JobApplicationType,
 } from "@/lib/job-applications";
+import { luxuryBtnPrimary, luxuryBtnPrimaryOnDark } from "@/lib/luxury-styles";
 
 type ApplyAction = {
   href: string;
@@ -62,7 +63,7 @@ function ConfirmApplyModal({
             <button
               type="button"
               onClick={handleProceed}
-              className="flex-1 rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-sm font-semibold text-white shadow-md hover:shadow-lg"
+              className={`flex-1 rounded-full px-4 py-3 text-sm ${luxuryBtnPrimaryOnDark}`}
             >
               OK
             </button>
@@ -125,7 +126,7 @@ export function LineApplyButton({
       <button
         type="button"
         onClick={() => openConfirm({ href: lineUrl, target: "_blank" })}
-        className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#06C755] font-semibold text-white shadow-md hover:bg-[#05b34c] active:scale-[0.99] ${sizeClass} ${fullWidth ? "w-full" : ""}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold ${luxuryBtnPrimary} ${sizeClass} ${fullWidth ? "w-full" : ""}`}
       >
         {label}
       </button>
@@ -157,7 +158,7 @@ export function PhoneApplyButton({
       <button
         type="button"
         onClick={() => openConfirm({ href: `tel:${tel}`, target: "_self" })}
-        className={`inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-gradient-to-r from-charcoal to-gold-dark font-semibold text-white shadow-md hover:from-gold-dark hover:to-charcoal active:scale-[0.99] ${sizeClass} ${fullWidth ? "w-full" : ""}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 ${luxuryBtnPrimary} ${sizeClass} ${fullWidth ? "w-full" : ""}`}
       >
         {label}
       </button>

@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { BENEFIT_SEARCH_CATEGORIES } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
+import {
+  luxuryBtnPrimary,
+  luxuryCardSurface,
+  luxurySectionHeading,
+} from "@/lib/luxury-styles";
 import { JOB_TYPES, type JobFilters } from "@/types/job";
 
 const SALARY_OPTIONS = [
@@ -35,8 +40,8 @@ function FilterButton({
       onClick={onClick}
       className={`rounded-full px-4 py-2.5 text-sm font-medium transition-all ${
         active
-          ? "bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
-          : "border border-gold/30 bg-ivory text-muted hover:border-gold hover:text-gold-dark"
+          ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+          : "border border-gold/35 bg-ivory text-muted hover:border-gold hover:text-gold-dark"
       }`}
     >
       {children}
@@ -47,7 +52,7 @@ function FilterButton({
 function ChevronDown({ open }: { open: boolean }) {
   return (
     <svg
-      className={`h-4 w-4 shrink-0 text-gold-dark transition-transform ${open ? "rotate-180" : ""}`}
+      className={`h-4 w-4 shrink-0 text-gold transition-transform ${open ? "rotate-180" : ""}`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -237,18 +242,16 @@ export function JobFilterSearch({
     <div className="space-y-4">
       <section
         id="shop-search"
-        className="scroll-mt-24 rounded-3xl border border-gold/25 bg-white p-4 shadow-[0_10px_35px_rgba(33,29,24,0.08)] sm:scroll-mt-28 sm:p-5"
+        className={`scroll-mt-24 rounded-3xl p-4 sm:scroll-mt-28 sm:p-5 ${luxuryCardSurface}`}
       >
         <div className="mb-3">
-          <p className="mb-0.5 text-xs font-semibold tracking-[0.2em] text-gold-dark">
+          <p className="mb-0.5 text-xs font-semibold tracking-[0.2em] text-gold">
             SHOP SEARCH
           </p>
-          <h2 className="font-serif text-lg font-semibold text-charcoal">
-            お店を探す
-          </h2>
+          <h2 className={luxurySectionHeading}>お店を探す</h2>
         </div>
 
-        <div ref={pickerRef} className="rounded-2xl border border-gold/15 bg-ivory/40 px-3 py-1">
+        <div ref={pickerRef} className="rounded-2xl border border-gold/25 bg-ivory/80 px-3 py-1">
           <CompactPickerRow
             label="エリア"
             value={districtLabel}
@@ -313,7 +316,7 @@ export function JobFilterSearch({
                   onClick={() => selectMinSalary(option.value)}
                   className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
                     draftMinSalary === option.value
-                      ? "bg-gradient-to-r from-gold to-gold-dark text-white shadow-sm"
+                      ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
                       : "text-charcoal hover:bg-white/80"
                   }`}
                 >
@@ -327,7 +330,7 @@ export function JobFilterSearch({
         <button
           type="button"
           onClick={() => handleSearch()}
-          className="mt-3 min-h-11 w-full rounded-full border border-gold/50 bg-charcoal px-5 py-2.5 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+          className={`mt-3 min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryBtnPrimary}`}
         >
           検索する
         </button>
@@ -339,14 +342,14 @@ export function JobFilterSearch({
             setOpenPicker(null);
           }}
           aria-expanded={showAdvanced}
-          className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border border-gold/35 bg-ivory px-4 py-2 text-sm font-semibold text-gold-dark transition hover:bg-gold-light/20"
+          className="mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border border-gold/40 bg-ivory px-4 py-2 text-sm font-semibold text-gold-dark transition hover:border-gold hover:bg-gold/5"
         >
           詳しく探す
           <ChevronDown open={showAdvanced} />
         </button>
 
         {showAdvanced && (
-          <div className="mt-4 space-y-4 border-t border-gold/15 pt-4">
+          <div className="mt-4 space-y-4 border-t border-gold/30 pt-4">
             <div>
               <label htmlFor="shop-keyword" className="mb-2 block text-sm font-semibold text-charcoal">
                 ワード検索
@@ -377,8 +380,8 @@ export function JobFilterSearch({
                           onClick={() => toggleBenefit(benefit)}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
                             selected
-                              ? "border-gold bg-gradient-to-r from-gold to-gold-dark text-white shadow-md"
-                              : "border-gold/30 bg-white text-muted hover:border-gold hover:bg-gold-light/20 hover:text-gold-dark"
+                              ? "border-gold bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+                              : "border-gold/35 bg-white text-muted hover:border-gold hover:bg-gold/5 hover:text-gold-dark"
                           }`}
                         >
                           {benefit}
@@ -401,7 +404,7 @@ export function JobFilterSearch({
               <button
                 type="button"
                 onClick={() => handleSearch()}
-                className="min-h-11 w-full rounded-full border border-gold/50 bg-charcoal px-5 py-2.5 text-sm font-semibold text-gold-light shadow-sm hover:bg-black"
+                className={`min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryBtnPrimary}`}
               >
                 検索する
               </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { luxurySectionHeading } from "@/lib/luxury-styles";
 import { fetchListingJobs, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 import { CompactJobCard } from "./CompactJobCard";
@@ -42,7 +43,7 @@ export function JobListingCarousel({
 
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-semibold text-charcoal sm:text-xl">{title}</h2>
+      <h2 className={luxurySectionHeading}>{title}</h2>
 
       {!ready ? (
         <div className="-mx-4 overflow-hidden px-4">

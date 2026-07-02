@@ -74,10 +74,10 @@ export function HeaderMenu() {
         aria-expanded={open}
         aria-controls="site-header-menu"
         aria-label="メニュー"
-        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-gold/35 bg-ivory px-3 text-sm font-semibold text-gold-dark transition hover:border-gold hover:bg-gold-light/20 sm:min-w-[5.5rem] sm:px-4"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-gold/45 bg-gradient-to-br from-ivory to-[#FFF9EE] px-3 text-sm font-semibold text-gold-dark shadow-luxury-sm transition hover:border-gold hover:shadow-luxury sm:min-w-[5.5rem] sm:px-4"
       >
         <svg
-          className="h-5 w-5 shrink-0"
+          className="h-5 w-5 shrink-0 text-gold"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

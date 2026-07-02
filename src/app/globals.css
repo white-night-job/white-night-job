@@ -36,14 +36,31 @@
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, #9a7b3c 0%, #c9a962 50%, #e8d5a3 100%);
+    background: linear-gradient(135deg, #9a7b1a 0%, #c9a227 45%, #d4af37 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .shadow-gold {
-    box-shadow: 0 4px 24px rgba(201, 169, 98, 0.15);
+    box-shadow: 0 8px 32px rgba(154, 123, 26, 0.16), 0 2px 10px rgba(26, 26, 26, 0.06);
+  }
+
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, #9a7b1a 0%, #c9a227 50%, #d4af37 100%);
+  }
+
+  .bg-gradient-gold-soft {
+    background: linear-gradient(
+      145deg,
+      #fffdf8 0%,
+      #fff9ee 45%,
+      #f8f0dc 100%
+    );
+  }
+
+  .border-gradient-gold {
+    border-color: rgba(201, 162, 39, 0.45);
   }
 
   .animate-fade-up {
@@ -86,7 +103,7 @@
     position: absolute;
     z-index: 1;
     color: rgba(255, 255, 255, 0.95);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 0 18px rgba(232, 213, 163, 0.9);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 0 18px rgba(229, 199, 107, 0.9);
     animation: sparkle-twinkle 2.4s ease-in-out infinite;
   }
 }

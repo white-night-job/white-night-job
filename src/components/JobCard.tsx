@@ -1,21 +1,26 @@
 import Link from "next/link";
+import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 import { SafetyBadge } from "./SafetyBadge";
 
 export function JobCard({ job }: { job: Job }) {
   return (
-    <article className="overflow-hidden rounded-3xl border border-gold/20 bg-white shadow-gold transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg">
+    <article
+      className={`overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
+    >
       <Link href={`/jobs/${job.id}`} className="block">
         {job.imageUrl ? (
-          <img
-            src={job.imageUrl}
-            alt={`${job.shopName}の店舗トップ画像`}
-            className="h-52 w-full object-cover sm:h-56"
-          />
+          <div className={`overflow-hidden ${luxuryImageFrame}`}>
+            <img
+              src={job.imageUrl}
+              alt={`${job.shopName}の店舗トップ画像`}
+              className="h-52 w-full object-cover sm:h-56"
+            />
+          </div>
         ) : (
-          <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-charcoal via-[#251c11] to-gold-dark sm:h-56">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,213,163,0.42),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(201,169,98,0.28),transparent_34%)]" />
+          <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-charcoal via-[#251c11] to-gold-dark ring-1 ring-gold/40 ring-inset sm:h-56">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.35),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(201,162,39,0.22),transparent_34%)]" />
             <div className="relative text-center">
               <p className="font-serif text-xl font-semibold tracking-[0.22em] text-gold-light">
                 White Night
@@ -29,10 +34,10 @@ export function JobCard({ job }: { job: Job }) {
         <div className="p-4 sm:p-5">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <p className="mb-1 text-xs font-medium text-gold-dark">
+              <p className="mb-1 text-xs font-medium text-muted">
                 {formatLocation(job)} · {job.jobType}
               </p>
-              <h3 className="truncate font-serif text-xl font-semibold text-charcoal">
+              <h3 className="truncate font-serif text-2xl font-semibold text-charcoal">
                 {job.shopName}
               </h3>
               {job.introductionText && (
@@ -44,25 +49,27 @@ export function JobCard({ job }: { job: Job }) {
             {job.isVerified && <SafetyBadge size="sm" />}
           </div>
 
-          <dl className="grid gap-2 text-sm text-charcoal">
-            <div className="rounded-xl border border-gold/15 bg-gold-light/20 px-3 py-2">
+          <dl className="grid gap-2 text-sm">
+            <div className="rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-2">
               <dt className="text-xs font-semibold text-gold-dark">時給</dt>
-              <dd className="mt-0.5 font-bold text-gold-dark">{job.salary}</dd>
+              <dd className="mt-0.5 bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
+                {job.salary}
+              </dd>
             </div>
-            <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-              <dt className="text-xs font-semibold text-gold-dark">営業時間</dt>
+            <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+              <dt className="text-xs font-semibold text-muted">営業時間</dt>
               <dd className="mt-0.5 line-clamp-1 text-muted">
                 {job.businessHours || "応相談"}
               </dd>
             </div>
             {job.address && (
-              <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-                <dt className="text-xs font-semibold text-gold-dark">住所</dt>
+              <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+                <dt className="text-xs font-semibold text-muted">住所</dt>
                 <dd className="mt-0.5 line-clamp-2 text-muted">{job.address}</dd>
               </div>
             )}
-            <div className="rounded-xl border border-gold/15 bg-ivory px-3 py-2">
-              <dt className="text-xs font-semibold text-gold-dark">キャスト年齢</dt>
+            <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+              <dt className="text-xs font-semibold text-muted">キャスト年齢</dt>
               <dd className="mt-0.5 line-clamp-1 text-muted">
                 {job.ageGroup || "詳細ページで確認"}
               </dd>

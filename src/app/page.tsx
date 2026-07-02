@@ -6,6 +6,7 @@ import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { SupportConsultationSection } from "@/components/SupportConsultationSection";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import { TOP_CTA_CARD_LAYOUT } from "@/components/top-cta-styles";
+import { luxuryCardSurface } from "@/lib/luxury-styles";
 import type { JobFilters } from "@/types/job";
 
 interface HomePageProps {
@@ -42,7 +43,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <SupportPromoBanner />
           <Link
             href="#first-time-guide"
-            className={`animate-fade-up animation-delay-150 group block rounded-3xl border border-gold/35 bg-white shadow-[0_12px_32px_rgba(33,29,24,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-gold hover:bg-gold-light/15 hover:shadow-gold ${TOP_CTA_CARD_LAYOUT}`}
+            className={`animate-fade-up animation-delay-150 group block rounded-3xl transition-all duration-300 hover:-translate-y-1 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface} ${TOP_CTA_CARD_LAYOUT}`}
           >
             <span className="block text-sm font-semibold text-gold-dark">
               初めてでも安心して探せます

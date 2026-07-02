@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { JobFilters } from "@/types/job";
+import { luxurySectionDivider, luxurySectionHeading } from "@/lib/luxury-styles";
 import { JobCount } from "./JobCount";
 import { JobFilterSearch } from "./JobFilterSearch";
 import { JobList } from "./JobList";
@@ -46,9 +47,9 @@ export function JobSearchSection({
       />
 
       {showJobList && (
-      <section id="jobs-section" className="scroll-mt-20">
+      <section id="jobs-section" className={`scroll-mt-20 ${luxurySectionDivider} pt-6`}>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-charcoal sm:text-xl">
+          <h2 className={luxurySectionHeading}>
             {title}
             {filterLabel && (
               <span className="ml-2 text-base font-normal text-gold-dark">

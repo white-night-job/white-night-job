@@ -34,7 +34,7 @@ const linkClassName =
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-gold/25 bg-gradient-to-b from-charcoal to-[#12100c]">
+    <footer className="mt-auto border-t border-gold/35 bg-gradient-to-b from-charcoal to-[#12100c]">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <nav
           aria-label="フッターナビゲーション"

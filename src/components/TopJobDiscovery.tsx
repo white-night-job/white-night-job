@@ -2,6 +2,7 @@
 
 import { JobFilterSearch } from "@/components/JobFilterSearch";
 import { JobListingCarousel } from "@/components/JobListingCarousel";
+import { luxurySectionDivider } from "@/lib/luxury-styles";
 import type { JobFilters } from "@/types/job";
 
 type TopJobDiscoveryProps = {
@@ -17,15 +18,19 @@ export function TopJobDiscovery({ initialFilters }: TopJobDiscoveryProps) {
         resultsPath="/jobs"
       />
 
-      <JobListingCarousel
-        title="新着店舗一覧"
-        kind="new"
-      />
+      <div className={`${luxurySectionDivider} pt-8`}>
+        <JobListingCarousel
+          title="新着店舗一覧"
+          kind="new"
+        />
+      </div>
 
-      <JobListingCarousel
-        title="PICK UP店舗"
-        kind="pickup"
-      />
+      <div className={`${luxurySectionDivider} pt-8`}>
+        <JobListingCarousel
+          title="PICK UP店舗"
+          kind="pickup"
+        />
+      </div>
     </div>
   );
 }
