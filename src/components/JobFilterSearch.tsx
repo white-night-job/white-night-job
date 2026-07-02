@@ -132,6 +132,7 @@ type JobFilterSearchProps = {
   resultsPath?: string;
   theme?: LuxuryTheme;
   embedded?: boolean;
+  inPlate?: boolean;
 };
 
 export function JobFilterSearch({
@@ -140,6 +141,7 @@ export function JobFilterSearch({
   resultsPath,
   theme = "light",
   embedded = false,
+  inPlate = false,
 }: JobFilterSearchProps) {
   const isPremium = isPremiumTheme(theme);
   const router = useRouter();
@@ -272,21 +274,25 @@ export function JobFilterSearch({
 
   const searchBody = (
     <>
-      <div className="relative mb-3">
-        <p
-          className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
-            embedded ? "text-[#e8e0cc]" : "text-gold-dark"
-          }`}
-        >
-          SHOP SEARCH
-        </p>
+      <div className={`relative ${inPlate ? "mb-2" : "mb-3"}`}>
+        {!inPlate && (
+          <p
+            className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
+              embedded ? "text-[#e8e0cc]" : "text-gold-dark"
+            }`}
+          >
+            SHOP SEARCH
+          </p>
+        )}
         <h2
           className={
-            embedded
-              ? "font-serif text-lg font-semibold text-white sm:text-xl"
-              : isPremium
-                ? sectionHeading(theme)
-                : luxurySectionHeading
+            inPlate
+              ? "font-serif text-base font-semibold text-[#111111] sm:text-lg"
+              : embedded
+                ? "font-serif text-lg font-semibold text-white sm:text-xl"
+                : isPremium
+                  ? sectionHeading(theme)
+                  : luxurySectionHeading
           }
         >
           お店を探す
@@ -295,10 +301,12 @@ export function JobFilterSearch({
 
       <div
         ref={pickerRef}
-        className={`relative rounded-2xl border px-3 py-1 ${
-          isPremium || embedded
-            ? "border-gold/50 bg-white/80 shadow-luxury-sm"
-            : "border-gold/25 bg-ivory/80"
+        className={`relative rounded-xl px-3 py-1 ${
+          inPlate
+            ? "bg-white"
+            : isPremium || embedded
+              ? "border border-gold/50 bg-white/80 shadow-luxury-sm"
+              : "border border-gold/25 bg-ivory/80"
         }`}
       >
           <CompactPickerRow
@@ -306,13 +314,13 @@ export function JobFilterSearch({
             value={districtLabel}
             open={openPicker === "district"}
             onToggle={() => togglePicker("district")}
-            isPremium={isPremium || embedded}
+            isPremium={isPremium || embedded || inPlate}
           >
             <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
               <FilterButton
                 active={draftDistrict === "all"}
                 onClick={() => selectDistrict("all")}
-                isPremium={isPremium || embedded}
+                isPremium={isPremium || embedded || inPlate}
               >
                 すべて
               </FilterButton>
@@ -321,7 +329,7 @@ export function JobFilterSearch({
                   key={district}
                   active={draftDistrict === district}
                   onClick={() => selectDistrict(district)}
-                  isPremium={isPremium || embedded}
+                  isPremium={isPremium || embedded || inPlate}
                 >
                   {district}
                 </FilterButton>
@@ -334,13 +342,13 @@ export function JobFilterSearch({
             value={jobTypeLabel}
             open={openPicker === "jobType"}
             onToggle={() => togglePicker("jobType")}
-            isPremium={isPremium || embedded}
+            isPremium={isPremium || embedded || inPlate}
           >
             <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
               <FilterButton
                 active={draftJobType === "all"}
                 onClick={() => selectJobType("all")}
-                isPremium={isPremium || embedded}
+                isPremium={isPremium || embedded || inPlate}
               >
                 すべて
               </FilterButton>
@@ -349,7 +357,7 @@ export function JobFilterSearch({
                   key={type}
                   active={draftJobType === type}
                   onClick={() => selectJobType(type)}
-                  isPremium={isPremium || embedded}
+                  isPremium={isPremium || embedded || inPlate}
                 >
                   {type}
                 </FilterButton>
@@ -362,7 +370,7 @@ export function JobFilterSearch({
             value={salaryLabel}
             open={openPicker === "minSalary"}
             onToggle={() => togglePicker("minSalary")}
-            isPremium={isPremium || embedded}
+            isPremium={isPremium || embedded || inPlate}
           >
             <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
               {SALARY_OPTIONS.map((option) => (
@@ -399,11 +407,13 @@ export function JobFilterSearch({
           }}
           aria-expanded={showAdvanced}
           className={`mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-            embedded
-              ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
-              : isPremium
-                ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
-                : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
+            inPlate
+              ? "border-[#111111]/10 bg-white text-[#111111]/80 hover:bg-white/90"
+              : embedded
+                ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
+                : isPremium
+                  ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
+                  : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
           }`}
         >
           詳しく探す
