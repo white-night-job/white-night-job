@@ -54,7 +54,7 @@ export function JobListingCarousel({
     : "rounded-2xl border border-gold/20 bg-white px-4 py-8 text-center text-sm text-muted";
 
   return (
-    <section className="space-y-2">
+    <section className="listing-section space-y-4">
       <h2 className={sectionHeading(theme)}>{title}</h2>
 
       {!ready ? (

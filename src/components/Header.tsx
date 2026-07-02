@@ -10,33 +10,20 @@ export function Header() {
   const isHome = pathname === "/";
 
   return (
-    <header
-      className={`sticky top-0 z-50 border-b backdrop-blur-md header-glow-line ${
-        isHome
-          ? "border-gold/50 bg-gradient-to-r from-white via-champagne to-white"
-          : "border-gold/35 bg-ivory/95 shadow-luxury-sm"
-      }`}
-    >
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-3 sm:h-16 sm:px-6">
-        <Link href="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gold-mid/60 bg-gradient-gold-metal text-[10px] font-bold text-charcoal shadow-metal sm:h-8 sm:w-8 sm:text-xs">
+    <header className="sticky top-0 z-50 border-b border-[#C4A574]/35 bg-white">
+      <div className="mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-8">
+        <Link href="/" className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#C4A574]/50 bg-[#FAF8F5] font-serif text-[11px] font-bold text-[#111111] sm:h-9 sm:w-9 sm:text-xs">
             WN
           </span>
-          <span
-            className={`truncate font-serif text-sm font-semibold sm:text-xl ${
-              isHome ? "text-gradient-gold" : "text-charcoal"
-            }`}
-          >
+          <span className="truncate font-serif text-base font-semibold tracking-wide text-[#111111] sm:text-lg">
             {SITE_NAME}
           </span>
         </Link>
-        <HeaderMenu variant={isHome ? "premium" : "light"} />
+        <HeaderMenu variant="light" />
       </div>
       {isHome && (
-        <div
-          className="h-px bg-gradient-to-r from-transparent via-gold to-transparent"
-          aria-hidden
-        />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#C4A574]/55 to-transparent" aria-hidden />
       )}
     </header>
   );

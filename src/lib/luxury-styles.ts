@@ -27,11 +27,10 @@ export const luxurySectionHeading = [
 ].join(" ");
 
 export const luxuryPremiumHeading = [
-  "flex items-center gap-3",
-  "font-serif text-lg font-semibold sm:text-xl",
-  "text-gradient-gold",
-  "before:block before:h-5 before:w-1 before:shrink-0 before:rounded-full",
-  "before:bg-gradient-to-b before:from-gold-dark before:via-gold-mid before:to-gold-light",
+  "listing-section-heading",
+  "font-serif text-xl font-semibold tracking-wide text-[#111111] sm:text-2xl",
+  "before:block before:h-6 before:w-px before:shrink-0 before:bg-gradient-to-b",
+  "before:from-[#8B6F3E] before:via-[#C4A574] before:to-[#E4D4BC]",
 ].join(" ");
 
 export const luxuryDarkSectionHeading = luxuryPremiumHeading;

@@ -287,7 +287,7 @@ export function JobFilterSearch({
         <h2
           className={
             inPlate
-              ? "font-serif text-base font-semibold text-[#111111] sm:text-lg"
+              ? "hero-search-heading font-serif"
               : embedded
                 ? "font-serif text-lg font-semibold text-white sm:text-xl"
                 : isPremium
@@ -301,11 +301,11 @@ export function JobFilterSearch({
 
       <div
         ref={pickerRef}
-        className={`relative rounded-xl px-3 py-1 ${
+        className={`relative rounded-lg px-3 py-1 ${
           inPlate
-            ? "bg-white"
+            ? "bg-transparent"
             : isPremium || embedded
-              ? "border border-gold/50 bg-white/80 shadow-luxury-sm"
+              ? "rounded-xl border border-gold/50 bg-white/80 shadow-luxury-sm"
               : "border border-gold/25 bg-ivory/80"
         }`}
       >
