@@ -5,6 +5,7 @@ import { luxuryPremiumCard } from "@/lib/luxury-styles";
 type SupportPromoBannerProps = {
   className?: string;
   embedded?: boolean;
+  inset?: boolean;
 };
 
 function PromoContent() {
@@ -33,10 +34,10 @@ function PromoContent() {
           </span>
         </span>
 
-        <span className="w-full font-serif text-base font-black leading-snug tracking-[0.06em] text-[#faf9f7] sm:text-lg">
+        <span className="w-full font-serif text-sm font-black leading-snug tracking-[0.06em] text-[#faf9f7] sm:text-base">
           全掲載店舗
         </span>
-        <span className="w-full font-serif text-base font-black leading-snug tracking-[0.06em] text-[#faf9f7] sm:text-lg">
+        <span className="w-full font-serif text-sm font-black leading-snug tracking-[0.06em] text-[#faf9f7] sm:text-base">
           相談受付実施
         </span>
       </div>
@@ -47,7 +48,22 @@ function PromoContent() {
 export function SupportPromoBanner({
   className = "",
   embedded = false,
+  inset = false,
 }: SupportPromoBannerProps) {
+  if (embedded && inset) {
+    return (
+      <Link
+        href="#support-section"
+        className={`group block px-3 py-2.5 transition hover:opacity-95 sm:px-4 sm:py-3 ${TOP_CTA_PROMO_LAYOUT} ${className}`}
+      >
+        <div className="relative z-10 flex w-full flex-col items-center justify-center gap-0.5 sm:gap-1">
+          <PromoContent />
+        </div>
+        <span className="sr-only">不安や疑問を事前に相談できる、安心のサポート体制。詳しく見る</span>
+      </Link>
+    );
+  }
+
   if (embedded) {
     return (
       <Link
