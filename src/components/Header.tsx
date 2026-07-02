@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HeaderShopLink } from "@/components/HeaderShopLink";
+import { HeaderMenu } from "@/components/HeaderMenu";
 import { SITE_NAME } from "@/lib/site";
 
 export function Header() {
@@ -14,21 +14,7 @@ export function Header() {
             {SITE_NAME}
           </span>
         </Link>
-        <nav className="flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-muted sm:gap-4 sm:text-sm">
-          <Link href="/#first-time-guide" className="whitespace-nowrap hover:text-gold-dark">
-            初めての方へ
-          </Link>
-          <Link href="/#shop-search" className="whitespace-nowrap hover:text-gold-dark">
-            店舗を探す🔍
-          </Link>
-          <Link href="/jobs" className="whitespace-nowrap hover:text-gold-dark">
-            求人一覧
-          </Link>
-          <Link href="/report" className="whitespace-nowrap hover:text-gold-dark">
-            ブラック店報告
-          </Link>
-          <HeaderShopLink />
-        </nav>
+        <HeaderMenu />
       </div>
     </header>
   );
