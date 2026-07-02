@@ -1,31 +1,54 @@
 import { SafetyBadge } from "./SafetyBadge";
-import { luxuryPremiumCard } from "@/lib/luxury-styles";
+
+function HeroBackground() {
+  return (
+    <>
+      <div className="hero-gold-bg absolute inset-0" aria-hidden />
+      <div className="hero-gold-corner-vignette absolute inset-0" aria-hidden />
+      <div className="hero-gold-texture absolute inset-0" aria-hidden />
+      <div className="hero-geo-pattern absolute inset-0" aria-hidden />
+      <div className="hero-glow hero-glow--center" aria-hidden />
+      <div className="hero-glow hero-glow--left" aria-hidden />
+      <div className="hero-glow hero-glow--right" aria-hidden />
+      <div className="hero-hairline absolute inset-0" aria-hidden />
+      <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-35" aria-hidden />
+      <div
+        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent sm:inset-x-8"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-gradient-to-r from-transparent via-gold-dark/50 to-transparent sm:inset-x-8"
+        aria-hidden
+      />
+    </>
+  );
+}
 
 export function Hero() {
   return (
-    <section
-      className={`relative overflow-hidden rounded-2xl px-5 py-6 sm:px-7 sm:py-8 ${luxuryPremiumCard}`}
-    >
-      <div className="luxury-shimmer pointer-events-none absolute inset-0 opacity-60" aria-hidden />
+    <section className="hero-panel relative overflow-hidden rounded-3xl px-6 py-10 sm:px-8 sm:py-12 md:py-14">
+      <HeroBackground />
+
       <div className="relative">
-        <SafetyBadge size="lg" />
-        <h1 className="mt-3 max-w-xl font-serif text-[1.375rem] font-semibold leading-snug text-balance sm:text-2xl md:text-3xl">
-          <span className="text-gradient-gold">安心</span>
-          <span className="text-charcoal">して働ける、</span>
+        <SafetyBadge size="lg" variant="hero" />
+
+        <h1 className="hero-title mt-4 max-w-xl font-serif text-[1.65rem] leading-snug text-balance sm:mt-5 sm:text-[1.8rem] md:text-[2.25rem]">
+          安心して働ける、
           <br />
-          <span className="text-charcoal">優良認定店専門サイト</span>
+          優良認定店専門サイト
         </h1>
-        <div className="mt-4 flex flex-col items-center justify-center">
-          <div className="inline-flex flex-col items-stretch border-y border-gold/55">
-            <p className="py-0 font-serif text-2xl font-bold leading-none tracking-[0.25em] text-gradient-gold sm:text-3xl md:text-4xl">
-              White Night
-            </p>
-          </div>
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.5em] text-gold-dark sm:text-sm">
+
+        <div className="mt-6 flex flex-col items-center justify-center sm:mt-7">
+          <p className="font-serif text-[2rem] font-black leading-none tracking-[0.22em] hero-brand-metal sm:text-[2.75rem] md:text-[3.25rem]">
+            White Night
+          </p>
+          <div className="hero-brand-line mt-3 w-full max-w-[16rem] sm:max-w-[20rem]" aria-hidden />
+          <p className="mt-3 font-serif text-sm font-bold uppercase tracking-[0.55em] hero-brand-metal sm:text-base md:text-lg">
             Job
           </p>
         </div>
-        <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted sm:text-base">
+
+        <p className="mt-5 max-w-lg text-sm leading-relaxed text-white/85 sm:mt-6 sm:text-base">
           審査済みの優良店のみ厳選。ブラック店は報告フォームからご連絡ください。
         </p>
       </div>
