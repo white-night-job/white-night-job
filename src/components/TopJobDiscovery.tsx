@@ -24,7 +24,7 @@ export function TopJobDiscovery({ initialFilters }: TopJobDiscoveryProps) {
       />
 
       <JobListingCarousel
-        title="ピックアップ店舗一覧"
+        title="PICK UP店舗"
         description="高額プランでピックアップ掲載中の店舗です。"
         kind="pickup"
       />
