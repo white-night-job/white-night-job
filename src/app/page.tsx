@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { Hero } from "@/components/Hero";
-import { JobSearchSection } from "@/components/JobSearchSection";
+import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { SupportConsultationSection } from "@/components/SupportConsultationSection";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import { TOP_CTA_CARD_LAYOUT } from "@/components/top-cta-styles";
@@ -54,7 +54,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </section>
 
         <Suspense fallback={<div className="h-52 animate-pulse rounded-2xl bg-white" />}>
-          <JobSearchSection initialFilters={filters} title="求人一覧" />
+          <TopJobDiscovery initialFilters={filters} />
         </Suspense>
 
         <SupportConsultationSection />

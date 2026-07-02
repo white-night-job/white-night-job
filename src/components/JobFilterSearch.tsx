@@ -97,11 +97,13 @@ function CompactPickerRow({
 type JobFilterSearchProps = {
   appliedFilters: JobFilters;
   onApply: (filters: JobFilters) => void;
+  resultsPath?: string;
 };
 
 export function JobFilterSearch({
   appliedFilters,
   onApply,
+  resultsPath,
 }: JobFilterSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -164,7 +166,10 @@ export function JobFilterSearch({
     if (filters.jobType) params.set("jobType", filters.jobType);
     filters.benefits?.forEach((benefit) => params.append("benefit", benefit));
     const query = params.toString();
-    router.push(query ? `${pathname}?${query}#jobs-section` : `${pathname}#jobs-section`);
+    const targetPath = resultsPath ?? pathname;
+    router.push(
+      query ? `${targetPath}?${query}#jobs-section` : `${targetPath}#jobs-section`,
+    );
   }
 
   function toggleBenefit(benefit: string) {

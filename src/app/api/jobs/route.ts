@@ -13,6 +13,7 @@ import {
   chatRecommendToRow,
   parseChatRecommendFromBody,
 } from "@/lib/chat-recommend-db";
+import { parsePickupFromBody, pickupToRow } from "@/lib/pickup-db";
 import {
   emptyApplicationDetail,
   fetchApplicationDetails,
@@ -31,6 +32,7 @@ import {
   compareJobsForListing,
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
+import { isNewListingJob } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
@@ -41,6 +43,7 @@ export async function GET(request: Request) {
     const keyword = searchParams.get("q")?.trim().toLowerCase() ?? "";
     const minSalary = Number(searchParams.get("minSalary") ?? 0);
     const selectedBenefits = searchParams.getAll("benefit").filter(Boolean);
+    const listing = searchParams.get("listing");
     const supabase = createSupabaseAdmin();
 
     let query = supabase
@@ -49,13 +52,32 @@ export async function GET(request: Request) {
       .eq("published", true)
       .order("created_at", { ascending: false });
 
+    if (listing === "pickup") {
+      query = query.eq("pickup_enabled", true);
+    }
+
     if (district && district !== "all") query = query.eq("district", district);
     if (jobType && jobType !== "all") query = query.eq("job_type", jobType);
 
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = data ?? [];
+    let rows = data ?? [];
+
+    if (listing === "new") {
+      rows = rows.filter((row) =>
+        isNewListingJob({
+          postedAt: String(row.posted_at),
+          createdAt: String(row.created_at),
+        }),
+      );
+    }
+
+    if (listing === "new" || listing === "pickup") {
+      const jobs = rows.map((row) => rowToJob(row));
+      return NextResponse.json({ jobs });
+    }
+
     const createdAtMap = Object.fromEntries(
       rows.map((row) => [row.id, String(row.created_at)]),
     );
@@ -185,6 +207,7 @@ export async function POST(request: Request) {
     const shopCredentials = parseShopCredentialsFromBody(body);
     const credentialRow = shopCredentialsToRow(shopCredentials);
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
+    const pickupRow = pickupToRow(parsePickupFromBody(body));
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -193,6 +216,7 @@ export async function POST(request: Request) {
         ...payloadToRow(payload),
         ...credentialRow,
         ...chatRecommendRow,
+        ...pickupRow,
       })
       .select("*")
       .single();

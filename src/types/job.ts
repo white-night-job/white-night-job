@@ -121,6 +121,8 @@ export interface Job {
   websiteUrl?: string;
   lineUrl: string;
   postedAt: string;
+  createdAt?: string;
+  pickupEnabled?: boolean;
   shopLoginId?: string;
   /** 管理画面のみ。公開APIでは返さない */
   shopLoginPassword?: string;

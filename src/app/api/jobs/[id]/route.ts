@@ -13,6 +13,7 @@ import {
   chatRecommendToRow,
   parseChatRecommendFromBody,
 } from "@/lib/chat-recommend-db";
+import { parsePickupFromBody, pickupToRow } from "@/lib/pickup-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const shopCredentials = parseShopCredentialsFromBody(body);
     const credentialRow = shopCredentialsToRow(shopCredentials);
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
+    const pickupRow = pickupToRow(parsePickupFromBody(body));
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -70,6 +72,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...payloadToRow(payload),
         ...credentialRow,
         ...chatRecommendRow,
+        ...pickupRow,
       })
       .eq("id", id)
       .select("*")

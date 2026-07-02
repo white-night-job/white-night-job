@@ -9,6 +9,8 @@ import { JobList } from "./JobList";
 type JobSearchSectionProps = {
   initialFilters: JobFilters;
   title: string;
+  showJobList?: boolean;
+  resultsPath?: string;
 };
 
 function getFilterLabel(filters: JobFilters) {
@@ -26,6 +28,8 @@ function getFilterLabel(filters: JobFilters) {
 export function JobSearchSection({
   initialFilters,
   title,
+  showJobList = true,
+  resultsPath,
 }: JobSearchSectionProps) {
   const [appliedFilters, setAppliedFilters] = useState<JobFilters>(initialFilters);
   const filterLabel = useMemo(
@@ -38,8 +42,10 @@ export function JobSearchSection({
       <JobFilterSearch
         appliedFilters={appliedFilters}
         onApply={setAppliedFilters}
+        resultsPath={resultsPath}
       />
 
+      {showJobList && (
       <section id="jobs-section" className="scroll-mt-20">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-charcoal sm:text-xl">
@@ -56,6 +62,7 @@ export function JobSearchSection({
         </div>
         <JobList filters={appliedFilters} />
       </section>
+      )}
     </div>
   );
 }

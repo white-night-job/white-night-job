@@ -93,6 +93,7 @@ type JobForm = {
   chatRecommendHighSalary: boolean;
   chatRecommendRelaxed: boolean;
   chatRecommendHighEarning: boolean;
+  pickupEnabled: boolean;
 };
 
 const emptyForm: JobForm = {
@@ -137,6 +138,7 @@ const emptyForm: JobForm = {
   chatRecommendHighSalary: false,
   chatRecommendRelaxed: false,
   chatRecommendHighEarning: false,
+  pickupEnabled: false,
 };
 
 const inputClass =
@@ -204,6 +206,7 @@ function toPayload(form: JobForm) {
     chat_recommend_high_salary: form.chatRecommendHighSalary,
     chat_recommend_relaxed: form.chatRecommendRelaxed,
     chat_recommend_high_earning: form.chatRecommendHighEarning,
+    pickup_enabled: form.pickupEnabled,
   };
 }
 
@@ -261,6 +264,7 @@ function toForm(job: Job): JobForm {
     chatRecommendHighSalary: job.chatRecommend?.highSalary ?? false,
     chatRecommendRelaxed: job.chatRecommend?.relaxed ?? false,
     chatRecommendHighEarning: job.chatRecommend?.highEarning ?? false,
+    pickupEnabled: job.pickupEnabled ?? false,
   };
 }
 
@@ -1566,6 +1570,25 @@ export default function AdminPage() {
             className={inputClass}
             placeholder="例：北海道札幌市中央区南○条西○丁目"
           />
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.pickupEnabled}
+              onChange={(event) =>
+                setField("pickupEnabled", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">ピックアップ掲載</span>
+              <span className="mt-1 block text-xs text-muted">
+                ONにするとトップページの「ピックアップ店舗一覧」に表示されます。
+              </span>
+            </span>
+          </label>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">

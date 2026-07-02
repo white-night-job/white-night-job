@@ -28,6 +28,15 @@ export async function fetchJobs(filters?: JobFilters): Promise<Job[]> {
   return data.jobs;
 }
 
+export async function fetchListingJobs(
+  kind: "new" | "pickup",
+): Promise<Job[]> {
+  const data = await readJson<{ jobs: Job[] }>(
+    await fetch(`/api/jobs?listing=${kind}`, { cache: "no-store" }),
+  );
+  return data.jobs;
+}
+
 export async function fetchJobById(id: string): Promise<Job | null> {
   const response = await fetch(`/api/jobs/${id}`, { cache: "no-store" });
   if (response.status === 404) return null;
