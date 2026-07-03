@@ -14,7 +14,7 @@ type MenuIconName =
   | "building"
   | "book"
   | "document"
-  | "mail";
+  | "megaphone";
 
 type NavItem = {
   href: string;
@@ -26,14 +26,15 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
   { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
-  { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
   { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
   { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
+  { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
   { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
-  { href: "/shop-login", label: "店舗様ログイン", icon: "building", match: "prefix" },
-  { href: "/terms", label: "利用規約", icon: "book", match: "prefix" },
+  { href: "/terms-user", label: "利用規約（求職者）", icon: "book", match: "exact" },
+  { href: "/terms-shop", label: "利用規約（掲載店舗）", icon: "book", match: "exact" },
   { href: "/legal", label: "特定商取引法に基づく表記", icon: "document", match: "exact" },
-  { href: "/report", label: "お問い合わせ", icon: "mail", match: "exact" },
+  { href: "/shop-login", label: "店舗様ログイン", icon: "building", match: "prefix" },
+  { href: "/for-shops", label: "掲載をご検討の方はこちら", icon: "megaphone", match: "prefix" },
 ];
 
 function MenuIcon({ name }: { name: MenuIconName }) {
@@ -146,11 +147,21 @@ function MenuIcon({ name }: { name: MenuIconName }) {
           <path d="M14 3.5V8h4.5M9 12h6M9 15.5h6" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       );
-    case "mail":
+    case "megaphone":
       return (
         <svg {...common}>
-          <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" strokeWidth="1.5" />
-          <path d="M4.5 7.5L12 13l7.5-5.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M4.5 10.5v3c0 .8.7 1.5 1.5 1.5h1.2l2.8 3.2c.4.4 1 .1 1-.4V6.2c0-.5-.6-.8-1-.4L7.2 9H6c-.8 0-1.5.7-1.5 1.5z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M11 7.5c2.2.8 4.5 2.2 6.5 4-2 1.8-4.3 3.2-6.5 4"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M18.5 9.5c1.2 1.1 1.8 2.3 1.8 2.5s-.6 1.4-1.8 2.5" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       );
     default:
@@ -164,12 +175,8 @@ function isItemActive(pathname: string, item: NavItem) {
     if (item.href === "/shop-login") {
       return pathname.startsWith("/shop-login") || pathname.startsWith("/shop-dashboard");
     }
-    if (item.href === "/terms") {
-      return (
-        pathname === "/terms" ||
-        pathname.startsWith("/terms-") ||
-        pathname === "/privacy"
-      );
+    if (item.href === "/for-shops") {
+      return pathname === "/for-shops" || pathname.startsWith("/for-shops/");
     }
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
