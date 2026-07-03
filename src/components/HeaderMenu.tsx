@@ -11,26 +11,10 @@ const NAV_ITEMS = [
   { href: "/report", label: "ブラック店報告" },
 ] as const;
 
-export function HeaderMenu({
-  variant = "light",
-}: {
-  variant?: "light" | "dark" | "premium";
-}) {
+export function HeaderMenu() {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [shopAuthenticated, setShopAuthenticated] = useState(false);
-  const [shopReady, setShopReady] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
-      .then((response) => response.json())
-      .then((data: { authenticated?: boolean }) => {
-        setShopAuthenticated(Boolean(data.authenticated));
-      })
-      .catch(() => setShopAuthenticated(false))
-      .finally(() => setShopReady(true));
-  }, [pathname]);
 
   useEffect(() => {
     setOpen(false);
@@ -66,12 +50,6 @@ export function HeaderMenu({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  const shopHref = shopAuthenticated ? "/shop-dashboard" : "/shop-login";
-  const shopLabel = shopAuthenticated ? "店舗管理" : "店舗ログイン";
-  const hideShopLink = pathname.startsWith("/admin");
-
-  const isPremium = variant === "premium" || variant === "dark";
-
   return (
     <div ref={menuRef} className="relative shrink-0">
       <button
@@ -80,14 +58,10 @@ export function HeaderMenu({
         aria-expanded={open}
         aria-controls="site-header-menu"
         aria-label="メニュー"
-        className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-metal transition hover:shadow-luxury-glow sm:min-w-[5.5rem] sm:px-4 ${
-          isPremium
-            ? "btn-gold-metal border-gold-mid/55 text-charcoal hover:border-gold-light"
-            : "border-gold/45 bg-gradient-to-br from-ivory to-champagne text-gold-dark hover:border-gold"
-        }`}
+        className="header-menu-btn flex min-h-11 min-w-11 items-center justify-center rounded-lg border px-2 sm:min-h-10 sm:min-w-[4.25rem] sm:px-3"
       >
         <svg
-          className="h-5 w-5 shrink-0 text-gold"
+          className="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -96,11 +70,13 @@ export function HeaderMenu({
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
+            strokeWidth={1.75}
+            d="M4 7h16M4 12h16M4 17h16"
           />
         </svg>
-        <span className="hidden sm:inline">メニュー</span>
+        <span className="ml-1.5 hidden text-[11px] font-semibold tracking-wide sm:inline">
+          メニュー
+        </span>
       </button>
 
       {open && (
@@ -113,43 +89,20 @@ export function HeaderMenu({
           />
           <nav
             id="site-header-menu"
-            className={`absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border shadow-luxury ${
-              isPremium
-                ? "border-gold/50 bg-gradient-to-br from-white via-ivory to-champagne"
-                : "border-gold/30 bg-white"
-            }`}
+            className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-[#C4A574]/35 bg-gradient-to-br from-white via-[#faf7f2] to-[#f0e6d4] shadow-luxury"
           >
-            <ul className="divide-y divide-gold/20 py-1">
+            <ul className="divide-y divide-[#C4A574]/20 py-1">
               {NAV_ITEMS.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className={`flex min-h-12 items-center px-4 py-3 text-sm font-medium transition ${
-                      isPremium
-                        ? "text-charcoal hover:bg-gold/10 hover:text-gold-dark"
-                        : "text-charcoal hover:bg-ivory hover:text-gold-dark"
-                    }`}
+                    className="flex min-h-11 items-center px-4 py-2.5 text-sm font-medium text-[#111111] transition hover:bg-[#C4A574]/10 hover:text-[#5a4828]"
                   >
                     {item.label}
                   </Link>
                 </li>
               ))}
-              {!hideShopLink && (
-                <li>
-                  <Link
-                    href={shopHref}
-                    onClick={() => setOpen(false)}
-                    className={`flex min-h-12 items-center px-4 py-3 text-sm font-semibold transition ${
-                      shopAuthenticated
-                        ? "bg-gradient-to-r from-gold/10 to-gold-light/20 text-gold-dark hover:from-gold/15 hover:to-gold-light/30"
-                        : "text-gold-dark hover:bg-ivory"
-                    } ${shopReady ? "" : "opacity-80"}`}
-                  >
-                    {shopLabel}
-                  </Link>
-                </li>
-              )}
             </ul>
           </nav>
         </>
