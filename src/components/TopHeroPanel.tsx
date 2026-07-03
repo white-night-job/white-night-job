@@ -14,8 +14,8 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
     <div className="first-view">
       <div className="hero-unified-plate relative mx-auto w-full max-w-2xl">
         <div className="hero-plate-header px-1 pt-2 text-center sm:pt-3">
-          <div className="mb-2 flex w-full justify-start">
-            <SafetyBadge size="xs" variant="hero" />
+          <div className="mb-1.5 flex w-full justify-start pl-0.5">
+            <SafetyBadge size="xxs" variant="hero" />
           </div>
 
           <h1 className="hero-title font-serif text-balance">
@@ -38,7 +38,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
           </p>
         </div>
 
-        <div className="hero-search-unit hero-plate-search mt-2 text-left sm:mt-2.5">
+        <div className="hero-search-unit hero-plate-search mt-1.5 text-left sm:mt-2">
           <JobFilterSearch
             appliedFilters={initialFilters}
             onApply={() => {}}
@@ -50,7 +50,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
         </div>
       </div>
 
-      <div className="hero-promo-card mx-auto mt-8 w-full max-w-2xl sm:mt-10">
+      <div className="hero-promo-card mx-auto mt-7 w-full max-w-2xl sm:mt-9">
         <SupportPromoBanner standalone />
       </div>
     </div>

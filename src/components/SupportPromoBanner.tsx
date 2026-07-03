@@ -42,14 +42,14 @@ export function SupportPromoBanner({
     return (
       <Link
         href="#support-section"
-        className={`hero-promo-plate group flex min-h-[4.25rem] w-full items-center justify-center gap-3 px-5 py-4 transition hover:opacity-95 sm:min-h-[4.5rem] sm:gap-4 sm:px-6 sm:py-5 ${className}`}
+        className={`hero-promo-plate group flex min-h-[3.5rem] w-full items-center justify-center gap-2.5 px-5 py-3 transition hover:opacity-95 sm:min-h-[3.75rem] sm:gap-3 sm:px-6 sm:py-3.5 ${className}`}
       >
-        <CrownIcon className="h-5 w-5 shrink-0 text-[#c9ad7a]/85 sm:h-6 sm:w-6" />
-        <div className="flex flex-col items-center gap-1 text-center">
-          <span className="text-[9px] font-medium tracking-[0.28em] text-[#c4a574]/65 sm:text-[10px]">
+        <CrownIcon className="hero-promo-crown h-[18px] w-[18px] shrink-0 sm:h-5 sm:w-5" />
+        <div className="flex flex-col items-center gap-0.5 text-center">
+          <span className="text-[8px] font-medium tracking-[0.3em] text-[#c4a574]/60 sm:text-[9px]">
             業界唯一
           </span>
-          <span className="font-serif text-[15px] font-semibold tracking-[0.06em] text-white sm:text-lg">
+          <span className="font-serif text-[15px] font-semibold tracking-[0.1em] text-white sm:text-lg sm:tracking-[0.12em]">
             全掲載店舗 相談受付実施
           </span>
         </div>

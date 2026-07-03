@@ -177,7 +177,7 @@ function CompactPickerRow({
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="flex min-h-9 w-full items-center justify-between gap-3 py-2 text-left"
+          className="flex min-h-8 w-full items-center justify-between gap-3 py-1.5 text-left"
         >
           <span className="flex min-w-0 items-center gap-2">
             {iconKind && <PickerIcon kind={iconKind} />}
@@ -191,7 +191,7 @@ function CompactPickerRow({
           </span>
         </button>
         {open && (
-          <div className="reservation-picker-panel mb-2 rounded-sm border border-[#111111]/08 bg-[#fafafa] p-2.5">
+          <div className="reservation-picker-panel mb-1.5 rounded-sm border border-[#111111]/08 bg-[#fafafa] p-2">
             {children}
           </div>
         )}
@@ -386,7 +386,7 @@ export function JobFilterSearch({
 
   const searchBody = (
     <>
-      <div className={`relative ${inPlate ? "mb-4" : "mb-3"}`}>
+      <div className={`relative ${inPlate ? "mb-2.5" : "mb-3"}`}>
         {!inPlate && (
           <p
             className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
@@ -410,7 +410,7 @@ export function JobFilterSearch({
           お店を探す
         </h2>
         {inPlate && (
-          <p className="mt-1 text-[11px] tracking-[0.08em] text-[#111111]/40">
+          <p className="mt-0.5 text-[10px] tracking-[0.08em] text-[#111111]/40">
             条件を選んで検索
           </p>
         )}
@@ -529,7 +529,7 @@ export function JobFilterSearch({
           onClick={() => handleSearch()}
           className={`relative w-full ${luxuryMetalBtn} ${
             inPlate
-              ? "mt-5 min-h-10 rounded-sm px-5 py-2 text-[13px] tracking-[0.06em]"
+              ? "hero-reservation-submit mt-3 min-h-9 rounded-sm px-5 py-1.5 text-[13px] tracking-[0.06em]"
               : "mt-3 min-h-11 rounded-full px-5 py-2.5 text-sm"
           }`}
         >
@@ -545,7 +545,7 @@ export function JobFilterSearch({
           aria-expanded={showAdvanced}
           className={`flex w-full items-center justify-center gap-1.5 transition ${
             inPlate
-              ? "mt-3 min-h-8 rounded-sm border-0 bg-transparent px-2 py-1 text-[12px] font-medium tracking-wide text-[#111111]/50 hover:text-[#111111]/75"
+              ? "hero-reservation-advanced mt-1.5 min-h-7 rounded-sm border-0 bg-transparent px-2 py-0.5 text-[12px] font-medium tracking-wide text-[#111111]/50 hover:text-[#111111]/75"
               : `min-h-10 rounded-full border px-4 py-2 text-sm font-semibold ${
                   embedded
                     ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
@@ -561,7 +561,7 @@ export function JobFilterSearch({
 
         {showAdvanced && (
           <div
-            className={`relative mt-5 space-y-4 border-t pt-5 ${
+            className={`relative mt-3 space-y-3 border-t pt-3 ${
               inPlate
                 ? "border-[#111111]/06"
                 : isPremium
