@@ -13,32 +13,34 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
   return (
     <div className="first-view">
       <div className="hero-unified-plate relative mx-auto w-full max-w-2xl">
-        <div className="hero-plate-header px-1 pt-2 text-center sm:pt-3">
-          <div className="mb-1.5 flex w-full justify-start pl-0.5">
-            <SafetyBadge size="xxs" variant="hero" />
-          </div>
+        <div className="hero-plate-header px-0.5 pt-2 sm:pt-3">
+          <div className="hero-plate-content">
+            <SafetyBadge variant="hero" />
 
-          <h1 className="hero-title font-serif text-balance">
-            安心して働ける、
-            <br />
-            優良認定店専門サイト
-          </h1>
+            <h1 className="hero-title font-serif">
+              <span className="hero-title-gold">安心して働ける、</span>
+              <br />
+              <span className="hero-title-dark">優良認定店専門サイト</span>
+            </h1>
 
-          <div className="hero-brand mt-2 sm:mt-2.5">
-            <p className="hero-brand-logo font-serif leading-none">
-              White Night
+            <div className="hero-brand">
+              <span className="hero-brand-line" aria-hidden />
+              <p className="hero-brand-logo font-serif leading-none">
+                White Night
+              </p>
+              <p className="hero-brand-sub font-serif uppercase">Job</p>
+              <span className="hero-brand-line" aria-hidden />
+            </div>
+
+            <p className="hero-desc">
+              審査済み店舗のみ掲載。
+              <br />
+              ブラック店舗は報告フォームへ。
             </p>
-            <p className="hero-brand-sub mt-1 font-serif uppercase">Job</p>
           </div>
-
-          <p className="hero-desc mx-auto mt-2 max-w-xs px-1">
-            審査済み店舗のみ掲載。
-            <br />
-            ブラック店舗は報告フォームへ。
-          </p>
         </div>
 
-        <div className="hero-search-unit hero-plate-search mt-1.5 text-left sm:mt-2">
+        <div className="hero-search-unit hero-plate-search mt-2 text-left sm:mt-2.5">
           <JobFilterSearch
             appliedFilters={initialFilters}
             onApply={() => {}}
