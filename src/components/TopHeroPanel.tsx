@@ -18,18 +18,21 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
             <SafetyBadge variant="hero" />
 
             <h1 className="hero-title font-serif">
-              <span className="hero-title-gold">安心して働ける、</span>
+              <span className="hero-title-dark">安心して働ける、</span>
               <br />
-              <span className="hero-title-dark">優良認定店専門サイト</span>
+              <span className="hero-title-gold">優良認定店</span>
+              <span className="hero-title-dark">専門サイト</span>
             </h1>
 
             <div className="hero-brand">
-              <span className="hero-brand-line" aria-hidden />
-              <p className="hero-brand-logo font-serif leading-none">
-                White Night
-              </p>
-              <p className="hero-brand-sub font-serif uppercase">Job</p>
-              <span className="hero-brand-line" aria-hidden />
+              <div className="hero-brand-mark">
+                <span className="hero-brand-line" aria-hidden />
+                <p className="hero-brand-logo font-serif leading-none">
+                  White Night
+                </p>
+                <span className="hero-brand-line" aria-hidden />
+                <p className="hero-brand-sub font-serif uppercase">Job</p>
+              </div>
             </div>
 
             <p className="hero-desc">
