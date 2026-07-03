@@ -442,71 +442,316 @@
   .hero-search-unit {
     position: relative;
     z-index: 1;
-    border-radius: 0.625rem;
-    padding: 0.75rem 1rem 0.875rem;
-    border: 1px solid rgba(17, 17, 17, 0.06);
-    background: rgba(255, 255, 255, 0.98);
+    overflow: hidden;
+    border-radius: 0.75rem;
+    padding: 0.875rem 0.875rem 1rem;
+    border: 1px solid rgba(196, 165, 116, 0.55);
+    background: linear-gradient(
+      165deg,
+      #ffffff 0%,
+      #faf7f2 18%,
+      #efe4d2 42%,
+      #d4c4a8 62%,
+      #3a3228 86%,
+      #111111 100%
+    );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 1),
-      0 2px 12px rgba(17, 17, 17, 0.04);
+      0 10px 28px rgba(17, 17, 17, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  .hero-search-unit::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: calc(0.75rem - 4px);
+    border: 1px solid rgba(196, 165, 116, 0.28);
+    pointer-events: none;
+  }
+
+  .hero-search-unit::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      125deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      transparent 40%,
+      transparent 70%,
+      rgba(17, 17, 17, 0.08) 100%
+    );
+    pointer-events: none;
   }
 
   @media (min-width: 640px) {
     .hero-search-unit {
-      padding: 0.875rem 1.125rem 1rem;
+      padding: 1rem 1.125rem 1.125rem;
     }
   }
 
-  .hero-reservation-form > div:first-child {
-    margin-bottom: 0.5rem;
-  }
-
-  .hero-reservation-form > div:first-child p {
-    margin-top: 0.125rem;
-    font-size: 10px;
-  }
-
-  .hero-reservation-form .reservation-picker-row button {
-    min-height: 2rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-  }
-
-  .hero-reservation-form .reservation-picker-panel {
-    margin-bottom: 0.375rem;
-    padding: 0.5rem;
-  }
-
-  .hero-reservation-form > button:nth-of-type(1) {
-    margin-top: 0.625rem;
-    min-height: 2.125rem;
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
-  }
-
-  .hero-reservation-form > button:nth-of-type(2) {
-    margin-top: 0.375rem;
-    min-height: 1.625rem;
-    padding-top: 0.125rem;
-    padding-bottom: 0.125rem;
-  }
-
-  .hero-reservation-form > div:last-child {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
+  .hero-reservation-form {
+    position: relative;
+    z-index: 1;
   }
 
   .hero-search-heading {
     font-size: 1.0625rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     color: #111111;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
   }
 
   @media (min-width: 640px) {
     .hero-search-heading {
       font-size: 1.1875rem;
     }
+  }
+
+  .hero-search-sub {
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    color: rgba(17, 17, 17, 0.45);
+  }
+
+  .hero-reservation-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .reservation-picker-row {
+    position: relative;
+  }
+
+  .reservation-picker-btn {
+    display: flex;
+    min-height: 2.75rem;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.55);
+    background: rgba(255, 255, 255, 0.94);
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 1px 4px rgba(17, 17, 17, 0.05);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .reservation-picker-row.is-open .reservation-picker-btn,
+  .reservation-picker-btn:hover {
+    border-color: rgba(196, 165, 116, 0.8);
+    background: #111111;
+    box-shadow: 0 2px 10px rgba(17, 17, 17, 0.14);
+  }
+
+  .reservation-picker-icon {
+    color: #c4a574;
+  }
+
+  .reservation-picker-row.is-open .reservation-picker-icon,
+  .reservation-picker-btn:hover .reservation-picker-icon {
+    color: #d4bc8e;
+  }
+
+  .reservation-picker-label {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: rgba(17, 17, 17, 0.5);
+  }
+
+  .reservation-picker-row.is-open .reservation-picker-label,
+  .reservation-picker-btn:hover .reservation-picker-label {
+    color: rgba(212, 188, 142, 0.75);
+  }
+
+  .reservation-picker-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #a8894a;
+  }
+
+  .reservation-picker-row.is-open .reservation-picker-value,
+  .reservation-picker-btn:hover .reservation-picker-value {
+    color: #d4bc8e;
+  }
+
+  .reservation-chevron {
+    color: #c4a574;
+  }
+
+  .reservation-picker-panel {
+    margin-top: 0.375rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.4);
+    background: rgba(255, 255, 255, 0.96);
+    padding: 0.5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .reservation-option-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(17, 17, 17, 0.65);
+  }
+
+  .reservation-option-btn:hover {
+    border-color: rgba(196, 165, 116, 0.35);
+    background: rgba(250, 247, 242, 0.9);
+    color: #111111;
+  }
+
+  .reservation-option-btn.is-active {
+    border-color: rgba(196, 165, 116, 0.65);
+    background: #111111;
+    color: #d4bc8e;
+  }
+
+  .hero-search-submit {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    min-height: 3rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.7);
+    background: linear-gradient(
+      180deg,
+      #f5ede0 0%,
+      #e8dcc8 28%,
+      #d4bc8e 58%,
+      #c9ad7a 100%
+    );
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #111111;
+    box-shadow:
+      0 4px 14px rgba(17, 17, 17, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      inset 0 -1px 0 rgba(139, 111, 62, 0.15);
+    transition:
+      background 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .hero-search-submit:hover {
+    background: linear-gradient(180deg, #faf7f2 0%, #ede0c8 35%, #dcc99a 70%, #c9ad7a 100%);
+    box-shadow:
+      0 6px 18px rgba(17, 17, 17, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .hero-search-submit:active {
+    transform: scale(0.99);
+  }
+
+  .hero-search-advanced {
+    display: flex;
+    min-height: 2.25rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.45);
+    background: rgba(17, 17, 17, 0.88);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #d4bc8e;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .hero-search-advanced:hover {
+    border-color: rgba(196, 165, 116, 0.7);
+    background: #111111;
+  }
+
+  .hero-search-advanced .reservation-chevron {
+    color: #d4bc8e;
+  }
+
+  .hero-search-advanced-panel {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(196, 165, 116, 0.28);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .hero-search-field-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(212, 188, 142, 0.85);
+  }
+
+  .hero-search-input {
+    min-height: 2.5rem;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.45);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: #111111;
+    outline: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .hero-search-input::placeholder {
+    color: rgba(17, 17, 17, 0.3);
+  }
+
+  .hero-search-input:focus {
+    border-color: rgba(196, 165, 116, 0.7);
+    box-shadow: 0 0 0 2px rgba(196, 165, 116, 0.12);
+  }
+
+  .hero-search-reset {
+    display: flex;
+    min-height: 2.25rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(196, 165, 116, 0.4);
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgba(17, 17, 17, 0.65);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .hero-search-reset:hover {
+    border-color: rgba(196, 165, 116, 0.6);
+    background: #fff;
+    color: #111111;
   }
 
   .header-brand-emblem {

@@ -48,10 +48,8 @@ function FilterButton({
       <button
         type="button"
         onClick={onClick}
-        className={`rounded-sm px-3 py-1.5 text-xs font-medium transition-colors ${
-          active
-            ? "border border-[#c4a574]/55 bg-[#faf7f2] text-[#111111]"
-            : "border border-transparent text-[#111111]/65 hover:border-[#111111]/08 hover:bg-[#111111]/[0.02]"
+        className={`reservation-option-btn rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          active ? "is-active" : ""
         }`}
       >
         {children}
@@ -86,7 +84,7 @@ function ChevronDown({
   return (
     <svg
       className={`shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""} ${
-        reservation ? "h-3.5 w-3.5 text-[#111111]/30" : "h-4 w-4 text-gold"
+        reservation ? "reservation-chevron h-3.5 w-3.5" : "h-4 w-4 text-gold"
       }`}
       fill="none"
       viewBox="0 0 24 24"
@@ -96,7 +94,7 @@ function ChevronDown({
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={reservation ? 1.25 : 2}
+        strokeWidth={reservation ? 1.5 : 2}
         d="M6 9l6 6 6-6"
       />
     </svg>
@@ -113,26 +111,29 @@ function PickerIcon({
       <>
         <path
           d="M12 21s-5.5-4.35-5.5-9a5.5 5.5 0 1111 0c0 4.65-5.5 9-5.5 9z"
-          strokeWidth="1.25"
+          strokeWidth="1.4"
         />
-        <circle cx="12" cy="12" r="1.75" strokeWidth="1.25" />
+        <circle cx="12" cy="12" r="1.75" strokeWidth="1.4" />
       </>
     ),
     jobType: (
-      <path
-        d="M8 7V5.5A1.5 1.5 0 019.5 4h5A1.5 1.5 0 0116 5.5V7M6 7h12v11.5A1.5 1.5 0 0116.5 20h-9A1.5 1.5 0 016 18.5V7z"
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <>
+        <path
+          d="M8 4h8l-1.2 8.2a3.8 3.8 0 01-7.6 0L8 4z"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        <path d="M12 12.5V18M9.5 20.5h5" strokeWidth="1.4" strokeLinecap="round" />
+      </>
     ),
     minSalary: (
       <>
-        <circle cx="12" cy="12" r="7.25" strokeWidth="1.25" />
+        <circle cx="12" cy="12" r="7.25" strokeWidth="1.4" />
         <path
-          d="M12 8.25v7.5M9.75 10.5c0-1 1-1.5 2.25-1.5s2.25.5 2.25 1.5-1 1.5-2.25 1.5-2.25.5-2.25 1.5 1 1.5 2.25 1.5 2.25-.5 2.25-1.5"
-          strokeWidth="1.25"
+          d="M9.2 9.2h4.2c1.1 0 2 .7 2 1.7s-.9 1.7-2 1.7H9.2M9.2 12.6h4.6c1.1 0 2 .7 2 1.7s-.9 1.7-2 1.7H9.2M11 7.5v1.7M11 16.3v1.7"
+          strokeWidth="1.4"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </>
     ),
@@ -140,7 +141,7 @@ function PickerIcon({
 
   return (
     <svg
-      className="h-3.5 w-3.5 shrink-0 text-[#111111]/28"
+      className="reservation-picker-icon h-4 w-4 shrink-0"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -172,28 +173,24 @@ function CompactPickerRow({
 }) {
   if (reservation) {
     return (
-      <div className="reservation-picker-row border-b border-[#111111]/06 last:border-b-0">
+      <div className={`reservation-picker-row ${open ? "is-open" : ""}`}>
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="flex min-h-8 w-full items-center justify-between gap-3 py-1.5 text-left"
+          className="reservation-picker-btn"
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-center gap-2.5">
             {iconKind && <PickerIcon kind={iconKind} />}
-            <span className="shrink-0 text-[11px] font-medium tracking-[0.12em] text-[#111111]/45">
-              {label}
-            </span>
+            <span className="reservation-picker-label">{label}</span>
           </span>
-          <span className="flex min-w-0 items-center justify-end gap-2 text-[13px] font-normal text-[#111111]">
-            <span className="truncate">{value}</span>
+          <span className="flex min-w-0 items-center justify-end gap-2">
+            <span className="reservation-picker-value truncate">{value}</span>
             <ChevronDown open={open} reservation />
           </span>
         </button>
         {open && (
-          <div className="reservation-picker-panel mb-1.5 rounded-sm border border-[#111111]/08 bg-[#fafafa] p-2">
-            {children}
-          </div>
+          <div className="reservation-picker-panel">{children}</div>
         )}
       </div>
     );
@@ -386,7 +383,7 @@ export function JobFilterSearch({
 
   const searchBody = (
     <>
-      <div className={`relative ${inPlate ? "mb-2.5" : "mb-3"}`}>
+      <div className={`relative ${inPlate ? "hero-search-title mb-3 text-center" : "mb-3"}`}>
         {!inPlate && (
           <p
             className={`mb-0.5 text-xs font-semibold tracking-[0.2em] ${
@@ -410,9 +407,7 @@ export function JobFilterSearch({
           お店を探す
         </h2>
         {inPlate && (
-          <p className="mt-0.5 text-[10px] tracking-[0.08em] text-[#111111]/40">
-            条件を選んで検索
-          </p>
+          <p className="hero-search-sub mt-1">条件を選んで検索</p>
         )}
       </div>
 
@@ -420,7 +415,7 @@ export function JobFilterSearch({
         ref={pickerRef}
         className={`relative ${
           inPlate
-            ? "hero-reservation-fields space-y-0 px-0.5"
+            ? "hero-reservation-fields"
             : `rounded-lg px-3 py-1 ${
                 isPremium || embedded
                   ? "rounded-xl border border-gold/50 bg-white/80 shadow-luxury-sm"
@@ -501,21 +496,23 @@ export function JobFilterSearch({
             reservation={inPlate}
             iconKind="minSalary"
           >
-            <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
+            <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
               {SALARY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => selectMinSalary(option.value)}
-                  className={`rounded-sm px-2.5 py-2 text-left text-xs font-medium transition ${
+                  className={
                     inPlate
-                      ? draftMinSalary === option.value
-                        ? "border border-[#c4a574]/50 bg-[#faf7f2] text-[#111111]"
-                        : "text-[#111111]/65 hover:bg-[#111111]/[0.03]"
-                      : draftMinSalary === option.value
-                        ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
-                        : "text-charcoal hover:bg-champagne/40"
-                  }`}
+                      ? `reservation-option-btn w-full rounded-md px-3 py-2 text-left text-xs font-medium ${
+                          draftMinSalary === option.value ? "is-active" : ""
+                        }`
+                      : `rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                          draftMinSalary === option.value
+                            ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+                            : "text-charcoal hover:bg-champagne/40"
+                        }`
+                  }
                 >
                   {option.label}
                 </button>
@@ -527,11 +524,11 @@ export function JobFilterSearch({
         <button
           type="button"
           onClick={() => handleSearch()}
-          className={`relative w-full ${luxuryMetalBtn} ${
+          className={
             inPlate
-              ? "hero-reservation-submit mt-3 min-h-9 rounded-sm px-5 py-1.5 text-[13px] tracking-[0.06em]"
-              : "mt-3 min-h-11 rounded-full px-5 py-2.5 text-sm"
-          }`}
+              ? "hero-search-submit"
+              : `relative mt-3 min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryMetalBtn}`
+          }
         >
           検索する
         </button>
@@ -543,17 +540,17 @@ export function JobFilterSearch({
             setOpenPicker(null);
           }}
           aria-expanded={showAdvanced}
-          className={`flex w-full items-center justify-center gap-1.5 transition ${
+          className={
             inPlate
-              ? "hero-reservation-advanced mt-1.5 min-h-7 rounded-sm border-0 bg-transparent px-2 py-0.5 text-[12px] font-medium tracking-wide text-[#111111]/50 hover:text-[#111111]/75"
-              : `min-h-10 rounded-full border px-4 py-2 text-sm font-semibold ${
+              ? "hero-search-advanced"
+              : `mt-2 flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   embedded
                     ? "border-[#c4b896]/50 bg-black/25 text-[#e8e0cc] hover:border-[#d4c9a8] hover:bg-black/35"
                     : isPremium
-                      ? "mt-2 border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
-                      : "mt-2 border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
+                      ? "border-gold/50 bg-white/70 text-gold-dark hover:border-gold hover:bg-champagne/30"
+                      : "border-gold/40 bg-ivory text-gold-dark hover:border-gold hover:bg-gold/5"
                 }`
-          }`}
+          }
         >
           詳しく探す
           <ChevronDown open={showAdvanced} reservation={inPlate} />
@@ -561,12 +558,12 @@ export function JobFilterSearch({
 
         {showAdvanced && (
           <div
-            className={`relative mt-3 space-y-3 border-t pt-3 ${
+            className={`relative ${
               inPlate
-                ? "border-[#111111]/06"
-                : isPremium
-                  ? "border-gold/40"
-                  : "border-gold/30"
+                ? "hero-search-advanced-panel"
+                : `mt-3 space-y-3 border-t pt-3 ${
+                    isPremium ? "border-gold/40" : "border-gold/30"
+                  }`
             }`}
           >
             <div>
@@ -574,7 +571,7 @@ export function JobFilterSearch({
                 htmlFor="shop-keyword"
                 className={`mb-2 block font-medium ${
                   inPlate
-                    ? "text-[11px] tracking-[0.1em] text-[#111111]/45"
+                    ? "hero-search-field-label"
                     : "text-sm font-semibold text-charcoal"
                 }`}
               >
@@ -586,7 +583,7 @@ export function JobFilterSearch({
                 onChange={(event) => setKeyword(event.target.value)}
                 className={
                   inPlate
-                    ? "min-h-9 w-full rounded-sm border border-[#111111]/10 bg-white px-3 py-2 text-[13px] text-[#111111] outline-none transition placeholder:text-[#111111]/30 focus:border-[#c4a574]/45 focus:ring-1 focus:ring-[#c4a574]/15"
+                    ? "hero-search-input"
                     : `min-h-11 w-full ${isPremium ? luxuryPremiumInput : "rounded-2xl border border-gold/30 bg-ivory px-4 py-2.5 text-base text-charcoal outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"}`
                 }
                 placeholder="例：ロゼッタ、ニュークラ、送迎あり"
@@ -597,7 +594,7 @@ export function JobFilterSearch({
               <p
                 className={`font-medium ${
                   inPlate
-                    ? "text-[11px] tracking-[0.1em] text-[#111111]/45"
+                    ? "hero-search-field-label"
                     : "text-sm font-semibold text-charcoal"
                 }`}
               >
@@ -606,9 +603,9 @@ export function JobFilterSearch({
               {BENEFIT_SEARCH_CATEGORIES.map((category) => (
                 <div
                   key={category.title}
-                  className={`rounded-sm border p-3 ${
+                  className={`rounded-md border p-3 ${
                     inPlate
-                      ? "border-[#111111]/06 bg-[#fafafa]"
+                      ? "border-[#c4a574]/30 bg-white/90"
                       : isPremium
                         ? "border-gold/35 bg-white/80"
                         : "border-gold/15 bg-ivory/70"
@@ -617,7 +614,7 @@ export function JobFilterSearch({
                   <p
                     className={`mb-2 font-medium ${
                       inPlate
-                        ? "text-[10px] tracking-[0.1em] text-[#111111]/40"
+                        ? "text-[10px] tracking-[0.1em] text-[#c4a574]"
                         : "text-xs font-semibold tracking-wide text-gold-dark"
                     }`}
                   >
@@ -631,17 +628,19 @@ export function JobFilterSearch({
                           key={benefit}
                           type="button"
                           onClick={() => toggleBenefit(benefit)}
-                          className={`rounded-sm border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                          className={
                             inPlate
-                              ? selected
-                                ? "border-[#c4a574]/55 bg-[#faf7f2] text-[#111111]"
-                                : "border-transparent text-[#111111]/60 hover:border-[#111111]/08 hover:bg-[#111111]/[0.02]"
-                              : selected
-                                ? "border-gold bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
-                                : isPremium
-                                  ? "border-gold/40 bg-white text-muted hover:border-gold hover:bg-champagne/30 hover:text-gold-dark"
-                                  : "border-gold/35 bg-white text-muted hover:border-gold hover:bg-gold/5 hover:text-gold-dark"
-                          }`}
+                              ? `reservation-option-btn rounded-md px-2.5 py-1.5 text-xs font-medium ${
+                                  selected ? "is-active" : ""
+                                }`
+                              : `rounded-full border px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${
+                                  selected
+                                    ? "border-gold bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
+                                    : isPremium
+                                      ? "border-gold/40 bg-white text-muted hover:border-gold hover:bg-champagne/30 hover:text-gold-dark"
+                                      : "border-gold/35 bg-white text-muted hover:border-gold hover:bg-gold/5 hover:text-gold-dark"
+                                }`
+                          }
                         >
                           {benefit}
                         </button>
@@ -656,26 +655,26 @@ export function JobFilterSearch({
               <button
                 type="button"
                 onClick={resetFilters}
-                className={`w-full font-medium ${
+                className={
                   inPlate
-                    ? "min-h-9 rounded-sm border border-[#111111]/10 bg-white px-5 py-2 text-[12px] text-[#111111]/55 hover:bg-[#111111]/[0.02]"
-                    : `min-h-11 rounded-full border px-5 py-2.5 text-sm font-semibold ${
+                    ? "hero-search-reset"
+                    : `min-h-11 w-full rounded-full border px-5 py-2.5 text-sm font-semibold ${
                         isPremium
                           ? "border-gold/50 bg-white/70 text-gold-dark hover:bg-champagne/30"
                           : "border-gold/40 bg-ivory text-gold-dark hover:bg-gold-light/20"
                       }`
-                }`}
+                }
               >
                 条件をリセット
               </button>
               <button
                 type="button"
                 onClick={() => handleSearch()}
-                className={`w-full ${luxuryMetalBtn} ${
+                className={
                   inPlate
-                    ? "min-h-10 rounded-sm px-5 py-2 text-[13px] tracking-[0.06em]"
-                    : "min-h-11 rounded-full px-5 py-2.5 text-sm"
-                }`}
+                    ? "hero-search-submit"
+                    : `min-h-11 w-full rounded-full px-5 py-2.5 text-sm ${luxuryMetalBtn}`
+                }
               >
                 検索する
               </button>
