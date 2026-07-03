@@ -45,7 +45,8 @@ export function JobListingCarousel({
 
   return (
     <section
-      className={`listing-panel ${isPickup ? "listing-panel-pickup" : "listing-panel-new"}`}
+      id={isPickup ? "pickup-shops" : "new-shops"}
+      className={`listing-panel scroll-mt-24 ${isPickup ? "listing-panel-pickup" : "listing-panel-new"}`}
     >
       <h2
         className={`listing-panel-heading ${isPickup ? "is-pickup" : ""}`}

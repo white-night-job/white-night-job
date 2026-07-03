@@ -4,17 +4,197 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const NAV_ITEMS = [
-  { href: "/#first-time-guide", label: "初めての方へ" },
-  { href: "/#shop-search", label: "店舗を探す" },
-  { href: "/jobs", label: "求人一覧" },
-  { href: "/report", label: "ブラック店報告" },
-] as const;
+type MenuIconName =
+  | "beginner"
+  | "search"
+  | "list"
+  | "new"
+  | "pickup"
+  | "alert"
+  | "building"
+  | "book"
+  | "document"
+  | "mail";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: MenuIconName;
+  match?: "exact" | "prefix" | "hash";
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
+  { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
+  { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
+  { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
+  { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
+  { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
+  { href: "/shop-login", label: "店舗様ログイン", icon: "building", match: "prefix" },
+  { href: "/terms", label: "利用規約", icon: "book", match: "prefix" },
+  { href: "/legal", label: "特定商取引法に基づく表記", icon: "document", match: "exact" },
+  { href: "/report", label: "お問い合わせ", icon: "mail", match: "exact" },
+];
+
+function MenuIcon({ name }: { name: MenuIconName }) {
+  const common = {
+    className: "header-menu-icon",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    "aria-hidden": true as const,
+  };
+
+  switch (name) {
+    case "beginner":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 3.5c2.2 1.8 3.8 2.4 6 2.4v6.2c0 3.7-2.5 6.4-6 8.4-3.5-2-6-4.7-6-8.4V5.9c2.2 0 3.8-.6 6-2.4z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12 9v4M12 15.5h.01"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "search":
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="6.25" strokeWidth="1.5" />
+          <path d="M16 16l3.5 3.5" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case "list":
+      return (
+        <svg {...common}>
+          <path
+            d="M8 7h11M8 12h11M8 17h11M5 7h.01M5 12h.01M5 17h.01"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "new":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 4.5l1.6 4.2H18l-3.5 2.7 1.3 4.3L12 13.8 8.2 15.7l1.3-4.3L6 8.7h4.4L12 4.5z"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "pickup":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 4.5l1.9 4.8 5.1.4-3.9 3.3 1.2 5-4.3-2.7-4.3 2.7 1.2-5-3.9-3.3 5.1-.4L12 4.5z"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "alert":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 4.5L3.8 18.5h16.4L12 4.5z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M12 10v4M12 16.5h.01" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      );
+    case "building":
+      return (
+        <svg {...common}>
+          <path
+            d="M4.5 20.5h15M6.5 20.5V6.5A1.5 1.5 0 018 5h8a1.5 1.5 0 011.5 1.5v14"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.5 9h1M13.5 9h1M9.5 12.5h1M13.5 12.5h1M9.5 16h1M13.5 16h1"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "book":
+      return (
+        <svg {...common}>
+          <path
+            d="M5.5 5.5A2 2 0 017.5 4H18v15.5H7.5a2 2 0 000 4H18"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M7.5 19.5V4" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case "document":
+      return (
+        <svg {...common}>
+          <path
+            d="M7.5 3.5h6.5L18.5 8v12a1 1 0 01-1 1h-10a1 1 0 01-1-1v-15a1 1 0 011-1z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M14 3.5V8h4.5M9 12h6M9 15.5h6" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case "mail":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" strokeWidth="1.5" />
+          <path d="M4.5 7.5L12 13l7.5-5.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function isItemActive(pathname: string, item: NavItem) {
+  if (item.match === "prefix") {
+    if (item.href === "/jobs") return pathname === "/jobs" || pathname.startsWith("/jobs/");
+    if (item.href === "/shop-login") {
+      return pathname.startsWith("/shop-login") || pathname.startsWith("/shop-dashboard");
+    }
+    if (item.href === "/terms") {
+      return (
+        pathname === "/terms" ||
+        pathname.startsWith("/terms-") ||
+        pathname === "/privacy"
+      );
+    }
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
+  }
+
+  if (item.match === "exact") {
+    return pathname === item.href;
+  }
+
+  return false;
+}
 
 export function HeaderMenu() {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const [shopAuthenticated, setShopAuthenticated] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
+      .then((response) => response.json())
+      .then((data: { authenticated?: boolean }) => {
+        setShopAuthenticated(Boolean(data.authenticated));
+      })
+      .catch(() => setShopAuthenticated(false));
+  }, [pathname]);
 
   useEffect(() => {
     setOpen(false);
@@ -49,6 +229,22 @@ export function HeaderMenu() {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open]);
+
+  const hideShopLink = pathname.startsWith("/admin");
+
+  const items = NAV_ITEMS.filter((item) => {
+    if (item.icon === "building" && hideShopLink) return false;
+    return true;
+  }).map((item) => {
+    if (item.icon === "building") {
+      return {
+        ...item,
+        href: shopAuthenticated ? "/shop-dashboard" : "/shop-login",
+        label: shopAuthenticated ? "店舗管理" : "店舗様ログイン",
+      };
+    }
+    return item;
+  });
 
   return (
     <div ref={menuRef} className="relative shrink-0">
@@ -87,22 +283,24 @@ export function HeaderMenu() {
             className="fixed inset-0 z-40 bg-charcoal/20"
             onClick={() => setOpen(false)}
           />
-          <nav
-            id="site-header-menu"
-            className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-[#C4A574]/35 bg-gradient-to-br from-white via-[#faf7f2] to-[#f0e6d4] shadow-luxury"
-          >
-            <ul className="divide-y divide-[#C4A574]/20 py-1">
-              {NAV_ITEMS.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="flex min-h-11 items-center px-4 py-2.5 text-sm font-medium text-[#111111] transition hover:bg-[#C4A574]/10 hover:text-[#5a4828]"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+          <nav id="site-header-menu" className="header-menu-panel">
+            <ul className="header-menu-list">
+              {items.map((item) => {
+                const active = isItemActive(pathname, item);
+                return (
+                  <li key={`${item.label}-${item.href}`}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={`header-menu-item ${active ? "is-active" : ""}`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <MenuIcon name={item.icon} />
+                      <span className="header-menu-item-label">{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
         </>
