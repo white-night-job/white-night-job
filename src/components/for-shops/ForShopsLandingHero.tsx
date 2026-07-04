@@ -34,7 +34,13 @@ export function ForShopsLandingHero() {
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
       <article className="fsl-hero">
         <div className="fsl-hero__bg" aria-hidden="true" />
+        <div className="fsl-hero__bg fsl-hero__bg--visual" aria-hidden="true" />
         <div className="fsl-hero__lights" aria-hidden="true">
+          <span className="fsl-hero__light fsl-hero__light--a" />
+          <span className="fsl-hero__light fsl-hero__light--b" />
+          <span className="fsl-hero__light fsl-hero__light--c" />
+        </div>
+        <div className="fsl-hero__lights fsl-hero__lights--visual" aria-hidden="true">
           <span className="fsl-hero__light fsl-hero__light--a" />
           <span className="fsl-hero__light fsl-hero__light--b" />
           <span className="fsl-hero__light fsl-hero__light--c" />
@@ -78,19 +84,23 @@ export function ForShopsLandingHero() {
               </a>
             </div>
           </div>
-
-          <figure className="fsl-hero__visual" aria-hidden="true">
-            <div className="fsl-hero__visual-scrim" />
-            <Image
-              src="/for-shops/hero-consultant.png"
-              alt=""
-              width={560}
-              height={700}
-              priority
-              className="fsl-hero__photo"
-            />
-          </figure>
         </div>
+
+        <figure className="fsl-hero__visual" aria-hidden="true">
+          <div className="fsl-hero__photo-frame">
+            <div className="fsl-hero__photo-mask">
+              <Image
+                src="/for-shops/hero-consultant.png"
+                alt=""
+                width={560}
+                height={700}
+                priority
+                className="fsl-hero__photo"
+              />
+            </div>
+            <div className="fsl-hero__photo-overlay" aria-hidden="true" />
+          </div>
+        </figure>
       </article>
     </section>
   );
