@@ -1638,8 +1638,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 55% 50% at 68% 32%, rgba(212, 188, 142, 0.2) 0%, transparent 70%),
-      radial-gradient(ellipse 45% 38% at 28% 24%, rgba(255, 255, 255, 0.3) 0%, transparent 65%);
+      radial-gradient(ellipse 60% 45% at 50% 0%, rgba(255, 255, 255, 0.25) 0%, transparent 65%),
+      radial-gradient(ellipse 80% 50% at 100% 100%, rgba(17, 17, 17, 0.08) 0%, transparent 55%);
     pointer-events: none;
   }
 
@@ -1662,8 +1662,41 @@
 
   .for-shops-hero-composition {
     position: relative;
+    isolation: isolate;
     width: 100%;
     min-height: clamp(13rem, 36vw, 19rem);
+    padding: clamp(1.25rem, 3.5vw, 2rem) clamp(1rem, 3vw, 1.75rem);
+    overflow: hidden;
+  }
+
+  .for-shops-hero-composition-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 85% 75% at 58% 38%, rgba(212, 188, 142, 0.22) 0%, transparent 68%),
+      radial-gradient(ellipse 60% 55% at 22% 30%, rgba(255, 255, 255, 0.55) 0%, transparent 62%),
+      linear-gradient(
+        108deg,
+        #ffffff 0%,
+        #faf7f2 22%,
+        #f3ebe0 48%,
+        #ebe0cf 72%,
+        #e4d4bc 100%
+      );
+    pointer-events: none;
+  }
+
+  .for-shops-hero-composition-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      118deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 42%,
+      rgba(196, 165, 116, 0.06) 100%
+    );
   }
 
   .for-shops-hero-visual {
@@ -1671,22 +1704,41 @@
     top: 0;
     left: clamp(36%, 40%, 44%);
     right: clamp(-0.75rem, -2vw, 0);
-    z-index: 0;
+    bottom: 0;
+    z-index: 1;
     line-height: 0;
     pointer-events: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .for-shops-hero-image {
     display: block;
     width: 100%;
     height: auto;
+    max-height: 100%;
     object-fit: contain;
     object-position: left top;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 12%,
+      black 26%,
+      black 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 12%,
+      black 26%,
+      black 100%
+    );
   }
 
   .for-shops-hero-copy {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     max-width: 100%;
   }
 
@@ -1781,6 +1833,7 @@
 
     .for-shops-hero-composition {
       min-height: 16rem;
+      padding: 1.75rem 1.5rem;
     }
 
     .for-shops-hero-visual {
@@ -1813,6 +1866,21 @@
 
     .for-shops-hero-composition {
       min-height: 18.5rem;
+      padding: 2rem 2rem 2.25rem;
+    }
+
+    .for-shops-hero-composition-bg {
+      background:
+        radial-gradient(ellipse 80% 70% at 60% 36%, rgba(212, 188, 142, 0.24) 0%, transparent 66%),
+        radial-gradient(ellipse 55% 50% at 20% 28%, rgba(255, 255, 255, 0.5) 0%, transparent 60%),
+        linear-gradient(
+          108deg,
+          #ffffff 0%,
+          #faf7f2 20%,
+          #f0e8da 45%,
+          #e8dcc8 70%,
+          #e0d0b8 100%
+        );
     }
 
     .for-shops-hero-visual {

@@ -128,6 +128,7 @@ export default function ForShopsPage() {
         <div className="for-shops-hero-inner">
           <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
           <div className="for-shops-hero-composition">
+            <div className="for-shops-hero-composition-bg" aria-hidden="true" />
             <div className="for-shops-hero-visual" aria-hidden="true">
               <Image
                 src="/for-shops/hero-consultant.png"
