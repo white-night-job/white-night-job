@@ -1,3 +1,6 @@
+/** Hero専用ビジュアル（人物＋背景が一体の合成画像）。透過PNGは使用しない。 */
+export const FOR_SHOPS_HERO_VISUAL = "/for-shops/hero-visual.webp";
+
 function MailIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -30,21 +33,25 @@ function SparkIcon() {
 export function ForShopsLandingHero() {
   return (
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
-      <article className="fsl-hero">
-        <div className="fsl-hero__bg" aria-hidden="true" />
-        <div className="fsl-hero__lights" aria-hidden="true">
-          <span className="fsl-hero__light fsl-hero__light--a" />
-          <span className="fsl-hero__light fsl-hero__light--b" />
-          <span className="fsl-hero__light fsl-hero__light--c" />
-          <span className="fsl-hero__light fsl-hero__light--d" />
-        </div>
-        <div className="fsl-hero__decor" aria-hidden="true">
-          <span className="fsl-hero__decor-line fsl-hero__decor-line--1" />
-          <span className="fsl-hero__decor-line fsl-hero__decor-line--2" />
-          <span className="fsl-hero__decor-arc" />
+      <article
+        className="fsl-hero"
+        style={{ ["--fsl-hero-visual" as string]: `url(${FOR_SHOPS_HERO_VISUAL})` }}
+      >
+        <div className="fsl-hero__canvas" aria-hidden="true">
+          <div className="fsl-hero__base" />
+          <div className="fsl-hero__visual" />
+          <div className="fsl-hero__sheen">
+            <span className="fsl-hero__sheen-line fsl-hero__sheen-line--1" />
+            <span className="fsl-hero__sheen-line fsl-hero__sheen-line--2" />
+            <span className="fsl-hero__sheen-line fsl-hero__sheen-line--3" />
+          </div>
+          <div className="fsl-hero__glow fsl-hero__glow--a" />
+          <div className="fsl-hero__glow fsl-hero__glow--b" />
         </div>
 
-        <div className="fsl-hero__inner">
+        <div className="fsl-hero__scrim" aria-hidden="true" />
+
+        <div className="fsl-hero__panel">
           <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
           <h1 className="fsl-hero__title">

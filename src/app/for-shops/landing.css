@@ -72,7 +72,7 @@
   color: #faf7f2;
 }
 
-/* ── Hero (text-only, mobile-first) ── */
+/* ── Hero (integrated ad visual, mobile-first) ── */
 
 .fsl-hero-shell {
   padding: 0.5rem 1rem 0.875rem;
@@ -81,20 +81,21 @@
 .fsl-hero {
   position: relative;
   overflow: hidden;
+  min-height: 22.5rem;
   border-radius: var(--fsl-radius-hero);
   border: var(--fsl-border);
   box-shadow:
-    0 16px 44px rgba(17, 17, 17, 0.12),
-    0 4px 12px rgba(196, 165, 116, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    0 18px 48px rgba(17, 17, 17, 0.13),
+    0 4px 14px rgba(196, 165, 116, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   --fsl-hero-gradient: linear-gradient(
-    175deg,
+    168deg,
     #ffffff 0%,
-    #faf7f2 14%,
-    #efe4d2 32%,
-    #dcc9a8 52%,
-    #8a7860 78%,
-    #2a2218 92%,
+    #faf7f2 12%,
+    #efe4d2 30%,
+    #dcc9a8 50%,
+    #9a8870 72%,
+    #3a3228 88%,
     #111111 100%
   );
 }
@@ -103,137 +104,134 @@
   content: "";
   position: absolute;
   inset: 5px;
+  z-index: 4;
   border-radius: calc(var(--fsl-radius-hero) - 5px);
-  border: 1px solid rgba(196, 165, 116, 0.22);
+  border: 1px solid rgba(196, 165, 116, 0.24);
   pointer-events: none;
-  z-index: 2;
 }
 
-.fsl-hero__bg {
+.fsl-hero__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.fsl-hero__base {
   position: absolute;
   inset: 0;
   background: var(--fsl-hero-gradient);
-  pointer-events: none;
 }
 
-.fsl-hero__lights {
+.fsl-hero__visual {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 1;
+  background-image: var(--fsl-hero-visual);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 72% 36%;
 }
 
-.fsl-hero__light {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(28px);
-  opacity: 0.55;
-}
-
-.fsl-hero__light--a {
-  top: -10%;
-  right: -5%;
-  width: 65%;
-  height: 42%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
-}
-
-.fsl-hero__light--b {
-  top: 22%;
-  left: -15%;
-  width: 75%;
-  height: 24%;
-  background: linear-gradient(
-    118deg,
-    transparent 0%,
-    rgba(212, 188, 142, 0.32) 42%,
-    rgba(255, 255, 255, 0.2) 58%,
-    transparent 100%
-  );
-  transform: rotate(-8deg);
-  filter: blur(18px);
-}
-
-.fsl-hero__light--c {
-  bottom: 18%;
-  right: -8%;
-  width: 55%;
-  height: 32%;
-  background: radial-gradient(ellipse, rgba(212, 188, 142, 0.26) 0%, transparent 72%);
-}
-
-.fsl-hero__light--d {
-  bottom: -5%;
-  left: 20%;
-  width: 60%;
-  height: 28%;
-  background: radial-gradient(ellipse, rgba(17, 17, 17, 0.35) 0%, transparent 70%);
-  opacity: 0.4;
-}
-
-.fsl-hero__decor {
+.fsl-hero__sheen {
   position: absolute;
   inset: 0;
-  z-index: 1;
   pointer-events: none;
-  overflow: hidden;
 }
 
-.fsl-hero__decor-line {
+.fsl-hero__sheen-line {
   position: absolute;
+  height: 1px;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(212, 188, 142, 0.45),
-    rgba(255, 255, 255, 0.35),
-    rgba(212, 188, 142, 0.45),
+    rgba(255, 255, 255, 0.15),
+    rgba(212, 188, 142, 0.55),
+    rgba(255, 255, 255, 0.25),
     transparent
   );
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
-.fsl-hero__decor-line--1 {
-  top: 38%;
-  right: -12%;
+.fsl-hero__sheen-line--1 {
+  top: 22%;
+  left: -10%;
+  width: 75%;
+  transform: rotate(-14deg);
+}
+
+.fsl-hero__sheen-line--2 {
+  top: 48%;
+  right: -18%;
+  width: 62%;
+  transform: rotate(-22deg);
+}
+
+.fsl-hero__sheen-line--3 {
+  bottom: 18%;
+  left: 8%;
   width: 55%;
-  height: 1px;
-  transform: rotate(-18deg);
-}
-
-.fsl-hero__decor-line--2 {
-  bottom: 28%;
-  left: -8%;
-  width: 48%;
-  height: 1px;
-  transform: rotate(12deg);
+  transform: rotate(8deg);
   opacity: 0.45;
 }
 
-.fsl-hero__decor-arc {
+.fsl-hero__glow {
   position: absolute;
-  bottom: -3.5rem;
-  right: -2.5rem;
-  width: 11rem;
-  height: 11rem;
   border-radius: 50%;
-  border: 1px solid rgba(196, 165, 116, 0.28);
+  filter: blur(32px);
+  pointer-events: none;
+}
+
+.fsl-hero__glow--a {
+  top: -12%;
+  right: -8%;
+  width: 58%;
+  height: 40%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 72%);
+  opacity: 0.65;
+}
+
+.fsl-hero__glow--b {
+  bottom: -8%;
+  right: 5%;
+  width: 50%;
+  height: 35%;
+  background: radial-gradient(ellipse, rgba(212, 188, 142, 0.28) 0%, transparent 70%);
   opacity: 0.55;
 }
 
-.fsl-hero__inner {
+.fsl-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    95deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(250, 247, 242, 0.88) 28%,
+    rgba(239, 228, 210, 0.52) 44%,
+    rgba(239, 228, 210, 0.12) 54%,
+    transparent 62%
+  );
+}
+
+.fsl-hero__panel {
   position: relative;
   z-index: 3;
-  padding: 1.125rem 1.125rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  width: 58%;
+  max-width: 13.75rem;
+  min-height: 22.5rem;
+  padding: 0.875rem 0.625rem 0.875rem 0.9375rem;
 }
 
 .fsl-hero__label {
-  margin: 0 0 0.5rem;
-  font-size: 0.625rem;
+  margin: 0 0 0.375rem;
+  font-size: 0.5625rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-align: center;
+  letter-spacing: 0.08em;
   color: rgba(168, 137, 74, 0.92);
+  white-space: nowrap;
 }
 
 .fsl-hero__title {
@@ -241,13 +239,12 @@
   font-family: var(--font-serif, ui-serif, Georgia, serif);
   font-weight: 700;
   letter-spacing: 0.02em;
-  text-align: center;
 }
 
 .fsl-hero__title-line {
   display: block;
-  font-size: 1.625rem;
-  line-height: 1.18;
+  font-size: 1.5rem;
+  line-height: 1.16;
   color: var(--fsl-black);
 }
 
@@ -266,30 +263,29 @@
 }
 
 .fsl-hero__spark {
-  display: flex;
-  justify-content: center;
-  margin: 0.4375rem 0 0.375rem;
+  display: block;
+  margin: 0.3125rem 0 0.25rem;
   color: rgba(168, 137, 74, 0.85);
   line-height: 0;
 }
 
 .fsl-hero__desc {
   margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.62;
-  text-align: center;
-  color: rgba(17, 17, 17, 0.78);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: rgba(17, 17, 17, 0.76);
 }
 
 .fsl-hero__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.4375rem;
+  margin-top: auto;
+  padding-top: 0.625rem;
 }
 
 .fsl-hero__actions .fsl-btn__label {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
 }
 
 /* ── Buttons (shared) ── */
@@ -351,30 +347,31 @@
 }
 
 .fsl-btn--gold {
-  border: 1px solid rgba(196, 165, 116, 0.62);
+  border: 1px solid rgba(196, 165, 116, 0.68);
   background: linear-gradient(
     180deg,
     #ffffff 0%,
-    #f8f0e4 14%,
-    #efe4d2 38%,
-    #dcc99a 72%,
+    #faf3e8 12%,
+    #f0e4d2 32%,
+    #e0cfa0 68%,
     #c9ad7a 100%
   );
   color: var(--fsl-black);
   box-shadow:
-    var(--fsl-shadow-btn),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -2px 0 rgba(139, 111, 62, 0.1);
+    0 6px 20px rgba(17, 17, 17, 0.15),
+    0 2px 6px rgba(196, 165, 116, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -3px 0 rgba(139, 111, 62, 0.12);
 }
 
 .fsl-btn--dark {
-  border: 1px solid rgba(196, 165, 116, 0.55);
-  background: linear-gradient(180deg, #1e1e1e 0%, #111111 55%, #0a0a0a 100%);
-  color: var(--fsl-gold-mid);
+  border: 1px solid rgba(196, 165, 116, 0.58);
+  background: linear-gradient(180deg, #242424 0%, #141414 48%, #0a0a0a 100%);
+  color: #dcc99a;
   box-shadow:
-    0 5px 16px rgba(17, 17, 17, 0.22),
-    inset 0 1px 0 rgba(212, 188, 142, 0.14),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.45);
+    0 6px 20px rgba(17, 17, 17, 0.28),
+    inset 0 1px 0 rgba(212, 188, 142, 0.18),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.5);
 }
 
 /* ── Features ── */
@@ -473,21 +470,30 @@
 
 @media (min-width: 375px) {
   .fsl-hero__title-line {
-    font-size: 1.75rem;
+    font-size: 1.625rem;
   }
 
   .fsl-hero__desc {
+    font-size: 0.71875rem;
+  }
+
+  .fsl-hero__actions .fsl-btn__label {
     font-size: 0.8125rem;
   }
 }
 
 @media (min-width: 390px) {
-  .fsl-hero__inner {
-    padding: 1.25rem 1.25rem 1.375rem;
+  .fsl-hero,
+  .fsl-hero__panel {
+    min-height: 23.5rem;
+  }
+
+  .fsl-hero__panel {
+    padding: 1rem 0.75rem 1rem 1.0625rem;
   }
 
   .fsl-hero__title-line {
-    font-size: 1.875rem;
+    font-size: 1.75rem;
   }
 
   .fsl-section-head__title {
@@ -496,13 +502,17 @@
 }
 
 @media (min-width: 430px) {
+  .fsl-hero__panel {
+    max-width: 14.5rem;
+  }
+
   .fsl-hero__title-line {
-    font-size: 2rem;
+    font-size: 1.875rem;
   }
 
   .fsl-hero__desc {
-    font-size: 0.875rem;
-    line-height: 1.68;
+    font-size: 0.75rem;
+    line-height: 1.55;
   }
 }
 
