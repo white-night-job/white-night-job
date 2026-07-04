@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 function MailIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -34,73 +32,55 @@ export function ForShopsLandingHero() {
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
       <article className="fsl-hero">
         <div className="fsl-hero__bg" aria-hidden="true" />
-        <div className="fsl-hero__bg fsl-hero__bg--visual" aria-hidden="true" />
         <div className="fsl-hero__lights" aria-hidden="true">
           <span className="fsl-hero__light fsl-hero__light--a" />
           <span className="fsl-hero__light fsl-hero__light--b" />
           <span className="fsl-hero__light fsl-hero__light--c" />
+          <span className="fsl-hero__light fsl-hero__light--d" />
         </div>
-        <div className="fsl-hero__lights fsl-hero__lights--visual" aria-hidden="true">
-          <span className="fsl-hero__light fsl-hero__light--a" />
-          <span className="fsl-hero__light fsl-hero__light--b" />
-          <span className="fsl-hero__light fsl-hero__light--c" />
+        <div className="fsl-hero__decor" aria-hidden="true">
+          <span className="fsl-hero__decor-line fsl-hero__decor-line--1" />
+          <span className="fsl-hero__decor-line fsl-hero__decor-line--2" />
+          <span className="fsl-hero__decor-arc" />
         </div>
 
-        <div className="fsl-hero__stage">
-          <div className="fsl-hero__copy">
-            <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
+        <div className="fsl-hero__inner">
+          <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
-            <h1 className="fsl-hero__title">
-              <span className="fsl-hero__title-line">優良店だけが集まる</span>
-              <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
-            </h1>
+          <h1 className="fsl-hero__title">
+            <span className="fsl-hero__title-line">優良店だけが集まる</span>
+            <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
+          </h1>
 
-            <span className="fsl-hero__spark" aria-hidden="true">
-              <SparkIcon />
-            </span>
+          <span className="fsl-hero__spark" aria-hidden="true">
+            <SparkIcon />
+          </span>
 
-            <p className="fsl-hero__desc">
-              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-            </p>
+          <p className="fsl-hero__desc">
+            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+          </p>
 
-            <div className="fsl-hero__actions">
-              <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
-                <span className="fsl-btn__icon">
-                  <MailIcon />
-                </span>
-                <span className="fsl-btn__label">掲載のお問い合わせ</span>
-                <span className="fsl-btn__chev" aria-hidden="true">
-                  ›
-                </span>
-              </a>
-              <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
-                <span className="fsl-btn__icon">
-                  <DocIcon />
-                </span>
-                <span className="fsl-btn__label">料金プランを見る</span>
-                <span className="fsl-btn__chev" aria-hidden="true">
-                  ›
-                </span>
-              </a>
-            </div>
+          <div className="fsl-hero__actions">
+            <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
+              <span className="fsl-btn__icon">
+                <MailIcon />
+              </span>
+              <span className="fsl-btn__label">掲載のお問い合わせ</span>
+              <span className="fsl-btn__chev" aria-hidden="true">
+                ›
+              </span>
+            </a>
+            <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
+              <span className="fsl-btn__icon">
+                <DocIcon />
+              </span>
+              <span className="fsl-btn__label">料金プランを見る</span>
+              <span className="fsl-btn__chev" aria-hidden="true">
+                ›
+              </span>
+            </a>
           </div>
         </div>
-
-        <figure className="fsl-hero__visual" aria-hidden="true">
-          <div className="fsl-hero__photo-frame">
-            <div className="fsl-hero__photo-mask">
-              <Image
-                src="/for-shops/hero-consultant.png"
-                alt=""
-                width={560}
-                height={700}
-                priority
-                className="fsl-hero__photo"
-              />
-            </div>
-            <div className="fsl-hero__photo-overlay" aria-hidden="true" />
-          </div>
-        </figure>
       </article>
     </section>
   );

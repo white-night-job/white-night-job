@@ -72,7 +72,7 @@
   color: #faf7f2;
 }
 
-/* ── Hero (mobile-only layout) ── */
+/* ── Hero (text-only, mobile-first) ── */
 
 .fsl-hero-shell {
   padding: 0.5rem 1rem 0.875rem;
@@ -84,8 +84,9 @@
   border-radius: var(--fsl-radius-hero);
   border: var(--fsl-border);
   box-shadow:
-    0 14px 40px rgba(17, 17, 17, 0.11),
-    0 2px 6px rgba(196, 165, 116, 0.14);
+    0 16px 44px rgba(17, 17, 17, 0.12),
+    0 4px 12px rgba(196, 165, 116, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
   --fsl-hero-gradient: linear-gradient(
     175deg,
     #ffffff 0%,
@@ -98,16 +99,21 @@
   );
 }
 
+.fsl-hero::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: calc(var(--fsl-radius-hero) - 5px);
+  border: 1px solid rgba(196, 165, 116, 0.22);
+  pointer-events: none;
+  z-index: 2;
+}
+
 .fsl-hero__bg {
   position: absolute;
   inset: 0;
   background: var(--fsl-hero-gradient);
   pointer-events: none;
-}
-
-.fsl-hero__bg--visual {
-  z-index: 2;
-  clip-path: polygon(46% 0%, 100% 0%, 100% 100%, 42% 100%);
 }
 
 .fsl-hero__lights {
@@ -118,11 +124,6 @@
   z-index: 1;
 }
 
-.fsl-hero__lights--visual {
-  z-index: 3;
-  clip-path: polygon(46% 0%, 100% 0%, 100% 100%, 42% 100%);
-}
-
 .fsl-hero__light {
   position: absolute;
   border-radius: 50%;
@@ -131,23 +132,23 @@
 }
 
 .fsl-hero__light--a {
-  top: -8%;
-  right: 8%;
-  width: 55%;
-  height: 38%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, transparent 70%);
+  top: -10%;
+  right: -5%;
+  width: 65%;
+  height: 42%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
 }
 
 .fsl-hero__light--b {
-  top: 18%;
-  left: -12%;
-  width: 70%;
-  height: 22%;
+  top: 22%;
+  left: -15%;
+  width: 75%;
+  height: 24%;
   background: linear-gradient(
     118deg,
     transparent 0%,
-    rgba(212, 188, 142, 0.28) 42%,
-    rgba(255, 255, 255, 0.18) 58%,
+    rgba(212, 188, 142, 0.32) 42%,
+    rgba(255, 255, 255, 0.2) 58%,
     transparent 100%
   );
   transform: rotate(-8deg);
@@ -155,34 +156,84 @@
 }
 
 .fsl-hero__light--c {
-  bottom: 22%;
-  right: -5%;
-  width: 50%;
-  height: 30%;
-  background: radial-gradient(ellipse, rgba(212, 188, 142, 0.22) 0%, transparent 72%);
+  bottom: 18%;
+  right: -8%;
+  width: 55%;
+  height: 32%;
+  background: radial-gradient(ellipse, rgba(212, 188, 142, 0.26) 0%, transparent 72%);
 }
 
-.fsl-hero__stage {
-  position: relative;
+.fsl-hero__light--d {
+  bottom: -5%;
+  left: 20%;
+  width: 60%;
+  height: 28%;
+  background: radial-gradient(ellipse, rgba(17, 17, 17, 0.35) 0%, transparent 70%);
+  opacity: 0.4;
+}
+
+.fsl-hero__decor {
+  position: absolute;
+  inset: 0;
   z-index: 1;
-  min-height: 21.75rem;
-  padding: 0.8125rem 0.75rem 0.6875rem 0.9375rem;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.fsl-hero__copy {
+.fsl-hero__decor-line {
+  position: absolute;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 188, 142, 0.45),
+    rgba(255, 255, 255, 0.35),
+    rgba(212, 188, 142, 0.45),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+.fsl-hero__decor-line--1 {
+  top: 38%;
+  right: -12%;
+  width: 55%;
+  height: 1px;
+  transform: rotate(-18deg);
+}
+
+.fsl-hero__decor-line--2 {
+  bottom: 28%;
+  left: -8%;
+  width: 48%;
+  height: 1px;
+  transform: rotate(12deg);
+  opacity: 0.45;
+}
+
+.fsl-hero__decor-arc {
+  position: absolute;
+  bottom: -3.5rem;
+  right: -2.5rem;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 165, 116, 0.28);
+  opacity: 0.55;
+}
+
+.fsl-hero__inner {
   position: relative;
   z-index: 3;
-  width: 57%;
-  max-width: 13.5rem;
+  padding: 1.125rem 1.125rem 1.25rem;
 }
 
 .fsl-hero__label {
-  margin: 0 0 0.3125rem;
-  font-size: 0.5625rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  text-align: center;
   color: rgba(168, 137, 74, 0.92);
-  white-space: nowrap;
 }
 
 .fsl-hero__title {
@@ -190,14 +241,14 @@
   font-family: var(--font-serif, ui-serif, Georgia, serif);
   font-weight: 700;
   letter-spacing: 0.02em;
+  text-align: center;
 }
 
 .fsl-hero__title-line {
   display: block;
-  font-size: 1.4375rem;
-  line-height: 1.16;
+  font-size: 1.625rem;
+  line-height: 1.18;
   color: var(--fsl-black);
-  white-space: nowrap;
 }
 
 .fsl-hero__title-gold {
@@ -215,109 +266,30 @@
 }
 
 .fsl-hero__spark {
-  display: block;
-  margin: 0.3125rem 0 0.25rem;
+  display: flex;
+  justify-content: center;
+  margin: 0.4375rem 0 0.375rem;
   color: rgba(168, 137, 74, 0.85);
   line-height: 0;
 }
 
 .fsl-hero__desc {
   margin: 0;
-  font-size: 0.6875rem;
-  line-height: 1.46;
-  color: rgba(17, 17, 17, 0.76);
+  font-size: 0.75rem;
+  line-height: 1.62;
+  text-align: center;
+  color: rgba(17, 17, 17, 0.78);
 }
 
 .fsl-hero__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.4375rem;
-  margin-top: 0.5625rem;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
-.fsl-hero__visual {
-  position: absolute;
-  z-index: 4;
-  top: 0.9375rem;
-  right: 0.625rem;
-  bottom: 0.5625rem;
-  width: 50%;
-  max-width: 11.25rem;
-  margin: 0;
-  pointer-events: none;
-}
-
-.fsl-hero__photo-frame {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--fsl-hero-gradient);
-}
-
-.fsl-hero__photo-mask {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.fsl-hero__photo-mask > span {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  line-height: 0 !important;
-  background: var(--fsl-hero-gradient) !important;
-  overflow: hidden;
-}
-
-.fsl-hero__photo {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: auto;
-  height: 21.5rem;
-  max-width: 200%;
-  margin-left: auto;
-  object-fit: contain;
-  object-position: right bottom;
-  background: var(--fsl-hero-gradient);
-  -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.65) 9%, #000 17%, #000 91%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 71%, transparent 100%);
-  mask-image:
-    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.65) 9%, #000 17%, #000 91%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 6%, #000 71%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-}
-
-.fsl-hero__photo-frame::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background:
-    linear-gradient(to left, #faf7f2 0%, rgba(250, 247, 242, 0.78) 11%, rgba(239, 228, 210, 0.32) 22%, transparent 36%),
-    linear-gradient(to top, transparent 50%, rgba(42, 34, 24, 0.38) 76%, rgba(17, 17, 17, 0.78) 91%, #111111 100%),
-    linear-gradient(to right, transparent 80%, rgba(250, 247, 242, 0.62) 100%),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.28) 0%, transparent 12%);
-}
-
-.fsl-hero__photo-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0.55;
-  background:
-    radial-gradient(ellipse 70% 55% at 78% 38%, rgba(255, 255, 255, 0.18) 0%, transparent 68%),
-    radial-gradient(ellipse 55% 45% at 62% 72%, rgba(212, 188, 142, 0.14) 0%, transparent 70%);
+.fsl-hero__actions .fsl-btn__label {
+  font-size: 0.8125rem;
 }
 
 /* ── Buttons (shared) ── */
@@ -500,46 +472,22 @@
 /* ── Mobile tuning (375–430px) ── */
 
 @media (min-width: 375px) {
-  .fsl-hero__label {
-    font-size: 0.625rem;
-  }
-
   .fsl-hero__title-line {
-    font-size: 1.5625rem;
+    font-size: 1.75rem;
   }
 
   .fsl-hero__desc {
-    font-size: 0.71875rem;
-    line-height: 1.48;
-  }
-
-  .fsl-hero__photo {
-    height: 22.5rem;
-  }
-
-  .fsl-btn__label {
     font-size: 0.8125rem;
   }
 }
 
 @media (min-width: 390px) {
-  .fsl-hero__stage {
-    min-height: 22.5rem;
-    padding: 0.875rem 0.8125rem 0.75rem 1rem;
-  }
-
-  .fsl-hero__visual {
-    top: 1rem;
-    right: 0.6875rem;
-    bottom: 0.625rem;
+  .fsl-hero__inner {
+    padding: 1.25rem 1.25rem 1.375rem;
   }
 
   .fsl-hero__title-line {
-    font-size: 1.625rem;
-  }
-
-  .fsl-hero__photo {
-    height: 23.5rem;
+    font-size: 1.875rem;
   }
 
   .fsl-section-head__title {
@@ -548,16 +496,13 @@
 }
 
 @media (min-width: 430px) {
-  .fsl-hero__copy {
-    max-width: 14.25rem;
-  }
-
   .fsl-hero__title-line {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
-  .fsl-hero__photo {
-    height: 24.5rem;
+  .fsl-hero__desc {
+    font-size: 0.875rem;
+    line-height: 1.68;
   }
 }
 
