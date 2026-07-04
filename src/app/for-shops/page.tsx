@@ -124,19 +124,25 @@ export default function ForShopsPage() {
   return (
     <div className="for-shops-page">
       <section className="for-shops-hero">
-        <div className="for-shops-hero-panel">
-          <div className="for-shops-hero-inner">
-            <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
-            <h1 className="for-shops-hero-title">優良店だけが集まる求人サイトへ。</h1>
-            <div className="for-shops-hero-visual" aria-hidden="true">
-              <Image
-                src="/for-shops/hero-consultant.png"
-                alt=""
-                width={560}
-                height={700}
-                priority
-                className="for-shops-hero-image"
-              />
+        <div className="for-shops-hero-glow" aria-hidden="true" />
+        <div className="for-shops-hero-inner">
+          <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
+          <div className="for-shops-hero-stage">
+            <div className="for-shops-hero-headline">
+              <h1 className="for-shops-hero-title">
+                <span className="for-shops-hero-title-gold">優良店</span>
+                <span className="for-shops-hero-title-text">だけが集まる求人サイトへ。</span>
+              </h1>
+              <div className="for-shops-hero-visual" aria-hidden="true">
+                <Image
+                  src="/for-shops/hero-consultant.png"
+                  alt=""
+                  width={560}
+                  height={700}
+                  priority
+                  className="for-shops-hero-image"
+                />
+              </div>
             </div>
             <p className="for-shops-hero-sub">
               White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
