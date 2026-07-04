@@ -1,25 +1,16 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ForShopsContactForm } from "@/components/for-shops/ForShopsContactForm";
 import { ForShopsFaq } from "@/components/for-shops/ForShopsFaq";
+import { ForShopsLandingFeatures } from "@/components/for-shops/ForShopsLandingFeatures";
+import { ForShopsLandingHero } from "@/components/for-shops/ForShopsLandingHero";
 import { SITE_NAME } from "@/lib/site";
+import "./landing.css";
 
 export const metadata: Metadata = {
   title: "掲載をご検討の方はこちら",
   description: `${SITE_NAME}への求人掲載をご検討の店舗様向けご案内。優良店のみ掲載、安心認証、AIチャット紹介など。`,
 };
-
-const FEATURES = [
-  { title: "優良店のみ掲載", desc: "審査を通過した優良店だけを掲載し、サイト全体の信頼を守ります。" },
-  { title: "安心認証制度", desc: "安心認証バッジで、求職者に信頼感のある求人として訴求できます。" },
-  { title: "AIチャットによる店舗紹介", desc: "AIチャットが条件に合う店舗を紹介し、自然な導線で応募につなげます。" },
-  { title: "ブラック店舗報告システム", desc: "通報窓口を備え、健全な掲載環境の維持に取り組んでいます。" },
-  { title: "スマホ特化デザイン", desc: "求職者の多くがスマホから閲覧。見やすく応募しやすいUIです。" },
-  { title: "掲載店舗専用ダッシュボード", desc: "求人編集・分析・設定を店舗様ご自身で管理できます。" },
-  { title: "応募・表示回数分析", desc: "表示回数や応募数を把握し、採用活動の改善に活かせます。" },
-  { title: "店舗ごとの編集機能", desc: "写真・待遇・紹介文などをいつでも更新できます。" },
-] as const;
 
 const COMPARISON_ROWS = [
   { label: "優良店のみ掲載", ours: true, others: false },
@@ -102,48 +93,6 @@ function CheckIcon({ positive }: { positive: boolean }) {
   );
 }
 
-function HeroMailIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 6h16v12H4V6Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function HeroDocIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M8 4h8l4 4v12H8V4Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="M16 4v4h4M10 12h8M10 16h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function FeatureShieldIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 3 5 6v6c0 4.5 3 7.8 7 9 4-1.2 7-4.5 7-9V6l-7-3Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function SectionHeading({
   eyebrow,
   title,
@@ -165,133 +114,11 @@ function SectionHeading({
 export default function ForShopsPage() {
   return (
     <div className="for-shops-page">
-      <section className="for-shops-hero">
-        <div className="for-shops-hero-inner">
-          <div className="for-shops-hero-card">
-            <div className="for-shops-hero-card-bg" aria-hidden="true" />
-            <div className="for-shops-hero-card-shimmer" aria-hidden="true" />
-            <div className="for-shops-hero-mobile">
-              <p className="for-shops-kicker for-shops-kicker-mobile">— 掲載をご検討の方はこちら —</p>
-              <div className="for-shops-hero-mobile-stage">
-                <div className="for-shops-hero-mobile-copy">
-                  <h1 className="for-shops-hero-title">
-                    <span className="for-shops-hero-title-line">優良店だけが集まる</span>
-                    <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
-                  </h1>
-                  <span className="for-shops-hero-divider" aria-hidden="true">
-                    ◆
-                  </span>
-                  <p className="for-shops-hero-sub">
-                    White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-                  </p>
-                  <div className="for-shops-hero-actions">
-                    <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
-                      <span className="for-shops-hero-btn-icon">
-                        <HeroMailIcon />
-                      </span>
-                      <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
-                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                        ›
-                      </span>
-                    </a>
-                    <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
-                      <span className="for-shops-hero-btn-icon">
-                        <HeroDocIcon />
-                      </span>
-                      <span className="for-shops-hero-btn-label">料金プランを見る</span>
-                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                        ›
-                      </span>
-                    </a>
-                  </div>
-                </div>
-                <div className="for-shops-hero-mobile-visual" aria-hidden="true">
-                  <div className="for-shops-hero-visual-scrim" />
-                  <Image
-                    src="/for-shops/hero-consultant.png"
-                    alt=""
-                    width={560}
-                    height={700}
-                    priority
-                    className="for-shops-hero-image for-shops-hero-image-mobile"
-                  />
-                </div>
-              </div>
-            </div>
+      <ForShopsLandingHero />
 
-            <div className="for-shops-hero-desktop">
-              <div className="for-shops-hero-grid">
-                <div className="for-shops-hero-content">
-                  <p className="for-shops-kicker">— 掲載をご検討の方はこちら —</p>
-                  <h1 className="for-shops-hero-title">
-                    <span className="for-shops-hero-title-line">優良店だけが集まる</span>
-                    <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
-                  </h1>
-                  <span className="for-shops-hero-divider" aria-hidden="true">
-                    ◆
-                  </span>
-                  <p className="for-shops-hero-sub">
-                    White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-                  </p>
-                  <div className="for-shops-hero-actions">
-                    <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
-                      <span className="for-shops-hero-btn-icon">
-                        <HeroMailIcon />
-                      </span>
-                      <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
-                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                        ›
-                      </span>
-                    </a>
-                    <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
-                      <span className="for-shops-hero-btn-icon">
-                        <HeroDocIcon />
-                      </span>
-                      <span className="for-shops-hero-btn-label">料金プランを見る</span>
-                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                        ›
-                      </span>
-                    </a>
-                  </div>
-                </div>
-                <div className="for-shops-hero-visual" aria-hidden="true">
-                  <div className="for-shops-hero-visual-scrim for-shops-hero-visual-scrim-desktop" />
-                  <Image
-                    src="/for-shops/hero-consultant.png"
-                    alt=""
-                    width={560}
-                    height={700}
-                    priority
-                    className="for-shops-hero-image for-shops-hero-image-desktop"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="for-shops-section">
-        <div className="for-shops-container">
-          <SectionHeading eyebrow="FEATURES" title="White Night Jobの特徴" />
-          <div className="for-shops-feature-list">
-            {FEATURES.map((feature) => (
-              <article key={feature.title} className="for-shops-feature-card">
-                <span className="for-shops-feature-icon" aria-hidden="true">
-                  <FeatureShieldIcon />
-                </span>
-                <div className="for-shops-feature-body">
-                  <h3>{feature.title}</h3>
-                  <p>{feature.desc}</p>
-                </div>
-                <span className="for-shops-feature-arrow" aria-hidden="true">
-                  ›
-                </span>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div className="for-shops-container">
+        <ForShopsLandingFeatures />
+      </div>
 
       <section className="for-shops-section for-shops-section-alt">
         <div className="for-shops-container">
