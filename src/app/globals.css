@@ -1618,8 +1618,8 @@
   }
 
   .for-shops-hero {
-    padding: 1.25rem 1rem 2rem;
-    background: linear-gradient(180deg, #faf8f5 0%, #f5f0e8 100%);
+    padding: 0.75rem 1rem 1.5rem;
+    background: linear-gradient(180deg, #faf8f5 0%, #f0ebe3 100%);
   }
 
   .for-shops-hero-inner {
@@ -1633,10 +1633,10 @@
     position: relative;
     overflow: hidden;
     border-radius: 24px;
-    border: 1px solid rgba(196, 165, 116, 0.42);
+    border: 1px solid rgba(196, 165, 116, 0.48);
     box-shadow:
-      0 10px 40px rgba(17, 17, 17, 0.07),
-      0 2px 8px rgba(196, 165, 116, 0.08);
+      0 8px 28px rgba(17, 17, 17, 0.08),
+      0 2px 6px rgba(196, 165, 116, 0.1);
   }
 
   .for-shops-hero-card-bg {
@@ -1644,15 +1644,16 @@
     inset: 0;
     z-index: 0;
     background:
-      radial-gradient(ellipse 70% 55% at 78% 35%, rgba(212, 188, 142, 0.28) 0%, transparent 68%),
-      radial-gradient(ellipse 50% 45% at 18% 20%, rgba(255, 255, 255, 0.65) 0%, transparent 62%),
+      radial-gradient(ellipse 75% 60% at 82% 72%, rgba(212, 188, 142, 0.22) 0%, transparent 68%),
+      radial-gradient(ellipse 55% 45% at 12% 18%, rgba(255, 255, 255, 0.55) 0%, transparent 62%),
       linear-gradient(
-        135deg,
+        155deg,
         #ffffff 0%,
-        #faf7f2 28%,
-        #f3ebe0 52%,
-        #ebe0cf 78%,
-        #f8f4ee 100%
+        #faf7f2 22%,
+        #efe4d2 48%,
+        #d4c4a8 72%,
+        #2a2218 94%,
+        #111111 100%
       );
     pointer-events: none;
   }
@@ -1665,60 +1666,74 @@
       linear-gradient(
         118deg,
         transparent 0%,
-        rgba(212, 188, 142, 0.1) 38%,
-        rgba(255, 255, 255, 0.22) 50%,
+        rgba(212, 188, 142, 0.12) 38%,
+        rgba(255, 255, 255, 0.2) 50%,
         rgba(212, 188, 142, 0.08) 62%,
         transparent 100%
-      ),
-      linear-gradient(
-        165deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        transparent 40%,
-        rgba(196, 165, 116, 0.05) 100%
       );
     pointer-events: none;
   }
 
-  .for-shops-hero-grid {
+  /* ── Mobile hero (default) ── */
+  .for-shops-hero-desktop {
+    display: none;
+  }
+
+  .for-shops-hero-mobile {
     position: relative;
     z-index: 1;
+    padding: 0.875rem 1rem 1rem;
+  }
+
+  .for-shops-kicker-mobile {
+    margin: 0 0 0.625rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: rgba(168, 137, 74, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .for-shops-hero-mobile-stage {
     display: grid;
-    grid-template-columns: minmax(0, 48%) minmax(0, 52%);
+    grid-template-columns: minmax(0, 58%) minmax(0, 42%);
     column-gap: 0;
-    align-items: stretch;
-    min-height: clamp(17.5rem, 50vw, 21rem);
-    padding: 1.125rem 0.5rem 1.125rem 1.125rem;
+    align-items: end;
+    min-height: 21rem;
   }
 
-  .for-shops-hero-content {
+  .for-shops-hero-mobile-copy {
     grid-column: 1;
+    grid-row: 1;
+    align-self: start;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-right: 0.375rem;
+    padding-right: 0.25rem;
   }
 
-  .for-shops-hero-visual {
+  .for-shops-hero-mobile-visual {
     grid-column: 2;
     grid-row: 1;
+    position: relative;
+    align-self: end;
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
-    min-width: 0;
-    min-height: 0;
-    margin-right: -0.625rem;
+    min-height: 18rem;
+    margin-right: -0.875rem;
+    margin-bottom: -0.625rem;
     overflow: hidden;
-    line-height: 0;
   }
 
-  .for-shops-kicker {
-    margin: 0 0 0.625rem;
-    font-size: 0.5625rem;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    color: rgba(139, 111, 62, 0.75);
-    text-align: left;
+  .for-shops-hero-visual-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse 95% 85% at 78% 75%, rgba(239, 228, 210, 0.98) 0%, rgba(248, 244, 238, 0.75) 45%, transparent 72%),
+      linear-gradient(to left, rgba(248, 244, 238, 0.85) 0%, transparent 38%);
+    pointer-events: none;
   }
 
   .for-shops-hero-title {
@@ -1731,12 +1746,9 @@
 
   .for-shops-hero-title-line {
     display: block;
-    font-size: clamp(1.125rem, 3.85vw, 2.75rem);
-    line-height: 1.22;
+    font-size: 1.375rem;
+    line-height: 1.28;
     color: #111111;
-  }
-
-  .for-shops-hero-title-line:first-child {
     white-space: nowrap;
   }
 
@@ -1756,25 +1768,26 @@
 
   .for-shops-hero-divider {
     display: block;
-    margin: 0.625rem 0 0.5rem;
-    font-size: 0.4375rem;
+    margin: 0.5rem 0 0.4375rem;
+    font-size: 0.375rem;
     line-height: 1;
     color: rgba(196, 165, 116, 0.65);
   }
 
   .for-shops-hero-sub {
     margin: 0;
+    max-width: 100%;
     font-size: 0.6875rem;
-    line-height: 1.75;
+    line-height: 1.65;
     letter-spacing: 0.01em;
-    color: rgba(17, 17, 17, 0.68);
+    color: rgba(17, 17, 17, 0.7);
   }
 
   .for-shops-hero-actions {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
-    margin-top: 0.875rem;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
     width: 100%;
   }
 
@@ -1783,10 +1796,10 @@
     align-items: center;
     gap: 0.625rem;
     width: 100%;
-    min-height: 3.375rem;
+    min-height: 3.5rem;
     border-radius: 16px;
     padding: 0 0.875rem;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     text-decoration: none;
@@ -1819,7 +1832,7 @@
     min-width: 0;
     text-align: left;
     white-space: nowrap;
-    font-size: clamp(0.6875rem, 2.6vw, 0.875rem);
+    font-size: 0.75rem;
   }
 
   .for-shops-hero-btn-arrow {
@@ -1881,76 +1894,122 @@
       inset 0 1px 0 rgba(212, 188, 142, 0.18);
   }
 
-  .for-shops-hero-image {
+  .for-shops-hero-image-mobile {
+    position: relative;
+    z-index: 2;
     display: block;
-    flex-shrink: 0;
     width: auto;
-    height: 68%;
-    min-height: 11.5rem;
-    max-height: 100%;
-    max-width: 145%;
+    height: 15.5rem;
+    max-width: 125%;
     object-fit: contain;
     object-position: right bottom;
     -webkit-mask-image: linear-gradient(
       to right,
       transparent 0%,
-      rgba(0, 0, 0, 0.5) 14%,
-      black 24%,
+      rgba(0, 0, 0, 0.6) 12%,
+      black 22%,
       black 100%
     );
     mask-image: linear-gradient(
       to right,
       transparent 0%,
-      rgba(0, 0, 0, 0.5) 14%,
-      black 24%,
+      rgba(0, 0, 0, 0.6) 12%,
+      black 22%,
       black 100%
     );
   }
 
   @media (min-width: 390px) {
-    .for-shops-kicker {
-      font-size: 0.625rem;
-      letter-spacing: 0.16em;
+    .for-shops-hero-mobile {
+      padding: 1rem 1rem 1.125rem;
+    }
+
+    .for-shops-kicker-mobile {
+      font-size: 0.6875rem;
+      letter-spacing: 0.14em;
     }
 
     .for-shops-hero-title-line {
-      font-size: clamp(1.25rem, 4.2vw, 2.75rem);
+      font-size: 1.5rem;
     }
 
     .for-shops-hero-sub {
       font-size: 0.75rem;
+      line-height: 1.7;
     }
 
-    .for-shops-hero-grid {
-      min-height: clamp(18rem, 52vw, 22rem);
-      padding: 1.25rem 0.625rem 1.25rem 1.25rem;
+    .for-shops-hero-btn-label {
+      font-size: 0.8125rem;
     }
 
-    .for-shops-hero-image {
-      height: 72%;
-      min-height: 12.5rem;
+    .for-shops-hero-mobile-stage {
+      min-height: 22rem;
+    }
+
+    .for-shops-hero-mobile-visual {
+      min-height: 19rem;
+    }
+
+    .for-shops-hero-image-mobile {
+      height: 17rem;
     }
   }
 
-  @media (min-width: 640px) {
+  @media (min-width: 430px) {
+    .for-shops-hero-title-line {
+      font-size: 1.625rem;
+    }
+
+    .for-shops-hero-image-mobile {
+      height: 18rem;
+    }
+  }
+
+  /* ── Desktop hero ── */
+  @media (min-width: 768px) {
     .for-shops-hero {
       padding: 1.5rem 1.25rem 2.5rem;
     }
 
+    .for-shops-hero-mobile {
+      display: none;
+    }
+
+    .for-shops-hero-desktop {
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
     .for-shops-hero-grid {
-      min-height: 20rem;
-      padding: 1.75rem 0.75rem 1.75rem 1.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 52%) minmax(0, 48%);
+      column-gap: 1rem;
+      align-items: stretch;
+      min-height: 22rem;
+      padding: 2rem 1.25rem 2rem 2rem;
+    }
+
+    .for-shops-hero-content {
+      grid-column: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 0.25rem;
     }
 
     .for-shops-kicker {
-      margin-bottom: 0.875rem;
+      margin: 0 0 0.875rem;
       font-size: 0.6875rem;
+      font-weight: 600;
       letter-spacing: 0.18em;
+      color: rgba(168, 137, 74, 0.85);
     }
 
     .for-shops-hero-title-line {
-      font-size: clamp(1.625rem, 3.6vw, 2.875rem);
-      line-height: 1.24;
+      font-size: clamp(1.875rem, 3.2vw, 3rem);
+      line-height: 1.22;
     }
 
     .for-shops-hero-divider {
@@ -1958,24 +2017,65 @@
     }
 
     .for-shops-hero-sub {
-      font-size: 0.875rem;
+      max-width: 24rem;
+      font-size: 0.9375rem;
       line-height: 1.8;
     }
 
     .for-shops-hero-actions {
-      margin-top: 1.125rem;
+      margin-top: 1.25rem;
+      max-width: 24rem;
       gap: 0.75rem;
     }
 
-    .for-shops-hero-btn {
-      min-height: 3.5rem;
-      padding: 0 1rem;
+    .for-shops-hero-btn-label {
+      font-size: 0.875rem;
     }
 
-    .for-shops-hero-image {
-      height: 74%;
-      min-height: 14rem;
-      max-width: 150%;
+    .for-shops-hero-visual {
+      grid-column: 2;
+      grid-row: 1;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      min-width: 0;
+      margin-right: -0.75rem;
+      overflow: hidden;
+      line-height: 0;
+    }
+
+    .for-shops-hero-visual-scrim-desktop {
+      background:
+        radial-gradient(ellipse 90% 80% at 75% 70%, rgba(239, 228, 210, 0.85) 0%, transparent 65%),
+        linear-gradient(to left, rgba(248, 244, 238, 0.5) 0%, transparent 35%);
+    }
+
+    .for-shops-hero-image-desktop {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: auto;
+      height: 78%;
+      min-height: 16rem;
+      max-height: 26rem;
+      max-width: 130%;
+      object-fit: contain;
+      object-position: right bottom;
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.5) 14%,
+        black 26%,
+        black 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.5) 14%,
+        black 26%,
+        black 100%
+      );
     }
   }
 
@@ -1985,55 +2085,13 @@
     }
 
     .for-shops-hero-grid {
-      grid-template-columns: minmax(0, 50%) minmax(0, 50%);
-      column-gap: 0.5rem;
+      column-gap: 1.25rem;
+      padding: 2.25rem 1.5rem 2.25rem 2.5rem;
       min-height: 24rem;
-      padding: 2.25rem 1rem 2.25rem 2.5rem;
     }
 
-    .for-shops-hero-content {
-      padding-right: 1rem;
-      justify-content: flex-start;
-      padding-top: 0.5rem;
-    }
-
-    .for-shops-hero-visual {
-      margin-right: -1rem;
-      align-items: flex-end;
-    }
-
-    .for-shops-hero-title-line {
-      font-size: clamp(2rem, 3.2vw, 3.125rem);
-      line-height: 1.2;
-    }
-
-    .for-shops-hero-sub {
-      max-width: 26rem;
-      font-size: 0.9375rem;
-    }
-
-    .for-shops-hero-actions {
-      max-width: 26rem;
-      margin-top: 1.375rem;
-    }
-
-    .for-shops-hero-image {
-      height: 78%;
-      min-height: 17rem;
-      max-height: 26rem;
-      max-width: 135%;
-    }
-  }
-
-  @media (min-width: 1100px) {
-    .for-shops-hero-grid {
-      min-height: 26rem;
-      padding: 2.5rem 1.25rem 2.5rem 2.75rem;
-    }
-
-    .for-shops-hero-image {
-      height: 80%;
-      min-height: 19rem;
+    .for-shops-hero-image-desktop {
+      min-height: 18rem;
       max-height: 28rem;
     }
   }
@@ -2183,7 +2241,43 @@
   .for-shops-feature-list {
     display: flex;
     flex-direction: column;
-    gap: 0.875rem;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 767px) {
+    .for-shops-feature-list {
+      gap: 0.875rem;
+    }
+
+    .for-shops-feature-card {
+      padding: 1.375rem 1.125rem;
+      gap: 0.875rem;
+      border: 1px solid rgba(196, 165, 116, 0.52);
+      box-shadow:
+        0 3px 14px rgba(17, 17, 17, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .for-shops-feature-icon {
+      width: 3.125rem;
+      height: 3.125rem;
+      border-color: rgba(196, 165, 116, 0.58);
+    }
+
+    .for-shops-feature-body h3 {
+      font-size: 0.9375rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .for-shops-feature-body p {
+      font-size: 0.8125rem;
+      line-height: 1.72;
+    }
+
+    .for-shops-feature-arrow {
+      font-size: 1.5rem;
+      color: rgba(168, 137, 74, 0.88);
+    }
   }
 
   @media (min-width: 640px) {

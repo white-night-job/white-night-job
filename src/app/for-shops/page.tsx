@@ -170,49 +170,101 @@ export default function ForShopsPage() {
           <div className="for-shops-hero-card">
             <div className="for-shops-hero-card-bg" aria-hidden="true" />
             <div className="for-shops-hero-card-shimmer" aria-hidden="true" />
-            <div className="for-shops-hero-grid">
-              <div className="for-shops-hero-content">
-                <p className="for-shops-kicker">— 掲載をご検討の方はこちら —</p>
-                <h1 className="for-shops-hero-title">
-                  <span className="for-shops-hero-title-line">優良店だけが集まる</span>
-                  <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
-                </h1>
-                <span className="for-shops-hero-divider" aria-hidden="true">
-                  ◆
-                </span>
-                <p className="for-shops-hero-sub">
-                  White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-                </p>
-                <div className="for-shops-hero-actions">
-                  <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
-                    <span className="for-shops-hero-btn-icon">
-                      <HeroMailIcon />
-                    </span>
-                    <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
-                    <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                      ›
-                    </span>
-                  </a>
-                  <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
-                    <span className="for-shops-hero-btn-icon">
-                      <HeroDocIcon />
-                    </span>
-                    <span className="for-shops-hero-btn-label">料金プランを見る</span>
-                    <span className="for-shops-hero-btn-arrow" aria-hidden="true">
-                      ›
-                    </span>
-                  </a>
+            <div className="for-shops-hero-mobile">
+              <p className="for-shops-kicker for-shops-kicker-mobile">— 掲載をご検討の方はこちら —</p>
+              <div className="for-shops-hero-mobile-stage">
+                <div className="for-shops-hero-mobile-copy">
+                  <h1 className="for-shops-hero-title">
+                    <span className="for-shops-hero-title-line">優良店だけが集まる</span>
+                    <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
+                  </h1>
+                  <span className="for-shops-hero-divider" aria-hidden="true">
+                    ◆
+                  </span>
+                  <p className="for-shops-hero-sub">
+                    White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+                  </p>
+                  <div className="for-shops-hero-actions">
+                    <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
+                      <span className="for-shops-hero-btn-icon">
+                        <HeroMailIcon />
+                      </span>
+                      <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
+                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                        ›
+                      </span>
+                    </a>
+                    <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
+                      <span className="for-shops-hero-btn-icon">
+                        <HeroDocIcon />
+                      </span>
+                      <span className="for-shops-hero-btn-label">料金プランを見る</span>
+                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                        ›
+                      </span>
+                    </a>
+                  </div>
+                </div>
+                <div className="for-shops-hero-mobile-visual" aria-hidden="true">
+                  <div className="for-shops-hero-visual-scrim" />
+                  <Image
+                    src="/for-shops/hero-consultant.png"
+                    alt=""
+                    width={560}
+                    height={700}
+                    priority
+                    className="for-shops-hero-image for-shops-hero-image-mobile"
+                  />
                 </div>
               </div>
-              <div className="for-shops-hero-visual" aria-hidden="true">
-                <Image
-                  src="/for-shops/hero-consultant.png"
-                  alt=""
-                  width={560}
-                  height={700}
-                  priority
-                  className="for-shops-hero-image"
-                />
+            </div>
+
+            <div className="for-shops-hero-desktop">
+              <div className="for-shops-hero-grid">
+                <div className="for-shops-hero-content">
+                  <p className="for-shops-kicker">— 掲載をご検討の方はこちら —</p>
+                  <h1 className="for-shops-hero-title">
+                    <span className="for-shops-hero-title-line">優良店だけが集まる</span>
+                    <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
+                  </h1>
+                  <span className="for-shops-hero-divider" aria-hidden="true">
+                    ◆
+                  </span>
+                  <p className="for-shops-hero-sub">
+                    White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+                  </p>
+                  <div className="for-shops-hero-actions">
+                    <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
+                      <span className="for-shops-hero-btn-icon">
+                        <HeroMailIcon />
+                      </span>
+                      <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
+                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                        ›
+                      </span>
+                    </a>
+                    <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
+                      <span className="for-shops-hero-btn-icon">
+                        <HeroDocIcon />
+                      </span>
+                      <span className="for-shops-hero-btn-label">料金プランを見る</span>
+                      <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                        ›
+                      </span>
+                    </a>
+                  </div>
+                </div>
+                <div className="for-shops-hero-visual" aria-hidden="true">
+                  <div className="for-shops-hero-visual-scrim for-shops-hero-visual-scrim-desktop" />
+                  <Image
+                    src="/for-shops/hero-consultant.png"
+                    alt=""
+                    width={560}
+                    height={700}
+                    priority
+                    className="for-shops-hero-image for-shops-hero-image-desktop"
+                  />
+                </div>
               </div>
             </div>
           </div>
