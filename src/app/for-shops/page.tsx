@@ -103,11 +103,14 @@ function SectionHeading({
   light?: boolean;
 }) {
   return (
-    <div className={`for-shops-section-heading ${light ? "is-light" : ""}`}>
-      <p className="for-shops-eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      <span className="for-shops-heading-line" aria-hidden />
-    </div>
+    <header className={`fsl-section-head ${light ? "is-light" : ""}`}>
+      <div className="fsl-section-head__eyebrow">
+        <span className="fsl-section-head__line" aria-hidden="true" />
+        <span>{eyebrow}</span>
+        <span className="fsl-section-head__line" aria-hidden="true" />
+      </div>
+      <h2 className="fsl-section-head__title">{title}</h2>
+    </header>
   );
 }
 
@@ -232,12 +235,17 @@ export default function ForShopsPage() {
 
       <section id="for-shops-contact" className="for-shops-cta scroll-mt-24">
         <div className="for-shops-container">
-          <p className="for-shops-eyebrow is-on-dark">CONTACT</p>
-          <h2 className="for-shops-cta-title">掲載をご希望の店舗様はこちら</h2>
+          <header className="fsl-section-head is-light is-on-dark">
+            <div className="fsl-section-head__eyebrow">
+              <span className="fsl-section-head__line" aria-hidden="true" />
+              <span>CONTACT</span>
+              <span className="fsl-section-head__line" aria-hidden="true" />
+            </div>
+            <h2 className="fsl-section-head__title">掲載をご希望の店舗様はこちら</h2>
+          </header>
           <p className="for-shops-cta-sub">
             お問い合わせフォーム、電話、メールからお気軽にご相談ください。
           </p>
-          <span className="for-shops-heading-line is-on-dark" aria-hidden />
           <ForShopsContactForm />
           <div className="for-shops-cta-links">
             <Link href="/terms-shop" className="for-shops-text-link">

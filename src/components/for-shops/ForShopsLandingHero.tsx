@@ -18,53 +18,76 @@ function DocIcon() {
   );
 }
 
+function SparkIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+      <path
+        d="M5 0 5.8 3.6 9.5 4.2 5.8 4.8 5 8.5 4.2 4.8.5 4.2 4.2 3.6 5 0Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 export function ForShopsLandingHero() {
   return (
-    <section className="fsl-hero-wrap">
-      <article className="fsl-hero-card">
-        <div className="fsl-hero-bg" aria-hidden="true" />
-        <div className="fsl-hero-rays" aria-hidden="true" />
+    <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
+      <article className="fsl-hero">
+        <div className="fsl-hero__bg" aria-hidden="true" />
+        <div className="fsl-hero__lights" aria-hidden="true">
+          <span className="fsl-hero__light fsl-hero__light--a" />
+          <span className="fsl-hero__light fsl-hero__light--b" />
+          <span className="fsl-hero__light fsl-hero__light--c" />
+        </div>
 
-        <div className="fsl-hero-body">
-          <h1 className="fsl-hero-title">
-            <span className="fsl-hero-title-line">優良店だけが集まる</span>
-            <span className="fsl-hero-title-line fsl-hero-title-gold">求人サイトへ。</span>
-          </h1>
+        <div className="fsl-hero__stage">
+          <div className="fsl-hero__copy">
+            <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
-          <p className="fsl-hero-desc">
-            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-          </p>
+            <h1 className="fsl-hero__title">
+              <span className="fsl-hero__title-line">優良店だけが集まる</span>
+              <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
+            </h1>
 
-          <div className="fsl-hero-cta">
-            <a href="#for-shops-contact" className="fsl-btn fsl-btn-gold">
-              <span className="fsl-btn-icon">
-                <MailIcon />
-              </span>
-              <span className="fsl-btn-text">掲載のお問い合わせ</span>
-              <span className="fsl-btn-arrow" aria-hidden="true">
-                ›
-              </span>
-            </a>
-            <a href="#for-shops-plans" className="fsl-btn fsl-btn-dark">
-              <span className="fsl-btn-icon">
-                <DocIcon />
-              </span>
-              <span className="fsl-btn-text">料金プランを見る</span>
-              <span className="fsl-btn-arrow" aria-hidden="true">
-                ›
-              </span>
-            </a>
+            <span className="fsl-hero__spark" aria-hidden="true">
+              <SparkIcon />
+            </span>
+
+            <p className="fsl-hero__desc">
+              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+            </p>
+
+            <div className="fsl-hero__actions">
+              <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
+                <span className="fsl-btn__icon">
+                  <MailIcon />
+                </span>
+                <span className="fsl-btn__label">掲載のお問い合わせ</span>
+                <span className="fsl-btn__chev" aria-hidden="true">
+                  ›
+                </span>
+              </a>
+              <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
+                <span className="fsl-btn__icon">
+                  <DocIcon />
+                </span>
+                <span className="fsl-btn__label">料金プランを見る</span>
+                <span className="fsl-btn__chev" aria-hidden="true">
+                  ›
+                </span>
+              </a>
+            </div>
           </div>
 
-          <figure className="fsl-hero-figure" aria-hidden="true">
-            <div className="fsl-hero-figure-fill" />
+          <figure className="fsl-hero__visual" aria-hidden="true">
+            <div className="fsl-hero__visual-scrim" />
             <Image
               src="/for-shops/hero-consultant.png"
               alt=""
               width={560}
               height={700}
               priority
-              className="fsl-hero-photo"
+              className="fsl-hero__photo"
             />
           </figure>
         </div>

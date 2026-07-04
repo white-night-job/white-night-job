@@ -1,6 +1,6 @@
 function ShieldIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M12 3 5 6v6c0 4.5 3 7.8 7 9 4-1.2 7-4.5 7-9V6l-7-3Z"
         stroke="currentColor"
@@ -31,23 +31,30 @@ const FEATURES = [
 
 export function ForShopsLandingFeatures() {
   return (
-    <section className="fsl-feat">
-      <header className="fsl-feat-header">
-        <p className="fsl-feat-eyebrow">FEATURES</p>
-        <h2 className="fsl-feat-title">White Night Jobの特徴</h2>
+    <section className="fsl-feat" aria-labelledby="fsl-feat-title">
+      <header className="fsl-section-head">
+        <div className="fsl-section-head__eyebrow">
+          <span className="fsl-section-head__line" aria-hidden="true" />
+          <span>FEATURES</span>
+          <span className="fsl-section-head__line" aria-hidden="true" />
+        </div>
+        <h2 id="fsl-feat-title" className="fsl-section-head__title">
+          White Night Jobの特徴
+        </h2>
       </header>
-      <ul className="fsl-feat-list">
+
+      <ul className="fsl-feat__list">
         {FEATURES.map((feature) => (
           <li key={feature.title}>
-            <article className="fsl-feat-card">
-              <span className="fsl-feat-icon" aria-hidden="true">
+            <article className="fsl-feat__card">
+              <span className="fsl-feat__icon" aria-hidden="true">
                 <ShieldIcon />
               </span>
-              <div className="fsl-feat-copy">
+              <div className="fsl-feat__body">
                 <h3>{feature.title}</h3>
                 <p>{feature.desc}</p>
               </div>
-              <span className="fsl-feat-arrow" aria-hidden="true">
+              <span className="fsl-feat__chev" aria-hidden="true">
                 ›
               </span>
             </article>
