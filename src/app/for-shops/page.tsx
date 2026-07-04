@@ -129,32 +129,32 @@ export default function ForShopsPage() {
           <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
           <div className="for-shops-hero-composition">
             <div className="for-shops-hero-composition-bg" aria-hidden="true" />
-            <div className="for-shops-hero-visual" aria-hidden="true">
-              <Image
-                src="/for-shops/hero-consultant.png"
-                alt=""
-                width={560}
-                height={700}
-                priority
-                className="for-shops-hero-image"
-              />
-            </div>
-            <div className="for-shops-hero-copy">
+            <div className="for-shops-hero-head">
               <h1 className="for-shops-hero-title">
                 <span className="for-shops-hero-title-gold">優良店</span>
                 <span className="for-shops-hero-title-text">だけが集まる求人サイトへ。</span>
               </h1>
-              <p className="for-shops-hero-sub">
-                White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-              </p>
-              <div className="for-shops-hero-actions">
-                <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
-                  掲載のお問い合わせ
-                </a>
-                <a href="#for-shops-plans" className="for-shops-btn for-shops-btn-secondary">
-                  料金プランを見る
-                </a>
+              <div className="for-shops-hero-visual" aria-hidden="true">
+                <Image
+                  src="/for-shops/hero-consultant.png"
+                  alt=""
+                  width={560}
+                  height={700}
+                  priority
+                  className="for-shops-hero-image"
+                />
               </div>
+            </div>
+            <p className="for-shops-hero-sub">
+              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+            </p>
+            <div className="for-shops-hero-actions">
+              <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
+                掲載のお問い合わせ
+              </a>
+              <a href="#for-shops-plans" className="for-shops-btn for-shops-btn-secondary">
+                料金プランを見る
+              </a>
             </div>
           </div>
         </div>
