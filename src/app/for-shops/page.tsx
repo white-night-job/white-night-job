@@ -102,6 +102,48 @@ function CheckIcon({ positive }: { positive: boolean }) {
   );
 }
 
+function HeroMailIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 6h16v12H4V6Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="m4 7 8 6 8-6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HeroDocIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M8 4h8l4 4v12H8V4Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M16 4v4h4M10 12h8M10 16h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FeatureShieldIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 3 5 6v6c0 4.5 3 7.8 7 9 4-1.2 7-4.5 7-9V6l-7-3Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function SectionHeading({
   eyebrow,
   title,
@@ -124,16 +166,44 @@ export default function ForShopsPage() {
   return (
     <div className="for-shops-page">
       <section className="for-shops-hero">
-        <div className="for-shops-hero-glow" aria-hidden="true" />
         <div className="for-shops-hero-inner">
-          <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
-          <div className="for-shops-hero-composition">
-            <div className="for-shops-hero-composition-bg" aria-hidden="true" />
-            <div className="for-shops-hero-head">
-              <h1 className="for-shops-hero-title">
-                <span className="for-shops-hero-title-gold">優良店</span>
-                <span className="for-shops-hero-title-text">だけが集まる求人サイトへ。</span>
-              </h1>
+          <div className="for-shops-hero-card">
+            <div className="for-shops-hero-card-bg" aria-hidden="true" />
+            <div className="for-shops-hero-card-shimmer" aria-hidden="true" />
+            <div className="for-shops-hero-grid">
+              <div className="for-shops-hero-content">
+                <p className="for-shops-kicker">— 掲載をご検討の方はこちら —</p>
+                <h1 className="for-shops-hero-title">
+                  <span className="for-shops-hero-title-line">優良店だけが集まる</span>
+                  <span className="for-shops-hero-title-line for-shops-hero-title-gold">求人サイトへ。</span>
+                </h1>
+                <span className="for-shops-hero-divider" aria-hidden="true">
+                  ◆
+                </span>
+                <p className="for-shops-hero-sub">
+                  White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+                </p>
+                <div className="for-shops-hero-actions">
+                  <a href="#for-shops-contact" className="for-shops-hero-btn for-shops-hero-btn-gold">
+                    <span className="for-shops-hero-btn-icon">
+                      <HeroMailIcon />
+                    </span>
+                    <span className="for-shops-hero-btn-label">掲載のお問い合わせ</span>
+                    <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                      ›
+                    </span>
+                  </a>
+                  <a href="#for-shops-plans" className="for-shops-hero-btn for-shops-hero-btn-dark">
+                    <span className="for-shops-hero-btn-icon">
+                      <HeroDocIcon />
+                    </span>
+                    <span className="for-shops-hero-btn-label">料金プランを見る</span>
+                    <span className="for-shops-hero-btn-arrow" aria-hidden="true">
+                      ›
+                    </span>
+                  </a>
+                </div>
+              </div>
               <div className="for-shops-hero-visual" aria-hidden="true">
                 <Image
                   src="/for-shops/hero-consultant.png"
@@ -145,17 +215,6 @@ export default function ForShopsPage() {
                 />
               </div>
             </div>
-            <p className="for-shops-hero-sub">
-              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-            </p>
-            <div className="for-shops-hero-actions">
-              <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
-                掲載のお問い合わせ
-              </a>
-              <a href="#for-shops-plans" className="for-shops-btn for-shops-btn-secondary">
-                料金プランを見る
-              </a>
-            </div>
           </div>
         </div>
       </section>
@@ -163,12 +222,19 @@ export default function ForShopsPage() {
       <section className="for-shops-section">
         <div className="for-shops-container">
           <SectionHeading eyebrow="FEATURES" title="White Night Jobの特徴" />
-          <div className="for-shops-feature-grid">
+          <div className="for-shops-feature-list">
             {FEATURES.map((feature) => (
-              <article key={feature.title} className="for-shops-card">
-                <span className="for-shops-card-mark" aria-hidden />
-                <h3>{feature.title}</h3>
-                <p>{feature.desc}</p>
+              <article key={feature.title} className="for-shops-feature-card">
+                <span className="for-shops-feature-icon" aria-hidden="true">
+                  <FeatureShieldIcon />
+                </span>
+                <div className="for-shops-feature-body">
+                  <h3>{feature.title}</h3>
+                  <p>{feature.desc}</p>
+                </div>
+                <span className="for-shops-feature-arrow" aria-hidden="true">
+                  ›
+                </span>
               </article>
             ))}
           </div>
