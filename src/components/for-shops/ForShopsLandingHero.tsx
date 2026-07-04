@@ -1,5 +1,6 @@
-/** Hero専用ビジュアル（人物＋背景が一体の合成画像）。透過PNGは使用しない。 */
-export const FOR_SHOPS_HERO_VISUAL = "/for-shops/hero-visual.webp";
+import Image from "next/image";
+
+export const FOR_SHOPS_HERO_PORTRAIT = "/for-shops/hero-consultant.png";
 
 function MailIcon() {
   return (
@@ -33,13 +34,9 @@ function SparkIcon() {
 export function ForShopsLandingHero() {
   return (
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
-      <article
-        className="fsl-hero"
-        style={{ ["--fsl-hero-visual" as string]: `url(${FOR_SHOPS_HERO_VISUAL})` }}
-      >
+      <article className="fsl-hero">
         <div className="fsl-hero__canvas" aria-hidden="true">
           <div className="fsl-hero__base" />
-          <div className="fsl-hero__visual" />
           <div className="fsl-hero__sheen">
             <span className="fsl-hero__sheen-line fsl-hero__sheen-line--1" />
             <span className="fsl-hero__sheen-line fsl-hero__sheen-line--2" />
@@ -49,43 +46,56 @@ export function ForShopsLandingHero() {
           <div className="fsl-hero__glow fsl-hero__glow--b" />
         </div>
 
-        <div className="fsl-hero__scrim" aria-hidden="true" />
+        <div className="fsl-hero__layout">
+          <div className="fsl-hero__panel">
+            <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
-        <div className="fsl-hero__panel">
-          <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
+            <h1 className="fsl-hero__title">
+              <span className="fsl-hero__title-line">優良店だけが集まる</span>
+              <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
+            </h1>
 
-          <h1 className="fsl-hero__title">
-            <span className="fsl-hero__title-line">優良店だけが集まる</span>
-            <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
-          </h1>
+            <span className="fsl-hero__spark" aria-hidden="true">
+              <SparkIcon />
+            </span>
 
-          <span className="fsl-hero__spark" aria-hidden="true">
-            <SparkIcon />
-          </span>
+            <p className="fsl-hero__desc">
+              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+            </p>
 
-          <p className="fsl-hero__desc">
-            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-          </p>
+            <div className="fsl-hero__actions">
+              <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
+                <span className="fsl-btn__icon">
+                  <MailIcon />
+                </span>
+                <span className="fsl-btn__label">掲載のお問い合わせ</span>
+                <span className="fsl-btn__chev" aria-hidden="true">
+                  ›
+                </span>
+              </a>
+              <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
+                <span className="fsl-btn__icon">
+                  <DocIcon />
+                </span>
+                <span className="fsl-btn__label">料金プランを見る</span>
+                <span className="fsl-btn__chev" aria-hidden="true">
+                  ›
+                </span>
+              </a>
+            </div>
+          </div>
 
-          <div className="fsl-hero__actions">
-            <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
-              <span className="fsl-btn__icon">
-                <MailIcon />
-              </span>
-              <span className="fsl-btn__label">掲載のお問い合わせ</span>
-              <span className="fsl-btn__chev" aria-hidden="true">
-                ›
-              </span>
-            </a>
-            <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
-              <span className="fsl-btn__icon">
-                <DocIcon />
-              </span>
-              <span className="fsl-btn__label">料金プランを見る</span>
-              <span className="fsl-btn__chev" aria-hidden="true">
-                ›
-              </span>
-            </a>
+          <div className="fsl-hero__portrait" aria-hidden="true">
+            <div className="fsl-hero__portrait-frame">
+              <Image
+                src={FOR_SHOPS_HERO_PORTRAIT}
+                alt=""
+                width={560}
+                height={700}
+                priority
+                className="fsl-hero__portrait-img"
+              />
+            </div>
           </div>
         </div>
       </article>
