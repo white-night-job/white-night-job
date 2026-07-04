@@ -1622,15 +1622,14 @@
     overflow: hidden;
     border-bottom: 1px solid rgba(196, 165, 116, 0.35);
     background: linear-gradient(
-      145deg,
+      160deg,
       #ffffff 0%,
-      #faf7f2 18%,
-      #efe4d2 42%,
-      #d4c4a8 62%,
-      #2a2218 88%,
-      #111111 100%
+      #faf7f2 28%,
+      #f3ebe0 52%,
+      #e8dcc8 72%,
+      #f5f0e8 100%
     );
-    padding: 2.5rem 0 3rem;
+    padding: 2.5rem 0 2.75rem;
   }
 
   .for-shops-hero::before {
@@ -1638,10 +1637,11 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(
-      125deg,
-      rgba(255, 255, 255, 0.35) 0%,
-      transparent 45%,
-      rgba(17, 17, 17, 0.08) 100%
+      115deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      transparent 42%,
+      rgba(196, 165, 116, 0.12) 78%,
+      rgba(196, 165, 116, 0.06) 100%
     );
     pointer-events: none;
   }
@@ -1649,9 +1649,17 @@
   .for-shops-hero-inner {
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
     margin: 0 auto;
-    max-width: 48rem;
+    max-width: 72rem;
     padding: 0 1rem;
+    align-items: center;
+  }
+
+  .for-shops-hero-content {
+    width: 100%;
     text-align: center;
   }
 
@@ -1666,9 +1674,9 @@
   .for-shops-hero-title {
     margin: 0;
     font-family: var(--font-serif, ui-serif, Georgia, serif);
-    font-size: clamp(1.75rem, 6vw, 2.75rem);
+    font-size: clamp(1.625rem, 5.5vw, 2.625rem);
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.35;
     letter-spacing: 0.04em;
     color: #111111;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -1676,19 +1684,115 @@
 
   .for-shops-hero-sub {
     margin: 1rem auto 0;
-    max-width: 36rem;
+    max-width: 32rem;
     font-size: 0.875rem;
-    line-height: 1.8;
+    line-height: 1.85;
     color: rgba(17, 17, 17, 0.72);
+  }
+
+  .for-shops-hero-visual {
+    position: relative;
+    width: min(100%, 18rem);
+    flex-shrink: 0;
+  }
+
+  .for-shops-hero-visual-glow {
+    position: absolute;
+    inset: 8% 0 0;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(196, 165, 116, 0.28) 0%,
+      rgba(196, 165, 116, 0.08) 45%,
+      transparent 72%
+    );
+    pointer-events: none;
+  }
+
+  .for-shops-hero-visual-frame {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(196, 165, 116, 0.12) 100%
+    );
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 12px 40px rgba(17, 17, 17, 0.08),
+      0 0 0 1px rgba(196, 165, 116, 0.25);
+  }
+
+  .for-shops-hero-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    object-position: center top;
+    opacity: 0.94;
+    mix-blend-mode: multiply;
+    filter: saturate(0.92) contrast(1.02);
   }
 
   @media (min-width: 640px) {
     .for-shops-hero {
-      padding: 3.5rem 0 4rem;
+      padding: 3.25rem 0 3.5rem;
     }
 
     .for-shops-hero-sub {
+      font-size: 0.9375rem;
+    }
+
+    .for-shops-hero-visual {
+      width: min(100%, 20rem);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .for-shops-hero {
+      padding: 4rem 0 4.5rem;
+    }
+
+    .for-shops-hero-inner {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3rem;
+      padding: 0 2rem;
+    }
+
+    .for-shops-hero-content {
+      flex: 1 1 52%;
+      max-width: 36rem;
+      text-align: left;
+    }
+
+    .for-shops-hero-sub {
+      margin: 1.125rem 0 0;
+      max-width: none;
       font-size: 1rem;
+    }
+
+    .for-shops-hero-visual {
+      flex: 0 1 42%;
+      width: auto;
+      max-width: 22rem;
+    }
+
+    .for-shops-hero-visual-frame {
+      border-radius: 1rem;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .for-shops-hero-inner {
+      gap: 4rem;
+    }
+
+    .for-shops-hero-visual {
+      max-width: 26rem;
     }
   }
 
@@ -1703,6 +1807,12 @@
     .for-shops-hero-actions {
       flex-direction: row;
       justify-content: center;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .for-shops-hero-actions {
+      justify-content: flex-start;
     }
   }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ForShopsContactForm } from "@/components/for-shops/ForShopsContactForm";
 import { ForShopsFaq } from "@/components/for-shops/ForShopsFaq";
@@ -124,22 +125,33 @@ export default function ForShopsPage() {
     <div className="for-shops-page">
       <section className="for-shops-hero">
         <div className="for-shops-hero-inner">
-          <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
-          <h1 className="for-shops-hero-title">
-            優良店だけが集まる
-            <br />
-            求人サイトへ。
-          </h1>
-          <p className="for-shops-hero-sub">
-            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-          </p>
-          <div className="for-shops-hero-actions">
-            <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
-              掲載のお問い合わせ
-            </a>
-            <a href="#for-shops-plans" className="for-shops-btn for-shops-btn-secondary">
-              料金プランを見る
-            </a>
+          <div className="for-shops-hero-content">
+            <p className="for-shops-kicker">掲載をご検討の方はこちら</p>
+            <h1 className="for-shops-hero-title">優良店だけが集まる求人サイトへ。</h1>
+            <p className="for-shops-hero-sub">
+              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+            </p>
+            <div className="for-shops-hero-actions">
+              <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
+                掲載のお問い合わせ
+              </a>
+              <a href="#for-shops-plans" className="for-shops-btn for-shops-btn-secondary">
+                料金プランを見る
+              </a>
+            </div>
+          </div>
+          <div className="for-shops-hero-visual" aria-hidden="true">
+            <div className="for-shops-hero-visual-glow" />
+            <div className="for-shops-hero-visual-frame">
+              <Image
+                src="/for-shops/hero-consultant.png"
+                alt=""
+                width={560}
+                height={700}
+                priority
+                className="for-shops-hero-image"
+              />
+            </div>
           </div>
         </div>
       </section>
