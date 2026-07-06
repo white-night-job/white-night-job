@@ -48,45 +48,48 @@ export function ForShopsLandingHero() {
         </div>
 
         <div className="fsl-hero__layout">
-          <div className="fsl-hero__panel">
+          <div className="fsl-hero__copy">
             <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
             <h1 className="fsl-hero__title">
-              <span className="fsl-hero__title-line">優良店だけが集まる</span>
-              <span className="fsl-hero__title-line fsl-hero__title-gold">求人サイトへ。</span>
+              <span className="fsl-hero__title-main">
+                <span className="fsl-hero__title-chunk">優良店だけが</span>
+                <span className="fsl-hero__title-chunk">集まる</span>
+              </span>
+              <span className="fsl-hero__title-gold">求人サイトへ。</span>
             </h1>
 
             <span className="fsl-hero__spark" aria-hidden="true">
               <SparkIcon />
             </span>
-
-            <p className="fsl-hero__desc">
-              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-            </p>
-
-            <div className="fsl-hero__actions">
-              <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
-                <span className="fsl-btn__icon">
-                  <MailIcon />
-                </span>
-                <span className="fsl-btn__label">掲載のお問い合わせ</span>
-                <span className="fsl-btn__chev" aria-hidden="true">
-                  ›
-                </span>
-              </a>
-              <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
-                <span className="fsl-btn__icon">
-                  <DocIcon />
-                </span>
-                <span className="fsl-btn__label">料金プランを見る</span>
-                <span className="fsl-btn__chev" aria-hidden="true">
-                  ›
-                </span>
-              </a>
-            </div>
           </div>
 
           <div className="fsl-hero__visual" aria-hidden="true" />
+
+          <p className="fsl-hero__desc">
+            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+          </p>
+
+          <div className="fsl-hero__actions">
+            <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
+              <span className="fsl-btn__icon">
+                <MailIcon />
+              </span>
+              <span className="fsl-btn__label">掲載のお問い合わせ</span>
+              <span className="fsl-btn__chev" aria-hidden="true">
+                ›
+              </span>
+            </a>
+            <a href="#for-shops-plans" className="fsl-btn fsl-btn--dark">
+              <span className="fsl-btn__icon">
+                <DocIcon />
+              </span>
+              <span className="fsl-btn__label">料金プランを見る</span>
+              <span className="fsl-btn__chev" aria-hidden="true">
+                ›
+              </span>
+            </a>
+          </div>
         </div>
       </article>
     </section>
