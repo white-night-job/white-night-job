@@ -1,6 +1,4 @@
-import Image from "next/image";
-
-export const FOR_SHOPS_HERO_PORTRAIT = "/for-shops/hero-consultant.png";
+export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.jpg";
 
 function MailIcon() {
   return (
@@ -34,7 +32,10 @@ function SparkIcon() {
 export function ForShopsLandingHero() {
   return (
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
-      <article className="fsl-hero">
+      <article
+        className="fsl-hero"
+        style={{ ["--fsl-hero-photo" as string]: `url(${FOR_SHOPS_HERO_IMAGE})` }}
+      >
         <div className="fsl-hero__canvas" aria-hidden="true">
           <div className="fsl-hero__base" />
           <div className="fsl-hero__sheen">
@@ -85,18 +86,7 @@ export function ForShopsLandingHero() {
             </div>
           </div>
 
-          <div className="fsl-hero__portrait" aria-hidden="true">
-            <div className="fsl-hero__portrait-frame">
-              <Image
-                src={FOR_SHOPS_HERO_PORTRAIT}
-                alt=""
-                width={560}
-                height={700}
-                priority
-                className="fsl-hero__portrait-img"
-              />
-            </div>
-          </div>
+          <div className="fsl-hero__visual" aria-hidden="true" />
         </div>
       </article>
     </section>
