@@ -193,16 +193,16 @@
 .fsl-hero__layout {
   position: relative;
   z-index: 2;
-  min-height: 27rem;
-  display: block;
+  display: grid;
+  grid-template-rows: minmax(19.5rem, auto) auto;
+  min-height: 0;
 }
 
 .fsl-hero__visual {
-  position: absolute;
-  inset: 0;
+  position: relative;
   z-index: 1;
   overflow: hidden;
-  border-radius: calc(var(--fsl-radius-hero) - 1px);
+  border-radius: calc(var(--fsl-radius-hero) - 1px) calc(var(--fsl-radius-hero) - 1px) 0 0;
 }
 
 .fsl-hero__visual::before {
@@ -236,10 +236,13 @@
 }
 
 .fsl-hero__content {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 2;
   padding: 1rem 1rem 0;
   width: min(62%, 15.5rem);
+  pointer-events: none;
 }
 
 .fsl-hero__label {
@@ -299,16 +302,13 @@
 }
 
 .fsl-hero__actions {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
   z-index: 3;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
-  padding: 0 1rem 1rem;
+  padding: 0.875rem 1rem 1rem;
 }
 
 .fsl-hero__actions .fsl-btn {
@@ -503,7 +503,7 @@
 
 @media (min-width: 375px) {
   .fsl-hero__layout {
-    min-height: 28rem;
+    grid-template-rows: minmax(20.5rem, auto) auto;
   }
 
   .fsl-hero__title-main,
@@ -514,7 +514,7 @@
 
 @media (min-width: 390px) {
   .fsl-hero__layout {
-    min-height: 29rem;
+    grid-template-rows: minmax(21.5rem, auto) auto;
   }
 
   .fsl-hero__content {
@@ -530,7 +530,7 @@
 
 @media (min-width: 430px) {
   .fsl-hero__layout {
-    min-height: 30.5rem;
+    grid-template-rows: minmax(23rem, auto) auto;
   }
 
   .fsl-hero__content {
@@ -560,7 +560,7 @@
   }
 
   .fsl-hero__layout {
-    min-height: 29rem;
+    grid-template-rows: minmax(24rem, auto) auto;
   }
 
   .fsl-hero__content {
@@ -597,8 +597,8 @@
   }
 
   .fsl-hero__actions {
-    padding: 0 1.5rem 1.5rem 2rem;
-    max-width: 28rem;
+    padding: 1rem 1.5rem 1.5rem 2rem;
+    max-width: none;
     gap: 0.5625rem;
   }
 
