@@ -18,7 +18,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
             <SafetyBadge variant="hero" />
 
             <h1 className="hero-title font-serif">
-              <span className="hero-title-dark">安心して働ける、</span>
+              <span className="hero-title-dark">安心できるお店選びを、</span>
               <br />
               <span className="hero-title-gold">優良認定店</span>
               <span className="hero-title-dark">専門サイト</span>
