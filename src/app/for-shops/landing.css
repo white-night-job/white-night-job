@@ -193,15 +193,20 @@
 .fsl-hero__layout {
   position: relative;
   z-index: 2;
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
+  grid-template-areas:
+    "content visual"
+    "actions actions";
+  align-items: stretch;
 }
 
 .fsl-hero__visual {
-  position: absolute;
-  inset: 0;
+  grid-area: visual;
+  position: relative;
   z-index: 1;
   overflow: hidden;
-  border-radius: calc(var(--fsl-radius-hero) - 1px);
+  border-radius: 0 calc(var(--fsl-radius-hero) - 1px) 0 0;
 }
 
 .fsl-hero__visual::before {
@@ -235,10 +240,10 @@
 }
 
 .fsl-hero__content {
+  grid-area: content;
   position: relative;
   z-index: 2;
-  padding: 1rem 1rem 0;
-  width: min(58%, 15rem);
+  padding: 1rem 0.75rem 0 1rem;
 }
 
 .fsl-hero__label {
@@ -314,6 +319,7 @@
 }
 
 .fsl-hero__actions {
+  grid-area: actions;
   position: relative;
   z-index: 3;
   display: flex;
@@ -515,10 +521,6 @@
 /* ── Mobile tuning (375–430px) ── */
 
 @media (min-width: 375px) {
-  .fsl-hero__content {
-    width: min(56%, 15.25rem);
-  }
-
   .fsl-hero__title-main {
     font-size: 1.375rem;
   }
@@ -530,8 +532,7 @@
 
 @media (min-width: 390px) {
   .fsl-hero__content {
-    width: min(55%, 15.75rem);
-    padding: 1.0625rem 1.0625rem 0;
+    padding: 1.0625rem 0.8125rem 0 1.0625rem;
   }
 
   .fsl-hero__title-main {
@@ -544,10 +545,6 @@
 }
 
 @media (min-width: 430px) {
-  .fsl-hero__content {
-    width: min(54%, 17rem);
-  }
-
   .fsl-hero__desc {
     font-size: 0.78125rem;
     line-height: 1.6;
@@ -571,8 +568,7 @@
   }
 
   .fsl-hero__content {
-    width: min(52%, 28rem);
-    padding: 1.5rem 1.5rem 0 2rem;
+    padding: 1.5rem 1rem 0 2rem;
   }
 
   .fsl-hero__title-main {
