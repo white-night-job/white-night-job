@@ -189,22 +189,24 @@
   opacity: 0.55;
 }
 
-/* Mobile: integrated hero overlay */
+/* Mobile: upper text+image, lower buttons */
 .fsl-hero__layout {
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.fsl-hero__upper {
   display: grid;
   grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
-  grid-template-areas:
-    "content visual"
-    "actions actions";
   align-items: stretch;
 }
 
 .fsl-hero__visual {
-  grid-area: visual;
   position: relative;
   z-index: 1;
+  min-height: 0;
   overflow: hidden;
   border-radius: 0 calc(var(--fsl-radius-hero) - 1px) 0 0;
 }
@@ -216,7 +218,7 @@
   background-image: var(--fsl-hero-photo);
   background-repeat: no-repeat;
   background-size: auto 100%;
-  background-position: right 0.35rem top 0.85rem;
+  background-position: right 0.25rem top;
 }
 
 .fsl-hero__visual::after {
@@ -240,7 +242,6 @@
 }
 
 .fsl-hero__content {
-  grid-area: content;
   position: relative;
   z-index: 2;
   padding: 1rem 0.75rem 0 1rem;
@@ -319,7 +320,6 @@
 }
 
 .fsl-hero__actions {
-  grid-area: actions;
   position: relative;
   z-index: 3;
   display: flex;

@@ -48,23 +48,25 @@ export function ForShopsLandingHero() {
         </div>
 
         <div className="fsl-hero__layout">
-          <div className="fsl-hero__visual" aria-hidden="true" />
+          <div className="fsl-hero__upper">
+            <div className="fsl-hero__content">
+              <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
 
-          <div className="fsl-hero__content">
-            <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
+              <h1 className="fsl-hero__title">
+                <span className="fsl-hero__title-main">優良店だけが集まる</span>
+                <span className="fsl-hero__title-gold">求人サイトへ。</span>
+              </h1>
 
-            <h1 className="fsl-hero__title">
-              <span className="fsl-hero__title-main">優良店だけが集まる</span>
-              <span className="fsl-hero__title-gold">求人サイトへ。</span>
-            </h1>
+              <span className="fsl-hero__spark" aria-hidden="true">
+                <SparkIcon />
+              </span>
 
-            <span className="fsl-hero__spark" aria-hidden="true">
-              <SparkIcon />
-            </span>
+              <p className="fsl-hero__desc">
+                White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+              </p>
+            </div>
 
-            <p className="fsl-hero__desc">
-              White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-            </p>
+            <div className="fsl-hero__visual" aria-hidden="true" />
           </div>
 
           <div className="fsl-hero__actions">
