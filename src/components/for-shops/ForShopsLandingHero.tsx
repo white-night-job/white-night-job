@@ -33,9 +33,11 @@ export function ForShopsLandingHero() {
 
         <div className="fsl-hero-image-card__shade" aria-hidden="true" />
 
-        <div className="fsl-hero-image-card__copy">
+        <div className="fsl-hero-image-card__label-wrap">
           <p className="fsl-hero-image-card__label">掲載をご検討の方はこちら</p>
+        </div>
 
+        <div className="fsl-hero-image-card__copy">
           <h1 className="fsl-hero-image-card__title">
             <span className="fsl-hero-image-card__title-main">優良店だけが集まる</span>
             <span className="fsl-hero-image-card__title-gold">求人サイトへ。</span>
