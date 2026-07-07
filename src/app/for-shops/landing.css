@@ -193,7 +193,6 @@
 .fsl-hero__layout {
   position: relative;
   z-index: 2;
-  min-height: 27.5rem;
   display: block;
 }
 
@@ -211,8 +210,8 @@
   inset: 0;
   background-image: var(--fsl-hero-photo);
   background-repeat: no-repeat;
-  background-size: 82% auto;
-  background-position: right 0.4rem top 1.1rem;
+  background-size: auto 100%;
+  background-position: right 0.35rem top 0.85rem;
 }
 
 .fsl-hero__visual::after {
@@ -320,7 +319,7 @@
   flex-direction: column;
   gap: 0.5rem;
   width: 100%;
-  padding: 0 1rem;
+  padding: 0 1rem 1.375rem;
   margin-top: 0;
 }
 
@@ -515,10 +514,6 @@
 /* ── Mobile tuning (375–430px) ── */
 
 @media (min-width: 375px) {
-  .fsl-hero__layout {
-    min-height: 29rem;
-  }
-
   .fsl-hero__content {
     width: min(56%, 15.25rem);
   }
@@ -530,10 +525,6 @@
 }
 
 @media (min-width: 390px) {
-  .fsl-hero__layout {
-    min-height: 30rem;
-  }
-
   .fsl-hero__content {
     width: min(55%, 15.75rem);
     padding: 1.0625rem 1.0625rem 0;
@@ -546,10 +537,6 @@
 }
 
 @media (min-width: 430px) {
-  .fsl-hero__layout {
-    min-height: 31rem;
-  }
-
   .fsl-hero__content {
     width: min(54%, 17rem);
   }
@@ -574,10 +561,6 @@
 
   .for-shops-page .for-shops-container {
     max-width: 56rem;
-  }
-
-  .fsl-hero__layout {
-    min-height: 29rem;
   }
 
   .fsl-hero__content {
@@ -614,7 +597,7 @@
   }
 
   .fsl-hero__actions {
-    padding: 0 1.5rem 1.5rem 2rem;
+    padding: 0 1.5rem 1.375rem 2rem;
     max-width: 26rem;
     gap: 0.5625rem;
   }
