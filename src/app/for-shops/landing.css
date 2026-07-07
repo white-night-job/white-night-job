@@ -211,8 +211,8 @@
   inset: 0;
   background-image: var(--fsl-hero-photo);
   background-repeat: no-repeat;
-  background-size: cover;
-  background-position: right center;
+  background-size: 82% auto;
+  background-position: right 0.4rem top 1.1rem;
 }
 
 .fsl-hero__visual::after {
