@@ -1,4 +1,4 @@
-export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.jpg";
+export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.png";
 
 function MailIcon() {
   return (
@@ -21,11 +21,15 @@ function DocIcon() {
 export function ForShopsLandingHero() {
   return (
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
-      <article
-        className="fsl-hero-image-card"
-        style={{ ["--fsl-hero-photo" as string]: `url(${FOR_SHOPS_HERO_IMAGE})` }}
-      >
-        <div className="fsl-hero-image-card__media" aria-hidden="true" />
+      <article className="fsl-hero-image-card">
+        <img
+          src={FOR_SHOPS_HERO_IMAGE}
+          alt=""
+          className="fsl-hero-image-card__img"
+          width={1024}
+          height={682}
+          decoding="async"
+        />
       </article>
 
       <article className="fsl-hero-cta-card">

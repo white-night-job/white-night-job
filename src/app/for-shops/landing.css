@@ -101,14 +101,12 @@
   pointer-events: none;
 }
 
-.fsl-hero-image-card__media {
+.fsl-hero-image-card__img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  background-image: var(--fsl-hero-photo);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: right center;
+  height: auto;
+  object-fit: contain;
+  border-radius: calc(var(--fsl-radius-hero) - 1px);
 }
 
 .fsl-hero-cta-card {
@@ -329,11 +327,6 @@
 
   .for-shops-page .for-shops-container {
     max-width: 56rem;
-  }
-
-  .fsl-hero-image-card__media {
-    aspect-ratio: 16 / 10;
-    background-position: right 12% center;
   }
 
   .fsl-hero-cta-card .fsl-btn {
