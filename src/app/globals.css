@@ -342,6 +342,32 @@
     overflow: hidden;
   }
 
+  .hero-plate-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: url("/images/top-hero.png");
+    background-repeat: no-repeat;
+    background-size: 100% auto;
+    background-position: center top;
+    pointer-events: none;
+  }
+
+  .hero-plate-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.55) 52%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
   @media (min-width: 640px) {
     .hero-plate-header {
       max-height: none;
@@ -349,6 +375,8 @@
   }
 
   .hero-plate-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     width: 100%;
     flex-direction: column;
