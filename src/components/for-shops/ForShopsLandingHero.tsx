@@ -18,17 +18,6 @@ function DocIcon() {
   );
 }
 
-function SparkIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-      <path
-        d="M5 0 5.8 3.6 9.5 4.2 5.8 4.8 5 8.5 4.2 4.8.5 4.2 4.2 3.6 5 0Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
 export function ForShopsLandingHero() {
   return (
     <section className="fsl-hero-shell" aria-label="掲載をご検討の方はこちら">
@@ -48,27 +37,7 @@ export function ForShopsLandingHero() {
         </div>
 
         <div className="fsl-hero__layout">
-          <div className="fsl-hero__copy">
-            <p className="fsl-hero__label">— 掲載をご検討の方はこちら —</p>
-
-            <h1 className="fsl-hero__title">
-              <span className="fsl-hero__title-main">
-                <span className="fsl-hero__title-chunk">優良店だけが</span>
-                <span className="fsl-hero__title-chunk">集まる</span>
-              </span>
-              <span className="fsl-hero__title-gold">求人サイトへ。</span>
-            </h1>
-
-            <span className="fsl-hero__spark" aria-hidden="true">
-              <SparkIcon />
-            </span>
-          </div>
-
           <div className="fsl-hero__visual" aria-hidden="true" />
-
-          <p className="fsl-hero__desc">
-            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
-          </p>
 
           <div className="fsl-hero__actions">
             <a href="#for-shops-contact" className="fsl-btn fsl-btn--gold">
