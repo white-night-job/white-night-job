@@ -313,7 +313,7 @@
   font-size: 0.71875rem;
   line-height: 1.52;
   color: rgba(17, 17, 17, 0.78);
-  padding-bottom: 0.25rem;
+  padding-bottom: 0;
 }
 
 .fsl-hero__actions {
@@ -324,7 +324,7 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0 1rem;
-  margin-top: 0.25rem;
+  margin-top: 0;
 }
 
 .fsl-hero__actions .fsl-btn {
