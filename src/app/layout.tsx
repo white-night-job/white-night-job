@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ChatBot } from "@/components/ChatBot";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -23,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <ChatBot />
+        <UserSessionProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <ChatBot />
+        </UserSessionProvider>
       </body>
     </html>
   );

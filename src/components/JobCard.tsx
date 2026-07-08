@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
@@ -7,8 +10,11 @@ import { SafetyBadge } from "./SafetyBadge";
 export function JobCard({ job }: { job: Job }) {
   return (
     <article
-      className={`overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
+      className={`relative overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
     >
+      <div className="absolute right-3 top-3 z-10">
+        <FavoriteButton jobId={job.id} />
+      </div>
       <Link href={`/jobs/${job.id}`} className="block">
         {job.imageUrl ? (
           <div className={`overflow-hidden ${luxuryImageFrame}`}>

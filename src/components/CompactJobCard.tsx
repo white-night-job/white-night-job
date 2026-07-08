@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import {
   isPremiumTheme,
   luxuryMetalBtn,
@@ -35,7 +38,10 @@ export function CompactJobCard({
 
   if (isPremium) {
     return (
-      <article className="listing-job-card">
+      <article className="listing-job-card relative">
+        <div className="absolute right-2 top-2 z-10">
+          <FavoriteButton jobId={job.id} />
+        </div>
         {badge && <ListingBadge badge={badge} />}
 
         {job.imageUrl ? (
@@ -82,6 +88,9 @@ export function CompactJobCard({
 
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5">
+      <div className="absolute right-2 top-2 z-10">
+        <FavoriteButton jobId={job.id} />
+      </div>
       {badge && <ListingBadge badge={badge} />}
 
       {job.imageUrl ? (

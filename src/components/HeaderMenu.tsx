@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useUserSession } from "@/components/UserSessionProvider";
 
 type MenuIconName =
   | "beginner"
@@ -14,7 +15,11 @@ type MenuIconName =
   | "building"
   | "book"
   | "document"
-  | "megaphone";
+  | "megaphone"
+  | "heart"
+  | "bell"
+  | "line"
+  | "logout";
 
 type NavItem = {
   href: string;
@@ -164,6 +169,44 @@ function MenuIcon({ name }: { name: MenuIconName }) {
           <path d="M18.5 9.5c1.2 1.1 1.8 2.3 1.8 2.5s-.6 1.4-1.8 2.5" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       );
+    case "heart":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 20s-6.8-4.3-8.6-8.2c-1.3-2.9.4-6.3 3.8-6.8 2-.3 3.5.6 4.8 2 1.3-1.4 2.8-2.3 4.8-2 3.4.5 5.1 3.9 3.8 6.8C18.8 15.7 12 20 12 20z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "bell":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 4.5a4.5 4.5 0 00-4.5 4.5v2.3c0 1.4-.5 2.8-1.5 3.8l-1 1.1h14l-1-1.1a5.4 5.4 0 01-1.5-3.8V9A4.5 4.5 0 0012 4.5z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M10 19a2 2 0 004 0" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+    case "line":
+      return (
+        <svg {...common}>
+          <path
+            d="M4 8.5C4 5.5 7.6 3 12 3s8 2.5 8 5.5-3.6 5.5-8 5.5h-1.2l-3 2.8c-.4.3-1 .1-1-.4V14C5.1 13.2 4 11.9 4 10.2V8.5z"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "logout":
+      return (
+        <svg {...common}>
+          <path d="M14 7V5.5A1.5 1.5 0 0012.5 4h-6A1.5 1.5 0 005 5.5v13A1.5 1.5 0 006.5 20h6a1.5 1.5 0 001.5-1.5V17" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M10 12h9M16.5 8.5 20 12l-3.5 3.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -190,6 +233,7 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function HeaderMenu() {
   const pathname = usePathname();
+  const { session, refreshSession } = useUserSession();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [shopAuthenticated, setShopAuthenticated] = useState(false);
@@ -253,6 +297,22 @@ export function HeaderMenu() {
     return item;
   });
 
+  const userItems: NavItem[] = session.authenticated
+    ? [
+        { href: "/favorites", label: "お気に入り店舗", icon: "heart", match: "prefix" },
+        { href: "/notification-settings", label: "通知設定", icon: "bell", match: "prefix" },
+      ]
+    : [
+        { href: "/jobs", label: "ゲストとして利用", icon: "search", match: "prefix" },
+        { href: "/api/line/login?redirect=/", label: "LINEでログイン", icon: "line", match: "hash" },
+      ];
+
+  async function handleUserLogout() {
+    await fetch("/api/user/logout", { method: "POST", credentials: "include" });
+    await refreshSession();
+    setOpen(false);
+  }
+
   return (
     <div ref={menuRef} className="relative shrink-0">
       <button
@@ -292,7 +352,7 @@ export function HeaderMenu() {
           />
           <nav id="site-header-menu" className="header-menu-panel">
             <ul className="header-menu-list">
-              {items.map((item) => {
+              {[...userItems, ...items].map((item) => {
                 const active = isItemActive(pathname, item);
                 return (
                   <li key={`${item.label}-${item.href}`}>
@@ -308,6 +368,18 @@ export function HeaderMenu() {
                   </li>
                 );
               })}
+              {session.authenticated && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={handleUserLogout}
+                    className="header-menu-item w-full text-left"
+                  >
+                    <MenuIcon name="logout" />
+                    <span className="header-menu-item-label">ログアウト</span>
+                  </button>
+                </li>
+              )}
             </ul>
           </nav>
         </>

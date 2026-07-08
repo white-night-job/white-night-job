@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
@@ -19,6 +20,20 @@ import type { Job } from "@/types/job";
 function JobApplyButtons({ job }: { job: Job }) {
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/jobs"
+          className="flex min-h-11 items-center justify-center rounded-full border border-gold/35 bg-white text-sm font-semibold text-gold-dark"
+        >
+          ゲストとして利用
+        </Link>
+        <a
+          href={`/api/line/login?redirect=${encodeURIComponent(`/jobs/${job.id}`)}`}
+          className="flex min-h-11 items-center justify-center rounded-full bg-[#06c755] text-sm font-semibold text-white"
+        >
+          LINEでログイン
+        </a>
+      </div>
       <LineApplyButton jobId={job.id} lineUrl={job.lineUrl} fullWidth size="lg" />
       {job.phone && (
         <PhoneApplyButton jobId={job.id} phone={job.phone} fullWidth size="lg" />
@@ -154,7 +169,10 @@ export default function JobDetailPage({
           <p className="text-sm font-medium text-gold-dark">
             {formatLocation(job)} · {job.jobType}
           </p>
-          <h1 className="mt-1 font-serif text-xl font-semibold sm:text-2xl">{job.title}</h1>
+          <div className="mt-1 flex items-start justify-between gap-3">
+            <h1 className="font-serif text-xl font-semibold sm:text-2xl">{job.title}</h1>
+            <FavoriteButton jobId={job.id} />
+          </div>
           <p className="mt-2 font-medium text-charcoal">{job.shopName}</p>
           {job.introductionText && (
             <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">

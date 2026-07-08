@@ -283,6 +283,7 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [notifyLoading, setNotifyLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
@@ -496,6 +497,45 @@ export default function AdminPage() {
     await fetch("/api/admin/logout", { method: "POST" });
     setAuthenticated(false);
     setJobs([]);
+  }
+
+  async function sendNotification(
+    type: "new_jobs" | "pickup_jobs" | "favorite_updates",
+    jobId?: string,
+  ) {
+    const confirmMessage =
+      type === "new_jobs"
+        ? "新着店舗通知を送信しますか？"
+        : type === "pickup_jobs"
+          ? "PICK UP店舗通知を送信しますか？"
+          : "特定店舗のお知らせを送信しますか？";
+    if (!window.confirm(confirmMessage)) return;
+
+    setNotifyLoading(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ type, jobId }),
+      });
+      const data = (await response.json()) as {
+        sent?: number;
+        failed?: number;
+        message?: string;
+      };
+      if (!response.ok) {
+        throw new Error(data.message ?? "通知送信に失敗しました。");
+      }
+      setMessage(
+        `通知送信が完了しました。送信成功: ${data.sent ?? 0}件 / 失敗: ${data.failed ?? 0}件`,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "通知送信に失敗しました。");
+    } finally {
+      setNotifyLoading(false);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -789,6 +829,39 @@ export default function AdminPage() {
           {message}
         </p>
       )}
+
+      <section className="mb-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+        <h2 className="text-lg font-semibold text-charcoal">通知送信</h2>
+        <p className="mt-1 text-xs text-muted">
+          LINEログインユーザー向け通知を送信します。送信結果はnotification_logsに記録されます。
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={notifyLoading}
+            onClick={() => void sendNotification("new_jobs")}
+            className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-semibold text-gold-dark disabled:opacity-60"
+          >
+            新着店舗通知を送信
+          </button>
+          <button
+            type="button"
+            disabled={notifyLoading}
+            onClick={() => void sendNotification("pickup_jobs")}
+            className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-semibold text-gold-dark disabled:opacity-60"
+          >
+            PICK UP店舗通知を送信
+          </button>
+          <button
+            type="button"
+            disabled={notifyLoading || !editingId}
+            onClick={() => void sendNotification("favorite_updates", editingId ?? undefined)}
+            className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-semibold text-gold-dark disabled:opacity-60"
+          >
+            特定店舗のお知らせを送信
+          </button>
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
         {!editingId && (
