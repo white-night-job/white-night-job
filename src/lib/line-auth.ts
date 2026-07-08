@@ -11,7 +11,7 @@ type LineProfile = {
 };
 
 function requireEnv(name: string): string {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(`${name} is not set. .env.local を確認してください。`);
   }
@@ -27,21 +27,25 @@ export function createLineLoginState(): string {
 }
 
 export function buildLineLoginUrl(state: string): string {
+  const redirectUri = getLineLoginRedirectUri();
   const params = new URLSearchParams({
     response_type: "code",
     client_id: requireEnv("LINE_LOGIN_CHANNEL_ID"),
-    redirect_uri: getLineLoginRedirectUri(),
+    redirect_uri: redirectUri,
     state,
     scope: "profile openid",
   });
-  return `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
+  const url = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
+  console.log("[line-auth] authorize redirect_uri", redirectUri);
+  return url;
 }
 
 export async function exchangeLineCodeForToken(code: string): Promise<string> {
+  const redirectUri = getLineLoginRedirectUri();
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: getLineLoginRedirectUri(),
+    redirect_uri: redirectUri,
     client_id: requireEnv("LINE_LOGIN_CHANNEL_ID"),
     client_secret: requireEnv("LINE_LOGIN_CHANNEL_SECRET"),
   });
@@ -51,6 +55,12 @@ export async function exchangeLineCodeForToken(code: string): Promise<string> {
     body,
   });
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("[line-auth] token exchange failed", {
+      status: response.status,
+      redirectUri,
+      errorBody,
+    });
     throw new Error("LINE認証トークンの取得に失敗しました。");
   }
   const data = (await response.json()) as LineTokenResponse;
@@ -78,7 +88,7 @@ export async function sendLinePushMessage(
   lineUserId: string,
   message: string,
 ): Promise<void> {
-  const channelToken = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN;
+  const channelToken = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim();
   if (!channelToken) {
     throw new Error("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN is not set.");
   }

@@ -19,11 +19,18 @@ function isProductionHost(request?: Request): boolean {
   if (process.env.NODE_ENV === "production") return true;
   if (!request) return false;
   const host = new URL(request.url).hostname;
-  return host === "whitenightjob.jp" || host.endsWith(".whitenightjob.jp");
+  return (
+    host === "whitenightjob.jp" ||
+    host === "www.whitenightjob.jp" ||
+    host.endsWith(".whitenightjob.jp")
+  );
 }
 
 export function buildUserCookieOptions(request?: Request) {
-  const domain = process.env.COOKIE_DOMAIN?.trim() || undefined;
+  const domain =
+    process.env.COOKIE_DOMAIN?.trim() ||
+    resolveSharedCookieDomain() ||
+    undefined;
   return {
     httpOnly: true,
     secure: isProductionHost(request) || process.env.NODE_ENV === "production",
@@ -31,6 +38,19 @@ export function buildUserCookieOptions(request?: Request) {
     path: "/",
     ...(domain ? { domain } : {}),
   };
+}
+
+function resolveSharedCookieDomain(): string | undefined {
+  const redirectUri = process.env.LINE_LOGIN_REDIRECT_URI?.trim();
+  if (!redirectUri) return undefined;
+  try {
+    const hostname = new URL(redirectUri).hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") return undefined;
+    const base = hostname.startsWith("www.") ? hostname.slice(4) : hostname;
+    return `.${base}`;
+  } catch {
+    return undefined;
+  }
 }
 
 export function createUserSessionValue(userId: string): string {
