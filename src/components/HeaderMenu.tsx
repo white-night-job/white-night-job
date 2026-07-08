@@ -233,7 +233,7 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function HeaderMenu() {
   const pathname = usePathname();
-  const { session, refreshSession } = useUserSession();
+  const { session, currentUser, ready, refreshSession } = useUserSession();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [shopAuthenticated, setShopAuthenticated] = useState(false);
@@ -297,15 +297,23 @@ export function HeaderMenu() {
     return item;
   });
 
-  const userItems: NavItem[] = session.authenticated
-    ? [
-        { href: "/favorites", label: "お気に入り店舗", icon: "heart", match: "prefix" },
-        { href: "/notification-settings", label: "通知設定", icon: "bell", match: "prefix" },
-      ]
-    : [
-        { href: "/jobs", label: "ゲストとして利用", icon: "search", match: "prefix" },
-        { href: "/api/line/login?redirect=/", label: "LINEでログイン", icon: "line", match: "hash" },
-      ];
+  const userItems: NavItem[] =
+    ready && session.authenticated
+      ? [
+          { href: "/favorites", label: "お気に入り店舗", icon: "heart", match: "prefix" },
+          { href: "/notification-settings", label: "通知設定", icon: "bell", match: "prefix" },
+        ]
+      : ready
+        ? [
+            { href: "/jobs", label: "ゲストとして利用", icon: "search", match: "prefix" },
+            {
+              href: `/api/line/login?redirect=${encodeURIComponent(pathname || "/")}`,
+              label: "LINEでログイン",
+              icon: "line",
+              match: "hash",
+            },
+          ]
+        : [];
 
   async function handleUserLogout() {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });
@@ -351,10 +359,10 @@ export function HeaderMenu() {
             onClick={() => setOpen(false)}
           />
           <nav id="site-header-menu" className="header-menu-panel">
-            {session.authenticated && (
+            {ready && session.authenticated && (
               <p className="border-b border-gold/20 px-4 py-2.5 text-[11px] font-semibold text-gold-dark">
                 LINEログイン済み
-                {session.user?.displayName ? `（${session.user.displayName}）` : ""}
+                {currentUser?.displayName ? `（${currentUser.displayName}）` : ""}
               </p>
             )}
             <ul className="header-menu-list">
@@ -374,7 +382,7 @@ export function HeaderMenu() {
                   </li>
                 );
               })}
-              {session.authenticated && (
+              {ready && session.authenticated && (
                 <li>
                   <button
                     type="button"

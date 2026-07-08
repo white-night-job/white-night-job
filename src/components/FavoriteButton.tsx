@@ -15,7 +15,7 @@ let favoriteCacheReady = false;
 
 export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   const pathname = usePathname();
-  const { session, ready } = useUserSession();
+  const { currentUser, ready, refreshSession } = useUserSession();
   const [isFavorite, setIsFavorite] = useState(false);
   const [checking, setChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -23,9 +23,8 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   const redirectPath = useMemo(() => pathname || "/", [pathname]);
   const lineLoginHref = `/api/line/login?redirect=${encodeURIComponent(redirectPath)}`;
 
-  async function fetchFavoriteState() {
-    if (!session.authenticated || !session.user?.id) return;
-    if (favoriteCacheReady && favoriteCacheUserId === session.user.id) {
+  async function fetchFavoriteState(userId: string) {
+    if (favoriteCacheReady && favoriteCacheUserId === userId) {
       setIsFavorite(favoriteCache.has(jobId));
       return;
     }
@@ -40,6 +39,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         console.error("[FavoriteButton] favorites fetch failed:", {
           status: response.status,
           body,
+          userId,
         });
         return;
       }
@@ -47,7 +47,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         favorites?: Array<{ job_id: string }>;
       };
       favoriteCache = new Set((data.favorites ?? []).map((item) => item.job_id));
-      favoriteCacheUserId = session.user.id;
+      favoriteCacheUserId = userId;
       favoriteCacheReady = true;
       setIsFavorite(favoriteCache.has(jobId));
     } finally {
@@ -55,57 +55,94 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
     }
   }
 
-  async function handleToggle() {
-    setErrorMessage(null);
+  async function resolveCurrentUser() {
+    if (currentUser?.id) return currentUser;
+    const nextSession = await refreshSession();
+    return nextSession.authenticated ? (nextSession.user ?? null) : null;
+  }
 
-    if (!ready) return;
-
-    if (!session.authenticated) {
-      window.location.href = lineLoginHref;
-      return;
+  async function toggleFavorite(userId: string): Promise<"ok" | "unauthorized" | "error"> {
+    if (isFavorite) {
+      const response = await fetch(
+        `/api/favorites?jobId=${encodeURIComponent(jobId)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+      if (response.status === 401) return "unauthorized";
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        console.error("[FavoriteButton] favorite delete failed:", {
+          status: response.status,
+          body,
+          userId,
+          jobId,
+        });
+        return "error";
+      }
+      favoriteCache.delete(jobId);
+      setIsFavorite(false);
+      return "ok";
     }
 
+    const response = await fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ jobId }),
+    });
+    if (response.status === 401) return "unauthorized";
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      console.error("[FavoriteButton] favorite insert failed:", {
+        status: response.status,
+        body,
+        userId,
+        jobId,
+      });
+      return "error";
+    }
+    favoriteCache.add(jobId);
+    setIsFavorite(true);
+    return "ok";
+  }
+
+  async function handleToggle() {
+    if (!ready || checking) return;
+
+    setErrorMessage(null);
     setChecking(true);
     try {
-      if (isFavorite) {
-        const response = await fetch(
-          `/api/favorites?jobId=${encodeURIComponent(jobId)}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          },
-        );
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          console.error("[FavoriteButton] favorite delete failed:", {
-            status: response.status,
-            body,
-          });
-          setErrorMessage("お気に入り登録に失敗しました");
+      let user = await resolveCurrentUser();
+      let result = await toggleFavorite(user?.id ?? "");
+
+      if (result === "unauthorized") {
+        user = await resolveCurrentUser();
+        if (!user?.id) {
+          console.error("[FavoriteButton] currentUser is null, redirecting to LINE login");
+          window.location.href = lineLoginHref;
           return;
         }
-        favoriteCache.delete(jobId);
-        setIsFavorite(false);
-      } else {
-        const response = await fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ jobId }),
+        result = await toggleFavorite(user.id);
+      }
+
+      if (result === "unauthorized") {
+        console.error("[FavoriteButton] still unauthorized after session refresh", {
+          userId: user?.id,
+          jobId,
         });
-        if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          console.error("[FavoriteButton] favorite insert failed:", {
-            status: response.status,
-            body,
-            jobId,
-            userId: session.user?.id,
-          });
-          setErrorMessage("お気に入り登録に失敗しました");
-          return;
-        }
-        favoriteCache.add(jobId);
-        setIsFavorite(true);
+        window.location.href = lineLoginHref;
+        return;
+      }
+
+      if (result === "error") {
+        setErrorMessage("お気に入り登録に失敗しました");
+        return;
+      }
+
+      if (result === "ok" && !currentUser) {
+        await refreshSession();
       }
     } catch (error) {
       console.error("[FavoriteButton] favorite toggle failed:", error);
@@ -116,7 +153,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   }
 
   useEffect(() => {
-    if (!session.authenticated) {
+    if (!currentUser?.id) {
       favoriteCache.clear();
       favoriteCacheUserId = null;
       favoriteCacheReady = false;
@@ -124,9 +161,9 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
       return;
     }
     if (!ready) return;
-    void fetchFavoriteState();
+    void fetchFavoriteState(currentUser.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, session.authenticated, session.user?.id, jobId]);
+  }, [ready, currentUser?.id, jobId]);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -139,7 +176,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
       >
         <span className={isFavorite ? "text-gold-dark" : "text-muted"}>♥</span>
       </button>
-      {session.authenticated && ready && (
+      {currentUser && ready && (
         <span className="hidden text-[10px] font-medium text-gold-dark sm:inline">
           LINEログイン済み
         </span>

@@ -33,7 +33,6 @@ export function buildLineLoginUrl(state: string): string {
     redirect_uri: getLineLoginRedirectUri(),
     state,
     scope: "profile openid",
-    prompt: "consent",
   });
   return `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
 }

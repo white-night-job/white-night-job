@@ -17,20 +17,22 @@ type NotificationSettings = {
   notify_favorite_updates: boolean;
 };
 
-type UserSession = {
+export type UserSession = {
   authenticated: boolean;
   user?: {
     id: string;
     displayName?: string | null;
     pictureUrl?: string | null;
+    lineUserId?: string | null;
   };
   notificationSettings?: NotificationSettings | null;
 };
 
 type UserSessionContextValue = {
   session: UserSession;
+  currentUser: UserSession["user"] | null;
   ready: boolean;
-  refreshSession: () => Promise<boolean>;
+  refreshSession: () => Promise<UserSession>;
 };
 
 const UserSessionContext = createContext<UserSessionContextValue | null>(null);
@@ -52,6 +54,10 @@ async function fetchUserSession(): Promise<UserSession> {
   };
 }
 
+async function wait(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function UserSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [session, setSession] = useState<UserSession>({ authenticated: false });
@@ -61,11 +67,12 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
     try {
       const nextSession = await fetchUserSession();
       setSession(nextSession);
-      return nextSession.authenticated;
+      return nextSession;
     } catch (error) {
       console.error("[UserSessionProvider] session fetch failed:", error);
-      setSession({ authenticated: false });
-      return false;
+      const fallback = { authenticated: false } satisfies UserSession;
+      setSession(fallback);
+      return fallback;
     } finally {
       setReady(true);
     }
@@ -76,11 +83,20 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
 
     async function loadSession() {
       const lineLogin = new URLSearchParams(window.location.search).get("lineLogin");
-      let authenticated = await refreshSession();
+      let nextSession = await refreshSession();
 
-      if (!cancelled && lineLogin === "success" && !authenticated) {
-        await new Promise((resolve) => setTimeout(resolve, 150));
-        authenticated = await refreshSession();
+      if (!cancelled && lineLogin === "success" && !nextSession.authenticated) {
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          await wait(200);
+          nextSession = await refreshSession();
+          if (nextSession.authenticated) break;
+        }
+        if (!nextSession.authenticated) {
+          console.error(
+            "[UserSessionProvider] LINE login succeeded but session cookie was not detected",
+            { lineLogin, pathname },
+          );
+        }
       }
 
       if (!cancelled && lineLogin) {
@@ -98,9 +114,11 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [pathname, refreshSession]);
 
+  const currentUser = session.authenticated ? (session.user ?? null) : null;
+
   const value = useMemo(
-    () => ({ session, ready, refreshSession }),
-    [ready, refreshSession, session],
+    () => ({ session, currentUser, ready, refreshSession }),
+    [currentUser, ready, refreshSession, session],
   );
 
   return (

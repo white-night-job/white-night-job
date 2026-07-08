@@ -11,6 +11,6 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const redirect = url.searchParams.get("redirect") ?? "/";
   const state = createLineLoginState();
-  const response = NextResponse.redirect(buildLineLoginUrl(state));
-  return attachLineStateCookie(response, `${state}:${redirect}`);
+  const response = NextResponse.redirect(buildLineLoginUrl(state), { status: 303 });
+  return attachLineStateCookie(response, state, redirect, request);
 }

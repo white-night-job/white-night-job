@@ -6,8 +6,10 @@ import {
 import { createSupabaseAdmin } from "@/lib/supabase";
 import {
   attachUserSessionCookie,
-  clearLineStateCookie,
+  clearLineStateCookieOnResponse,
   getLineStateCookie,
+  parseLineStateCookie,
+  USER_COOKIE_NAME,
 } from "@/lib/user-auth";
 
 async function ensureUserNotificationSettings(userId: string) {
@@ -21,27 +23,40 @@ async function ensureUserNotificationSettings(userId: string) {
   }
 }
 
+function buildRedirectDestination(requestUrl: URL, redirectPath: string): URL {
+  const destination = redirectPath.startsWith("http")
+    ? new URL(redirectPath)
+    : new URL(redirectPath || "/", requestUrl.origin);
+  destination.searchParams.set("lineLogin", "success");
+  return destination;
+}
+
 export async function handleLineCallback(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
   if (!code || !state) {
+    console.error("[line-callback] missing code or state");
     return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
   }
 
   const stateCookie = await getLineStateCookie();
-  await clearLineStateCookie();
   if (!stateCookie) {
+    console.error("[line-callback] missing state cookie");
     return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
   }
 
-  const delimiterIndex = stateCookie.indexOf(":");
-  const expectedState =
-    delimiterIndex >= 0 ? stateCookie.slice(0, delimiterIndex) : stateCookie;
-  const redirectTo =
-    delimiterIndex >= 0 ? stateCookie.slice(delimiterIndex + 1) : "/";
-  if (expectedState !== state) {
-    return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
+  const parsedState = parseLineStateCookie(stateCookie);
+  if (!parsedState || parsedState.state !== state) {
+    console.error("[line-callback] state mismatch", {
+      receivedState: state,
+      parsedState,
+    });
+    const failed = NextResponse.redirect(
+      new URL("/?lineLogin=failed", requestUrl.origin),
+      { status: 303 },
+    );
+    return clearLineStateCookieOnResponse(failed);
   }
 
   try {
@@ -60,7 +75,7 @@ export async function handleLineCallback(request: Request) {
         },
         { onConflict: "line_user_id" },
       )
-      .select("id")
+      .select("id, line_user_id")
       .single();
 
     if (error || !data?.id) {
@@ -70,12 +85,23 @@ export async function handleLineCallback(request: Request) {
 
     await ensureUserNotificationSettings(data.id);
 
-    const destination = new URL(redirectTo || "/", requestUrl.origin);
-    destination.searchParams.set("lineLogin", "success");
-    const response = NextResponse.redirect(destination);
-    return attachUserSessionCookie(response, data.id);
+    const destination = buildRedirectDestination(requestUrl, parsedState.redirectPath);
+    const response = NextResponse.redirect(destination, { status: 303 });
+    clearLineStateCookieOnResponse(response);
+    attachUserSessionCookie(response, data.id, request);
+
+    const setCookieHeader = response.headers.get("set-cookie");
+    if (!setCookieHeader?.includes(USER_COOKIE_NAME)) {
+      console.error("[line-callback] session cookie was not attached to redirect");
+    }
+
+    return response;
   } catch (error) {
     console.error("[line-callback] LINE login failed:", error);
-    return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
+    const failed = NextResponse.redirect(
+      new URL("/?lineLogin=failed", requestUrl.origin),
+      { status: 303 },
+    );
+    return clearLineStateCookieOnResponse(failed);
   }
 }
