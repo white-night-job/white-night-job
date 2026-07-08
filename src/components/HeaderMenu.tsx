@@ -351,6 +351,12 @@ export function HeaderMenu() {
             onClick={() => setOpen(false)}
           />
           <nav id="site-header-menu" className="header-menu-panel">
+            {session.authenticated && (
+              <p className="border-b border-gold/20 px-4 py-2.5 text-[11px] font-semibold text-gold-dark">
+                LINEログイン済み
+                {session.user?.displayName ? `（${session.user.displayName}）` : ""}
+              </p>
+            )}
             <ul className="header-menu-list">
               {[...userItems, ...items].map((item) => {
                 const active = isItemActive(pathname, item);

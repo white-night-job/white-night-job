@@ -17,6 +17,7 @@ export async function GET() {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
+    console.error("[favorites] GET failed:", { userId, error });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
@@ -30,6 +31,7 @@ export async function GET() {
     .select("*")
     .in("id", jobIds);
   if (jobsError) {
+    console.error("[favorites] jobs fetch failed:", { userId, jobIds, error: jobsError });
     return NextResponse.json({ message: jobsError.message }, { status: 500 });
   }
 
@@ -45,6 +47,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const userId = await getAuthenticatedUserId();
   if (!userId) {
+    console.error("[favorites] POST rejected: no authenticated user");
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
 
@@ -63,6 +66,7 @@ export async function POST(request: Request) {
     { onConflict: "user_id,job_id" },
   );
   if (error) {
+    console.error("[favorites] POST failed:", { userId, jobId, error });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
@@ -71,6 +75,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const userId = await getAuthenticatedUserId();
   if (!userId) {
+    console.error("[favorites] DELETE rejected: no authenticated user");
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
 
@@ -87,6 +92,7 @@ export async function DELETE(request: Request) {
     .eq("user_id", userId)
     .eq("job_id", jobId);
   if (error) {
+    console.error("[favorites] DELETE failed:", { userId, jobId, error });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

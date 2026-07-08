@@ -5,10 +5,21 @@ import {
 } from "@/lib/line-auth";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import {
+  attachUserSessionCookie,
   clearLineStateCookie,
   getLineStateCookie,
-  setUserCookie,
 } from "@/lib/user-auth";
+
+async function ensureUserNotificationSettings(userId: string) {
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase.from("user_notification_settings").upsert(
+    { user_id: userId },
+    { onConflict: "user_id", ignoreDuplicates: true },
+  );
+  if (error) {
+    console.error("[line-callback] notification settings upsert failed:", error);
+  }
+}
 
 export async function handleLineCallback(request: Request) {
   const requestUrl = new URL(request.url);
@@ -53,12 +64,18 @@ export async function handleLineCallback(request: Request) {
       .single();
 
     if (error || !data?.id) {
+      console.error("[line-callback] users upsert failed:", error);
       throw error ?? new Error("ユーザー情報保存に失敗しました。");
     }
 
-    await setUserCookie(data.id);
-    return NextResponse.redirect(new URL(redirectTo || "/", requestUrl.origin));
-  } catch {
+    await ensureUserNotificationSettings(data.id);
+
+    const destination = new URL(redirectTo || "/", requestUrl.origin);
+    destination.searchParams.set("lineLogin", "success");
+    const response = NextResponse.redirect(destination);
+    return attachUserSessionCookie(response, data.id);
+  } catch (error) {
+    console.error("[line-callback] LINE login failed:", error);
     return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
   }
 }

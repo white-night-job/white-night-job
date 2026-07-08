@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 type NotificationSettings = {
   notify_new_jobs: boolean;
@@ -29,41 +30,73 @@ type UserSession = {
 type UserSessionContextValue = {
   session: UserSession;
   ready: boolean;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
 };
 
 const UserSessionContext = createContext<UserSessionContextValue | null>(null);
 
+async function fetchUserSession(): Promise<UserSession> {
+  const response = await fetch("/api/user/session", {
+    cache: "no-store",
+    credentials: "include",
+  });
+  const data = (await response.json()) as {
+    authenticated?: boolean;
+    user?: UserSession["user"];
+    notificationSettings?: NotificationSettings | null;
+  };
+  return {
+    authenticated: Boolean(data.authenticated),
+    user: data.user,
+    notificationSettings: data.notificationSettings ?? null,
+  };
+}
+
 export function UserSessionProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [session, setSession] = useState<UserSession>({ authenticated: false });
   const [ready, setReady] = useState(false);
 
   const refreshSession = useCallback(async () => {
     try {
-      const response = await fetch("/api/user/session", {
-        cache: "no-store",
-        credentials: "include",
-      });
-      const data = (await response.json()) as {
-        authenticated?: boolean;
-        user?: UserSession["user"];
-        notificationSettings?: NotificationSettings | null;
-      };
-      setSession({
-        authenticated: Boolean(data.authenticated),
-        user: data.user,
-        notificationSettings: data.notificationSettings ?? null,
-      });
-    } catch {
+      const nextSession = await fetchUserSession();
+      setSession(nextSession);
+      return nextSession.authenticated;
+    } catch (error) {
+      console.error("[UserSessionProvider] session fetch failed:", error);
       setSession({ authenticated: false });
+      return false;
     } finally {
       setReady(true);
     }
   }, []);
 
   useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
+    let cancelled = false;
+
+    async function loadSession() {
+      const lineLogin = new URLSearchParams(window.location.search).get("lineLogin");
+      let authenticated = await refreshSession();
+
+      if (!cancelled && lineLogin === "success" && !authenticated) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        authenticated = await refreshSession();
+      }
+
+      if (!cancelled && lineLogin) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("lineLogin");
+        const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState(window.history.state, "", nextUrl);
+      }
+    }
+
+    void loadSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, refreshSession]);
 
   const value = useMemo(
     () => ({ session, ready, refreshSession }),

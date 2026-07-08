@@ -1,8 +1,25 @@
 import { createHash } from "crypto";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 
-const USER_COOKIE_NAME = "white-night-user";
+export const USER_COOKIE_NAME = "white-night-user";
 const LINE_STATE_COOKIE_NAME = "white-night-line-state";
+
+const USER_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 30,
+};
+
+const LINE_STATE_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 10,
+};
 
 function getUserSessionSecret(): string {
   return (
@@ -39,15 +56,30 @@ export async function getAuthenticatedUserId(): Promise<string | null> {
   return parseUserSessionValue(value);
 }
 
+export function attachUserSessionCookie(
+  response: NextResponse,
+  userId: string,
+): NextResponse {
+  response.cookies.set(
+    USER_COOKIE_NAME,
+    createUserSessionValue(userId),
+    USER_COOKIE_OPTIONS,
+  );
+  return response;
+}
+
 export async function setUserCookie(userId: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(USER_COOKIE_NAME, createUserSessionValue(userId), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  cookieStore.set(
+    USER_COOKIE_NAME,
+    createUserSessionValue(userId),
+    USER_COOKIE_OPTIONS,
+  );
+}
+
+export function clearUserSessionCookie(response: NextResponse): NextResponse {
+  response.cookies.delete(USER_COOKIE_NAME);
+  return response;
 }
 
 export async function clearUserCookie(): Promise<void> {
@@ -55,15 +87,17 @@ export async function clearUserCookie(): Promise<void> {
   cookieStore.delete(USER_COOKIE_NAME);
 }
 
+export function attachLineStateCookie(
+  response: NextResponse,
+  state: string,
+): NextResponse {
+  response.cookies.set(LINE_STATE_COOKIE_NAME, state, LINE_STATE_COOKIE_OPTIONS);
+  return response;
+}
+
 export async function setLineStateCookie(state: string): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(LINE_STATE_COOKIE_NAME, state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 10,
-  });
+  cookieStore.set(LINE_STATE_COOKIE_NAME, state, LINE_STATE_COOKIE_OPTIONS);
 }
 
 export async function getLineStateCookie(): Promise<string | null> {
