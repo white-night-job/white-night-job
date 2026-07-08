@@ -33,8 +33,8 @@ async function ensureSettingsRow(userId: string) {
   return data;
 }
 
-export async function GET() {
-  const userId = await getAuthenticatedUserId();
+export async function GET(request: Request) {
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
@@ -54,7 +54,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const userId = await getAuthenticatedUserId();
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }

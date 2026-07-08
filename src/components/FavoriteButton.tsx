@@ -15,16 +15,17 @@ let favoriteCacheReady = false;
 
 export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   const pathname = usePathname();
-  const { currentUser, ready, refreshSession } = useUserSession();
+  const { currentUser, isLoggedIn, ready, refreshSession } = useUserSession();
   const [isFavorite, setIsFavorite] = useState(false);
   const [checking, setChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const redirectPath = useMemo(() => pathname || "/", [pathname]);
   const lineLoginHref = `/api/line/login?redirect=${encodeURIComponent(redirectPath)}`;
+  const userId = currentUser?.id ?? null;
 
-  async function fetchFavoriteState(userId: string) {
-    if (favoriteCacheReady && favoriteCacheUserId === userId) {
+  async function fetchFavoriteState(activeUserId: string) {
+    if (favoriteCacheReady && favoriteCacheUserId === activeUserId) {
       setIsFavorite(favoriteCache.has(jobId));
       return;
     }
@@ -39,7 +40,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         console.error("[FavoriteButton] favorites fetch failed:", {
           status: response.status,
           body,
-          userId,
+          userId: activeUserId,
         });
         return;
       }
@@ -47,7 +48,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         favorites?: Array<{ job_id: string }>;
       };
       favoriteCache = new Set((data.favorites ?? []).map((item) => item.job_id));
-      favoriteCacheUserId = userId;
+      favoriteCacheUserId = activeUserId;
       favoriteCacheReady = true;
       setIsFavorite(favoriteCache.has(jobId));
     } finally {
@@ -55,13 +56,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
     }
   }
 
-  async function resolveCurrentUser() {
-    if (currentUser?.id) return currentUser;
-    const nextSession = await refreshSession();
-    return nextSession.authenticated ? (nextSession.user ?? null) : null;
-  }
-
-  async function toggleFavorite(userId: string): Promise<"ok" | "unauthorized" | "error"> {
+  async function toggleFavorite(): Promise<"ok" | "unauthorized" | "error"> {
     if (isFavorite) {
       const response = await fetch(
         `/api/favorites?jobId=${encodeURIComponent(jobId)}`,
@@ -113,23 +108,45 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
 
     setErrorMessage(null);
     setChecking(true);
+
+    console.log("[FavoriteButton] click", {
+      currentUser,
+      userId,
+      isLoggedIn,
+      jobId,
+      ready,
+    });
+
     try {
-      let user = await resolveCurrentUser();
-      let result = await toggleFavorite(user?.id ?? "");
+      let result = await toggleFavorite();
 
       if (result === "unauthorized") {
-        user = await resolveCurrentUser();
-        if (!user?.id) {
-          console.error("[FavoriteButton] currentUser is null, redirecting to LINE login");
+        const nextSession = await refreshSession();
+        const refreshedUserId = nextSession.user?.id ?? null;
+        const refreshedLoggedIn = Boolean(refreshedUserId);
+
+        console.log("[FavoriteButton] unauthorized, refreshed session", {
+          currentUser: nextSession.user ?? null,
+          userId: refreshedUserId,
+          isLoggedIn: refreshedLoggedIn,
+          reason: nextSession.reason ?? null,
+        });
+
+        if (!refreshedLoggedIn) {
+          console.log("[FavoriteButton] redirecting to LINE login because currentUser is null", {
+            reason: nextSession.reason ?? "unauthorized",
+            jobId,
+          });
           window.location.href = lineLoginHref;
           return;
         }
-        result = await toggleFavorite(user.id);
+
+        result = await toggleFavorite();
       }
 
       if (result === "unauthorized") {
-        console.error("[FavoriteButton] still unauthorized after session refresh", {
-          userId: user?.id,
+        console.log("[FavoriteButton] redirecting to LINE login after retry still unauthorized", {
+          userId,
           jobId,
         });
         window.location.href = lineLoginHref;
@@ -141,7 +158,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         return;
       }
 
-      if (result === "ok" && !currentUser) {
+      if (result === "ok" && !isLoggedIn) {
         await refreshSession();
       }
     } catch (error) {
@@ -153,7 +170,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   }
 
   useEffect(() => {
-    if (!currentUser?.id) {
+    if (!userId) {
       favoriteCache.clear();
       favoriteCacheUserId = null;
       favoriteCacheReady = false;
@@ -161,9 +178,9 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
       return;
     }
     if (!ready) return;
-    void fetchFavoriteState(currentUser.id);
+    void fetchFavoriteState(userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, currentUser?.id, jobId]);
+  }, [ready, userId, jobId]);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -176,7 +193,7 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
       >
         <span className={isFavorite ? "text-gold-dark" : "text-muted"}>♥</span>
       </button>
-      {currentUser && ready && (
+      {isLoggedIn && ready && (
         <span className="hidden text-[10px] font-medium text-gold-dark sm:inline">
           LINEログイン済み
         </span>

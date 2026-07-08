@@ -26,11 +26,13 @@ export type UserSession = {
     lineUserId?: string | null;
   };
   notificationSettings?: NotificationSettings | null;
+  reason?: string;
 };
 
 type UserSessionContextValue = {
   session: UserSession;
   currentUser: UserSession["user"] | null;
+  isLoggedIn: boolean;
   ready: boolean;
   refreshSession: () => Promise<UserSession>;
 };
@@ -38,17 +40,39 @@ type UserSessionContextValue = {
 const UserSessionContext = createContext<UserSessionContextValue | null>(null);
 
 async function fetchUserSession(): Promise<UserSession> {
-  const response = await fetch("/api/user/session", {
+  const response = await fetch("/api/me", {
     cache: "no-store",
     credentials: "include",
   });
   const data = (await response.json()) as {
     authenticated?: boolean;
+    userId?: string | null;
     user?: UserSession["user"];
     notificationSettings?: NotificationSettings | null;
+    reason?: string;
+    cookieName?: string;
+    hasCookieHeader?: boolean;
   };
+
+  console.log("[UserSessionProvider] /api/me response", {
+    ok: response.ok,
+    status: response.status,
+    authenticated: data.authenticated,
+    userId: data.userId ?? data.user?.id ?? null,
+    reason: data.reason ?? null,
+    cookieName: data.cookieName ?? null,
+    hasCookieHeader: data.hasCookieHeader ?? null,
+  });
+
+  if (!data.authenticated) {
+    return {
+      authenticated: false,
+      reason: data.reason,
+    };
+  }
+
   return {
-    authenticated: Boolean(data.authenticated),
+    authenticated: true,
     user: data.user,
     notificationSettings: data.notificationSettings ?? null,
   };
@@ -70,7 +94,7 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
       return nextSession;
     } catch (error) {
       console.error("[UserSessionProvider] session fetch failed:", error);
-      const fallback = { authenticated: false } satisfies UserSession;
+      const fallback = { authenticated: false, reason: "fetch_failed" } satisfies UserSession;
       setSession(fallback);
       return fallback;
     } finally {
@@ -86,6 +110,9 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
       let nextSession = await refreshSession();
 
       if (!cancelled && lineLogin === "success" && !nextSession.authenticated) {
+        console.log("[UserSessionProvider] lineLogin=success but not authenticated, retrying", {
+          reason: nextSession.reason,
+        });
         for (let attempt = 0; attempt < 5; attempt += 1) {
           await wait(200);
           nextSession = await refreshSession();
@@ -93,8 +120,8 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
         }
         if (!nextSession.authenticated) {
           console.error(
-            "[UserSessionProvider] LINE login succeeded but session cookie was not detected",
-            { lineLogin, pathname },
+            "[UserSessionProvider] LINE login redirect succeeded but session cookie unreadable",
+            { reason: nextSession.reason, pathname },
           );
         }
       }
@@ -115,10 +142,11 @@ export function UserSessionProvider({ children }: { children: ReactNode }) {
   }, [pathname, refreshSession]);
 
   const currentUser = session.authenticated ? (session.user ?? null) : null;
+  const isLoggedIn = Boolean(currentUser?.id);
 
   const value = useMemo(
-    () => ({ session, currentUser, ready, refreshSession }),
-    [currentUser, ready, refreshSession, session],
+    () => ({ session, currentUser, isLoggedIn, ready, refreshSession }),
+    [currentUser, isLoggedIn, ready, refreshSession, session],
   );
 
   return (

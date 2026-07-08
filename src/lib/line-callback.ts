@@ -9,6 +9,7 @@ import {
   clearLineStateCookieOnResponse,
   getLineStateCookie,
   parseLineStateCookie,
+  setUserSessionCookie,
   USER_COOKIE_NAME,
 } from "@/lib/user-auth";
 
@@ -35,20 +36,29 @@ export async function handleLineCallback(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
+
+  console.log("[line-callback] start", {
+    path: requestUrl.pathname,
+    hasCode: Boolean(code),
+    hasState: Boolean(state),
+    host: requestUrl.host,
+  });
+
   if (!code || !state) {
-    console.error("[line-callback] missing code or state");
+    console.log("[line-callback] abort: missing code or state");
     return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
   }
 
-  const stateCookie = await getLineStateCookie();
+  const stateCookie = await getLineStateCookie(request);
+  console.log("[line-callback] state cookie", { hasStateCookie: Boolean(stateCookie) });
   if (!stateCookie) {
-    console.error("[line-callback] missing state cookie");
+    console.log("[line-callback] abort: missing state cookie");
     return NextResponse.redirect(new URL("/?lineLogin=failed", requestUrl.origin));
   }
 
   const parsedState = parseLineStateCookie(stateCookie);
   if (!parsedState || parsedState.state !== state) {
-    console.error("[line-callback] state mismatch", {
+    console.log("[line-callback] abort: state mismatch", {
       receivedState: state,
       parsedState,
     });
@@ -56,14 +66,21 @@ export async function handleLineCallback(request: Request) {
       new URL("/?lineLogin=failed", requestUrl.origin),
       { status: 303 },
     );
-    return clearLineStateCookieOnResponse(failed);
+    return clearLineStateCookieOnResponse(failed, request);
   }
 
   try {
     const accessToken = await exchangeLineCodeForToken(code);
-    const profile = await fetchLineProfile(accessToken);
-    const supabase = createSupabaseAdmin();
+    console.log("[line-callback] LINE token acquired");
 
+    const profile = await fetchLineProfile(accessToken);
+    console.log("[line-callback] LINE profile", {
+      lineUserId: profile.userId,
+      displayName: profile.displayName,
+      hasPicture: Boolean(profile.pictureUrl),
+    });
+
+    const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("users")
       .upsert(
@@ -83,17 +100,32 @@ export async function handleLineCallback(request: Request) {
       throw error ?? new Error("ユーザー情報保存に失敗しました。");
     }
 
+    console.log("[line-callback] users saved", {
+      userId: data.id,
+      lineUserId: data.line_user_id,
+    });
+
     await ensureUserNotificationSettings(data.id);
 
     const destination = buildRedirectDestination(requestUrl, parsedState.redirectPath);
+    console.log("[line-callback] redirect destination", destination.toString());
+
+    await setUserSessionCookie(data.id, request);
+    console.log("[line-callback] session cookie set via cookies()", {
+      cookieName: USER_COOKIE_NAME,
+      userId: data.id,
+    });
+
     const response = NextResponse.redirect(destination, { status: 303 });
-    clearLineStateCookieOnResponse(response);
+    clearLineStateCookieOnResponse(response, request);
     attachUserSessionCookie(response, data.id, request);
 
     const setCookieHeader = response.headers.get("set-cookie");
-    if (!setCookieHeader?.includes(USER_COOKIE_NAME)) {
-      console.error("[line-callback] session cookie was not attached to redirect");
-    }
+    console.log("[line-callback] response Set-Cookie", {
+      cookieName: USER_COOKIE_NAME,
+      hasSetCookieHeader: Boolean(setCookieHeader),
+      includesUserCookie: Boolean(setCookieHeader?.includes(USER_COOKIE_NAME)),
+    });
 
     return response;
   } catch (error) {
@@ -102,6 +134,6 @@ export async function handleLineCallback(request: Request) {
       new URL("/?lineLogin=failed", requestUrl.origin),
       { status: 303 },
     );
-    return clearLineStateCookieOnResponse(failed);
+    return clearLineStateCookieOnResponse(failed, request);
   }
 }

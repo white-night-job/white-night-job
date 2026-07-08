@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { getAuthenticatedUserId } from "@/lib/user-auth";
+import { getAuthenticatedUserId, USER_COOKIE_NAME } from "@/lib/user-auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const userId = await getAuthenticatedUserId();
+export async function GET(request: Request) {
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
+    console.error("[favorites] GET rejected: no authenticated user", {
+      cookieName: USER_COOKIE_NAME,
+      hasCookieHeader: Boolean(request.headers.get("cookie")?.includes(USER_COOKIE_NAME)),
+    });
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
   const supabase = createSupabaseAdmin();
@@ -45,9 +49,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await getAuthenticatedUserId();
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
-    console.error("[favorites] POST rejected: no authenticated user");
+    console.error("[favorites] POST rejected: no authenticated user", {
+      cookieName: USER_COOKIE_NAME,
+      hasCookieHeader: Boolean(request.headers.get("cookie")?.includes(USER_COOKIE_NAME)),
+    });
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
 
@@ -69,13 +76,17 @@ export async function POST(request: Request) {
     console.error("[favorites] POST failed:", { userId, jobId, error });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
+  console.log("[favorites] POST success", { userId, jobId });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: Request) {
-  const userId = await getAuthenticatedUserId();
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
-    console.error("[favorites] DELETE rejected: no authenticated user");
+    console.error("[favorites] DELETE rejected: no authenticated user", {
+      cookieName: USER_COOKIE_NAME,
+      hasCookieHeader: Boolean(request.headers.get("cookie")?.includes(USER_COOKIE_NAME)),
+    });
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
 
