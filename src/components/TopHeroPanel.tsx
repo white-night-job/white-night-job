@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { JobFilterSearch } from "@/components/JobFilterSearch";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
@@ -41,15 +40,6 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
               <br />
               ブラック店舗は報告フォームへ。
             </p>
-
-            <div className="hero-login-actions">
-              <Link href="/jobs" className="hero-guest-btn">
-                ゲストとして利用
-              </Link>
-              <a href="/api/line/login?redirect=/mypage" className="hero-line-btn">
-                LINEでログイン
-              </a>
-            </div>
           </div>
         </div>
 

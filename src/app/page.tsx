@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
+import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
+import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopPageShell } from "@/components/TopPageShell";
@@ -36,6 +38,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <TopHeroPanel initialFilters={filters} />
 
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
+        <RecentlyViewedCarousel />
+
         <Suspense
           fallback={
             <div className="h-48 animate-pulse rounded-2xl border border-[#b8a876]/40 bg-gradient-to-br from-[#f5f2eb] to-[#d4c9a8]" />
@@ -43,6 +47,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         >
           <TopJobDiscovery />
         </Suspense>
+
+        <NightJobDiagnosis />
 
         <SupportConsultationSection />
         <FirstTimeGuide />

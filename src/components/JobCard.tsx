@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CompareButton } from "@/components/CompareButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
@@ -87,6 +88,9 @@ export function JobCard({ job }: { job: Job }) {
           </p>
         </div>
       </Link>
+      <div className="border-t border-gold/10 px-4 pb-4 sm:px-5">
+        <CompareButton jobId={job.id} />
+      </div>
     </article>
   );
 }

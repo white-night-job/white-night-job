@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CompareButton } from "@/components/CompareButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import {
   isPremiumTheme,
@@ -81,6 +82,9 @@ export function CompactJobCard({
           <Link href={`/jobs/${job.id}`} className="listing-card-link">
             求人詳細を見る
           </Link>
+          <div className="mt-2 border-t border-gold/10 pt-2">
+            <CompareButton jobId={job.id} />
+          </div>
         </div>
       </article>
     );
@@ -135,6 +139,9 @@ export function CompactJobCard({
         >
           求人詳細を見る
         </Link>
+        <div className="mt-2 border-t border-gold/10 pt-2">
+          <CompareButton jobId={job.id} />
+        </div>
       </div>
     </article>
   );
