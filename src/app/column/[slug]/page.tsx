@@ -81,8 +81,8 @@ export default async function ColumnArticlePage({ params }: ColumnArticlePagePro
       <ColumnArticleBody sections={article.sections} />
 
       <div className="mt-12 space-y-10 border-t border-gold/20 pt-10">
-        <ColumnRelatedArticles articles={relatedArticles} />
         <ColumnRecommendedJobs article={article} />
+        <ColumnRelatedArticles articles={relatedArticles} />
         <ColumnLineCta />
       </div>
 

@@ -6,6 +6,7 @@ export function Header() {
   return (
     <header className="site-header sticky top-0 z-50">
       <div className="mx-auto flex h-[3.75rem] max-w-5xl items-center justify-between gap-3 px-4 sm:h-16 sm:gap-4 sm:px-8">
+        <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
         <Link
           href="/"
           aria-label={LOGO_ALT}
@@ -22,6 +23,15 @@ export function Header() {
             White Night Job
           </span>
         </Link>
+        <nav aria-label="メインナビゲーション" className="hidden items-center gap-1 md:flex">
+          <Link
+            href="/column"
+            className="header-nav-link rounded-lg px-3 py-2 text-[13px] font-medium text-white/85 transition-colors hover:text-gold-light"
+          >
+            コラム
+          </Link>
+        </nav>
+        </div>
         <HeaderActions />
       </div>
       <div className="site-header-line h-px" aria-hidden />

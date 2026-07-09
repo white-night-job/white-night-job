@@ -20,7 +20,7 @@ export async function ColumnRecommendedJobs({ article }: ColumnRecommendedJobsPr
           id="recommended-jobs-heading"
           className="font-serif text-xl font-semibold text-charcoal sm:text-2xl"
         >
-          おすすめ求人
+          【おすすめ店舗】
         </h2>
         <Link
           href={searchPath}

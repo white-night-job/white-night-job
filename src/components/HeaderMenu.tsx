@@ -29,6 +29,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/column", label: "コラム", icon: "book", match: "prefix" },
   { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
   { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
   { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
@@ -231,6 +232,9 @@ function isItemActive(pathname: string, item: NavItem) {
     }
     if (item.href === "/for-shops") {
       return pathname === "/for-shops" || pathname.startsWith("/for-shops/");
+    }
+    if (item.href === "/column") {
+      return pathname === "/column" || pathname.startsWith("/column/");
     }
     if (item.href === "/mypage") {
       return pathname === "/mypage" || pathname.startsWith("/mypage/");

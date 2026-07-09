@@ -4,6 +4,7 @@ import { BrandAboutSection } from "@/components/BrandAboutSection";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
+import { TopColumnSection } from "@/components/TopColumnSection";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopPageShell } from "@/components/TopPageShell";
@@ -65,6 +66,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </Suspense>
 
         <NightJobDiagnosis />
+
+        <TopColumnSection />
 
         <SupportConsultationSection />
         <BrandAboutSection />
