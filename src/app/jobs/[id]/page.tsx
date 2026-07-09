@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { CompareButton } from "@/components/CompareButton";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
@@ -15,6 +16,7 @@ import {
 import { recordJobView } from "@/lib/job-view-storage";
 import { recordUserViewHistory } from "@/lib/view-history-client";
 import { fetchJobById, formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import { IMAGE_ALT_BRAND } from "@/lib/site";
 import { RecruiterMessageSection } from "@/components/RecruiterMessageSection";
 import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import type { Job } from "@/types/job";
@@ -131,14 +133,17 @@ export default function JobDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
-      <Link href="/" className="mb-6 inline-block text-sm text-muted hover:text-gold-dark">
-        ← 求人一覧に戻る
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "求人一覧", href: "/jobs" },
+          { label: job.shopName },
+        ]}
+      />
       <article className="rounded-2xl border border-gold/25 bg-white shadow-gold">
         {job.imageUrl ? (
           <img
             src={job.imageUrl}
-            alt={`${job.shopName}の店舗トップ画像`}
+            alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
             className="h-64 w-full rounded-t-2xl object-cover sm:h-80"
           />
         ) : (

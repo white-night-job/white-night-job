@@ -1,4 +1,5 @@
 import { luxuryPremiumCard } from "@/lib/luxury-styles";
+import { SITE_BRAND_JA, SITE_NAME } from "@/lib/site";
 
 const concerns = [
   "本当に安全なお店なのか分からない",
@@ -48,7 +49,7 @@ export function FirstTimeGuide() {
 
         <div className="mt-6 space-y-6 text-sm leading-8 text-charcoal sm:text-base sm:leading-9">
           <p>
-            White Night Jobは、
+            {SITE_BRAND_JA}（{SITE_NAME}）は、
             <br />
             「安心して働ける夜職求人だけを探したい」人のための求人サイトです。
           </p>

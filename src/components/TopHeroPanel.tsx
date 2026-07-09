@@ -3,6 +3,7 @@
 import { JobFilterSearch } from "@/components/JobFilterSearch";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
+import { SITE_BRAND_JA, SITE_NAME } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
 type TopHeroPanelProps = {
@@ -17,14 +18,14 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
           <div className="hero-plate-content">
             <SafetyBadge variant="hero" />
 
-            <h1 className="hero-title font-serif">
+            <h2 className="hero-title font-serif">
               <span className="hero-title-dark">安心できるお店選びを、</span>
               <br />
               <span className="hero-title-gold">優良認定店</span>
               <span className="hero-title-dark">専門サイト</span>
-            </h1>
+            </h2>
 
-            <div className="hero-brand">
+            <h1 className="hero-brand">
               <div className="hero-brand-mark">
                 <span className="hero-brand-line" aria-hidden />
                 <p className="hero-brand-logo font-serif leading-none">
@@ -43,12 +44,12 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
                 </div>
                 <p className="hero-brand-sub font-serif uppercase">Job</p>
               </div>
-            </div>
+            </h1>
 
             <p className="hero-desc">
-              審査済み店舗のみ掲載。
+              {SITE_BRAND_JA}（{SITE_NAME}）は、審査済み店舗のみを掲載する夜職求人サイトです。
               <br />
-              ブラック店舗は報告フォームへ。
+              体験入店から正社員まで、安心して比較できる求人をお探しください。
             </p>
           </div>
         </div>

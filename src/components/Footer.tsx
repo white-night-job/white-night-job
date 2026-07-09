@@ -1,11 +1,16 @@
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+import {
+  SITE_BRAND_JA,
+  SITE_FORMAL_NAME,
+  SITE_TAGLINE,
+} from "@/lib/site";
 
 const footerSections = [
   {
-    title: "White Night Job",
+    title: SITE_FORMAL_NAME,
     links: [
       { href: "/#first-time-guide", label: "初めての方へ" },
+      { href: "/#about-brand", label: `${SITE_BRAND_JA}とは` },
       { href: "/jobs", label: "求人一覧" },
       { href: "/#shop-search", label: "店舗を探す" },
       { href: "/report", label: "ブラック店報告" },
@@ -36,6 +41,10 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-gold/35 bg-gradient-to-b from-charcoal to-[#12100c]">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <p className="mb-6 text-center text-sm leading-7 text-white/75">
+          {SITE_TAGLINE}
+        </p>
+
         <nav
           aria-label="フッターナビゲーション"
           className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6"
@@ -59,7 +68,7 @@ export function Footer() {
         </nav>
 
         <p className="mt-8 border-t border-gold/15 pt-5 text-center text-xs text-white/50">
-          © {SITE_NAME}
+          © {SITE_FORMAL_NAME}
         </p>
       </div>
     </footer>

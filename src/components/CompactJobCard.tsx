@@ -10,6 +10,7 @@ import {
   type LuxuryTheme,
 } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
+import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
 type CompactJobCardProps = {
@@ -49,7 +50,7 @@ export function CompactJobCard({
           <div className="listing-card-image">
             <img
               src={job.imageUrl}
-              alt={`${job.shopName}の店舗トップ画像`}
+              alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
               className="h-28 w-full object-cover sm:h-32"
             />
           </div>
@@ -101,7 +102,7 @@ export function CompactJobCard({
         <div className="overflow-hidden ring-1 ring-gold/40 ring-inset">
           <img
             src={job.imageUrl}
-            alt={`${job.shopName}の店舗トップ画像`}
+            alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
             className="h-28 w-full rounded-xl object-cover sm:h-32"
           />
         </div>

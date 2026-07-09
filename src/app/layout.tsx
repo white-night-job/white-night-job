@@ -2,15 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { ChatBot } from "@/components/ChatBot";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { JsonLd } from "@/components/JsonLd";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { buildOrganizationJsonLd, buildRootMetadata } from "@/lib/seo";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
-  description: SITE_DESCRIPTION,
-};
+export const metadata: Metadata = buildRootMetadata();
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -27,6 +25,7 @@ export default async function RootLayout({
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
+        <JsonLd data={buildOrganizationJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
           <Header />
           <main className="flex-1">{children}</main>

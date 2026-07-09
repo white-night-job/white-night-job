@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUserSession } from "@/components/UserSessionProvider";
+import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
 export function ViewHistoryList({
@@ -61,7 +62,7 @@ export function ViewHistoryList({
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-charcoal to-gold-dark">
             {job.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={job.imageUrl} alt="" className="h-full w-full object-cover" />
+              <img src={job.imageUrl} alt={`${job.shopName}｜${IMAGE_ALT_BRAND}`} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-[10px] text-gold-light">
                 WN

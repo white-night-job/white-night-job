@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CompareButton } from "@/components/CompareButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { IMAGE_ALT_BRAND } from "@/lib/site";
 import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
@@ -21,7 +22,7 @@ export function JobCard({ job }: { job: Job }) {
           <div className={`overflow-hidden ${luxuryImageFrame}`}>
             <img
               src={job.imageUrl}
-              alt={`${job.shopName}の店舗トップ画像`}
+              alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
               className="h-52 w-full object-cover sm:h-56"
             />
           </div>
