@@ -9,6 +9,7 @@ const footerSections = [
   {
     title: SITE_FORMAL_NAME,
     links: [
+      { href: "/column", label: "コラム" },
       { href: "/first-time-guide", label: "初めての方へ" },
       { href: "/cast-guide", label: "キャスト向けガイド" },
       { href: "/#about-brand", label: `${SITE_BRAND_JA}とは` },

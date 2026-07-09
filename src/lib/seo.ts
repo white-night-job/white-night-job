@@ -88,6 +88,67 @@ export function buildOrganizationJsonLd() {
   };
 }
 
+export function buildArticleMetadata(
+  articleTitle: string,
+  description: string,
+  pathname: string,
+): Metadata {
+  const canonical = `${SITE_URL}${pathname}`;
+  const ogTitle = `${articleTitle} | ${SITE_OG_TITLE}`;
+
+  return {
+    title: articleTitle,
+    description,
+    openGraph: {
+      type: "article",
+      title: ogTitle,
+      description,
+      url: canonical,
+      siteName: SITE_FORMAL_NAME,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description,
+    },
+    alternates: {
+      canonical,
+    },
+  };
+}
+
+export function buildArticleJsonLd(params: {
+  title: string;
+  description: string;
+  pathname: string;
+  dateModified: string;
+  category: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: params.title,
+    description: params.description,
+    url: `${SITE_URL}${params.pathname}`,
+    dateModified: params.dateModified,
+    author: {
+      "@type": "Organization",
+      name: SITE_FORMAL_NAME,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_FORMAL_NAME,
+      url: SITE_URL,
+    },
+    articleSection: params.category,
+    isPartOf: {
+      "@type": "WebSite",
+      name: SITE_FORMAL_NAME,
+      url: SITE_URL,
+    },
+  };
+}
+
 export function buildWebPageJsonLd(
   pageTitle: string,
   description: string,
