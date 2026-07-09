@@ -26,11 +26,14 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
 
             <div className="hero-brand">
               <div className="hero-brand-mark">
-                <span className="hero-brand-line" aria-hidden />
                 <p className="hero-brand-logo font-serif leading-none">
                   White Night
                 </p>
-                <span className="hero-brand-line" aria-hidden />
+                <div className="hero-brand-tag">
+                  <span className="hero-brand-tag-text font-serif">
+                    体入ホワイトナイト
+                  </span>
+                </div>
                 <p className="hero-brand-sub font-serif uppercase">Job</p>
               </div>
             </div>
