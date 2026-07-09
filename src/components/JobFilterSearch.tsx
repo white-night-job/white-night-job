@@ -15,6 +15,7 @@ import {
   sectionHeading,
   type LuxuryTheme,
 } from "@/lib/luxury-styles";
+import { saveSearchHistory } from "@/lib/search-history";
 import { JOB_TYPES, type JobFilters } from "@/types/job";
 
 const SALARY_OPTIONS = [
@@ -350,6 +351,7 @@ export function JobFilterSearch({
     };
 
     onApply(nextFilters);
+    saveSearchHistory(nextFilters);
     pushParams(nextFilters);
     setOpenPicker(null);
   }

@@ -46,7 +46,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
               <Link href="/jobs" className="hero-guest-btn">
                 ゲストとして利用
               </Link>
-              <a href="/api/line/login?redirect=/" className="hero-line-btn">
+              <a href="/api/line/login?redirect=/mypage" className="hero-line-btn">
                 LINEでログイン
               </a>
             </div>

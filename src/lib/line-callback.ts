@@ -24,10 +24,17 @@ async function ensureUserNotificationSettings(userId: string) {
   }
 }
 
+function resolvePostLoginRedirect(redirectPath: string): string {
+  const path = redirectPath.trim() || "/mypage";
+  if (path === "/") return "/mypage";
+  return path;
+}
+
 function buildRedirectDestination(requestUrl: URL, redirectPath: string): URL {
-  const destination = redirectPath.startsWith("http")
-    ? new URL(redirectPath)
-    : new URL(redirectPath || "/", requestUrl.origin);
+  const resolved = resolvePostLoginRedirect(redirectPath);
+  const destination = resolved.startsWith("http")
+    ? new URL(resolved)
+    : new URL(resolved, requestUrl.origin);
   destination.searchParams.set("lineLogin", "success");
   return destination;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useUserSession } from "@/components/UserSessionProvider";
 
@@ -19,6 +19,7 @@ type MenuIconName =
   | "heart"
   | "bell"
   | "line"
+  | "user"
   | "logout";
 
 type NavItem = {
@@ -200,6 +201,17 @@ function MenuIcon({ name }: { name: MenuIconName }) {
           />
         </svg>
       );
+    case "user":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="8.5" r="3.25" strokeWidth="1.5" />
+          <path
+            d="M5.5 19.5c.8-3 3.4-5 6.5-5s5.7 2 6.5 5"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
     case "logout":
       return (
         <svg {...common}>
@@ -221,6 +233,12 @@ function isItemActive(pathname: string, item: NavItem) {
     if (item.href === "/for-shops") {
       return pathname === "/for-shops" || pathname.startsWith("/for-shops/");
     }
+    if (item.href === "/mypage") {
+      return pathname === "/mypage";
+    }
+    if (item.href === "/favorites") {
+      return pathname === "/favorites";
+    }
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
 
@@ -233,6 +251,7 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function HeaderMenu() {
   const pathname = usePathname();
+  const router = useRouter();
   const { session, currentUser, ready, refreshSession } = useUserSession();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -297,21 +316,24 @@ export function HeaderMenu() {
     return item;
   });
 
+  const lineLoginRedirect =
+    pathname === "/" || !pathname ? "/mypage" : pathname;
+
   const userItems: NavItem[] =
     ready && session.authenticated
       ? [
-          { href: "/favorites", label: "お気に入り店舗", icon: "heart", match: "prefix" },
-          { href: "/notification-settings", label: "通知設定", icon: "bell", match: "prefix" },
+          { href: "/mypage", label: "マイページ", icon: "user", match: "prefix" },
+          { href: "/favorites", label: "お気に入り", icon: "heart", match: "prefix" },
         ]
       : ready
         ? [
-            { href: "/jobs", label: "ゲストとして利用", icon: "search", match: "prefix" },
             {
-              href: `/api/line/login?redirect=${encodeURIComponent(pathname || "/")}`,
+              href: `/api/line/login?redirect=${encodeURIComponent(lineLoginRedirect)}`,
               label: "LINEでログイン",
               icon: "line",
               match: "hash",
             },
+            { href: "/jobs", label: "ゲストで利用", icon: "search", match: "prefix" },
           ]
         : [];
 
@@ -319,6 +341,7 @@ export function HeaderMenu() {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });
     await refreshSession();
     setOpen(false);
+    router.push("/");
   }
 
   return (
