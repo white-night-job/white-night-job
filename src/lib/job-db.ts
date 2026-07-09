@@ -28,6 +28,7 @@ export type JobPayload = {
   recruiterTitle?: string;
   recruiterImage?: string;
   recruiterMessage?: string;
+  managerComment?: string;
   phone?: string;
   address?: string;
   access?: string;
@@ -71,6 +72,7 @@ type JobRow = {
   recruiter_title: string | null;
   recruiter_image: string | null;
   recruiter_message: string | null;
+  manager_comment: string | null;
   phone: string | null;
   address: string | null;
   access: string | null;
@@ -131,6 +133,7 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     recruiterTitle: row.recruiter_title?.trim() || undefined,
     recruiterImage: row.recruiter_image?.trim() || undefined,
     recruiterMessage: row.recruiter_message?.trim() || undefined,
+    managerComment: row.manager_comment?.trim() || undefined,
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
     access: row.access ?? undefined,
@@ -257,6 +260,7 @@ export function payloadToRow(payload: JobPayload) {
     recruiter_title: payload.recruiterTitle?.trim() || null,
     recruiter_image: payload.recruiterImage?.trim() || null,
     recruiter_message: payload.recruiterMessage?.trim() || null,
+    manager_comment: payload.managerComment?.trim() || null,
     phone: payload.phone?.trim() || null,
     address: payload.address?.trim() || null,
     access: payload.access?.trim() || null,
@@ -318,6 +322,10 @@ export function normalizeJobPayload(body: unknown): JobPayload {
     recruiterMessage: readOptionalString(
       data.recruiterMessage ??
         (data as { recruiter_message?: unknown }).recruiter_message,
+    ),
+    managerComment: readOptionalString(
+      data.managerComment ??
+        (data as { manager_comment?: unknown }).manager_comment,
     ),
     phone: data.phone ? String(data.phone) : undefined,
     address: data.address ? String(data.address) : undefined,

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
+import {
+  isNotificationArea,
+  NOTIFICATION_AREA_OPTIONS,
+} from "@/lib/notification-areas";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +12,7 @@ type SettingsPayload = {
   notifyNewJobs?: boolean;
   notifyPickupJobs?: boolean;
   notifyFavoriteUpdates?: boolean;
+  notificationAreas?: string[];
 };
 
 async function ensureSettingsRow(userId: string) {
@@ -33,6 +38,38 @@ async function ensureSettingsRow(userId: string) {
   return data;
 }
 
+async function fetchNotificationAreas(userId: string) {
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("user_notification_areas")
+    .select("area")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return (data ?? []).map((row) => row.area);
+}
+
+async function saveNotificationAreas(userId: string, areas: string[]) {
+  const supabase = createSupabaseAdmin();
+  const validAreas = [...new Set(areas.filter(isNotificationArea))];
+
+  const { error: deleteError } = await supabase
+    .from("user_notification_areas")
+    .delete()
+    .eq("user_id", userId);
+  if (deleteError) throw deleteError;
+
+  if (validAreas.length === 0) return [];
+
+  const { error: insertError } = await supabase.from("user_notification_areas").insert(
+    validAreas.map((area) => ({
+      user_id: userId,
+      area,
+    })),
+  );
+  if (insertError) throw insertError;
+  return validAreas;
+}
+
 export async function GET(request: Request) {
   const userId = await getAuthenticatedUserId(request);
   if (!userId) {
@@ -40,10 +77,13 @@ export async function GET(request: Request) {
   }
   try {
     const row = await ensureSettingsRow(userId);
+    const notificationAreas = await fetchNotificationAreas(userId);
     return NextResponse.json({
       notifyNewJobs: row.notify_new_jobs,
       notifyPickupJobs: row.notify_pickup_jobs,
       notifyFavoriteUpdates: row.notify_favorite_updates,
+      notificationAreas,
+      areaOptions: NOTIFICATION_AREA_OPTIONS,
     });
   } catch (error) {
     return NextResponse.json(
@@ -77,10 +117,26 @@ export async function PUT(request: Request) {
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
-  return NextResponse.json({
-    ok: true,
-    notifyNewJobs: data.notify_new_jobs,
-    notifyPickupJobs: data.notify_pickup_jobs,
-    notifyFavoriteUpdates: data.notify_favorite_updates,
-  });
+
+  try {
+    const notificationAreas = await saveNotificationAreas(
+      userId,
+      payload.notificationAreas ?? [],
+    );
+    return NextResponse.json({
+      ok: true,
+      notifyNewJobs: data.notify_new_jobs,
+      notifyPickupJobs: data.notify_pickup_jobs,
+      notifyFavoriteUpdates: data.notify_favorite_updates,
+      notificationAreas,
+    });
+  } catch (areaError) {
+    return NextResponse.json(
+      {
+        message:
+          areaError instanceof Error ? areaError.message : "通知エリアの保存に失敗しました。",
+      },
+      { status: 500 },
+    );
+  }
 }

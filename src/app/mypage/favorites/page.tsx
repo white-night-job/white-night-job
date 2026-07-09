@@ -10,6 +10,8 @@ export default function MyPageFavoritesPage() {
   const { isLoggedIn, ready } = useUserSession();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!ready) return;
@@ -28,6 +30,30 @@ export default function MyPageFavoritesPage() {
       })
       .finally(() => setLoading(false));
   }, [isLoggedIn, ready]);
+
+  async function sendFavoriteShopsToLine() {
+    setSending(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/line/send-favorite-shops", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await response.json()) as { message?: string; count?: number };
+      if (!response.ok) {
+        throw new Error(data.message ?? "LINE送信に失敗しました。");
+      }
+      setMessage(
+        data.count && data.count > 0
+          ? `お気に入り店舗${data.count}件をLINEで送信しました。`
+          : "LINEを確認してください。",
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "LINE送信に失敗しました。");
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (!ready || loading) {
     return (
@@ -58,12 +84,23 @@ export default function MyPageFavoritesPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-5 sm:max-w-2xl sm:px-6 sm:py-8">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-2xl font-semibold text-charcoal">お気に入り</h1>
-        <Link href="/mypage" className="text-sm font-medium text-gold-dark">
-          マイページへ
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void sendFavoriteShopsToLine()}
+            disabled={sending}
+            className="rounded-full bg-[#06c755] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {sending ? "送信中..." : "お気に入り店舗をLINEで受け取る"}
+          </button>
+          <Link href="/mypage" className="text-sm font-medium text-gold-dark">
+            マイページへ
+          </Link>
+        </div>
       </div>
+      {message && <p className="mb-4 text-sm text-muted">{message}</p>}
       {jobs.length === 0 ? (
         <div className="rounded-2xl border border-gold/20 bg-white p-6 text-sm text-muted">
           まだお気に入り登録された店舗はありません。

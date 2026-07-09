@@ -57,6 +57,7 @@ export interface JobEntry {
   recruiterTitle?: string;
   recruiterImage?: string;
   recruiterMessage?: string;
+  managerComment?: string;
   phone?: string;
   address?: string;
   access?: string;
@@ -111,6 +112,7 @@ export interface Job {
   recruiterTitle?: string;
   recruiterImage?: string;
   recruiterMessage?: string;
+  managerComment?: string;
   phone?: string;
   address?: string;
   access?: string;

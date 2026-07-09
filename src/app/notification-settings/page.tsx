@@ -1,41 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type Settings = {
-  notifyNewJobs: boolean;
-  notifyPickupJobs: boolean;
-  notifyFavoriteUpdates: boolean;
-};
+import { useState } from "react";
+import {
+  NotificationAreaSettings,
+  useNotificationSettings,
+} from "@/components/NotificationAreaSettings";
 
 export default function NotificationSettingsPage() {
-  const [settings, setSettings] = useState<Settings>({
-    notifyNewJobs: true,
-    notifyPickupJobs: true,
-    notifyFavoriteUpdates: true,
-  });
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(true);
+  const { settings, setSettings, loading, authenticated } = useNotificationSettings();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    fetch("/api/notification-settings", {
-      cache: "no-store",
-      credentials: "include",
-    })
-      .then(async (response) => {
-        if (response.status === 401) {
-          setAuthenticated(false);
-          return null;
-        }
-        return (await response.json()) as Settings;
-      })
-      .then((data) => {
-        if (data) setSettings(data);
-      })
-      .finally(() => setLoading(false));
-  }, []);
 
   async function save() {
     setSaving(true);
@@ -92,46 +66,50 @@ export default function NotificationSettingsPage() {
         LINEログイン済みユーザー向けの通知設定です。
       </p>
 
-      <div className="mt-5 space-y-3 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-        <label className="flex items-center gap-3 text-sm text-charcoal">
-          <input
-            type="checkbox"
-            checked={settings.notifyNewJobs}
-            onChange={(event) =>
-              setSettings((current) => ({
-                ...current,
-                notifyNewJobs: event.target.checked,
-              }))
-            }
-          />
-          新着店舗通知
-        </label>
-        <label className="flex items-center gap-3 text-sm text-charcoal">
-          <input
-            type="checkbox"
-            checked={settings.notifyPickupJobs}
-            onChange={(event) =>
-              setSettings((current) => ({
-                ...current,
-                notifyPickupJobs: event.target.checked,
-              }))
-            }
-          />
-          PICK UP店舗通知
-        </label>
-        <label className="flex items-center gap-3 text-sm text-charcoal">
-          <input
-            type="checkbox"
-            checked={settings.notifyFavoriteUpdates}
-            onChange={(event) =>
-              setSettings((current) => ({
-                ...current,
-                notifyFavoriteUpdates: event.target.checked,
-              }))
-            }
-          />
-          お気に入り店舗の更新通知
-        </label>
+      <div className="mt-5 space-y-4">
+        <div className="space-y-3 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
+          <label className="flex items-center gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={settings.notifyNewJobs}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  notifyNewJobs: event.target.checked,
+                }))
+              }
+            />
+            新着店舗通知
+          </label>
+          <label className="flex items-center gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={settings.notifyPickupJobs}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  notifyPickupJobs: event.target.checked,
+                }))
+              }
+            />
+            PICK UP店舗通知
+          </label>
+          <label className="flex items-center gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={settings.notifyFavoriteUpdates}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  notifyFavoriteUpdates: event.target.checked,
+                }))
+              }
+            />
+            お気に入り店舗の更新通知
+          </label>
+        </div>
+
+        <NotificationAreaSettings settings={settings} onChange={setSettings} />
       </div>
 
       <button

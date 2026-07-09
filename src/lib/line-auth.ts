@@ -88,6 +88,13 @@ export async function sendLinePushMessage(
   lineUserId: string,
   message: string,
 ): Promise<void> {
+  await sendLinePushMessages(lineUserId, [{ type: "text", text: message }]);
+}
+
+export async function sendLinePushMessages(
+  lineUserId: string,
+  messages: unknown[],
+): Promise<void> {
   const channelToken = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim();
   if (!channelToken) {
     throw new Error("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN is not set.");
@@ -100,10 +107,17 @@ export async function sendLinePushMessage(
     },
     body: JSON.stringify({
       to: lineUserId,
-      messages: [{ type: "text", text: message }],
+      messages,
     }),
   });
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("[line-auth] push message failed", {
+      lineUserId,
+      status: response.status,
+      errorBody,
+      messages,
+    });
     throw new Error("LINE通知送信に失敗しました。");
   }
 }

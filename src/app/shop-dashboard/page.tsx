@@ -48,6 +48,7 @@ type ShopForm = {
   recruiterTitle: string;
   recruiterImage: string;
   recruiterMessage: string;
+  managerComment: string;
   chatRecommendComment: string;
   storeImages: string[];
   benefits: string[];
@@ -95,6 +96,7 @@ function toForm(job: Job): ShopForm {
     recruiterTitle: job.recruiterTitle ?? "",
     recruiterImage: job.recruiterImage ?? "",
     recruiterMessage: job.recruiterMessage ?? "",
+    managerComment: job.managerComment ?? "",
     chatRecommendComment: job.chatRecommend?.comment ?? "",
     storeImages: getDisplayStoreImages(job),
     benefits: getKnownBenefits(job.benefits),
@@ -126,6 +128,7 @@ function toPayload(form: ShopForm) {
     recruiterTitle: form.recruiterTitle || undefined,
     recruiterImage: form.recruiterImage,
     recruiterMessage: form.recruiterMessage || undefined,
+    managerComment: form.managerComment || undefined,
     chatRecommendComment: form.chatRecommendComment || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     benefits: form.benefits,
@@ -697,6 +700,17 @@ export default function ShopDashboardPage() {
               rows={6}
               className={inputClass}
               placeholder="応募を迷っている方へのメッセージを入力してください"
+            />
+          </div>
+          <div className="mt-4">
+            <label htmlFor="managerComment" className={labelClass}>店長から一言</label>
+            <textarea
+              id="managerComment"
+              value={form.managerComment}
+              onChange={(e) => setField("managerComment", e.target.value)}
+              rows={4}
+              className={inputClass}
+              placeholder="LINE配信や店舗詳細に表示されます"
             />
           </div>
         </div>

@@ -176,6 +176,16 @@ export default function JobDetailPage({
               {job.introductionText}
             </p>
           )}
+          {job.managerComment && (
+            <div className="mt-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-white to-champagne/40 p-4">
+              <p className="text-xs font-semibold tracking-wide text-gold-dark">
+                店長から一言
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-charcoal sm:text-base">
+                {job.managerComment}
+              </p>
+            </div>
+          )}
           {job.isVerified && <div className="mt-3"><SafetyBadge /></div>}
         </div>
         <div className="space-y-6 px-5 py-6 sm:px-8">

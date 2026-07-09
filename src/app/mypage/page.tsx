@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
+import { NotificationAreaSettings } from "@/components/NotificationAreaSettings";
 import { ViewHistoryList } from "@/components/ViewHistoryList";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
@@ -18,6 +19,7 @@ type NotificationSettings = {
   notifyNewJobs: boolean;
   notifyPickupJobs: boolean;
   notifyFavoriteUpdates: boolean;
+  notificationAreas: string[];
 };
 
 export default function MyPage() {
@@ -30,7 +32,10 @@ export default function MyPage() {
     notifyNewJobs: true,
     notifyPickupJobs: true,
     notifyFavoriteUpdates: true,
+    notificationAreas: [],
   });
+  const [sendingFavoritesLine, setSendingFavoritesLine] = useState(false);
+  const [favoritesLineMessage, setFavoritesLineMessage] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
@@ -58,7 +63,12 @@ export default function MyPage() {
         }
         if (settingsResponse.ok) {
           const data = (await settingsResponse.json()) as NotificationSettings;
-          setSettings(data);
+          setSettings({
+            notifyNewJobs: data.notifyNewJobs,
+            notifyPickupJobs: data.notifyPickupJobs,
+            notifyFavoriteUpdates: data.notifyFavoriteUpdates,
+            notificationAreas: data.notificationAreas ?? [],
+          });
         }
       })
       .finally(() => setLoading(false));
@@ -81,6 +91,32 @@ export default function MyPage() {
       setSettingsMessage("通知設定の保存に失敗しました。");
     } finally {
       setSavingSettings(false);
+    }
+  }
+
+  async function sendFavoriteShopsToLine() {
+    setSendingFavoritesLine(true);
+    setFavoritesLineMessage("");
+    try {
+      const response = await fetch("/api/line/send-favorite-shops", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await response.json()) as { message?: string; count?: number };
+      if (!response.ok) {
+        throw new Error(data.message ?? "LINE送信に失敗しました。");
+      }
+      setFavoritesLineMessage(
+        data.count && data.count > 0
+          ? `お気に入り店舗${data.count}件をLINEで送信しました。`
+          : "LINEを確認してください。",
+      );
+    } catch (error) {
+      setFavoritesLineMessage(
+        error instanceof Error ? error.message : "LINE送信に失敗しました。",
+      );
+    } finally {
+      setSendingFavoritesLine(false);
     }
   }
 
@@ -155,12 +191,25 @@ export default function MyPage() {
       </section>
 
       <section className="mt-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-serif text-lg font-semibold text-charcoal">お気に入り店舗</h2>
-          <Link href="/mypage/favorites" className="text-xs font-medium text-gold-dark">
-            すべて見る
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void sendFavoriteShopsToLine()}
+              disabled={sendingFavoritesLine}
+              className="rounded-full bg-[#06c755] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              {sendingFavoritesLine ? "送信中..." : "LINEで受け取る"}
+            </button>
+            <Link href="/mypage/favorites" className="text-xs font-medium text-gold-dark">
+              すべて見る
+            </Link>
+          </div>
         </div>
+        {favoritesLineMessage && (
+          <p className="mb-3 text-xs text-muted">{favoritesLineMessage}</p>
+        )}
         {jobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white p-5 text-sm text-muted">
             まだお気に入り登録された店舗はありません。
@@ -247,6 +296,9 @@ export default function MyPage() {
             />
             お気に入り店舗の更新通知
           </label>
+        </div>
+        <div className="mt-4">
+          <NotificationAreaSettings settings={settings} onChange={setSettings} />
         </div>
         <button
           type="button"
