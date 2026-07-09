@@ -1,3 +1,5 @@
+import { IMAGE_ALT_BRAND, SITE_FORMAL_NAME } from "@/lib/site";
+
 export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.png";
 
 function MailIcon() {
@@ -24,7 +26,7 @@ export function ForShopsLandingHero() {
       <article className="fsl-hero-image-card">
         <img
           src={FOR_SHOPS_HERO_IMAGE}
-          alt=""
+          alt={IMAGE_ALT_BRAND}
           className="fsl-hero-image-card__img"
           width={1024}
           height={682}
@@ -44,7 +46,7 @@ export function ForShopsLandingHero() {
           </h1>
 
           <p className="fsl-hero-image-card__desc">
-            White Night Jobは、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
+            {SITE_FORMAL_NAME}は、安心して働ける環境づくりを大切にする店舗様だけを掲載する、夜職専門の求人サイトです。
           </p>
         </div>
       </article>

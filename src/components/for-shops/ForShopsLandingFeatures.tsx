@@ -1,3 +1,5 @@
+import { SITE_BRAND_JA } from "@/lib/site";
+
 function ShieldIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -39,7 +41,7 @@ export function ForShopsLandingFeatures() {
           <span className="fsl-section-head__line" aria-hidden="true" />
         </div>
         <h2 id="fsl-feat-title" className="fsl-section-head__title">
-          White Night Jobの特徴
+          {SITE_BRAND_JA}の特徴
         </h2>
       </header>
 

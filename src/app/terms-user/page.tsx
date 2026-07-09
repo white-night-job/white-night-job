@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/LegalDocument";
-import { SITE_NAME } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
+import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "求職者向け利用規約",
-  description: `${SITE_NAME}の求職者向け利用規約です。`,
-};
+export const metadata: Metadata = buildPageMetadata(
+  "求職者向け利用規約",
+  `${SITE_FORMAL_NAME}の求職者向け利用規約です。求人の閲覧・応募・相談に関する条件を定めています。`,
+  "/terms-user",
+);
 
 const UPDATED_AT = "2026年6月18日";
 
@@ -13,12 +15,14 @@ export default function TermsUserPage() {
   return (
     <LegalDocument
       title="求職者向け利用規約"
-      description={`${SITE_NAME}を利用して求人を閲覧・応募する求職者向けの利用条件です。`}
+      description={`${SITE_LEGAL_INTRO}本規約は、求人を閲覧・応募する求職者向けの利用条件です。`}
       updatedAt={UPDATED_AT}
+      pathname="/terms-user"
+      breadcrumbLabel="求職者向け利用規約"
       sections={[
         {
           id: "site-use",
-          title: "1. White Night Jobの利用について",
+          title: `1. ${SITE_FORMAL_NAME}の利用について`,
           content: (
             <p>
               当サイトは、夜職求人情報の閲覧および応募機会を提供する情報サービスです。求職者は本規約に同意の上、当サイトを利用するものとします。

@@ -1,29 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/site";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { JsonLd } from "@/components/JsonLd";
+import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
+import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO, SITE_TAGLINE } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "利用規約",
-  description: `${SITE_NAME}の利用規約ページ一覧です。`,
-};
+export const metadata: Metadata = buildPageMetadata(
+  "利用規約",
+  `${SITE_FORMAL_NAME}の利用規約ページです。求職者向け・掲載店舗向けの規約をご確認いただけます。`,
+  "/terms",
+);
 
 export default function TermsPage() {
+  const description = `${SITE_LEGAL_INTRO}利用規約は、利用者区分ごとに分かれています。該当する規約をご確認ください。`;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mb-8">
-        <Link
-          href="/"
-          className="mb-4 inline-block text-sm text-muted hover:text-gold-dark"
-        >
-          ← トップページへ
-        </Link>
+      <JsonLd data={buildWebPageJsonLd("利用規約", description, "/terms")} />
+      <Breadcrumbs items={[{ label: "利用規約" }]} />
+
+      <header className="mb-8">
         <h1 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
           利用規約
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          {SITE_NAME}の利用規約は、利用者区分ごとに分かれています。該当する規約をご確認ください。
-        </p>
-      </div>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{description}</p>
+      </header>
 
       <section className="space-y-4 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-8">
         <Link
@@ -34,7 +35,7 @@ export default function TermsPage() {
             求職者向け利用規約
           </p>
           <p className="mt-1 text-sm text-muted">
-            求人の閲覧・応募・相談・ブラック店舗報告など、求職者向けの利用条件です。
+            {SITE_FORMAL_NAME}における求人の閲覧・応募・相談・ブラック店舗報告など、求職者向けの利用条件です。
           </p>
         </Link>
         <Link
@@ -49,6 +50,10 @@ export default function TermsPage() {
           </p>
         </Link>
       </section>
+
+      <footer className="mt-8 border-t border-gold/15 pt-6">
+        <p className="text-sm leading-relaxed text-muted">{SITE_TAGLINE}</p>
+      </footer>
     </div>
   );
 }

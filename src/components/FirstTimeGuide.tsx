@@ -1,5 +1,5 @@
 import { luxuryPremiumCard } from "@/lib/luxury-styles";
-import { SITE_BRAND_JA, SITE_NAME } from "@/lib/site";
+import { SITE_FORMAL_NAME } from "@/lib/site";
 
 const concerns = [
   "本当に安全なお店なのか分からない",
@@ -23,7 +23,90 @@ const supports = [
   "女の子目線での安全性確認",
 ];
 
-export function FirstTimeGuide() {
+function GuideContent({ showHeading = true }: { showHeading?: boolean }) {
+  return (
+    <div className="relative">
+      {showHeading && (
+        <>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gold-dark">
+            Guide
+          </p>
+          <h2 className="font-serif text-2xl font-semibold text-gradient-gold sm:text-3xl">
+            初めての方へ
+          </h2>
+        </>
+      )}
+
+      <div className="mt-6 space-y-6 text-sm leading-8 text-charcoal sm:text-base sm:leading-9">
+        <p>
+          {SITE_FORMAL_NAME}は、
+          <br />
+          「安心して働ける夜職求人だけを探したい」人のための求人サイトです。
+        </p>
+
+        <div>
+          <p>夜職を探していると、</p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {concerns.map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-gold/30 bg-white/80 px-4 py-3 text-charcoal shadow-luxury-sm"
+              >
+                <span className="mr-2 text-gold-dark">・</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p>そんな不安を感じることがあります。</p>
+
+        <div>
+          <p>
+            当サイトでは、
+            <br />
+            できる限り“安心して働けるお店”を見つけやすくするために、
+          </p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {supports.map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-gold/45 bg-gradient-to-r from-champagne/60 to-gold-light/40 px-4 py-3 font-medium text-gold-dark shadow-luxury-sm"
+              >
+                <span className="mr-2">・</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-2xl border border-gold/45 bg-gradient-to-br from-white to-champagne p-5 shadow-luxury-sm sm:p-6">
+          <p>
+            「夜職＝怖い」ではなく、
+            <br />
+            自分に合った環境で働ける人を増やしたい。
+          </p>
+          <p className="mt-4">そんな思いで運営しています。</p>
+          <p className="mt-4 font-semibold text-gold-dark">
+            まずは気になるお店を、
+            <br />
+            ゆっくり探してみてください。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function FirstTimeGuide({ embedded = false }: { embedded?: boolean }) {
+  if (embedded) {
+    return (
+      <article className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-8 ${luxuryPremiumCard}`}>
+        <GuideContent showHeading={false} />
+      </article>
+    );
+  }
+
   return (
     <section
       id="first-time-guide"
@@ -38,75 +121,7 @@ export function FirstTimeGuide() {
         className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-gold-mid/20 blur-3xl"
         aria-hidden
       />
-
-      <div className="relative">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-gold-dark">
-          Guide
-        </p>
-        <h2 className="font-serif text-2xl font-semibold text-gradient-gold sm:text-3xl">
-          初めての方へ
-        </h2>
-
-        <div className="mt-6 space-y-6 text-sm leading-8 text-charcoal sm:text-base sm:leading-9">
-          <p>
-            {SITE_BRAND_JA}（{SITE_NAME}）は、
-            <br />
-            「安心して働ける夜職求人だけを探したい」人のための求人サイトです。
-          </p>
-
-          <div>
-            <p>夜職を探していると、</p>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {concerns.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-2xl border border-gold/30 bg-white/80 px-4 py-3 text-charcoal shadow-luxury-sm"
-                >
-                  <span className="mr-2 text-gold-dark">・</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <p>そんな不安を感じることがあります。</p>
-
-          <div>
-            <p>
-              このサイトでは、
-              <br />
-              できる限り“安心して働けるお店”を見つけやすくするために、
-            </p>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {supports.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-2xl border border-gold/45 bg-gradient-to-r from-champagne/60 to-gold-light/40 px-4 py-3 font-medium text-gold-dark shadow-luxury-sm"
-                >
-                  <span className="mr-2">・</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-2xl border border-gold/45 bg-gradient-to-br from-white to-champagne p-5 shadow-luxury-sm sm:p-6">
-            <p>
-              「夜職＝怖い」ではなく、
-              <br />
-              自分に合った環境で働ける人を増やしたい。
-            </p>
-            <p className="mt-4">
-              そんな思いで運営しています。
-            </p>
-            <p className="mt-4 font-semibold text-gold-dark">
-              まずは気になるお店を、
-              <br />
-              ゆっくり探してみてください。
-            </p>
-          </div>
-        </div>
-      </div>
+      <GuideContent />
     </section>
   );
 }

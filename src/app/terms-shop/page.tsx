@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/LegalDocument";
-import { SITE_NAME } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
+import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "掲載店舗向け利用規約",
-  description: `${SITE_NAME}の掲載店舗向け利用規約です。`,
-};
+export const metadata: Metadata = buildPageMetadata(
+  "掲載店舗向け利用規約",
+  `${SITE_FORMAL_NAME}の掲載店舗向け利用規約です。求人掲載・料金・店舗管理機能に関する条件を定めています。`,
+  "/terms-shop",
+);
 
 const UPDATED_AT = "2026年6月18日";
 
@@ -13,8 +15,10 @@ export default function TermsShopPage() {
   return (
     <LegalDocument
       title="掲載店舗向け利用規約"
-      description={`${SITE_NAME}へ求人掲載する店舗向けの利用条件です。`}
+      description={`${SITE_LEGAL_INTRO}本規約は、${SITE_FORMAL_NAME}へ求人掲載する店舗向けの利用条件です。`}
       updatedAt={UPDATED_AT}
+      pathname="/terms-shop"
+      breadcrumbLabel="掲載店舗向け利用規約"
       sections={[
         {
           id: "listing",

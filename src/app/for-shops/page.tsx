@@ -4,16 +4,17 @@ import { ForShopsContactForm } from "@/components/for-shops/ForShopsContactForm"
 import { ForShopsFaq } from "@/components/for-shops/ForShopsFaq";
 import { ForShopsLandingFeatures } from "@/components/for-shops/ForShopsLandingFeatures";
 import { ForShopsLandingHero } from "@/components/for-shops/ForShopsLandingHero";
-import { SITE_NAME } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
+import { SITE_BRAND_JA, SITE_FORMAL_NAME } from "@/lib/site";
 import "./landing.css";
 
-export const metadata: Metadata = {
-  title: "掲載をご検討の方はこちら",
-  description: `${SITE_NAME}への求人掲載をご検討の店舗様向けご案内。優良店のみ掲載、安心認証、AIチャット紹介など。`,
-};
+export const metadata: Metadata = buildPageMetadata(
+  "店舗向け掲載案内",
+  `${SITE_FORMAL_NAME}への求人掲載をご検討の店舗様向けご案内。優良店のみ掲載、安心認証、AIチャット紹介など。`,
+  "/for-shops",
+);
 
 const COMPARISON_ROWS = [
-  { label: "優良店のみ掲載", ours: true, others: false },
   { label: "ブラック店通報", ours: true, others: false },
   { label: "AIチャット紹介", ours: true, others: false },
   { label: "応募分析", ours: true, others: false },
@@ -131,7 +132,7 @@ export default function ForShopsPage() {
               <thead>
                 <tr>
                   <th scope="col">項目</th>
-                  <th scope="col">White Night Job</th>
+                  <th scope="col">{SITE_BRAND_JA}</th>
                   <th scope="col">他社求人サイト</th>
                 </tr>
               </thead>

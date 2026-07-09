@@ -1,6 +1,7 @@
 export const SITE_BRAND_JA = "体入ホワイトナイト";
 export const SITE_NAME = "White Night Job";
 export const SITE_FORMAL_NAME = "体入ホワイトナイト（White Night Job）";
+export const SITE_LEGAL_INTRO = `${SITE_FORMAL_NAME}（以下「当サイト」といいます。）`;
 export const SITE_TITLE =
   "体入ホワイトナイト | White Night Job｜安心・安全な夜職求人サイト";
 export const SITE_DESCRIPTION =

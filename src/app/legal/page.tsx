@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/LegalDocument";
-import { SITE_FORMAL_NAME } from "@/lib/site";
+import { buildPageMetadata } from "@/lib/seo";
+import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "特定商取引法に基づく表記",
-  description: `${SITE_FORMAL_NAME}の特定商取引法に基づく表記です。`,
-};
+export const metadata: Metadata = buildPageMetadata(
+  "特定商取引法に基づく表記",
+  `${SITE_FORMAL_NAME}の特定商取引法に基づく表記です。`,
+  "/legal",
+);
 
 const UPDATED_AT = "2026年6月3日";
 
@@ -13,8 +15,10 @@ export default function LegalPage() {
   return (
     <LegalDocument
       title="特定商取引法に基づく表記"
-      description={`${SITE_FORMAL_NAME}における有料サービス（求人掲載プラン等）の販売に関する表示です。`}
+      description={`${SITE_LEGAL_INTRO}有料サービス（求人掲載プラン等）の販売に関する表示です。`}
       updatedAt={UPDATED_AT}
+      pathname="/legal"
+      breadcrumbLabel="特定商取引法に基づく表記"
       sections={[
         {
           id: "service-name",

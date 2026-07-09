@@ -1,5 +1,5 @@
 import { luxuryPremiumCard } from "@/lib/luxury-styles";
-import { SITE_BRAND_JA, SITE_NAME } from "@/lib/site";
+import { SITE_FORMAL_NAME } from "@/lib/site";
 
 export function SupportConsultationSection() {
   return (
@@ -35,7 +35,7 @@ export function SupportConsultationSection() {
             </p>
             <p>実際に、こういったケースは少なくありません。</p>
             <p>
-              {SITE_BRAND_JA}（{SITE_NAME}）では、
+              {SITE_FORMAL_NAME}では、
               <br />
               全ての掲載店舗様に相談窓口を設けて頂いております！
             </p>
