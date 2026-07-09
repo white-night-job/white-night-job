@@ -13,25 +13,12 @@ import {
 } from "@/lib/search-history";
 import type { Job } from "@/types/job";
 
-type NotificationSettings = {
-  notifyNewJobs: boolean;
-  notifyPickupJobs: boolean;
-  notifyFavoriteUpdates: boolean;
-};
-
 export default function MyPage() {
   const router = useRouter();
   const { currentUser, isLoggedIn, ready, refreshSession } = useUserSession();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchHistory, setSearchHistory] = useState<SavedSearchFilters | null>(null);
-  const [settings, setSettings] = useState<NotificationSettings>({
-    notifyNewJobs: true,
-    notifyPickupJobs: true,
-    notifyFavoriteUpdates: true,
-  });
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [settingsMessage, setSettingsMessage] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -44,45 +31,16 @@ export default function MyPage() {
 
     setSearchHistory(loadSearchHistory());
 
-    Promise.all([
-      fetch("/api/favorites", { cache: "no-store", credentials: "include" }),
-      fetch("/api/notification-settings", {
-        cache: "no-store",
-        credentials: "include",
-      }),
-    ])
-      .then(async ([favoritesResponse, settingsResponse]) => {
-        if (favoritesResponse.ok) {
-          const data = (await favoritesResponse.json()) as { jobs?: Job[] };
-          setJobs(data.jobs ?? []);
-        }
-        if (settingsResponse.ok) {
-          const data = (await settingsResponse.json()) as NotificationSettings;
-          setSettings(data);
-        }
+    fetch("/api/favorites", { cache: "no-store", credentials: "include" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { jobs?: Job[] };
+      })
+      .then((data) => {
+        if (data?.jobs) setJobs(data.jobs);
       })
       .finally(() => setLoading(false));
   }, [isLoggedIn, ready]);
-
-  async function saveSettings() {
-    setSavingSettings(true);
-    setSettingsMessage("");
-    try {
-      const response = await fetch("/api/notification-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(settings),
-      });
-      if (!response.ok) throw new Error("保存に失敗しました。");
-      setSettingsMessage("通知設定を保存しました。");
-    } catch (error) {
-      console.error("[mypage] settings save failed:", error);
-      setSettingsMessage("通知設定の保存に失敗しました。");
-    } finally {
-      setSavingSettings(false);
-    }
-  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -119,12 +77,6 @@ export default function MyPage() {
           >
             LINEでログイン
           </a>
-          <Link
-            href="/jobs"
-            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 px-5 text-sm font-semibold text-gold-dark"
-          >
-            ゲストで利用
-          </Link>
         </div>
       </div>
     );
@@ -141,24 +93,28 @@ export default function MyPage() {
         <h1 className="mt-1 font-serif text-2xl font-semibold text-charcoal">
           マイページ
         </h1>
+
         <div className="mt-4 flex items-center gap-3">
           {currentUser?.pictureUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentUser.pictureUrl}
               alt=""
-              className="h-12 w-12 rounded-full border border-gold/30 object-cover"
+              className="h-14 w-14 rounded-full border-2 border-gold/35 object-cover shadow-gold"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 bg-ivory text-gold-dark">
-              ♥
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-gold/35 bg-ivory text-xl text-gold-dark shadow-gold">
+              👤
             </div>
           )}
-          <div>
-            <p className="text-xs text-muted">LINEログイン中</p>
-            <p className="font-semibold text-charcoal">
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-serif text-lg font-semibold text-charcoal">
               {currentUser?.displayName ?? "ユーザー"}
             </p>
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#06c755]/30 bg-[#06c755]/10 px-2.5 py-1 text-[11px] font-semibold text-[#058a42]">
+              <span aria-hidden>LINE</span>
+              連携済み
+            </span>
           </div>
         </div>
       </section>
@@ -166,11 +122,13 @@ export default function MyPage() {
       <section className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="font-serif text-lg font-semibold text-charcoal">
-            お気に入り登録店舗
+            お気に入り店舗
           </h2>
-          <Link href="/favorites" className="text-xs font-medium text-gold-dark">
-            一覧へ
-          </Link>
+          {jobs.length > 0 && (
+            <Link href="/mypage/favorites" className="text-xs font-medium text-gold-dark">
+              すべて見る
+            </Link>
+          )}
         </div>
         {jobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white p-5 text-sm text-muted">
@@ -178,7 +136,7 @@ export default function MyPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {jobs.slice(0, 5).map((job) => (
+            {jobs.slice(0, 3).map((job) => (
               <MyPageFavoriteCard
                 key={job.id}
                 job={job}
@@ -187,21 +145,13 @@ export default function MyPage() {
                 }
               />
             ))}
-            {jobs.length > 5 && (
-              <Link
-                href="/favorites"
-                className="block text-center text-sm font-medium text-gold-dark"
-              >
-                他 {jobs.length - 5} 件を見る
-              </Link>
-            )}
           </div>
         )}
       </section>
 
       <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
         <h2 className="font-serif text-lg font-semibold text-charcoal">
-          直近の検索条件
+          最近検索した条件
         </h2>
         {searchSummary.length === 0 ? (
           <p className="mt-2 text-sm text-muted">保存された検索条件はありません。</p>
@@ -225,67 +175,11 @@ export default function MyPage() {
         )}
       </section>
 
-      <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-        <h2 className="font-serif text-lg font-semibold text-charcoal">通知設定</h2>
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyNewJobs}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyNewJobs: event.target.checked,
-                }))
-              }
-            />
-            新着店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyPickupJobs}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyPickupJobs: event.target.checked,
-                }))
-              }
-            />
-            PICK UP店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyFavoriteUpdates}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyFavoriteUpdates: event.target.checked,
-                }))
-              }
-            />
-            お気に入り店舗の更新通知
-          </label>
-        </div>
-        <button
-          type="button"
-          onClick={saveSettings}
-          disabled={savingSettings}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {savingSettings ? "保存中..." : "通知設定を保存"}
-        </button>
-        {settingsMessage && (
-          <p className="mt-2 text-sm text-muted">{settingsMessage}</p>
-        )}
-      </section>
-
       <button
         type="button"
         onClick={handleLogout}
         disabled={loggingOut}
-        className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-charcoal/20 bg-white px-4 text-sm font-semibold text-charcoal disabled:opacity-60"
+        className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-charcoal/20 bg-white px-4 text-sm font-semibold text-charcoal shadow-gold disabled:opacity-60"
       >
         {loggingOut ? "ログアウト中..." : "ログアウト"}
       </button>

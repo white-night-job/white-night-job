@@ -7,13 +7,19 @@ import { useUserSession } from "@/components/UserSessionProvider";
 type FavoriteButtonProps = {
   jobId: string;
   className?: string;
+  /** 店舗詳細ページのみ true。未ログイン時にLINE認証へ遷移する */
+  allowLineLoginRedirect?: boolean;
 };
 
 let favoriteCacheUserId: string | null = null;
 let favoriteCache = new Set<string>();
 let favoriteCacheReady = false;
 
-export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
+export function FavoriteButton({
+  jobId,
+  className = "",
+  allowLineLoginRedirect = false,
+}: FavoriteButtonProps) {
   const pathname = usePathname();
   const { currentUser, isLoggedIn, ready, refreshSession } = useUserSession();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -106,38 +112,25 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
   async function handleToggle() {
     if (!ready || checking) return;
 
+    if (!isLoggedIn && !allowLineLoginRedirect) {
+      return;
+    }
+
     setErrorMessage(null);
     setChecking(true);
-
-    console.log("[FavoriteButton] click", {
-      currentUser,
-      userId,
-      isLoggedIn,
-      jobId,
-      ready,
-    });
 
     try {
       let result = await toggleFavorite();
 
       if (result === "unauthorized") {
         const nextSession = await refreshSession();
-        const refreshedUserId = nextSession.user?.id ?? null;
-        const refreshedLoggedIn = Boolean(refreshedUserId);
-
-        console.log("[FavoriteButton] unauthorized, refreshed session", {
-          currentUser: nextSession.user ?? null,
-          userId: refreshedUserId,
-          isLoggedIn: refreshedLoggedIn,
-          reason: nextSession.reason ?? null,
-        });
+        const refreshedLoggedIn = Boolean(nextSession.user?.id);
 
         if (!refreshedLoggedIn) {
-          console.log("[FavoriteButton] redirecting to LINE login because currentUser is null", {
-            reason: nextSession.reason ?? "unauthorized",
-            jobId,
-          });
-          window.location.href = lineLoginHref;
+          if (allowLineLoginRedirect) {
+            console.log("[FavoriteButton] redirecting to LINE login", { jobId });
+            window.location.href = lineLoginHref;
+          }
           return;
         }
 
@@ -145,11 +138,9 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
       }
 
       if (result === "unauthorized") {
-        console.log("[FavoriteButton] redirecting to LINE login after retry still unauthorized", {
-          userId,
-          jobId,
-        });
-        window.location.href = lineLoginHref;
+        if (allowLineLoginRedirect) {
+          window.location.href = lineLoginHref;
+        }
         return;
       }
 
@@ -188,16 +179,11 @@ export function FavoriteButton({ jobId, className = "" }: FavoriteButtonProps) {
         type="button"
         aria-label={isFavorite ? "お気に入り解除" : "お気に入り登録"}
         onClick={handleToggle}
-        disabled={checking || !ready}
+        disabled={checking || !ready || (!isLoggedIn && !allowLineLoginRedirect)}
         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-gold/35 bg-white/92 text-lg shadow-gold transition disabled:opacity-60 ${className}`}
       >
         <span className={isFavorite ? "text-gold-dark" : "text-muted"}>♥</span>
       </button>
-      {isLoggedIn && ready && (
-        <span className="hidden text-[10px] font-medium text-gold-dark sm:inline">
-          LINEログイン済み
-        </span>
-      )}
       {errorMessage && (
         <p className="max-w-[8rem] text-center text-[10px] leading-tight text-red-600">
           {errorMessage}

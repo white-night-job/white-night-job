@@ -171,7 +171,7 @@ export default function JobDetailPage({
           </p>
           <div className="mt-1 flex items-start justify-between gap-3">
             <h1 className="font-serif text-xl font-semibold sm:text-2xl">{job.title}</h1>
-            <FavoriteButton jobId={job.id} />
+            <FavoriteButton jobId={job.id} allowLineLoginRedirect />
           </div>
           <p className="mt-2 font-medium text-charcoal">{job.shopName}</p>
           {job.introductionText && (
