@@ -7,9 +7,9 @@ import { createSupabaseAdmin } from "@/lib/supabase";
 import {
   attachUserSessionCookie,
   clearLineStateCookieOnResponse,
+  describeUserCookieOptions,
   getLineStateCookie,
   parseLineStateCookie,
-  setUserSessionCookie,
   USER_COOKIE_NAME,
 } from "@/lib/user-auth";
 
@@ -117,21 +117,17 @@ export async function handleLineCallback(request: Request) {
     const destination = buildRedirectDestination(requestUrl, parsedState.redirectPath);
     console.log("[line-callback] redirect destination", destination.toString());
 
-    await setUserSessionCookie(data.id, request);
-    console.log("[line-callback] session cookie set via cookies()", {
-      cookieName: USER_COOKIE_NAME,
-      userId: data.id,
-    });
-
     const response = NextResponse.redirect(destination, { status: 303 });
     clearLineStateCookieOnResponse(response, request);
     attachUserSessionCookie(response, data.id, request);
 
+    const cookieOptions = describeUserCookieOptions(request);
     const setCookieHeader = response.headers.get("set-cookie");
-    console.log("[line-callback] response Set-Cookie", {
-      cookieName: USER_COOKIE_NAME,
+    console.log("[line-callback] session cookie attached to redirect", {
+      ...cookieOptions,
       hasSetCookieHeader: Boolean(setCookieHeader),
       includesUserCookie: Boolean(setCookieHeader?.includes(USER_COOKIE_NAME)),
+      setCookiePreview: setCookieHeader?.slice(0, 240) ?? null,
     });
 
     return response;

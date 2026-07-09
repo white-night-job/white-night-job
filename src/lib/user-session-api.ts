@@ -1,8 +1,8 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   getAuthenticatedUserId,
   parseUserSessionValue,
+  readUserSessionCookieValue,
   USER_COOKIE_NAME,
 } from "@/lib/user-auth";
 import { createSupabaseAdmin } from "@/lib/supabase";
@@ -33,19 +33,19 @@ export type MeResponse =
         | "db_error";
       cookieName: string;
       hasCookieHeader: boolean;
+      hasCookieStore: boolean;
     };
 
 export async function buildMeResponse(request: Request): Promise<MeResponse> {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const hasCookieHeader = cookieHeader.includes(USER_COOKIE_NAME);
-
-  const cookieStore = await cookies();
-  const rawCookie = cookieStore.get(USER_COOKIE_NAME)?.value;
+  const rawCookie = await readUserSessionCookieValue(request);
+  const hasCookieStore = Boolean(rawCookie);
 
   console.log("[api/me] cookie check", {
     cookieName: USER_COOKIE_NAME,
     hasCookieHeader,
-    hasRawCookie: Boolean(rawCookie),
+    hasCookieStore,
     rawCookieLength: rawCookie?.length ?? 0,
   });
 
@@ -57,6 +57,7 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
       reason: "cookie_missing",
       cookieName: USER_COOKIE_NAME,
       hasCookieHeader,
+      hasCookieStore,
     };
   }
 
@@ -69,6 +70,7 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
       reason: "cookie_invalid",
       cookieName: USER_COOKIE_NAME,
       hasCookieHeader,
+      hasCookieStore,
     };
   }
 
@@ -81,6 +83,7 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
       reason: "cookie_invalid",
       cookieName: USER_COOKIE_NAME,
       hasCookieHeader,
+      hasCookieStore,
     };
   }
 
@@ -109,6 +112,7 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
       reason: "db_error",
       cookieName: USER_COOKIE_NAME,
       hasCookieHeader,
+      hasCookieStore,
     };
   }
 
@@ -120,6 +124,7 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
       reason: "user_not_found",
       cookieName: USER_COOKIE_NAME,
       hasCookieHeader,
+      hasCookieStore,
     };
   }
 

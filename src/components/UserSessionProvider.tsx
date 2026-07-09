@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
+import type { ServerUserSession } from "@/lib/server-user-session";
 
 type NotificationSettings = {
   notify_new_jobs: boolean;
@@ -82,9 +83,23 @@ async function wait(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function UserSessionProvider({ children }: { children: ReactNode }) {
+export function UserSessionProvider({
+  children,
+  initialSession,
+}: {
+  children: ReactNode;
+  initialSession?: ServerUserSession;
+}) {
   const pathname = usePathname();
-  const [session, setSession] = useState<UserSession>({ authenticated: false });
+  const [session, setSession] = useState<UserSession>(() => {
+    if (initialSession?.authenticated && initialSession.user) {
+      return {
+        authenticated: true,
+        user: initialSession.user,
+      };
+    }
+    return { authenticated: false };
+  });
   const [ready, setReady] = useState(false);
 
   const refreshSession = useCallback(async () => {

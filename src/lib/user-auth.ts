@@ -5,7 +5,7 @@ import type { NextResponse } from "next/server";
 export const USER_COOKIE_NAME = "white-night-user";
 export const LINE_STATE_COOKIE_NAME = "white-night-line-state";
 const LINE_STATE_DELIMITER = "|";
-const USER_SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+export const USER_SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 function getUserSessionSecret(): string {
   return (
@@ -26,20 +26,6 @@ function isProductionHost(request?: Request): boolean {
   );
 }
 
-export function buildUserCookieOptions(request?: Request) {
-  const domain =
-    process.env.COOKIE_DOMAIN?.trim() ||
-    resolveSharedCookieDomain() ||
-    undefined;
-  return {
-    httpOnly: true,
-    secure: isProductionHost(request) || process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    ...(domain ? { domain } : {}),
-  };
-}
-
 function resolveSharedCookieDomain(): string | undefined {
   const redirectUri = process.env.LINE_LOGIN_REDIRECT_URI?.trim();
   if (!redirectUri) return undefined;
@@ -51,6 +37,36 @@ function resolveSharedCookieDomain(): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function resolveCookieDomain(request?: Request): string | undefined {
+  const explicit = process.env.COOKIE_DOMAIN?.trim();
+  const candidate = explicit || resolveSharedCookieDomain();
+  if (!candidate) return undefined;
+
+  if (!request) return candidate.startsWith(".") ? candidate : `.${candidate}`;
+
+  const host = new URL(request.url).hostname;
+  if (host === "localhost" || host === "127.0.0.1") return undefined;
+
+  const base = candidate.startsWith(".") ? candidate.slice(1) : candidate;
+  if (host === base || host === `www.${base}` || host.endsWith(`.${base}`)) {
+    return candidate.startsWith(".") ? candidate : `.${candidate}`;
+  }
+
+  return undefined;
+}
+
+export function buildUserCookieOptions(request?: Request) {
+  const domain = resolveCookieDomain(request);
+  return {
+    httpOnly: true,
+    secure: isProductionHost(request) || process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: USER_SESSION_MAX_AGE,
+    ...(domain ? { domain } : {}),
+  };
 }
 
 export function createUserSessionValue(userId: string): string {
@@ -88,7 +104,7 @@ function readCookieFromHeader(
   return null;
 }
 
-export async function getAuthenticatedUserId(
+export async function readUserSessionCookieValue(
   request?: Request,
 ): Promise<string | null> {
   const cookieStore = await cookies();
@@ -98,19 +114,15 @@ export async function getAuthenticatedUserId(
     value = readCookieFromHeader(request.headers.get("cookie"), USER_COOKIE_NAME);
   }
 
-  if (!value) return null;
-  return parseUserSessionValue(value);
+  return value;
 }
 
-export async function setUserSessionCookie(
-  userId: string,
+export async function getAuthenticatedUserId(
   request?: Request,
-): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(USER_COOKIE_NAME, createUserSessionValue(userId), {
-    ...buildUserCookieOptions(request),
-    maxAge: USER_SESSION_MAX_AGE,
-  });
+): Promise<string | null> {
+  const value = await readUserSessionCookieValue(request);
+  if (!value) return null;
+  return parseUserSessionValue(value);
 }
 
 export function attachUserSessionCookie(
@@ -118,11 +130,14 @@ export function attachUserSessionCookie(
   userId: string,
   request?: Request,
 ): NextResponse {
-  response.cookies.set(USER_COOKIE_NAME, createUserSessionValue(userId), {
-    ...buildUserCookieOptions(request),
-    maxAge: USER_SESSION_MAX_AGE,
-  });
+  const options = buildUserCookieOptions(request);
+  response.cookies.set(USER_COOKIE_NAME, createUserSessionValue(userId), options);
   return response;
+}
+
+function withoutMaxAge(options: ReturnType<typeof buildUserCookieOptions>) {
+  const { maxAge: _ignored, ...rest } = options;
+  return rest;
 }
 
 export function attachLineStateCookie(
@@ -135,7 +150,7 @@ export function attachLineStateCookie(
     LINE_STATE_COOKIE_NAME,
     `${state}${LINE_STATE_DELIMITER}${redirectPath}`,
     {
-      ...buildUserCookieOptions(request),
+      ...withoutMaxAge(buildUserCookieOptions(request)),
       maxAge: 60 * 10,
     },
   );
@@ -147,7 +162,7 @@ export function clearLineStateCookieOnResponse(
   request?: Request,
 ): NextResponse {
   response.cookies.set(LINE_STATE_COOKIE_NAME, "", {
-    ...buildUserCookieOptions(request),
+    ...withoutMaxAge(buildUserCookieOptions(request)),
     maxAge: 0,
   });
   return response;
@@ -158,7 +173,7 @@ export function clearUserSessionCookie(
   request?: Request,
 ): NextResponse {
   response.cookies.set(USER_COOKIE_NAME, "", {
-    ...buildUserCookieOptions(request),
+    ...withoutMaxAge(buildUserCookieOptions(request)),
     maxAge: 0,
   });
   return response;
@@ -193,7 +208,15 @@ export function parseLineStateCookie(
   };
 }
 
-export async function clearUserCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(USER_COOKIE_NAME);
+export function describeUserCookieOptions(request?: Request) {
+  const options = buildUserCookieOptions(request);
+  return {
+    cookieName: USER_COOKIE_NAME,
+    httpOnly: options.httpOnly,
+    secure: options.secure,
+    sameSite: options.sameSite,
+    path: options.path,
+    maxAge: options.maxAge,
+    domain: "domain" in options ? options.domain : undefined,
+  };
 }
