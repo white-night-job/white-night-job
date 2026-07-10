@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { HeaderLoginModal } from "@/components/HeaderLoginModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 
 function AccountIcon() {
@@ -13,28 +14,34 @@ function AccountIcon() {
   );
 }
 
+function buildLineLoginHref(redirectPath: string) {
+  return `/api/line/login?redirect=${encodeURIComponent(redirectPath)}`;
+}
+
 export function HeaderAccountMenu() {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, ready, refreshSession } = useUserSession();
   const menuRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  const lineLoginRedirect =
-    pathname === "/" || !pathname ? "/mypage" : pathname;
+  const lineLoginRedirect = pathname || "/";
+  const lineLoginHref = buildLineLoginHref(lineLoginRedirect);
 
   useEffect(() => {
-    setOpen(false);
+    setMenuOpen(false);
+    setLoginModalOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent | TouchEvent) {
       if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        setMenuOpen(false);
       }
     }
 
-    if (!open) return;
+    if (!menuOpen) return;
 
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("touchstart", handlePointerDown);
@@ -42,57 +49,66 @@ export function HeaderAccountMenu() {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("touchstart", handlePointerDown);
     };
-  }, [open]);
+  }, [menuOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!menuOpen) return;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setMenuOpen(false);
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [menuOpen]);
 
   async function handleLogout() {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });
     await refreshSession();
-    setOpen(false);
+    setMenuOpen(false);
     router.push("/");
   }
 
-  const triggerLabel = isLoggedIn ? "マイページ" : "アカウント";
+  function handleTriggerClick() {
+    if (!ready) return;
+    if (isLoggedIn) {
+      setMenuOpen((current) => !current);
+      return;
+    }
+    setLoginModalOpen(true);
+  }
+
+  const triggerLabel = isLoggedIn ? "マイページ" : "ログイン";
 
   return (
-    <div ref={menuRef} className="relative shrink-0">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-expanded={open}
-        aria-controls="header-account-menu"
-        aria-label={triggerLabel}
-        className={`header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
-      >
-        <AccountIcon />
-        <span className="header-account-btn-label">{triggerLabel}</span>
-      </button>
+    <>
+      <div ref={menuRef} className="relative shrink-0">
+        <button
+          type="button"
+          onClick={handleTriggerClick}
+          aria-expanded={isLoggedIn ? menuOpen : loginModalOpen}
+          aria-controls={isLoggedIn ? "header-account-menu" : "header-login-modal-title"}
+          aria-label={triggerLabel}
+          className={`header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
+        >
+          <AccountIcon />
+          <span className="header-account-btn-label">{triggerLabel}</span>
+        </button>
 
-      {open && ready && (
-        <>
-          <button
-            type="button"
-            aria-label="アカウントメニューを閉じる"
-            className="fixed inset-0 z-40 bg-charcoal/15"
-            onClick={() => setOpen(false)}
-          />
-          <nav id="header-account-menu" className="header-account-panel">
-            {isLoggedIn ? (
+        {menuOpen && ready && isLoggedIn && (
+          <>
+            <button
+              type="button"
+              aria-label="アカウントメニューを閉じる"
+              className="fixed inset-0 z-40 bg-charcoal/15"
+              onClick={() => setMenuOpen(false)}
+            />
+            <nav id="header-account-menu" className="header-account-panel">
               <ul className="header-account-list">
                 <li>
                   <Link
                     href="/mypage"
-                    onClick={() => setOpen(false)}
+                    onClick={() => setMenuOpen(false)}
                     className="header-account-item"
                   >
                     マイページ
@@ -102,7 +118,7 @@ export function HeaderAccountMenu() {
                 <li>
                   <Link
                     href="/mypage/favorites"
-                    onClick={() => setOpen(false)}
+                    onClick={() => setMenuOpen(false)}
                     className="header-account-item"
                   >
                     お気に入り
@@ -119,32 +135,18 @@ export function HeaderAccountMenu() {
                   </button>
                 </li>
               </ul>
-            ) : (
-              <ul className="header-account-list">
-                <li>
-                  <a
-                    href={`/api/line/login?redirect=${encodeURIComponent(lineLoginRedirect)}`}
-                    className="header-account-item header-account-item-line"
-                    onClick={() => setOpen(false)}
-                  >
-                    LINEでログイン
-                  </a>
-                </li>
-                <li className="header-account-divider" aria-hidden />
-                <li>
-                  <Link
-                    href="/#first-time-guide"
-                    onClick={() => setOpen(false)}
-                    className="header-account-item"
-                  >
-                    初めての方へ
-                  </Link>
-                </li>
-              </ul>
-            )}
-          </nav>
-        </>
+            </nav>
+          </>
+        )}
+      </div>
+
+      {!isLoggedIn && (
+        <HeaderLoginModal
+          open={loginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
+          lineLoginHref={lineLoginHref}
+        />
       )}
-    </div>
+    </>
   );
 }

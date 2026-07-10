@@ -3419,3 +3419,201 @@ html.is-header-scrolled .site-header-line {
     transform: translateY(0);
   }
 }
+
+/* ── Header login modal ── */
+
+.header-login-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.header-login-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 10, 10, 0.52);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.header-login-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 22.5rem;
+  padding: 1.125rem;
+  border-radius: 1.125rem;
+  border: 1px solid rgba(196, 165, 116, 0.38);
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
+  box-shadow:
+    0 24px 64px rgba(17, 17, 17, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  animation: header-login-modal-in 0.28s ease;
+}
+
+.header-login-modal-line-card {
+  position: relative;
+  padding: 1rem 0.875rem 0.875rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.32);
+  background: linear-gradient(165deg, #ffffff 0%, #fffdf8 48%, #f8f2e8 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.header-login-modal-badge {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.375rem;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: linear-gradient(135deg, #f5ede0 0%, #e0d0b0 45%, #c9ad7a 100%);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #5a4520;
+  box-shadow: 0 2px 8px rgba(196, 165, 116, 0.22);
+}
+
+.header-login-modal-line-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 4.5rem;
+}
+
+.header-login-modal-line-dot {
+  flex-shrink: 0;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  background: #06c755;
+  box-shadow: 0 0 0 3px rgba(6, 199, 85, 0.16);
+}
+
+.header-login-modal-heading {
+  margin: 0;
+  font-family: var(--font-serif), serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #1a1612;
+}
+
+.header-login-modal-line-desc {
+  margin: 0.625rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.82);
+}
+
+.header-login-modal-line-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: rgba(42, 34, 24, 0.52);
+}
+
+.header-login-modal-line-btn {
+  margin-top: 0.875rem;
+  display: inline-flex;
+  min-height: 2.875rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background: #06c755;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 22px rgba(6, 199, 85, 0.24);
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.header-login-modal-line-btn:hover {
+  filter: brightness(1.03);
+}
+
+.header-login-modal-line-btn:active {
+  transform: scale(1.02);
+}
+
+.header-login-modal-divider {
+  height: 1px;
+  margin: 0.875rem 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(196, 165, 116, 0.42) 50%,
+    transparent 100%
+  );
+}
+
+.header-login-modal-guest-card {
+  padding: 0.125rem 0.25rem 0.25rem;
+}
+
+.header-login-modal-guest-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #3d3428;
+}
+
+.header-login-modal-guest-desc {
+  margin: 0.375rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: rgba(42, 34, 24, 0.66);
+}
+
+.header-login-modal-guest-btn {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  min-height: 2.625rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(196, 165, 116, 0.48);
+  background: #ffffff;
+  color: #8b6f3e;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.header-login-modal-guest-btn:hover {
+  border-color: rgba(196, 165, 116, 0.72);
+  background: #fffdf8;
+}
+
+.header-login-modal-guest-btn:active {
+  transform: scale(1.02);
+}
+
+@keyframes header-login-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

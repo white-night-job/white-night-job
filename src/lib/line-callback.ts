@@ -25,9 +25,7 @@ async function ensureUserNotificationSettings(userId: string) {
 }
 
 function resolvePostLoginRedirect(redirectPath: string): string {
-  const path = redirectPath.trim() || "/mypage";
-  if (path === "/") return "/mypage";
-  return path;
+  return redirectPath.trim() || "/";
 }
 
 function buildRedirectDestination(requestUrl: URL, redirectPath: string): URL {
