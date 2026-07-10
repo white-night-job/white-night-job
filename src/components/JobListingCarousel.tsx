@@ -81,7 +81,7 @@ export function JobListingCarousel({
           <div className="listing-carousel-track">
             <div className="listing-carousel-grid">
               {jobs.map((job) => (
-                <div key={job.id} className="snap-start">
+                <div key={job.id} className="listing-carousel-item snap-start">
                   <CompactJobCard job={job} theme="premium" badge={badge} />
                 </div>
               ))}

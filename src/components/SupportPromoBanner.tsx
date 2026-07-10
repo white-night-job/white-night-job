@@ -44,7 +44,7 @@ export function SupportPromoBanner({
         href="#support-section"
         className={`hero-promo-plate group flex min-h-[3.5rem] w-full items-center justify-center gap-2.5 px-5 py-3 transition hover:opacity-95 sm:min-h-[3.75rem] sm:gap-3 sm:px-6 sm:py-3.5 ${className}`}
       >
-        <CrownIcon className="hero-promo-crown h-[18px] w-[18px] shrink-0 sm:h-5 sm:w-5" />
+        <CrownIcon className="hero-promo-crown hero-promo-crown-glow h-[18px] w-[18px] shrink-0 sm:h-5 sm:w-5" />
         <div className="flex flex-col items-center gap-0.5 text-center">
           <span className="text-[8px] font-medium tracking-[0.3em] text-[#c4a574]/60 sm:text-[9px]">
             業界唯一

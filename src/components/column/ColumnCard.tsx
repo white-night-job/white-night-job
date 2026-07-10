@@ -4,13 +4,22 @@ import type { ColumnArticle } from "@/data/column-articles";
 
 type ColumnCardProps = {
   article: ColumnArticle;
+  variant?: "default" | "top";
 };
 
-export function ColumnCard({ article }: ColumnCardProps) {
+export function ColumnCard({ article, variant = "default" }: ColumnCardProps) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5">
+    <article
+      className={`column-premium-card flex h-full flex-col overflow-hidden ${
+        variant === "top" ? "column-premium-card-top" : ""
+      }`}
+    >
       <Link href={`/column/${article.slug}`} className="block">
-        <ColumnThumbnail title={article.title} tone={article.thumbnailTone} />
+        <ColumnThumbnail
+          title={article.title}
+          tone={article.thumbnailTone}
+          className="column-premium-thumb"
+        />
       </Link>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">

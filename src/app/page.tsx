@@ -4,6 +4,7 @@ import { BrandAboutSection } from "@/components/BrandAboutSection";
 import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { TopColumnSection } from "@/components/TopColumnSection";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
@@ -51,27 +52,41 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   return (
-    <TopPageShell>
-      <TopHeroPanel initialFilters={filters} />
-
+    <TopPageShell hero={<TopHeroPanel initialFilters={filters} />}>
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
-        <RecentlyViewedCarousel />
+        <ScrollReveal>
+          <Suspense
+            fallback={
+              <div className="h-48 animate-pulse rounded-2xl border border-[#b8a876]/40 bg-gradient-to-br from-[#f5f2eb] to-[#d4c9a8]" />
+            }
+          >
+            <TopJobDiscovery />
+          </Suspense>
+        </ScrollReveal>
 
-        <Suspense
-          fallback={
-            <div className="h-48 animate-pulse rounded-2xl border border-[#b8a876]/40 bg-gradient-to-br from-[#f5f2eb] to-[#d4c9a8]" />
-          }
-        >
-          <TopJobDiscovery />
-        </Suspense>
+        <ScrollReveal delayMs={60}>
+          <NightJobDiagnosis />
+        </ScrollReveal>
 
-        <NightJobDiagnosis />
+        <ScrollReveal delayMs={80}>
+          <RecentlyViewedCarousel />
+        </ScrollReveal>
 
-        <TopColumnSection />
+        <ScrollReveal delayMs={100}>
+          <TopColumnSection />
+        </ScrollReveal>
 
-        <SupportConsultationSection />
-        <BrandAboutSection />
-        <FirstTimeGuide />
+        <ScrollReveal delayMs={120}>
+          <SupportConsultationSection />
+        </ScrollReveal>
+
+        <ScrollReveal delayMs={140}>
+          <BrandAboutSection />
+        </ScrollReveal>
+
+        <ScrollReveal delayMs={160}>
+          <FirstTimeGuide />
+        </ScrollReveal>
       </div>
     </TopPageShell>
   );

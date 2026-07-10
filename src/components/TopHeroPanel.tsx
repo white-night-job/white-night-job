@@ -13,8 +13,13 @@ type TopHeroPanelProps = {
 export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
   return (
     <div className="first-view">
-      <div className="hero-unified-plate relative mx-auto w-full max-w-2xl">
-        <div className="hero-plate-header px-0.5 pt-2 sm:pt-3">
+      <div className="hero-immersive">
+        <div className="hero-immersive-fx" aria-hidden>
+          <div className="hero-gold-sweep" />
+          <div className="hero-particles" />
+        </div>
+
+        <div className="hero-plate-header hero-immersive-header">
           <div className="hero-plate-content">
             <SafetyBadge variant="hero" />
 
@@ -28,9 +33,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
             <h1 className="hero-brand">
               <div className="hero-brand-mark">
                 <span className="hero-brand-line" aria-hidden />
-                <p className="hero-brand-logo font-serif leading-none">
-                  White Night
-                </p>
+                <p className="hero-brand-logo font-serif leading-none">White Night</p>
                 <div className="hero-brand-tag-wrap">
                   <span
                     className="hero-brand-line hero-brand-line-through"
@@ -42,7 +45,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
                     </span>
                   </div>
                 </div>
-                <p className="hero-brand-sub font-serif uppercase">Job</p>
+                <p className="hero-brand-sub font-serif uppercase">JOB</p>
               </div>
             </h1>
 
@@ -54,20 +57,24 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
           </div>
         </div>
 
-        <div className="hero-search-unit hero-plate-search mt-2 text-left sm:mt-2.5">
-          <JobFilterSearch
-            appliedFilters={initialFilters}
-            onApply={() => {}}
-            resultsPath="/jobs"
-            theme="premium"
-            embedded
-            inPlate
-          />
+        <div className="hero-immersive-search">
+          <div className="hero-search-unit hero-plate-search text-left">
+            <JobFilterSearch
+              appliedFilters={initialFilters}
+              onApply={() => {}}
+              resultsPath="/jobs"
+              theme="premium"
+              embedded
+              inPlate
+            />
+          </div>
         </div>
       </div>
 
-      <div className="hero-promo-card mx-auto mt-7 w-full max-w-2xl sm:mt-9">
-        <SupportPromoBanner standalone />
+      <div className="hero-promo-fullbleed">
+        <div className="hero-promo-card">
+          <SupportPromoBanner standalone />
+        </div>
       </div>
     </div>
   );
