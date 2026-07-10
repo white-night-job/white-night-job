@@ -75,17 +75,17 @@ function buildDiagnosisAdvice(
   const advice: string[] = [];
 
   if (
-    answers.priority === "beginner" ||
+    answers.experience === "none" ||
     top.jobType === "ガールズバー" ||
     top.jobType === "コンカフェ"
   ) {
     advice.push("未経験でも始めやすい職種です");
   }
   advice.push("まずは体験入店がおすすめです");
-  if (answers.serviceStyle === "friendly" || answers.purpose === "fun") {
+  if (answers.serviceStyle === "friendly" || answers.priority === "fun") {
     advice.push("人と話すことが好きなあなたに向いています");
   }
-  if (answers.priority === "salary") {
+  if (answers.priority === "earn_money" || answers.goal === "high_income") {
     advice.push("時給面を重視するなら、条件比較が大切です");
   }
   if (answers.alcohol === "no") {
@@ -93,6 +93,9 @@ function buildDiagnosisAdvice(
   }
   if (answers.customerType === "regular") {
     advice.push("常連さんとの関係づくりがやりがいになる職種です");
+  }
+  if (answers.schedule === "week1_2" || answers.schedule === "undecided") {
+    advice.push("週1〜2日から始められる店舗も多いので、無理のないペースで探しましょう");
   }
 
   return advice.slice(0, 4);
@@ -117,6 +120,7 @@ export function calculateDiagnosisResult(answers: DiagnosisAnswers): DiagnosisRe
       reason: profile.reason,
       points: profile.points,
       merits: profile.merits,
+      cautions: profile.cautions,
       jobsUrl: buildDiagnosisJobsUrl(type),
     };
   }).sort((a, b) => b.percent - a.percent);

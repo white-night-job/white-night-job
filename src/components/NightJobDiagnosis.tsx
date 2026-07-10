@@ -10,12 +10,17 @@ import {
 } from "@/lib/job-type-diagnosis";
 
 const EMPTY_ANSWERS: DiagnosisAnswers = {
-  purpose: null,
+  priority: null,
+  experience: null,
+  age: null,
   alcohol: null,
   serviceStyle: null,
-  workTime: null,
   customerType: null,
-  priority: null,
+  goal: null,
+  atmosphere: null,
+  schedule: null,
+  outfit: null,
+  personality: null,
 };
 
 export function NightJobDiagnosis() {
@@ -68,7 +73,7 @@ export function NightJobDiagnosis() {
         <p className="job-diagnosis-eyebrow">Diagnosis</p>
         <h2 className="job-diagnosis-title font-serif">あなたに合う職種診断</h2>
         <p className="job-diagnosis-subtitle">
-          約30秒・6つの質問で
+          約1分・11の質問で
           <br />
           あなたに向いている夜職が分かります。
         </p>

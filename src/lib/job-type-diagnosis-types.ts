@@ -12,12 +12,17 @@ export const DIAGNOSIS_JOB_TYPES = [
 export type DiagnosisJobType = (typeof DIAGNOSIS_JOB_TYPES)[number];
 
 export type DiagnosisAnswers = {
-  purpose: string | null;
+  priority: string | null;
+  experience: string | null;
+  age: string | null;
   alcohol: string | null;
   serviceStyle: string | null;
-  workTime: string | null;
   customerType: string | null;
-  priority: string | null;
+  goal: string | null;
+  atmosphere: string | null;
+  schedule: string | null;
+  outfit: string | null;
+  personality: string | null;
 };
 
 export type DiagnosisQuestion = {
@@ -26,12 +31,20 @@ export type DiagnosisQuestion = {
   options: { label: string; value: string }[];
 };
 
+export type DiagnosisJobProfile = {
+  reason: string;
+  points: string[];
+  merits: string[];
+  cautions: string[];
+};
+
 export type DiagnosisResultItem = {
   jobType: DiagnosisJobType;
   percent: number;
   reason: string;
   points: string[];
   merits: string[];
+  cautions: string[];
   jobsUrl: string;
 };
 

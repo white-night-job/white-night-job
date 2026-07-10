@@ -4112,6 +4112,14 @@
   color: #8b6f3e;
 }
 
+.job-diagnosis-result-block-caution .job-diagnosis-result-block-title {
+  color: #9a6b4a;
+}
+
+.job-diagnosis-result-block-caution .job-diagnosis-result-list {
+  color: rgba(74, 52, 36, 0.78);
+}
+
 .job-diagnosis-result-block-text,
 .job-diagnosis-result-list {
   margin: 0.375rem 0 0;

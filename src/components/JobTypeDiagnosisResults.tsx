@@ -76,6 +76,15 @@ function MedalCard({
         </ul>
       </div>
 
+      <div className="job-diagnosis-result-block job-diagnosis-result-block-caution">
+        <p className="job-diagnosis-result-block-title">注意点</p>
+        <ul className="job-diagnosis-result-list">
+          {item.cautions.map((caution) => (
+            <li key={caution}>{caution}</li>
+          ))}
+        </ul>
+      </div>
+
       <Link href={item.jobsUrl} className="job-diagnosis-result-jobs-btn">
         この職種の求人を見る
       </Link>
