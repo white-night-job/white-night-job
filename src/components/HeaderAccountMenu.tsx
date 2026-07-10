@@ -69,7 +69,10 @@ export function HeaderAccountMenu() {
     router.push("/");
   }
 
-  function handleTriggerClick() {
+  function handleTriggerClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (!ready) return;
     if (isLoggedIn) {
       setMenuOpen((current) => !current);
