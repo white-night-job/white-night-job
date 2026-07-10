@@ -3207,3 +3207,215 @@ html.is-header-scrolled .site-header-line {
     padding: 0;
   }
 }
+
+/* ── LINE login guidance ── */
+
+.line-login-promo-card {
+  position: relative;
+  margin-top: 0.75rem;
+  padding: 0.875rem 2rem 0.875rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(196, 165, 116, 0.42);
+  background: linear-gradient(165deg, #ffffff 0%, #fffdf8 52%, #f8f2e8 100%);
+  box-shadow:
+    0 10px 28px rgba(17, 17, 17, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.line-login-promo-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: rgba(42, 34, 24, 0.45);
+  font-size: 1.125rem;
+  line-height: 1;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.line-login-promo-close:hover {
+  color: rgba(42, 34, 24, 0.72);
+  background: rgba(196, 165, 116, 0.12);
+}
+
+.line-login-promo-heading {
+  margin: 0;
+  font-family: var(--font-serif), serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #1a1612;
+}
+
+.line-login-promo-list {
+  margin: 0.625rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.line-login-promo-list li {
+  position: relative;
+  padding-left: 0.875rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(42, 34, 24, 0.82);
+}
+
+.line-login-promo-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #d4bc8e 0%, #a8894a 100%);
+}
+
+.line-login-promo-btn {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  min-height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.4375rem;
+  background: #06c755;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 20px rgba(6, 199, 85, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.line-login-promo-btn:hover {
+  filter: brightness(1.03);
+  box-shadow: 0 10px 24px rgba(6, 199, 85, 0.28);
+}
+
+.line-login-promo-btn:active {
+  transform: translateY(1px);
+}
+
+.line-login-promo-note {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: rgba(42, 34, 24, 0.58);
+}
+
+.favorite-login-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.favorite-login-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 10, 10, 0.42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.favorite-login-sheet-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 32rem;
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border-radius: 1rem 1rem 0 0;
+  border: 1px solid rgba(196, 165, 116, 0.38);
+  border-bottom: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
+  box-shadow: 0 -12px 40px rgba(17, 17, 17, 0.16);
+  animation: favorite-sheet-rise 0.32s ease;
+}
+
+.favorite-login-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto 0.875rem;
+  border-radius: 9999px;
+  background: rgba(196, 165, 116, 0.45);
+}
+
+.favorite-login-sheet-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.favorite-login-sheet-desc {
+  margin: 0.625rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.78);
+}
+
+.favorite-login-sheet-actions {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.favorite-login-sheet-primary {
+  display: inline-flex;
+  min-height: 2.875rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background: #06c755;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 8px 22px rgba(6, 199, 85, 0.24);
+  transition: filter 0.2s ease;
+}
+
+.favorite-login-sheet-primary:hover {
+  filter: brightness(1.03);
+}
+
+.favorite-login-sheet-secondary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 165, 116, 0.35);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #8b6f3e;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+@keyframes favorite-sheet-rise {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}

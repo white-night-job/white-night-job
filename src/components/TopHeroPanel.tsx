@@ -1,6 +1,7 @@
 "use client";
 
 import { JobFilterSearch } from "@/components/JobFilterSearch";
+import { LineLoginPromoCard } from "@/components/LineLoginPromoCard";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { SupportPromoBanner } from "@/components/SupportPromoBanner";
 import type { JobFilters } from "@/types/job";
@@ -61,6 +62,7 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
               inPlate
             />
           </div>
+          <LineLoginPromoCard />
         </div>
       </div>
 
