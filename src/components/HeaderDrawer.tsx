@@ -16,7 +16,7 @@ const MAIN_ITEMS: DrawerItem[] = [
   { href: "/#shop-search", label: "お店を探す", match: "hash" },
   { href: "/column", label: "コラム", match: "prefix" },
   { label: "AI相談", action: "chat" },
-  { href: "/#night-job-diagnosis", label: "ナイトワーク診断", match: "hash" },
+  { href: "/#night-job-diagnosis", label: "職種診断", match: "hash" },
 ];
 
 const SHOP_ITEMS: DrawerItem[] = [

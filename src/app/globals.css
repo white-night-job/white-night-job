@@ -3874,3 +3874,413 @@
     transform: translateY(0);
   }
 }
+
+/* ── Job type diagnosis ── */
+
+.job-diagnosis-section {
+  position: relative;
+}
+
+.job-diagnosis-shell {
+  border-radius: 1rem;
+  border: 1px solid rgba(196, 165, 116, 0.32);
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf8 55%, #f8f2e8 100%);
+  padding: 1.25rem 1rem 1.5rem;
+  box-shadow:
+    0 14px 36px rgba(17, 17, 17, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.job-diagnosis-eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-title {
+  margin: 0.35rem 0 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.72);
+}
+
+.job-diagnosis-progress {
+  margin-top: 1rem;
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgba(196, 165, 116, 0.18);
+}
+
+.job-diagnosis-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c9ad7a 0%, #e0d0b0 100%);
+  transition: width 0.35s ease;
+}
+
+.job-diagnosis-question-wrap {
+  margin-top: 1.125rem;
+}
+
+.job-diagnosis-step {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-question {
+  margin: 0.5rem 0 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-options {
+  margin-top: 0.875rem;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.job-diagnosis-option {
+  min-height: 2.875rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(196, 165, 116, 0.35);
+  background: #fffdf8;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1612;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.job-diagnosis-option:active {
+  transform: scale(0.98);
+}
+
+.job-diagnosis-option:hover {
+  border-color: rgba(196, 165, 116, 0.6);
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.06);
+}
+
+.job-diagnosis-transition {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+  animation: job-diagnosis-fade-in 0.4s ease;
+}
+
+.job-diagnosis-transition-text {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-transition-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #c9ad7a;
+  animation: job-diagnosis-pulse 0.9s ease-in-out infinite;
+}
+
+.job-diagnosis-results {
+  margin-top: 0.25rem;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.job-diagnosis-results-visible {
+  animation: job-diagnosis-results-in 0.55s ease forwards;
+}
+
+.job-diagnosis-results-heading {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: center;
+  color: #1a1612;
+}
+
+.job-diagnosis-result-card {
+  position: relative;
+  margin-bottom: 0.875rem;
+  padding: 1.125rem 1rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.35);
+  background: linear-gradient(165deg, #ffffff 0%, #fffdf8 45%, #f5efe3 100%);
+  box-shadow:
+    0 12px 28px rgba(17, 17, 17, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: translateY(18px);
+  animation: job-diagnosis-card-in 0.55s ease forwards;
+}
+
+.job-diagnosis-result-card-rank-1 {
+  border-color: rgba(201, 173, 122, 0.55);
+  box-shadow:
+    0 16px 36px rgba(17, 17, 17, 0.1),
+    0 0 0 1px rgba(212, 188, 142, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.job-diagnosis-result-medal {
+  font-size: 1.75rem;
+  line-height: 1;
+  animation: job-diagnosis-medal-pop 0.7s ease forwards;
+}
+
+.job-diagnosis-result-rank {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-result-job {
+  margin: 0.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-result-meter-wrap {
+  margin-top: 0.875rem;
+}
+
+.job-diagnosis-result-meter-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(42, 34, 24, 0.58);
+}
+
+.job-diagnosis-result-meter {
+  margin-top: 0.375rem;
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgba(196, 165, 116, 0.16);
+}
+
+.job-diagnosis-result-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a8894a 0%, #e0d0b0 100%);
+  animation: job-diagnosis-meter-grow 0.9s ease forwards;
+}
+
+.job-diagnosis-result-percent {
+  margin: 0.375rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-result-block {
+  margin-top: 0.875rem;
+}
+
+.job-diagnosis-result-block-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-result-block-text,
+.job-diagnosis-result-list {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.82);
+}
+
+.job-diagnosis-result-list {
+  padding-left: 1rem;
+}
+
+.job-diagnosis-result-jobs-btn {
+  margin-top: 1rem;
+  display: inline-flex;
+  min-height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f5ede0 0%, #d4bc8e 55%, #a8894a 100%);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1a1612;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.1);
+  transition: transform 0.16s ease;
+}
+
+.job-diagnosis-result-jobs-btn:active {
+  transform: scale(0.98);
+}
+
+.job-diagnosis-advice-card {
+  margin-top: 0.25rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.28);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.job-diagnosis-advice-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-advice-list {
+  margin: 0.625rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: rgba(42, 34, 24, 0.8);
+}
+
+.job-diagnosis-actions {
+  margin-top: 1rem;
+}
+
+.job-diagnosis-save-btn {
+  display: inline-flex;
+  min-height: 2.875rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 0;
+  background: #06c755;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(6, 199, 85, 0.22);
+}
+
+.job-diagnosis-save-btn:disabled {
+  opacity: 0.65;
+}
+
+.job-diagnosis-save-message,
+.job-diagnosis-save-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: rgba(42, 34, 24, 0.65);
+  text-align: center;
+}
+
+.job-diagnosis-secondary-actions {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+}
+
+.job-diagnosis-secondary-btn {
+  min-height: 2.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(196, 165, 116, 0.4);
+  background: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8b6f3e;
+}
+
+@keyframes job-diagnosis-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes job-diagnosis-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+}
+
+@keyframes job-diagnosis-results-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes job-diagnosis-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes job-diagnosis-medal-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes job-diagnosis-meter-grow {
+  from {
+    width: 0;
+  }
+}

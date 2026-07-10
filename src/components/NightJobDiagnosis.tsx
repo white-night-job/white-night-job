@@ -1,221 +1,299 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { fetchJobs } from "@/lib/job-storage";
-import type { Job } from "@/types/job";
+import { useEffect, useRef, useState } from "react";
+import { useUserSession } from "@/components/UserSessionProvider";
+import {
+  calculateDiagnosisResult,
+  DIAGNOSIS_QUESTIONS,
+  type DiagnosisAnswers,
+  type DiagnosisResult,
+  type DiagnosisResultItem,
+} from "@/lib/job-type-diagnosis";
 
-type Answers = {
-  beginner: boolean | null;
-  canDrink: boolean | null;
-  minSalary: string | null;
-  frequency: string | null;
-  agePreference: string | null;
+const EMPTY_ANSWERS: DiagnosisAnswers = {
+  purpose: null,
+  alcohol: null,
+  serviceStyle: null,
+  workTime: null,
+  customerType: null,
+  priority: null,
 };
 
-const QUESTIONS = [
-  {
-    key: "beginner" as const,
-    title: "ナイトワークは初めてですか？",
-    options: [
-      { label: "はい（未経験）", value: true },
-      { label: "いいえ（経験あり）", value: false },
-    ],
-  },
-  {
-    key: "canDrink" as const,
-    title: "お酒は飲めますか？",
-    options: [
-      { label: "飲める", value: true },
-      { label: "飲めない", value: false },
-    ],
-  },
-  {
-    key: "minSalary" as const,
-    title: "希望時給は？",
-    options: [
-      { label: "2,000円以上", value: "2000" },
-      { label: "2,500円以上", value: "2500" },
-      { label: "3,000円以上", value: "3000" },
-      { label: "3,500円以上", value: "3500" },
-    ],
-  },
-  {
-    key: "frequency" as const,
-    title: "働く頻度は？",
-    options: [
-      { label: "週1〜2日", value: "light" },
-      { label: "週3〜4日", value: "medium" },
-      { label: "週5日以上", value: "heavy" },
-    ],
-  },
-  {
-    key: "agePreference" as const,
-    title: "お客様の年齢層の希望は？",
-    options: [
-      { label: "若い層が多いお店", value: "young" },
-      { label: "落ち着いた層が多いお店", value: "mature" },
-      { label: "こだわらない", value: "any" },
-    ],
-  },
-];
+function MedalCard({
+  rank,
+  item,
+  delayMs,
+}: {
+  rank: 1 | 2;
+  item: DiagnosisResultItem;
+  delayMs: number;
+}) {
+  const medal = rank === 1 ? "🥇" : "🥈";
+  const rankLabel = rank === 1 ? "第1位" : "第2位";
 
-function parseHourly(salary: string): number {
-  const match = salary.match(/(\d[\d,]*)/);
-  if (!match) return 0;
-  return Number(match[1].replace(/,/g, ""));
-}
+  return (
+    <article
+      className={`job-diagnosis-result-card job-diagnosis-result-card-rank-${rank}`}
+      style={{ animationDelay: `${delayMs}ms` }}
+    >
+      <div className="job-diagnosis-result-medal" aria-hidden>
+        {medal}
+      </div>
+      <p className="job-diagnosis-result-rank">{rankLabel}</p>
+      <h3 className="job-diagnosis-result-job font-serif">{item.jobType}</h3>
 
-function scoreJob(job: Job, answers: Answers): number {
-  let score = 0;
+      <div className="job-diagnosis-result-meter-wrap">
+        <p className="job-diagnosis-result-meter-label">適性</p>
+        <div className="job-diagnosis-result-meter">
+          <div
+            className="job-diagnosis-result-meter-fill"
+            style={{ width: `${item.percent}%` }}
+          />
+        </div>
+        <p className="job-diagnosis-result-percent">{item.percent}%</p>
+      </div>
 
-  if (answers.beginner === true && job.benefits.includes("未経験者大歓迎")) {
-    score += 20;
-  }
-  if (answers.beginner === false && job.benefits.includes("経験者優遇")) {
-    score += 12;
-  }
-  if (answers.canDrink === false && job.benefits.includes("お酒飲めなくてもOK")) {
-    score += 18;
-  }
-  if (answers.minSalary) {
-    const hourly = parseHourly(job.salary);
-    if (hourly >= Number(answers.minSalary)) score += 15;
-  }
-  if (answers.frequency === "light") {
-    if (job.benefits.includes("週1出勤OK") || job.benefits.includes("月1出勤OK")) {
-      score += 12;
-    }
-  }
-  if (answers.agePreference === "young" && (job.customerAgeLevel ?? 0) >= 3) {
-    score += 8;
-  }
-  if (answers.agePreference === "mature" && (job.customerAgeLevel ?? 0) <= 2) {
-    score += 8;
-  }
-  if (job.isVerified) score += 5;
-  if (job.pickupEnabled) score += 3;
+      <div className="job-diagnosis-result-block">
+        <p className="job-diagnosis-result-block-title">おすすめ理由</p>
+        <p className="job-diagnosis-result-block-text">{item.reason}</p>
+      </div>
 
-  return score;
+      <div className="job-diagnosis-result-block">
+        <p className="job-diagnosis-result-block-title">向いているポイント</p>
+        <ul className="job-diagnosis-result-list">
+          {item.points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="job-diagnosis-result-block">
+        <p className="job-diagnosis-result-block-title">メリット</p>
+        <ul className="job-diagnosis-result-list">
+          {item.merits.map((merit) => (
+            <li key={merit}>{merit}</li>
+          ))}
+        </ul>
+      </div>
+
+      <Link href={item.jobsUrl} className="job-diagnosis-result-jobs-btn">
+        この職種の求人を見る
+      </Link>
+    </article>
+  );
 }
 
 export function NightJobDiagnosis() {
+  const { isLoggedIn, ready } = useUserSession();
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({
-    beginner: null,
-    canDrink: null,
-    minSalary: null,
-    frequency: null,
-    agePreference: null,
-  });
-  const [results, setResults] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const [answers, setAnswers] = useState<DiagnosisAnswers>(EMPTY_ANSWERS);
+  const [result, setResult] = useState<DiagnosisResult | null>(null);
+  const [phase, setPhase] = useState<"questions" | "transition" | "results">("questions");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  const current = QUESTIONS[step];
+  const current = DIAGNOSIS_QUESTIONS[step];
+  const progress = Math.round(((step + (phase === "results" ? 1 : 0)) / DIAGNOSIS_QUESTIONS.length) * 100);
 
-  async function finish(nextAnswers: Answers) {
-    setLoading(true);
-    try {
-      const jobs = await fetchJobs();
-      const ranked = jobs
-        .map((job) => ({ job, score: scoreJob(job, nextAnswers) }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map((item) => item.job);
-      setResults(ranked);
-      setDone(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleSelect(value: boolean | string) {
+  function handleSelect(value: string) {
     const key = current.key;
-    const next = { ...answers, [key]: value } as Answers;
+    const next = { ...answers, [key]: value } as DiagnosisAnswers;
     setAnswers(next);
-    if (step < QUESTIONS.length - 1) {
+
+    if (step < DIAGNOSIS_QUESTIONS.length - 1) {
       setStep(step + 1);
       return;
     }
-    void finish(next);
+
+    const nextResult = calculateDiagnosisResult(next);
+    setResult(nextResult);
+    setPhase("transition");
+
+    window.setTimeout(() => {
+      setPhase("results");
+    }, 450);
   }
 
   function reset() {
     setStep(0);
-    setAnswers({
-      beginner: null,
-      canDrink: null,
-      minSalary: null,
-      frequency: null,
-      agePreference: null,
-    });
-    setResults([]);
-    setDone(false);
+    setAnswers(EMPTY_ANSWERS);
+    setResult(null);
+    setPhase("questions");
+    setSaveMessage("");
   }
 
-  return (
-    <section id="night-job-diagnosis" className="scroll-mt-24 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-dark">
-        Diagnosis
-      </p>
-      <h2 className="mt-1 font-serif text-xl font-semibold text-charcoal">
-        あなたに合うお店診断
-      </h2>
+  async function saveToMyPage() {
+    if (!result) return;
 
-      {!done ? (
-        <div className="mt-4">
-          <p className="text-xs text-muted">
-            質問 {step + 1} / {QUESTIONS.length}
-          </p>
-          <p className="mt-2 font-medium text-charcoal">{current.title}</p>
-          <div className="mt-4 grid gap-2">
-            {current.options.map((option) => (
-              <button
-                key={option.label}
-                type="button"
-                disabled={loading}
-                onClick={() => handleSelect(option.value)}
-                className="min-h-11 rounded-full border border-gold/35 bg-ivory px-4 text-sm font-semibold text-charcoal transition hover:border-gold hover:bg-white"
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+    if (!isLoggedIn) {
+      const redirect = `${window.location.pathname}${window.location.search}#night-job-diagnosis`;
+      window.location.href = `/api/line/login?redirect=${encodeURIComponent(redirect)}`;
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage("");
+    try {
+      const response = await fetch("/api/job-type-diagnosis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          diagnosedAt: result.diagnosedAt,
+          firstJobType: result.topTwo[0].jobType,
+          firstPercent: result.topTwo[0].percent,
+          secondJobType: result.topTwo[1].jobType,
+          secondPercent: result.topTwo[1].percent,
+          answers,
+        }),
+      });
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        throw new Error(data.message ?? "保存に失敗しました。");
+      }
+      setSaveMessage("診断結果をマイページに保存しました。");
+    } catch (error) {
+      setSaveMessage(
+        error instanceof Error ? error.message : "保存に失敗しました。",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function shareResult() {
+    if (!result) return;
+
+    const text = `あなたに合う職種診断の結果\n🥇 ${result.topTwo[0].jobType} ${result.topTwo[0].percent}%\n🥈 ${result.topTwo[1].jobType} ${result.topTwo[1].percent}%`;
+    const url = `${window.location.origin}/#night-job-diagnosis`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "あなたに合う職種診断", text, url });
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      setSaveMessage("結果をクリップボードにコピーしました。");
+    } catch {
+      setSaveMessage("シェアに失敗しました。");
+    }
+  }
+
+  useEffect(() => {
+    if (phase !== "results" || !resultsRef.current) return;
+    resultsRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [phase]);
+
+  return (
+    <section
+      id="night-job-diagnosis"
+      className="job-diagnosis-section scroll-mt-24"
+    >
+      <div className="job-diagnosis-shell">
+        <p className="job-diagnosis-eyebrow">Diagnosis</p>
+        <h2 className="job-diagnosis-title font-serif">あなたに合う職種診断</h2>
+        <p className="job-diagnosis-subtitle">
+          約30秒・6つの質問で
+          <br />
+          あなたに向いている夜職が分かります。
+        </p>
+
+        <div className="job-diagnosis-progress" aria-hidden>
+          <div
+            className="job-diagnosis-progress-fill"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-      ) : (
-        <div className="mt-4 space-y-3">
-          <p className="text-sm text-muted">あなたにおすすめの店舗</p>
-          {results.length === 0 ? (
-            <p className="text-sm text-muted">該当する店舗が見つかりませんでした。</p>
-          ) : (
-            results.map((job) => (
-              <article
-                key={job.id}
-                className="rounded-xl border border-gold/20 bg-ivory p-4"
-              >
-                <p className="font-serif font-semibold text-charcoal">{job.shopName}</p>
-                <p className="mt-1 text-xs text-muted">
-                  {job.district} · {job.jobType} · {job.salary}
-                </p>
-                <Link
-                  href={`/jobs/${job.id}`}
-                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 text-xs font-semibold text-white"
+
+        {phase !== "results" && phase !== "transition" && (
+          <div className="job-diagnosis-question-wrap">
+            <p className="job-diagnosis-step">
+              Q{step + 1} / {DIAGNOSIS_QUESTIONS.length}
+            </p>
+            <p className="job-diagnosis-question font-serif">{current.title}</p>
+            <div className="job-diagnosis-options">
+              {current.options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className="job-diagnosis-option"
                 >
-                  詳細を見る
-                </Link>
-              </article>
-            ))
-          )}
-          <button
-            type="button"
-            onClick={reset}
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            もう一度診断する
-          </button>
-        </div>
-      )}
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {phase === "transition" && (
+          <div className="job-diagnosis-transition" aria-live="polite">
+            <p className="job-diagnosis-transition-text font-serif">結果を見る</p>
+            <span className="job-diagnosis-transition-dot" />
+          </div>
+        )}
+
+        {phase === "results" && result && (
+          <div ref={resultsRef} className="job-diagnosis-results job-diagnosis-results-visible">
+            <p className="job-diagnosis-results-heading font-serif">診断結果</p>
+
+            <MedalCard rank={1} item={result.topTwo[0]} delayMs={80} />
+            <MedalCard rank={2} item={result.topTwo[1]} delayMs={180} />
+
+            <section className="job-diagnosis-advice-card">
+              <h3 className="job-diagnosis-advice-title font-serif">あなたへのアドバイス</h3>
+              <ul className="job-diagnosis-advice-list">
+                {result.advice.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </section>
+
+            <div className="job-diagnosis-actions">
+              <button
+                type="button"
+                onClick={() => void saveToMyPage()}
+                disabled={saving || !ready}
+                className="job-diagnosis-save-btn"
+              >
+                {saving ? "保存中..." : "診断結果をLINEへ保存"}
+              </button>
+              {saveMessage && (
+                <p className="job-diagnosis-save-message">{saveMessage}</p>
+              )}
+              {!isLoggedIn && ready && (
+                <p className="job-diagnosis-save-hint">
+                  LINEログイン後、マイページでいつでも確認できます。
+                </p>
+              )}
+            </div>
+
+            <div className="job-diagnosis-secondary-actions">
+              <button
+                type="button"
+                onClick={reset}
+                className="job-diagnosis-secondary-btn"
+              >
+                もう一度診断する
+              </button>
+              <button
+                type="button"
+                onClick={() => void shareResult()}
+                className="job-diagnosis-secondary-btn"
+              >
+                友達にシェア
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
