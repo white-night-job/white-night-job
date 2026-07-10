@@ -1,9 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { MemberGateModal } from "@/components/MemberGateModal";
+import { useUserSession } from "@/components/UserSessionProvider";
+import { MEMBER_PATHS } from "@/lib/member-access";
 import { CHAT_AREA_OPTIONS } from "@/lib/chat/area-options";
 import { FAQ_QUICK_REPLIES } from "@/lib/chat/system-prompt";
 import type { ChatRecommendation } from "@/lib/chat/types";
@@ -175,7 +178,9 @@ function RecommendationCard({ item }: { item: ChatRecommendation }) {
 
 export function ChatBot() {
   const pathname = usePathname();
+  const { isLoggedIn, ready } = useUserSession();
   const [open, setOpen] = useState(false);
+  const [memberGateOpen, setMemberGateOpen] = useState(false);
   const [step, setStep] = useState<ChatStep>("area");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [draftAreas, setDraftAreas] = useState<string[]>([]);
@@ -198,14 +203,23 @@ export function ChatBot() {
     height: number;
   } | null>(null);
 
+  const attemptOpenChat = useCallback(() => {
+    if (!ready) return;
+    if (!isLoggedIn) {
+      setMemberGateOpen(true);
+      return;
+    }
+    setOpen(true);
+  }, [isLoggedIn, ready]);
+
   useEffect(() => {
     function handleOpenChat() {
-      setOpen(true);
+      attemptOpenChat();
     }
 
     window.addEventListener("wn:open-chat", handleOpenChat);
     return () => window.removeEventListener("wn:open-chat", handleOpenChat);
-  }, []);
+  }, [attemptOpenChat]);
 
   const scrollToAnchor = useCallback(
     (anchor: { kind: "user-question" | "recommendations"; messageId: string }) => {
@@ -427,6 +441,12 @@ export function ChatBot() {
           message?: string;
         };
 
+        if (response.status === 401) {
+          setOpen(false);
+          setMemberGateOpen(true);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(data.message ?? "送信に失敗しました。");
         }
@@ -494,6 +514,12 @@ export function ChatBot() {
         recommendations?: ChatRecommendation[];
         message?: string;
       };
+
+      if (response.status === 401) {
+        setOpen(false);
+        setMemberGateOpen(true);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.message ?? "おすすめ店舗の取得に失敗しました。");
@@ -793,7 +819,13 @@ export function ChatBot() {
         {(!open || !isMobile) && (
           <button
             type="button"
-            onClick={() => setOpen((current) => !current)}
+            onClick={() => {
+              if (open) {
+                setOpen(false);
+                return;
+              }
+              attemptOpenChat();
+            }}
             className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
             aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
             aria-expanded={open}
@@ -815,6 +847,14 @@ export function ChatBot() {
           </button>
         )}
       </div>
+
+      <MemberGateModal
+        open={memberGateOpen}
+        onClose={() => setMemberGateOpen(false)}
+        title="AI相談はLINEログイン後に利用できます"
+        description="LINEログインすると、相談履歴を保存しながらAIへ相談できます。"
+        redirectPath={MEMBER_PATHS.consultation}
+      />
     </>
   );
 }

@@ -17,6 +17,7 @@ import {
 } from "@/lib/job-type-diagnosis";
 import { pickRecommendedDiagnosisShops } from "@/lib/job-type-diagnosis-recommendations";
 import { fetchJobs } from "@/lib/job-storage";
+import { MEMBER_PATHS } from "@/lib/member-access";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 
 function MedalCard({
@@ -202,7 +203,7 @@ export function JobTypeDiagnosisResults({
 
   async function saveToMyPage() {
     if (!isLoggedIn) {
-      const redirect = `${window.location.pathname}${window.location.search}#night-job-diagnosis`;
+      const redirect = MEMBER_PATHS.diagnosis;
       window.location.href = `/api/line/login?redirect=${encodeURIComponent(redirect)}`;
       return;
     }

@@ -12,8 +12,8 @@ export function buildDiagnosisShareText(result: DiagnosisResult): string {
 }
 
 export function buildDiagnosisShareUrl(): string {
-  if (typeof window === "undefined") return "https://whitenightjob.jp/#night-job-diagnosis";
-  return `${window.location.origin}/#night-job-diagnosis`;
+  if (typeof window === "undefined") return "https://whitenightjob.jp/diagnosis";
+  return `${window.location.origin}/diagnosis`;
 }
 
 export function buildLineShareUrl(text: string, url: string): string {

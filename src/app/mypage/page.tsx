@@ -282,7 +282,7 @@ export default function MyPage() {
           </ul>
         )}
         <Link
-          href="/#night-job-diagnosis"
+          href="/diagnosis"
           className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gold/40 bg-ivory px-4 text-sm font-semibold text-gold-dark"
         >
           もう一度診断する

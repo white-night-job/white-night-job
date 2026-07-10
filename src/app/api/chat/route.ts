@@ -6,6 +6,7 @@ import {
   type ChatCompletionMessage,
 } from "@/lib/chat/ai-responder";
 import type { ChatApiMessage, ChatApiResponse } from "@/lib/chat/types";
+import { getAuthenticatedUserId } from "@/lib/user-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,11 @@ function toCompletionMessages(
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
+    }
+
     const body = (await request.json()) as {
       messages?: unknown;
       selectedAreas?: unknown;

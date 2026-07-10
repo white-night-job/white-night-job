@@ -11,6 +11,7 @@ import type { ChatApiMessage } from "@/lib/chat/types";
 import { rowToJob } from "@/lib/job-db";
 import { fetchBoostStatsForJobs } from "@/lib/shop-boosts";
 import { createSupabaseAdmin } from "@/lib/supabase";
+import { getAuthenticatedUserId } from "@/lib/user-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,11 @@ function sanitizeSelectedAreas(areas: unknown): string[] {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
+    }
+
     const body = (await request.json()) as {
       selectedAreas?: unknown;
       messages?: unknown;
@@ -103,6 +109,11 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthenticatedUserId(request);
+    if (!userId) {
+      return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const preferences = preferencesFromQuery(searchParams);
     const message = searchParams.get("message") ?? "";
