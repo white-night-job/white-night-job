@@ -155,7 +155,7 @@ export function NightJobDiagnosis() {
   }
 
   return (
-    <section className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+    <section id="night-job-diagnosis" className="scroll-mt-24 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-dark">
         Diagnosis
       </p>

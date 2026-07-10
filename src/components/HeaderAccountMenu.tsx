@@ -89,7 +89,7 @@ export function HeaderAccountMenu() {
           aria-expanded={isLoggedIn ? menuOpen : loginModalOpen}
           aria-controls={isLoggedIn ? "header-account-menu" : "header-login-modal-title"}
           aria-label={triggerLabel}
-          className={`header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
+          className={`header-icon-btn header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
         >
           <AccountIcon />
           <span className="header-account-btn-label">{triggerLabel}</span>
@@ -122,6 +122,26 @@ export function HeaderAccountMenu() {
                     className="header-account-item"
                   >
                     お気に入り
+                  </Link>
+                </li>
+                <li className="header-account-divider" aria-hidden />
+                <li>
+                  <Link
+                    href="/mypage/history"
+                    onClick={() => setMenuOpen(false)}
+                    className="header-account-item"
+                  >
+                    閲覧履歴
+                  </Link>
+                </li>
+                <li className="header-account-divider" aria-hidden />
+                <li>
+                  <Link
+                    href="/notification-settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="header-account-item"
+                  >
+                    通知設定
                   </Link>
                 </li>
                 <li className="header-account-divider" aria-hidden />

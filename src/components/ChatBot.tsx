@@ -198,6 +198,15 @@ export function ChatBot() {
     height: number;
   } | null>(null);
 
+  useEffect(() => {
+    function handleOpenChat() {
+      setOpen(true);
+    }
+
+    window.addEventListener("wn:open-chat", handleOpenChat);
+    return () => window.removeEventListener("wn:open-chat", handleOpenChat);
+  }, []);
+
   const scrollToAnchor = useCallback(
     (anchor: { kind: "user-question" | "recommendations"; messageId: string }) => {
       const container = messagesContainerRef.current;
