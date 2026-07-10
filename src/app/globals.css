@@ -4216,6 +4216,369 @@
   color: #8b6f3e;
 }
 
+.job-diagnosis-empathy-card {
+  margin-top: 0.25rem;
+  padding: 1.125rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.32);
+  background: linear-gradient(165deg, #fffdf8 0%, #f8f2e8 100%);
+  text-align: center;
+}
+
+.job-diagnosis-empathy-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-empathy-stat {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: rgba(42, 34, 24, 0.82);
+}
+
+.job-diagnosis-empathy-percent {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-empathy-note {
+  margin: 0.625rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: rgba(42, 34, 24, 0.55);
+}
+
+.job-diagnosis-section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-section-lead {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: rgba(42, 34, 24, 0.65);
+}
+
+.job-diagnosis-shops-section {
+  margin-top: 1rem;
+}
+
+.job-diagnosis-shops-loading,
+.job-diagnosis-shops-empty {
+  margin: 0.875rem 0 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(196, 165, 116, 0.35);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.7);
+  background: rgba(255, 253, 248, 0.8);
+}
+
+.job-diagnosis-inline-link {
+  margin-left: 0.25rem;
+  font-weight: 600;
+  color: #8b6f3e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.job-diagnosis-shops-grid {
+  margin-top: 0.875rem;
+  display: grid;
+  gap: 0.875rem;
+}
+
+.job-diagnosis-shop-card {
+  overflow: hidden;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.32);
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.06);
+}
+
+.job-diagnosis-shop-image-wrap {
+  position: relative;
+  height: 9.5rem;
+  overflow: hidden;
+  background: #f5efe3;
+}
+
+.job-diagnosis-shop-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.job-diagnosis-shop-image-placeholder {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #c4a574;
+}
+
+.job-diagnosis-shop-body {
+  padding: 0.875rem 1rem 1rem;
+}
+
+.job-diagnosis-shop-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-shop-meta {
+  margin: 0.625rem 0 0;
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+}
+
+.job-diagnosis-shop-meta div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.job-diagnosis-shop-meta dt {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: rgba(42, 34, 24, 0.5);
+}
+
+.job-diagnosis-shop-meta dd {
+  margin: 0;
+  color: rgba(42, 34, 24, 0.78);
+}
+
+.job-diagnosis-shop-salary {
+  font-weight: 700;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-shop-reason {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.72);
+}
+
+.job-diagnosis-shop-detail-btn {
+  margin-top: 0.875rem;
+  display: inline-flex;
+  min-height: 2.625rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: #fffdf8;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-trial-card {
+  margin-top: 1rem;
+  padding: 1.125rem 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.28);
+  background: rgba(255, 253, 248, 0.92);
+  text-align: center;
+}
+
+.job-diagnosis-trial-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1612;
+}
+
+.job-diagnosis-trial-text {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  color: rgba(42, 34, 24, 0.68);
+}
+
+.job-diagnosis-trial-btn {
+  margin-top: 0.875rem;
+  display: inline-flex;
+  min-height: 2.875rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: linear-gradient(180deg, #ffffff 0%, #f5efe3 100%);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1a1612;
+}
+
+.job-diagnosis-share-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.3);
+  background: linear-gradient(180deg, #111111 0%, #2a2218 100%);
+  color: #f5efe3;
+}
+
+.job-diagnosis-share-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #f0e6d4;
+}
+
+.job-diagnosis-share-preview {
+  margin-top: 0.875rem;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 253, 248, 0.08);
+}
+
+.job-diagnosis-share-preview-line,
+.job-diagnosis-share-preview-brand {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: rgba(240, 230, 212, 0.78);
+}
+
+.job-diagnosis-share-preview-result {
+  margin: 0.5rem 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #ffffff;
+}
+
+.job-diagnosis-share-actions {
+  margin-top: 0.875rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.job-diagnosis-share-btn {
+  min-height: 2.625rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(240, 230, 212, 0.22);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fffdf8;
+  background: rgba(255, 253, 248, 0.08);
+}
+
+.job-diagnosis-share-btn-line {
+  background: rgba(6, 199, 85, 0.18);
+  border-color: rgba(6, 199, 85, 0.35);
+}
+
+.job-diagnosis-share-btn-x {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.job-diagnosis-share-btn-ig {
+  background: linear-gradient(
+    135deg,
+    rgba(240, 148, 51, 0.25) 0%,
+    rgba(188, 24, 136, 0.25) 55%,
+    rgba(64, 93, 230, 0.25) 100%
+  );
+}
+
+.job-diagnosis-history-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(196, 165, 116, 0.28);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.job-diagnosis-history-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.job-diagnosis-history-item {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(196, 165, 116, 0.22);
+  background: #ffffff;
+}
+
+.job-diagnosis-history-date {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: rgba(42, 34, 24, 0.58);
+}
+
+.job-diagnosis-history-ranks {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: rgba(42, 34, 24, 0.82);
+}
+
+.job-diagnosis-history-ranks span {
+  display: inline-block;
+  min-width: 2.5rem;
+  font-weight: 700;
+  color: #8b6f3e;
+}
+
+.job-diagnosis-primary-cta {
+  margin-top: 1rem;
+  display: inline-flex;
+  min-height: 3.25rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f5ede0 0%, #d4bc8e 45%, #a8894a 100%);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #1a1612;
+  box-shadow:
+    0 12px 28px rgba(17, 17, 17, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.16s ease;
+}
+
+.job-diagnosis-primary-cta:active {
+  transform: scale(0.98);
+}
+
+@media (min-width: 640px) {
+  .job-diagnosis-shops-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .job-diagnosis-secondary-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 @keyframes job-diagnosis-fade-in {
   from {
     opacity: 0;

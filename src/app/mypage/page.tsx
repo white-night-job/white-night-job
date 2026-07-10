@@ -43,7 +43,7 @@ export default function MyPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
-  const [diagnosis, setDiagnosis] = useState<SavedDiagnosisResult | null>(null);
+  const [diagnosisHistory, setDiagnosisHistory] = useState<SavedDiagnosisResult[]>([]);
 
   useEffect(() => {
     if (!ready) return;
@@ -81,9 +81,10 @@ export default function MyPage() {
         }
         if (diagnosisResponse.ok) {
           const data = (await diagnosisResponse.json()) as {
+            history?: SavedDiagnosisResult[];
             diagnosis?: SavedDiagnosisResult | null;
           };
-          setDiagnosis(data.diagnosis ?? null);
+          setDiagnosisHistory(data.history ?? (data.diagnosis ? [data.diagnosis] : []));
         }
       })
       .finally(() => setLoading(false));
@@ -246,30 +247,39 @@ export default function MyPage() {
 
       <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
         <h2 className="font-serif text-lg font-semibold text-charcoal">診断結果</h2>
-        {!diagnosis ? (
+        {diagnosisHistory.length === 0 ? (
           <p className="mt-2 text-sm text-muted">
             まだ職種診断の結果はありません。
           </p>
         ) : (
-          <div className="mt-4 space-y-3 text-sm text-charcoal">
-            <p className="text-xs text-muted">
-              診断日：{formatDiagnosisDate(diagnosis.diagnosedAt)}
-            </p>
-            <div className="rounded-xl border border-gold/20 bg-ivory p-4">
-              <p className="text-xs font-semibold text-gold-dark">第1位</p>
-              <p className="mt-1 font-serif text-base font-semibold">
-                {diagnosis.firstJobType}
-              </p>
-              <p className="mt-1 text-sm text-muted">適性 {diagnosis.firstPercent}%</p>
-            </div>
-            <div className="rounded-xl border border-gold/20 bg-ivory p-4">
-              <p className="text-xs font-semibold text-gold-dark">第2位</p>
-              <p className="mt-1 font-serif text-base font-semibold">
-                {diagnosis.secondJobType}
-              </p>
-              <p className="mt-1 text-sm text-muted">適性 {diagnosis.secondPercent}%</p>
-            </div>
-          </div>
+          <ul className="mt-4 space-y-3">
+            {diagnosisHistory.map((entry) => (
+              <li
+                key={entry.id ?? entry.diagnosedAt}
+                className="rounded-xl border border-gold/20 bg-ivory p-4 text-sm text-charcoal"
+              >
+                <p className="text-xs text-muted">
+                  診断日：{formatDiagnosisDate(entry.diagnosedAt)}
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gold-dark">第1位</p>
+                    <p className="mt-1 font-serif text-base font-semibold">
+                      {entry.firstJobType}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">適性 {entry.firstPercent}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gold-dark">第2位</p>
+                    <p className="mt-1 font-serif text-base font-semibold">
+                      {entry.secondJobType}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">適性 {entry.secondPercent}%</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
         <Link
           href="/#night-job-diagnosis"
