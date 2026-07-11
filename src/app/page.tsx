@@ -53,12 +53,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   return (
-    <TopPageShell hero={<TopHeroPanel initialFilters={filters} />}>
+    <TopPageShell
+      hero={<TopHeroPanel initialFilters={filters} />}
+      featureBand={<TopFeatureIntroSection />}
+    >
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
-        <ScrollReveal>
-          <TopFeatureIntroSection />
-        </ScrollReveal>
-
         <ScrollReveal delayMs={40}>
           <Suspense
             fallback={
