@@ -6,6 +6,7 @@ import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { TopColumnSection } from "@/components/TopColumnSection";
+import { TopFeatureIntroSection } from "@/components/TopFeatureIntroSection";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopPageShell } from "@/components/TopPageShell";
@@ -55,6 +56,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <TopPageShell hero={<TopHeroPanel initialFilters={filters} />}>
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <ScrollReveal>
+          <TopFeatureIntroSection />
+        </ScrollReveal>
+
+        <ScrollReveal delayMs={40}>
           <Suspense
             fallback={
               <div className="h-48 animate-pulse rounded-2xl border border-[#b8a876]/40 bg-gradient-to-br from-[#f5f2eb] to-[#d4c9a8]" />
