@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Bot, ClipboardList, ShieldAlert } from "lucide-react";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { MEMBER_PATHS } from "@/lib/member-access";
@@ -14,18 +15,36 @@ type DrawerItem = {
   action?: "chat" | "diagnosis";
   memberOnly?: boolean;
   match?: "exact" | "prefix" | "hash";
+  icon?: ReactNode;
 };
 
+const DRAWER_ICON_PROPS = {
+  className: "header-drawer-item-icon",
+  strokeWidth: 1.5,
+} as const;
+
 const MAIN_ITEMS: DrawerItem[] = [
-  { href: "/", label: "ホーム", match: "exact" },
-  { href: "/#shop-search", label: "お店を探す", match: "hash" },
-  { href: "/column", label: "コラム", match: "prefix" },
-  { label: "AI相談", action: "chat", memberOnly: true },
+  {
+    label: "AI相談",
+    action: "chat",
+    memberOnly: true,
+    icon: <Bot {...DRAWER_ICON_PROPS} />,
+  },
   {
     label: "あなたに合う職種診断",
     action: "diagnosis",
     memberOnly: true,
+    icon: <ClipboardList {...DRAWER_ICON_PROPS} />,
   },
+  {
+    href: "/report",
+    label: "ブラック店報告",
+    match: "exact",
+    icon: <ShieldAlert {...DRAWER_ICON_PROPS} />,
+  },
+  { href: "/", label: "ホーム", match: "exact" },
+  { href: "/#shop-search", label: "お店を探す", match: "hash" },
+  { href: "/column", label: "コラム", match: "prefix" },
 ];
 
 const SHOP_ITEMS: DrawerItem[] = [
@@ -176,7 +195,10 @@ export function HeaderDrawer() {
             onClick={() => handleMemberAction(item)}
             className={className}
           >
-            <span className="header-drawer-item-label">{item.label}</span>
+            <span className="header-drawer-item-main">
+              {item.icon}
+              <span className="header-drawer-item-label">{item.label}</span>
+            </span>
             {showMemberBadge && (
               <span className="header-drawer-member-badge">
                 <span aria-hidden>🔒</span>
@@ -199,7 +221,10 @@ export function HeaderDrawer() {
           className={className}
           aria-current={active ? "page" : undefined}
         >
-          <span className="header-drawer-item-label">{label}</span>
+          <span className="header-drawer-item-main">
+            {item.icon}
+            <span className="header-drawer-item-label">{label}</span>
+          </span>
         </Link>
       </li>
     );

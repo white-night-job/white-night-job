@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ShieldAlert } from "lucide-react";
 
 type MenuIconName =
   | "beginner"
@@ -29,13 +30,15 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/consultation", label: "AI相談", icon: "line", match: "prefix" },
+  { href: "/diagnosis", label: "あなたに合う職種診断", icon: "list", match: "prefix" },
+  { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
   { href: "/column", label: "コラム", icon: "book", match: "prefix" },
   { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
   { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
   { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
   { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
   { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
-  { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
   { href: "/terms-user", label: "利用規約（求職者）", icon: "book", match: "exact" },
   { href: "/terms-shop", label: "利用規約（掲載店舗）", icon: "book", match: "exact" },
   { href: "/legal", label: "特定商取引法に基づく表記", icon: "document", match: "exact" },
@@ -107,14 +110,11 @@ function MenuIcon({ name }: { name: MenuIconName }) {
       );
     case "alert":
       return (
-        <svg {...common}>
-          <path
-            d="M12 4.5L3.8 18.5h16.4L12 4.5z"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path d="M12 10v4M12 16.5h.01" strokeWidth="1.75" strokeLinecap="round" />
-        </svg>
+        <ShieldAlert
+          className="header-menu-icon"
+          strokeWidth={1.5}
+          aria-hidden
+        />
       );
     case "building":
       return (
