@@ -24,6 +24,9 @@ const DRAWER_ICON_PROPS = {
 } as const;
 
 const MAIN_ITEMS: DrawerItem[] = [
+  { href: "/", label: "ホーム", match: "exact" },
+  { href: "/#shop-search", label: "お店を探す", match: "hash" },
+  { href: "/column", label: "コラム", match: "prefix" },
   {
     label: "AI相談",
     action: "chat",
@@ -42,9 +45,6 @@ const MAIN_ITEMS: DrawerItem[] = [
     match: "exact",
     icon: <ShieldAlert {...DRAWER_ICON_PROPS} />,
   },
-  { href: "/", label: "ホーム", match: "exact" },
-  { href: "/#shop-search", label: "お店を探す", match: "hash" },
-  { href: "/column", label: "コラム", match: "prefix" },
 ];
 
 const SHOP_ITEMS: DrawerItem[] = [

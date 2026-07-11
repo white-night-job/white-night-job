@@ -30,12 +30,13 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/", label: "ホーム", icon: "heart", match: "exact" },
+  { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
+  { href: "/column", label: "コラム", icon: "book", match: "prefix" },
   { href: "/consultation", label: "AI相談", icon: "line", match: "prefix" },
   { href: "/diagnosis", label: "あなたに合う職種診断", icon: "list", match: "prefix" },
   { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
-  { href: "/column", label: "コラム", icon: "book", match: "prefix" },
   { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
-  { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
   { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
   { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
   { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
