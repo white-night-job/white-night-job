@@ -6,11 +6,10 @@ import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { TopColumnSection } from "@/components/TopColumnSection";
-import { TopFeatureIntroSection } from "@/components/TopFeatureIntroSection";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
+import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
-import { SupportConsultationSection } from "@/components/SupportConsultationSection";
 import { SITE_DESCRIPTION, SITE_OG_TITLE, SITE_TITLE } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
@@ -55,7 +54,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <TopPageShell
       hero={<TopHeroPanel initialFilters={filters} />}
-      featureBand={<TopFeatureIntroSection />}
+      midBand={<TopMidBand />}
     >
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <ScrollReveal delayMs={40}>
@@ -81,14 +80,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </ScrollReveal>
 
         <ScrollReveal delayMs={120}>
-          <SupportConsultationSection />
-        </ScrollReveal>
-
-        <ScrollReveal delayMs={140}>
           <BrandAboutSection />
         </ScrollReveal>
 
-        <ScrollReveal delayMs={160}>
+        <ScrollReveal delayMs={140}>
           <FirstTimeGuide />
         </ScrollReveal>
       </div>
