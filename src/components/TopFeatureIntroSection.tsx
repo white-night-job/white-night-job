@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Crown,
   MessageSquareCheck,
+  ShieldAlert,
   UserRound,
 } from "lucide-react";
 import { MemberGateModal } from "@/components/MemberGateModal";
@@ -21,6 +22,7 @@ type FeatureAction = "link" | "ai" | "diagnosis";
 type FeatureItem = {
   id: string;
   label: string;
+  description: string;
   action: FeatureAction;
   href?: string;
   icon: ReactNode;
@@ -35,6 +37,7 @@ const FEATURES: FeatureItem[] = [
   {
     id: "interview",
     label: "面接前相談",
+    description: "応募や面接前の不安を担当者へ相談できます。",
     action: "link",
     href: "/pre-interview-consultation",
     icon: <MessageSquareCheck {...ICON_PROPS} />,
@@ -42,12 +45,14 @@ const FEATURES: FeatureItem[] = [
   {
     id: "ai",
     label: "AI相談",
+    description: "夜職に関する悩みをいつでもAIへ相談できます。",
     action: "ai",
     icon: <Bot {...ICON_PROPS} />,
   },
   {
     id: "staff",
     label: "担当者紹介",
+    description: "担当者の顔やプロフィールを事前に確認できます。",
     action: "link",
     href: "/staff-intro",
     icon: <UserRound {...ICON_PROPS} />,
@@ -55,15 +60,25 @@ const FEATURES: FeatureItem[] = [
   {
     id: "diagnosis",
     label: "職種診断",
+    description: "11問であなたに向いている夜職を診断できます。",
     action: "diagnosis",
     icon: <ClipboardList {...ICON_PROPS} />,
   },
   {
     id: "videos",
     label: "店内動画",
+    description: "写真だけでは分からない店内の雰囲気を確認できます。",
     action: "link",
     href: "/shop-videos",
     icon: <Clapperboard {...ICON_PROPS} />,
+  },
+  {
+    id: "report",
+    label: "ブラック店報告",
+    description: "求人内容と違う店や危険な店を匿名で報告できます。",
+    action: "link",
+    href: "/report",
+    icon: <ShieldAlert {...ICON_PROPS} />,
   },
 ];
 
@@ -72,6 +87,7 @@ function FeatureContent({ feature }: { feature: FeatureItem }) {
     <>
       <span className="feature-intro-icon">{feature.icon}</span>
       <span className="feature-intro-label">{feature.label}</span>
+      <span className="feature-intro-desc">{feature.description}</span>
       <span className="feature-intro-arrow" aria-hidden>
         <ChevronRight strokeWidth={1.5} className="feature-intro-arrow-svg" />
       </span>
@@ -133,17 +149,14 @@ export function TopFeatureIntroSection() {
             <span className="feature-intro-title-line" aria-hidden />
           </div>
           <p className="feature-intro-subtitle">
-            安心してお店を選ぶための、5つのサポート。
+            安心してお店を選ぶための、6つのサポート。
           </p>
         </div>
 
         <nav aria-label="便利な機能" className="feature-intro-nav">
           <ul className="feature-intro-row">
-            {FEATURES.map((feature, index) => (
+            {FEATURES.map((feature) => (
               <li key={feature.id} className="feature-intro-item">
-                {index > 0 ? (
-                  <span className="feature-intro-divider" aria-hidden />
-                ) : null}
                 {feature.action === "link" && feature.href ? (
                   <Link href={feature.href} className="feature-intro-link">
                     <FeatureContent feature={feature} />
