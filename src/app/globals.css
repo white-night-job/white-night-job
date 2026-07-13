@@ -2518,6 +2518,7 @@
     .for-shops-plan-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       align-items: stretch;
+      gap: 0.875rem;
     }
   }
 
@@ -2528,18 +2529,26 @@
     border-radius: 0.875rem;
     border: 1px solid rgba(196, 165, 116, 0.45);
     background: linear-gradient(165deg, #ffffff 0%, #faf7f2 40%, #efe4d2 100%);
-    padding: 1.25rem 1rem 1.1rem;
+    padding: 1.35rem 1rem 1.15rem;
     box-shadow:
       0 10px 28px rgba(17, 17, 17, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
   .for-shops-plan-card.is-recommended {
-    border-color: rgba(196, 165, 116, 0.75);
+    border-color: rgba(196, 165, 116, 0.95);
+    background: linear-gradient(165deg, #fffdf8 0%, #f5ead5 42%, #e4d0a8 100%);
     box-shadow:
-      0 14px 36px rgba(17, 17, 17, 0.18),
-      0 0 0 1px rgba(212, 188, 142, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      0 16px 40px rgba(17, 17, 17, 0.22),
+      0 0 0 2px rgba(196, 165, 116, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  }
+
+  @media (min-width: 768px) {
+    .for-shops-plan-card.is-recommended {
+      transform: translateY(-0.35rem);
+      z-index: 1;
+    }
   }
 
   .for-shops-plan-badge {
@@ -2547,42 +2556,81 @@
     top: 0.75rem;
     right: 0.75rem;
     border-radius: 0.25rem;
-    border: 1px solid rgba(196, 165, 116, 0.7);
-    background: #111111;
-    padding: 0.2rem 0.5rem;
+    border: 1px solid rgba(212, 188, 142, 0.85);
+    background: linear-gradient(180deg, #1a1612 0%, #111111 100%);
+    padding: 0.28rem 0.55rem;
     font-size: 0.625rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     color: #d4bc8e;
   }
 
   .for-shops-plan-card h3 {
     margin: 0;
+    padding-right: 4.5rem;
     font-family: var(--font-serif, ui-serif, Georgia, serif);
     font-size: 1.05rem;
     font-weight: 700;
     color: #111111;
   }
 
+  .for-shops-plan-card.is-recommended h3 {
+    color: #5a4828;
+  }
+
   .for-shops-plan-price {
-    margin: 0.75rem 0 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.15rem;
+    margin: 0.85rem 0 1rem;
+    padding: 0.85rem 0.75rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgba(196, 165, 116, 0.35);
+    background: rgba(255, 255, 255, 0.72);
     color: #111111;
   }
 
-  .for-shops-plan-price span {
+  .for-shops-plan-card.is-recommended .for-shops-plan-price {
+    border-color: rgba(196, 165, 116, 0.7);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 242, 226, 0.95) 100%);
+  }
+
+  .for-shops-plan-price-currency {
     font-family: var(--font-serif, ui-serif, Georgia, serif);
-    font-size: 1.75rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    line-height: 1;
     background: linear-gradient(165deg, #111111 0%, #5a4828 45%, #c4a574 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
+  .for-shops-plan-price-amount {
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: clamp(1.85rem, 6.5vw, 2.35rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    background: linear-gradient(165deg, #111111 0%, #5a4828 45%, #c4a574 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .for-shops-plan-card.is-recommended .for-shops-plan-price-currency,
+  .for-shops-plan-card.is-recommended .for-shops-plan-price-amount {
+    background: linear-gradient(165deg, #3d3018 0%, #8b6f3e 40%, #c4a574 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .for-shops-plan-price small {
-    margin-left: 0.25rem;
-    font-size: 0.75rem;
+    margin-left: 0.2rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
     color: rgba(17, 17, 17, 0.5);
   }
 
@@ -2596,24 +2644,147 @@
   .for-shops-plan-list li {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 0.75rem;
-    padding: 0.55rem 0;
+    padding: 0.6rem 0;
     border-top: 1px solid rgba(196, 165, 116, 0.22);
     font-size: 0.75rem;
   }
 
-  .for-shops-plan-list li span {
-    color: rgba(17, 17, 17, 0.5);
+  .for-shops-plan-list li > span:first-child {
+    color: rgba(17, 17, 17, 0.55);
+    flex-shrink: 0;
   }
 
-  .for-shops-plan-list li strong {
+  .for-shops-plan-value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    font-weight: 700;
+    text-align: right;
+    line-height: 1.35;
+  }
+
+  .for-shops-plan-value.is-yes {
+    font-size: 1.05rem;
+    color: #a8894a;
+  }
+
+  .for-shops-plan-value.is-no {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(17, 17, 17, 0.28);
+  }
+
+  .for-shops-plan-value.is-priority {
+    border-radius: 0.25rem;
+    border: 1px solid rgba(196, 165, 116, 0.45);
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.15rem 0.45rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: #5a4828;
+  }
+
+  .for-shops-plan-value.is-top {
+    border-radius: 0.25rem;
+    border: 1px solid rgba(196, 165, 116, 0.75);
+    background: linear-gradient(180deg, #1a1612 0%, #111111 100%);
+    padding: 0.15rem 0.45rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    color: #d4bc8e;
+  }
+
+  .for-shops-plan-value.is-text {
+    font-size: 0.75rem;
     font-weight: 600;
     color: #111111;
-    text-align: right;
   }
 
   .for-shops-plan-card .for-shops-btn {
     width: 100%;
+  }
+
+  .for-shops-plan-compare {
+    margin-top: 1.75rem;
+  }
+
+  .for-shops-plan-compare-title {
+    margin: 0 0 0.85rem;
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    color: #faf7f2;
+  }
+
+  .for-shops-plan-table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .for-shops-plan-table {
+    min-width: 22.5rem;
+    font-size: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .for-shops-plan-table {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .for-shops-plan-table th,
+  .for-shops-plan-table td {
+    padding: 0.7rem 0.5rem;
+    vertical-align: middle;
+  }
+
+  @media (min-width: 640px) {
+    .for-shops-plan-table th,
+    .for-shops-plan-table td {
+      padding: 0.85rem 0.7rem;
+    }
+  }
+
+  .for-shops-plan-table thead th.is-premium-col,
+  .for-shops-plan-table td.is-premium-col {
+    background: rgba(196, 165, 116, 0.12);
+  }
+
+  .for-shops-plan-table thead th.is-premium-col {
+    background: linear-gradient(180deg, #2a2216 0%, #1a1612 100%);
+    color: #f0e6d4;
+    box-shadow: inset 0 -2px 0 rgba(196, 165, 116, 0.65);
+  }
+
+  .for-shops-plan-table-price-row td,
+  .for-shops-plan-table-price-row th {
+    background: rgba(250, 247, 242, 0.95);
+  }
+
+  .for-shops-plan-table-price {
+    display: block;
+    font-family: var(--font-serif, ui-serif, Georgia, serif);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #111111;
+  }
+
+  @media (min-width: 640px) {
+    .for-shops-plan-table-price {
+      font-size: 1.05rem;
+    }
+  }
+
+  .for-shops-plan-table-price.is-premium {
+    color: #8b6f3e;
+  }
+
+  .for-shops-plan-table .for-shops-plan-value {
+    text-align: center;
   }
 
   .for-shops-plan-note {

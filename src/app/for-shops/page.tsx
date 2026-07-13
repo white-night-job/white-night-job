@@ -33,44 +33,40 @@ const MERITS = [
   "ブランドイメージ向上",
 ] as const;
 
-const PLANS = [
-  {
-    name: "ライトプラン",
-    price: "¥15,000",
-    recommended: false,
-    features: {
-      掲載内容: "基本求人掲載",
-      ピックアップ掲載: "—",
-      AIおすすめ表示: "標準",
-      表示順位: "通常",
-      応募分析: "基本レポート",
-    },
-  },
-  {
-    name: "スタンダードプラン",
-    price: "¥30,000",
-    recommended: true,
-    features: {
-      掲載内容: "求人掲載＋写真強化",
-      ピックアップ掲載: "月1回",
-      AIおすすめ表示: "優先",
-      表示順位: "上位寄り",
-      応募分析: "詳細レポート",
-    },
-  },
-  {
-    name: "プレミアムプラン",
-    price: "¥50,000",
-    recommended: false,
-    features: {
-      掲載内容: "フル掲載＋優先サポート",
-      ピックアップ掲載: "優先枠",
-      AIおすすめ表示: "最優先",
-      表示順位: "最上位寄り",
-      応募分析: "詳細＋改善提案",
-    },
-  },
+const PLAN_FEATURE_ROWS = [
+  { label: "掲載内容", light: "フル掲載", standard: "フル掲載", premium: "フル掲載" },
+  { label: "新着店舗掲載", light: "○", standard: "○", premium: "○" },
+  { label: "AIおすすめ表示", light: "－", standard: "優先", premium: "最優先" },
+  { label: "上位表示ボタン", light: "1日5回", standard: "1日5回", premium: "1日5回" },
+  { label: "応募分析", light: "○", standard: "○", premium: "○" },
+  { label: "LINEおすすめ通知", light: "－", standard: "－", premium: "○" },
 ] as const;
+
+type PlanKey = "light" | "standard" | "premium";
+
+const PLANS: {
+  key: PlanKey;
+  name: string;
+  price: string;
+  recommended: boolean;
+}[] = [
+  { key: "light", name: "ライトプラン", price: "12,000", recommended: false },
+  { key: "standard", name: "スタンダードプラン", price: "25,000", recommended: false },
+  { key: "premium", name: "プレミアムプラン", price: "38,000", recommended: true },
+];
+
+function planFeatureTone(value: string): "yes" | "no" | "priority" | "top" | "text" {
+  if (value === "○") return "yes";
+  if (value === "－") return "no";
+  if (value === "最優先") return "top";
+  if (value === "優先") return "priority";
+  return "text";
+}
+
+function PlanFeatureValue({ value }: { value: string }) {
+  const tone = planFeatureTone(value);
+  return <span className={`for-shops-plan-value is-${tone}`}>{value}</span>;
+}
 
 const STEPS = [
   { step: "01", title: "お問い合わせ", desc: "フォーム・電話・メールからご連絡ください。" },
@@ -182,23 +178,74 @@ export default function ForShopsPage() {
                 {plan.recommended && <span className="for-shops-plan-badge">おすすめ</span>}
                 <h3>{plan.name}</h3>
                 <p className="for-shops-plan-price">
-                  <span>{plan.price}</span>
-                  <small>/ 月</small>
+                  <span className="for-shops-plan-price-currency">¥</span>
+                  <span className="for-shops-plan-price-amount">{plan.price}</span>
+                  <small>/ 月（税別）</small>
                 </p>
                 <ul className="for-shops-plan-list">
-                  {Object.entries(plan.features).map(([label, value]) => (
-                    <li key={label}>
-                      <span>{label}</span>
-                      <strong>{value}</strong>
+                  {PLAN_FEATURE_ROWS.map((row) => (
+                    <li key={row.label}>
+                      <span>{row.label}</span>
+                      <PlanFeatureValue value={row[plan.key]} />
                     </li>
                   ))}
                 </ul>
-                <a href="#for-shops-contact" className="for-shops-btn for-shops-btn-primary">
+                <a
+                  href="#for-shops-contact"
+                  className={`for-shops-btn ${plan.recommended ? "for-shops-btn-primary" : "for-shops-btn-secondary"}`}
+                >
                   このプランで相談する
                 </a>
               </article>
             ))}
           </div>
+
+          <div className="for-shops-plan-compare">
+            <h3 className="for-shops-plan-compare-title">プラン比較表</h3>
+            <div className="for-shops-table-wrap for-shops-plan-table-wrap">
+              <table className="for-shops-table for-shops-plan-table">
+                <thead>
+                  <tr>
+                    <th scope="col">項目</th>
+                    <th scope="col">ライト</th>
+                    <th scope="col">スタンダード</th>
+                    <th scope="col" className="is-premium-col">
+                      プレミアム
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="for-shops-plan-table-price-row">
+                    <th scope="row">月額料金</th>
+                    <td>
+                      <span className="for-shops-plan-table-price">¥12,000</span>
+                    </td>
+                    <td>
+                      <span className="for-shops-plan-table-price">¥25,000</span>
+                    </td>
+                    <td className="is-premium-col">
+                      <span className="for-shops-plan-table-price is-premium">¥38,000</span>
+                    </td>
+                  </tr>
+                  {PLAN_FEATURE_ROWS.map((row) => (
+                    <tr key={row.label}>
+                      <th scope="row">{row.label}</th>
+                      <td>
+                        <PlanFeatureValue value={row.light} />
+                      </td>
+                      <td>
+                        <PlanFeatureValue value={row.standard} />
+                      </td>
+                      <td className="is-premium-col">
+                        <PlanFeatureValue value={row.premium} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <p className="for-shops-plan-note">
             ※表示価格は税別の目安です。詳細・キャンペーンはお問い合わせ時にご案内します。
           </p>

@@ -578,6 +578,24 @@
   gap: 0.75rem;
 }
 
+.for-shops-page .for-shops-plan-card.is-recommended {
+  border: 2px solid rgba(196, 165, 116, 0.85);
+  background: linear-gradient(165deg, #fffdf8 0%, #f5ead5 42%, #e4d0a8 100%);
+  box-shadow:
+    0 16px 40px rgba(17, 17, 17, 0.22),
+    0 0 0 1px rgba(196, 165, 116, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.for-shops-page .for-shops-plan-compare {
+  margin-top: 1.5rem;
+}
+
+.for-shops-page .for-shops-plan-table .for-shops-plan-value.is-priority,
+.for-shops-page .for-shops-plan-table .for-shops-plan-value.is-top {
+  min-width: auto;
+}
+
 .for-shops-page .for-shops-faq {
   gap: 0.6875rem;
 }
