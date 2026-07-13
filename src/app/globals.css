@@ -2677,6 +2677,16 @@
     color: rgba(17, 17, 17, 0.28);
   }
 
+  .for-shops-plan-value.is-normal {
+    border-radius: 0.25rem;
+    border: 1px solid rgba(17, 17, 17, 0.12);
+    background: rgba(255, 255, 255, 0.7);
+    padding: 0.15rem 0.45rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: rgba(17, 17, 17, 0.55);
+  }
+
   .for-shops-plan-value.is-priority {
     border-radius: 0.25rem;
     border: 1px solid rgba(196, 165, 116, 0.45);

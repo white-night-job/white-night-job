@@ -591,6 +591,7 @@
   margin-top: 1.5rem;
 }
 
+.for-shops-page .for-shops-plan-table .for-shops-plan-value.is-normal,
 .for-shops-page .for-shops-plan-table .for-shops-plan-value.is-priority,
 .for-shops-page .for-shops-plan-table .for-shops-plan-value.is-top {
   min-width: auto;

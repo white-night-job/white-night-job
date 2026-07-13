@@ -35,6 +35,7 @@ const MERITS = [
 
 const PLAN_FEATURE_ROWS = [
   { label: "掲載内容", light: "フル掲載", standard: "フル掲載", premium: "フル掲載" },
+  { label: "表示順位", light: "通常", standard: "優先", premium: "最優先" },
   { label: "新着店舗掲載", light: "○", standard: "○", premium: "○" },
   { label: "ピックアップ掲載", light: "－", standard: "－", premium: "○" },
   { label: "AIおすすめ表示", light: "－", standard: "優先", premium: "最優先" },
@@ -56,11 +57,12 @@ const PLANS: {
   { key: "premium", name: "プレミアムプラン", price: "38,000", recommended: true },
 ];
 
-function planFeatureTone(value: string): "yes" | "no" | "priority" | "top" | "text" {
+function planFeatureTone(value: string): "yes" | "no" | "normal" | "priority" | "top" | "text" {
   if (value === "○") return "yes";
   if (value === "－") return "no";
   if (value === "最優先") return "top";
   if (value === "優先") return "priority";
+  if (value === "通常") return "normal";
   return "text";
 }
 
