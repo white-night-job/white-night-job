@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 
-const CONTACT_EMAIL = "comsia.info@gmail.com";
-const CONTACT_PHONE = "011-600-1073";
+const CONTACT_EMAIL = "whitenightjob.info@gmail.com";
+const CONTACT_PHONE = "090-8371-7443";
+const CONTACT_LINE_URL = "https://line.me/ti/p/gI8BFeh2LH";
 
 export function ForShopsContactForm() {
   const [shopName, setShopName] = useState("");
+  const [area, setArea] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,6 +21,7 @@ export function ForShopsContactForm() {
     const body = [
       "【掲載のお問い合わせ】",
       `店舗名: ${shopName}`,
+      `エリア: ${area}`,
       `ご担当者名: ${name}`,
       `メール: ${email}`,
       `電話: ${phone}`,
@@ -50,6 +53,16 @@ export function ForShopsContactForm() {
           />
         </div>
         <div className="for-shops-field">
+          <label htmlFor="for-shops-area">エリア</label>
+          <input
+            id="for-shops-area"
+            value={area}
+            onChange={(event) => setArea(event.target.value)}
+            required
+            placeholder="例：すすきの / 札幌駅前"
+          />
+        </div>
+        <div className="for-shops-field">
           <label htmlFor="for-shops-name">ご担当者名</label>
           <input
             id="for-shops-name"
@@ -78,7 +91,7 @@ export function ForShopsContactForm() {
               type="tel"
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
-              placeholder="011-000-0000"
+              placeholder="090-0000-0000"
             />
           </div>
         </div>
@@ -103,7 +116,7 @@ export function ForShopsContactForm() {
             onChange={(event) => setMessage(event.target.value)}
             rows={5}
             required
-            placeholder="掲載希望エリア、ご質問などご記入ください"
+            placeholder="掲載希望の詳細、ご質問などご記入ください"
           />
         </div>
         <button type="submit" className="for-shops-btn for-shops-btn-primary">
@@ -127,11 +140,13 @@ export function ForShopsContactForm() {
           <span className="for-shops-channel-value">{CONTACT_EMAIL}</span>
         </a>
         <a
-          href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("【LINE相談希望】掲載について")}`}
+          href={CONTACT_LINE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="for-shops-channel-card"
         >
-          <span className="for-shops-channel-label">LINE相談</span>
-          <span className="for-shops-channel-value">メールにてLINE相談をご希望とお知らせください</span>
+          <span className="for-shops-channel-label">LINE</span>
+          <span className="for-shops-channel-value">友だち追加してご相談ください</span>
         </a>
       </div>
     </div>
