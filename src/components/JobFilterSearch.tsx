@@ -413,6 +413,7 @@ export function JobFilterSearch({
         )}
       </div>
 
+      <div className={inPlate ? "hero-search-primary-row" : undefined}>
       <div
         ref={pickerRef}
         className={`relative ${
@@ -534,6 +535,7 @@ export function JobFilterSearch({
         >
           検索する
         </button>
+      </div>
 
         <button
           type="button"

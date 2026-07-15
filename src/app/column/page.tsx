@@ -36,7 +36,7 @@ export default function ColumnListPage() {
         </p>
       </header>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="column-list-grid grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {COLUMN_ARTICLES.map((article) => (
           <ColumnCard key={article.slug} article={article} />
         ))}

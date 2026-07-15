@@ -1,6 +1,7 @@
 "use client";
 
 import { HeaderAccountMenu } from "@/components/HeaderAccountMenu";
+import { HeaderDesktopNav } from "@/components/HeaderDesktopNav";
 import { HeaderDrawer } from "@/components/HeaderDrawer";
 import { HeaderLogo } from "@/components/HeaderLogo";
 
@@ -15,6 +16,8 @@ export function Header() {
         <div className="site-header-logo">
           <HeaderLogo />
         </div>
+
+        <HeaderDesktopNav />
 
         <div className="site-header-slot site-header-slot-right">
           <HeaderAccountMenu />

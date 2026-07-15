@@ -7,6 +7,7 @@ import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
 import { buildOrganizationJsonLd, buildRootMetadata } from "@/lib/seo";
 import "./globals.css";
+import "./desktop.css";
 
 export const metadata: Metadata = buildRootMetadata();
 

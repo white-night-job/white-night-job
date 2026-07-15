@@ -132,14 +132,15 @@ export default function JobDetailPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="job-detail-shell mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <Breadcrumbs
         items={[
           { label: "求人一覧", href: "/jobs" },
           { label: job.shopName },
         ]}
       />
-      <article className="rounded-2xl border border-gold/25 bg-white shadow-gold">
+      <div className="job-detail-layout">
+      <article className="job-detail-main rounded-2xl border border-gold/25 bg-white shadow-gold">
         {job.imageUrl ? (
           <img
             src={job.imageUrl}
@@ -272,7 +273,9 @@ export default function JobDetailPage({
               })}
             </div>
           </section>
-          <JobApplyButtons job={job} />
+          <div className="job-detail-apply-inline">
+            <JobApplyButtons job={job} />
+          </div>
           {displayStoreImages.length > 0 && (
             <StoreImagesGallery
               images={displayStoreImages}
@@ -387,9 +390,32 @@ export default function JobDetailPage({
               </p>
             </section>
           )}
-          <JobApplyButtons job={job} />
+          <div className="job-detail-apply-inline">
+            <JobApplyButtons job={job} />
+          </div>
         </div>
       </article>
+
+      <aside className="job-detail-sticky-aside">
+        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
+          <p className="font-serif text-lg font-semibold text-charcoal">{job.shopName}</p>
+          <p className="mt-1 text-sm text-gold-dark">
+            {formatLocation(job)} · {job.jobType}
+          </p>
+          <p className="mt-3 text-base font-semibold text-charcoal">{job.salary}</p>
+          <div className="mt-4 flex items-center gap-2">
+            <FavoriteButton jobId={job.id} allowLineLoginRedirect />
+            <CompareButton jobId={job.id} />
+          </div>
+          <div className="mt-5">
+            <JobApplyButtons job={job} />
+          </div>
+          <p className="mt-4 text-xs leading-relaxed text-muted">
+            LINE相談・電話応募はボタンからすぐできます。お気に入り登録で後から見返せます。
+          </p>
+        </div>
+      </aside>
+      </div>
     </div>
   );
 }

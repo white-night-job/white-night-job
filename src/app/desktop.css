@@ -1,0 +1,534 @@
+/* =========================================================
+   Desktop / Tablet responsive overlays
+   IMPORTANT: Mobile base styles live in globals.css and must
+   not be edited for layout here. Only min-width media queries.
+   ========================================================= */
+
+/* PC-only header chrome: hidden on phones */
+.site-header-desktop-nav,
+.site-header-desktop-actions {
+  display: none;
+}
+
+.line-login-promo-layout {
+  display: block;
+}
+
+.line-login-promo-copy,
+.line-login-promo-cta {
+  display: contents;
+}
+
+.job-detail-sticky-aside {
+  display: none;
+}
+
+.admin-sidebar {
+  display: none;
+}
+
+/* ========== Tablet: 768px+ ========== */
+@media (min-width: 768px) {
+  .top-page-content {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  /* Feature intro: 6 items in one row */
+  .feature-intro-band {
+    max-width: min(1200px, 100%);
+    margin-inline: auto;
+  }
+
+  .feature-intro-row {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .feature-intro-item {
+    position: relative;
+    min-width: 0;
+  }
+
+  .feature-intro-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 18%;
+    bottom: 18%;
+    right: 0;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(212, 188, 142, 0.55) 20%,
+      rgba(212, 188, 142, 0.55) 80%,
+      transparent 100%
+    );
+  }
+
+  .feature-intro-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.45rem;
+    padding: 0.85rem 0.55rem 1rem;
+    height: 100%;
+  }
+
+  .feature-intro-desc {
+    font-size: 0.7rem;
+    line-height: 1.45;
+    max-width: 9.5rem;
+  }
+
+  /* Search primary row (fields + button) */
+  .hero-search-primary-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .hero-reservation-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    align-items: start;
+  }
+
+  .hero-plate-search {
+    max-width: min(1100px, 100%);
+    margin-inline: auto;
+  }
+
+  .hero-immersive-search .hero-search-submit {
+    margin-top: 0.85rem;
+    width: 100%;
+  }
+
+  /* Job listing carousels → grids */
+  .listing-panel {
+    max-width: min(1200px, 100%);
+    margin-inline: auto;
+  }
+
+  .listing-carousel-track {
+    overflow: visible;
+  }
+
+  .listing-carousel-fade {
+    display: none !important;
+  }
+
+  .listing-carousel-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    grid-auto-columns: unset !important;
+    grid-auto-flow: unset !important;
+    width: 100%;
+  }
+
+  .listing-carousel-item {
+    width: auto !important;
+    min-width: 0;
+    scroll-snap-align: unset;
+  }
+
+  .listing-carousel {
+    overflow: visible;
+  }
+
+  /* Column list already has lg:3 — bump tablet */
+  .column-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+/* ========== PC: 1024px+ ========== */
+@media (min-width: 1024px) {
+  /* —— Header —— */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    min-height: 76px;
+    background: rgba(13, 13, 13, 0.88);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .site-header-inner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: min(1360px, 100%);
+    margin-inline: auto;
+    min-height: 76px;
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+    width: 100%;
+  }
+
+  .site-header-slot-left,
+  .site-header-slot-right {
+    display: none !important;
+  }
+
+  .site-header-logo {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    justify-self: start;
+  }
+
+  .site-header-desktop-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(0.75rem, 1.4vw, 1.5rem);
+  }
+
+  .site-header-desktop-link {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: rgba(250, 247, 242, 0.88);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    padding: 0.35rem 0.15rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+
+  .site-header-desktop-link:hover,
+  .site-header-desktop-link.is-active {
+    color: #d4bc8e;
+  }
+
+  .site-header-desktop-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    justify-self: end;
+  }
+
+  .site-header-desktop-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.35rem;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgba(212, 188, 142, 0.45);
+    color: #f0e6d4;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .site-header-desktop-action:hover {
+    border-color: rgba(212, 188, 142, 0.85);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .site-header-desktop-action.is-shop {
+    background: linear-gradient(180deg, #f5ede0 0%, #d4bc8e 100%);
+    color: #111111;
+    border-color: rgba(196, 165, 116, 0.7);
+  }
+
+  .site-header-line {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 188, 142, 0.55) 20%,
+      rgba(212, 188, 142, 0.9) 50%,
+      rgba(212, 188, 142, 0.55) 80%,
+      transparent 100%
+    );
+  }
+
+  /* —— Hero —— */
+  .first-view {
+    width: 100%;
+  }
+
+  .hero-immersive {
+    max-width: min(1360px, 100%);
+    margin-inline: auto;
+    min-height: clamp(500px, 58vh, 650px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+    padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .hero-immersive-header,
+  .hero-immersive-search {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-plate-header,
+  .hero-plate-content {
+    max-width: none;
+  }
+
+  .hero-immersive-search {
+    width: 100%;
+  }
+
+  .hero-plate-search {
+    max-width: none;
+  }
+
+  .hero-search-primary-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: end;
+    max-width: min(1200px, 100%);
+  }
+
+  .hero-search-primary-row .hero-reservation-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .hero-immersive-search .hero-search-submit {
+    margin-top: 0;
+    min-width: 8rem;
+    min-height: 3rem;
+    width: auto;
+  }
+
+  .hero-immersive-search .hero-search-advanced {
+    margin-top: 0.5rem;
+  }
+
+  /* Search row + button under advanced */
+  .hero-search-unit {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .top-mid-band {
+    max-width: min(1200px, 100%);
+    margin-inline: auto;
+  }
+
+  .top-mid-band-line-wrap {
+    max-width: min(1200px, 100%);
+    margin-inline: auto;
+  }
+
+  /* LINE promo 2-col */
+  .line-login-promo-card {
+    max-width: min(1200px, 100%);
+    margin-inline: auto;
+  }
+
+  .line-login-promo-copy,
+  .line-login-promo-cta {
+    display: block;
+  }
+
+  .line-login-promo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr);
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .line-login-promo-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  /* Listings 3–4 cols */
+  .listing-carousel-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 1.375rem;
+  }
+
+  .top-page-content {
+    max-width: min(1280px, 100%);
+  }
+
+  /* Jobs index grid */
+  .jobs-list-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Column list 3 cols */
+  .column-list-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Column article */
+  .column-article-shell {
+    max-width: min(820px, 100%);
+    margin-inline: auto;
+  }
+
+  .column-article-shell .prose,
+  .column-article-body {
+    font-size: 1.05rem;
+    line-height: 1.85;
+  }
+
+  /* Job detail 2-col */
+  .job-detail-shell {
+    max-width: min(1280px, 100%);
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+    padding-block: 2rem;
+  }
+
+  .job-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.7fr);
+    gap: 1.75rem;
+    align-items: start;
+  }
+
+  .job-detail-sticky-aside {
+    display: block;
+    position: sticky;
+    top: 100px;
+  }
+
+  .job-detail-apply-inline {
+    display: none !important;
+  }
+
+  /* Admin */
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 1.5rem;
+    max-width: min(1360px, 100%);
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+    padding-block: 1.75rem;
+  }
+
+  .admin-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    top: 96px;
+    align-self: start;
+    border-radius: 1rem;
+    border: 1px solid rgba(196, 165, 116, 0.35);
+    background: linear-gradient(165deg, #111111 0%, #1a1612 100%);
+    padding: 1rem;
+  }
+
+  .admin-sidebar-link {
+    display: block;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    color: #d4bc8e;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .admin-sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .admin-main {
+    min-width: 0;
+  }
+
+  .admin-table-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
+
+/* ========== Wide PC: 1440px+ ========== */
+@media (min-width: 1440px) {
+  .site-header-inner,
+  .hero-immersive,
+  .admin-shell,
+  .job-detail-shell {
+    max-width: 1360px;
+  }
+
+  .listing-carousel-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 1.5rem;
+  }
+
+  .jobs-list-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .top-page-content {
+    max-width: 1360px;
+  }
+
+  .feature-intro-band,
+  .top-mid-band,
+  .line-login-promo-card {
+    max-width: 1280px;
+  }
+}
+
+/* Utility max-width overrides (Tailwind collision) */
+@media (min-width: 1024px) {
+  .job-detail-shell.max-w-3xl {
+    max-width: min(1280px, 100%);
+  }
+
+  .admin-shell.max-w-4xl {
+    max-width: min(1360px, 100%);
+  }
+
+  .column-article-shell.max-w-3xl {
+    max-width: min(820px, 100%);
+  }
+
+  /* Beat tablet max constraints from globals */
+  .hero-immersive {
+    max-width: min(1360px, 100%) !important;
+  }
+
+  .hero-immersive-header {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  .hero-plate-header,
+  .hero-plate-content,
+  .hero-plate-search {
+    max-width: none !important;
+  }
+}

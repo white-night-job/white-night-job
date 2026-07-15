@@ -43,25 +43,31 @@ export function LineLoginPromoCard() {
         ×
       </button>
 
-      <h2 id="line-login-promo-heading" className="line-login-promo-heading">
-        LINE連携でもっと便利に
-      </h2>
+      <div className="line-login-promo-layout">
+        <div className="line-login-promo-copy">
+          <h2 id="line-login-promo-heading" className="line-login-promo-heading">
+            LINE連携でもっと便利に
+          </h2>
 
-      <ul className="line-login-promo-list">
-        {BENEFITS.map((benefit) => (
-          <li key={benefit}>{benefit}</li>
-        ))}
-      </ul>
+          <ul className="line-login-promo-list">
+            {BENEFITS.map((benefit) => (
+              <li key={benefit}>{benefit}</li>
+            ))}
+          </ul>
+        </div>
 
-      <a
-        href="/api/line/login?redirect=%2Fmypage"
-        className="line-login-promo-btn"
-      >
-        <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
-        LINEでかんたんログイン
-      </a>
+        <div className="line-login-promo-cta">
+          <a
+            href="/api/line/login?redirect=%2Fmypage"
+            className="line-login-promo-btn"
+          >
+            <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+            LINEでかんたんログイン
+          </a>
 
-      <p className="line-login-promo-note">登録不要・30日間ログイン状態を保持</p>
+          <p className="line-login-promo-note">登録不要・30日間ログイン状態を保持</p>
+        </div>
+      </div>
     </section>
   );
 }

@@ -770,7 +770,23 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="admin-shell mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+      <aside className="admin-sidebar" aria-label="管理メニュー">
+        <a href="#admin-broadcast" className="admin-sidebar-link">
+          LINE配信
+        </a>
+        <a href="#admin-history" className="admin-sidebar-link">
+          通知履歴
+        </a>
+        <a href="#admin-jobs" className="admin-sidebar-link">
+          求人管理
+        </a>
+        <Link href="/" className="admin-sidebar-link">
+          サイトを見る
+        </Link>
+      </aside>
+
+      <div className="admin-main">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
@@ -803,13 +819,17 @@ export default function AdminPage() {
         </p>
       )}
 
+      <div id="admin-broadcast">
       <LineBroadcastPanel
         jobs={jobs}
         selectedJobId={editingId}
         onMessage={setMessage}
       />
+      </div>
 
+      <div id="admin-history">
       <LineNotificationHistoryPanel />
+      </div>
 
       <section className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
         {!editingId && (
@@ -1733,7 +1753,7 @@ export default function AdminPage() {
         )}
       </section>
 
-      <section className="mt-8">
+      <section id="admin-jobs" className="mt-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-charcoal">
             求人一覧
@@ -1976,6 +1996,7 @@ export default function AdminPage() {
           </ul>
         )}
       </section>
+      </div>
     </div>
   );
 }

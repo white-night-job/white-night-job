@@ -46,7 +46,7 @@ export default async function ColumnArticlePage({ params }: ColumnArticlePagePro
   const pathname = `/column/${article.slug}`;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+    <div className="column-article-shell mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <JsonLd
         data={buildArticleJsonLd({
           title: article.title,
