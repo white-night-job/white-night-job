@@ -14,6 +14,11 @@ import {
   parseChatRecommendFromBody,
 } from "@/lib/chat-recommend-db";
 import { parsePickupFromBody, pickupToRow } from "@/lib/pickup-db";
+import {
+  listingPriorityToRow,
+  parseListingPriorityFromBody,
+} from "@/lib/listing-priority";
+import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -64,8 +69,17 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const credentialRow = shopCredentialsToRow(shopCredentials);
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
     const pickupRow = pickupToRow(parsePickupFromBody(body));
+    const listingPriorityRow = listingPriorityToRow(
+      parseListingPriorityFromBody(body),
+    );
 
     const supabase = createSupabaseAdmin();
+    const { data: previous } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
     const { data, error } = await supabase
       .from("jobs")
       .update({
@@ -73,6 +87,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...credentialRow,
         ...chatRecommendRow,
         ...pickupRow,
+        ...listingPriorityRow,
       })
       .eq("id", id)
       .select("*")
@@ -86,9 +101,11 @@ export async function PUT(request: Request, { params }: RouteContext) {
       throw error;
     }
 
-    return NextResponse.json({
-      job: rowToJob(data, { includeShopLoginPassword: true }),
-    });
+    const before = previous ? rowToJob(previous) : null;
+    const after = rowToJob(data, { includeShopLoginPassword: true });
+    void runAutoNotificationsAfterJobChange({ before, after });
+
+    return NextResponse.json({ job: after });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の更新に失敗しました。") },

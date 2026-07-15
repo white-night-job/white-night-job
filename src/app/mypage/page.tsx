@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
-import { NotificationAreaSettings } from "@/components/NotificationAreaSettings";
+import {
+  EMPTY_NOTIFICATION_SETTINGS,
+  NotificationPreferenceForm,
+  type NotificationSettingsState,
+} from "@/components/NotificationAreaSettings";
 import { ViewHistoryList } from "@/components/ViewHistoryList";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
@@ -19,25 +23,15 @@ import {
 } from "@/lib/job-type-diagnosis";
 import type { Job } from "@/types/job";
 
-type NotificationSettings = {
-  notifyNewJobs: boolean;
-  notifyPickupJobs: boolean;
-  notifyFavoriteUpdates: boolean;
-  notificationAreas: string[];
-};
-
 export default function MyPage() {
   const router = useRouter();
   const { currentUser, isLoggedIn, ready, refreshSession } = useUserSession();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchHistory, setSearchHistory] = useState<SavedSearchFilters | null>(null);
-  const [settings, setSettings] = useState<NotificationSettings>({
-    notifyNewJobs: true,
-    notifyPickupJobs: true,
-    notifyFavoriteUpdates: true,
-    notificationAreas: [],
-  });
+  const [settings, setSettings] = useState<NotificationSettingsState>(
+    EMPTY_NOTIFICATION_SETTINGS,
+  );
   const [sendingFavoritesLine, setSendingFavoritesLine] = useState(false);
   const [favoritesLineMessage, setFavoritesLineMessage] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
@@ -71,12 +65,14 @@ export default function MyPage() {
           setJobs(data.jobs ?? []);
         }
         if (settingsResponse.ok) {
-          const data = (await settingsResponse.json()) as NotificationSettings;
+          const data = (await settingsResponse.json()) as NotificationSettingsState;
           setSettings({
             notifyNewJobs: data.notifyNewJobs,
             notifyPickupJobs: data.notifyPickupJobs,
             notifyFavoriteUpdates: data.notifyFavoriteUpdates,
             notificationAreas: data.notificationAreas ?? [],
+            notificationJobTypes: data.notificationJobTypes ?? [],
+            minHourlyWage: Number(data.minHourlyWage ?? 0),
           });
         }
         if (diagnosisResponse.ok) {
@@ -324,42 +320,7 @@ export default function MyPage() {
       </section>
 
       <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-        <h2 className="font-serif text-lg font-semibold text-charcoal">通知設定</h2>
-        <div className="mt-4 space-y-3">
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyNewJobs}
-              onChange={(event) =>
-                setSettings((c) => ({ ...c, notifyNewJobs: event.target.checked }))
-              }
-            />
-            新着店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyPickupJobs}
-              onChange={(event) =>
-                setSettings((c) => ({ ...c, notifyPickupJobs: event.target.checked }))
-              }
-            />
-            PICK UP店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyFavoriteUpdates}
-              onChange={(event) =>
-                setSettings((c) => ({ ...c, notifyFavoriteUpdates: event.target.checked }))
-              }
-            />
-            お気に入り店舗の更新通知
-          </label>
-        </div>
-        <div className="mt-4">
-          <NotificationAreaSettings settings={settings} onChange={setSettings} />
-        </div>
+        <NotificationPreferenceForm settings={settings} onChange={setSettings} />
         <button
           type="button"
           onClick={saveSettings}

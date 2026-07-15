@@ -15,6 +15,11 @@ import {
 } from "@/lib/chat-recommend-db";
 import { parsePickupFromBody, pickupToRow } from "@/lib/pickup-db";
 import {
+  listingPriorityToRow,
+  parseListingPriorityFromBody,
+} from "@/lib/listing-priority";
+import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
+import {
   emptyApplicationDetail,
   fetchApplicationDetails,
   fetchApplicationRows,
@@ -32,6 +37,10 @@ import {
   compareJobsForListing,
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
+import {
+  listingPriorityRank,
+  parseListingPriority,
+} from "@/lib/listing-priority";
 import { isNewListingJob } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -126,6 +135,8 @@ export async function GET(request: Request) {
         boostMap,
         createdAtMap[a.id] ?? a.postedAt,
         createdAtMap[b.id] ?? b.postedAt,
+        listingPriorityRank(parseListingPriority(a.listingPriority)),
+        listingPriorityRank(parseListingPriority(b.listingPriority)),
       ),
     );
 
@@ -208,6 +219,9 @@ export async function POST(request: Request) {
     const credentialRow = shopCredentialsToRow(shopCredentials);
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
     const pickupRow = pickupToRow(parsePickupFromBody(body));
+    const listingPriorityRow = listingPriorityToRow(
+      parseListingPriorityFromBody(body),
+    );
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -217,6 +231,7 @@ export async function POST(request: Request) {
         ...credentialRow,
         ...chatRecommendRow,
         ...pickupRow,
+        ...listingPriorityRow,
       })
       .select("*")
       .single();
@@ -228,10 +243,14 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    return NextResponse.json(
-      { job: rowToJob(data, { includeShopLoginPassword: true }) },
-      { status: 201 },
-    );
+    const job = rowToJob(data, { includeShopLoginPassword: true });
+    void runAutoNotificationsAfterJobChange({
+      before: null,
+      after: job,
+      wasCreate: true,
+    });
+
+    return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の保存に失敗しました。") },

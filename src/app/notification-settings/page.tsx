@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  NotificationAreaSettings,
+  NotificationPreferenceForm,
   useNotificationSettings,
 } from "@/components/NotificationAreaSettings";
 
@@ -63,53 +63,11 @@ export default function NotificationSettingsPage() {
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 className="font-serif text-2xl font-semibold text-charcoal">通知設定</h1>
       <p className="mt-2 text-sm text-muted">
-        LINEログイン済みユーザー向けの通知設定です。
+        希望条件に合う求人やお気に入り店舗の更新を、LINEで自動お知らせします。
       </p>
 
-      <div className="mt-5 space-y-4">
-        <div className="space-y-3 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyNewJobs}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyNewJobs: event.target.checked,
-                }))
-              }
-            />
-            新着店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyPickupJobs}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyPickupJobs: event.target.checked,
-                }))
-              }
-            />
-            PICK UP店舗通知
-          </label>
-          <label className="flex items-center gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={settings.notifyFavoriteUpdates}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  notifyFavoriteUpdates: event.target.checked,
-                }))
-              }
-            />
-            お気に入り店舗の更新通知
-          </label>
-        </div>
-
-        <NotificationAreaSettings settings={settings} onChange={setSettings} />
+      <div className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
+        <NotificationPreferenceForm settings={settings} onChange={setSettings} />
       </div>
 
       <button

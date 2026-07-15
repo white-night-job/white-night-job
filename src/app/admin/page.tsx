@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { LineBroadcastPanel } from "@/components/admin/LineBroadcastPanel";
+import { LineNotificationHistoryPanel } from "@/components/admin/LineNotificationHistoryPanel";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BENEFIT_CATEGORIES,
@@ -96,6 +97,7 @@ type JobForm = {
   chatRecommendRelaxed: boolean;
   chatRecommendHighEarning: boolean;
   pickupEnabled: boolean;
+  listingPriority: "normal" | "priority" | "top";
 };
 
 const emptyForm: JobForm = {
@@ -142,6 +144,7 @@ const emptyForm: JobForm = {
   chatRecommendRelaxed: false,
   chatRecommendHighEarning: false,
   pickupEnabled: false,
+  listingPriority: "normal",
 };
 
 const inputClass =
@@ -211,6 +214,7 @@ function toPayload(form: JobForm) {
     chat_recommend_relaxed: form.chatRecommendRelaxed,
     chat_recommend_high_earning: form.chatRecommendHighEarning,
     pickup_enabled: form.pickupEnabled,
+    listing_priority: form.listingPriority,
   };
 }
 
@@ -270,6 +274,10 @@ function toForm(job: Job): JobForm {
     chatRecommendRelaxed: job.chatRecommend?.relaxed ?? false,
     chatRecommendHighEarning: job.chatRecommend?.highEarning ?? false,
     pickupEnabled: job.pickupEnabled ?? false,
+    listingPriority:
+      job.listingPriority === "priority" || job.listingPriority === "top"
+        ? job.listingPriority
+        : "normal",
   };
 }
 
@@ -800,6 +808,8 @@ export default function AdminPage() {
         selectedJobId={editingId}
         onMessage={setMessage}
       />
+
+      <LineNotificationHistoryPanel />
 
       <section className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
         {!editingId && (
@@ -1615,6 +1625,40 @@ export default function AdminPage() {
               </span>
             </span>
           </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <p className="text-sm font-semibold text-charcoal">表示順位</p>
+          <p className="mt-1 text-xs text-muted">
+            最優先へ変更すると、条件一致ユーザーへPickUp店舗通知が自動送信されます。
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(
+              [
+                ["normal", "通常"],
+                ["priority", "優先"],
+                ["top", "最優先"],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-semibold ${
+                  form.listingPriority === value
+                    ? "border-gold bg-gold/15 text-charcoal"
+                    : "border-gold/25 bg-white text-muted"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="listingPriority"
+                  checked={form.listingPriority === value}
+                  onChange={() => setField("listingPriority", value)}
+                  className="sr-only"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">

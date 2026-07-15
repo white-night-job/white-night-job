@@ -5,6 +5,11 @@ import {
   isNotificationArea,
   NOTIFICATION_AREA_OPTIONS,
 } from "@/lib/notification-areas";
+import {
+  isJobType,
+  MIN_HOURLY_WAGE_OPTIONS,
+  NOTIFICATION_JOB_TYPE_OPTIONS,
+} from "@/lib/notification-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +18,8 @@ type SettingsPayload = {
   notifyPickupJobs?: boolean;
   notifyFavoriteUpdates?: boolean;
   notificationAreas?: string[];
+  notificationJobTypes?: string[];
+  minHourlyWage?: number;
 };
 
 async function ensureSettingsRow(userId: string) {
@@ -31,6 +38,7 @@ async function ensureSettingsRow(userId: string) {
       notify_new_jobs: true,
       notify_pickup_jobs: true,
       notify_favorite_updates: true,
+      min_hourly_wage: 0,
     })
     .select("*")
     .single();
@@ -46,6 +54,20 @@ async function fetchNotificationAreas(userId: string) {
     .eq("user_id", userId);
   if (error) throw error;
   return (data ?? []).map((row) => row.area);
+}
+
+async function fetchNotificationJobTypes(userId: string) {
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("user_notification_job_types")
+    .select("job_type")
+    .eq("user_id", userId);
+  if (error) {
+    // テーブル未作成時は空配列
+    console.error("[notification-settings] job types fetch failed", error);
+    return [];
+  }
+  return (data ?? []).map((row) => row.job_type);
 }
 
 async function saveNotificationAreas(userId: string, areas: string[]) {
@@ -70,6 +92,32 @@ async function saveNotificationAreas(userId: string, areas: string[]) {
   return validAreas;
 }
 
+async function saveNotificationJobTypes(userId: string, jobTypes: string[]) {
+  const supabase = createSupabaseAdmin();
+  const valid = [...new Set(jobTypes.filter(isJobType))];
+
+  const { error: deleteError } = await supabase
+    .from("user_notification_job_types")
+    .delete()
+    .eq("user_id", userId);
+  if (deleteError) throw deleteError;
+
+  if (valid.length === 0) return [];
+
+  const { error: insertError } = await supabase
+    .from("user_notification_job_types")
+    .insert(valid.map((jobType) => ({ user_id: userId, job_type: jobType })));
+  if (insertError) throw insertError;
+  return valid;
+}
+
+function normalizeMinWage(value: unknown): number {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if ((MIN_HOURLY_WAGE_OPTIONS as readonly number[]).includes(n)) return n;
+  return 0;
+}
+
 export async function GET(request: Request) {
   const userId = await getAuthenticatedUserId(request);
   if (!userId) {
@@ -77,13 +125,20 @@ export async function GET(request: Request) {
   }
   try {
     const row = await ensureSettingsRow(userId);
-    const notificationAreas = await fetchNotificationAreas(userId);
+    const [notificationAreas, notificationJobTypes] = await Promise.all([
+      fetchNotificationAreas(userId),
+      fetchNotificationJobTypes(userId),
+    ]);
     return NextResponse.json({
       notifyNewJobs: row.notify_new_jobs,
       notifyPickupJobs: row.notify_pickup_jobs,
       notifyFavoriteUpdates: row.notify_favorite_updates,
+      minHourlyWage: Number(row.min_hourly_wage ?? 0),
       notificationAreas,
+      notificationJobTypes,
       areaOptions: NOTIFICATION_AREA_OPTIONS,
+      jobTypeOptions: NOTIFICATION_JOB_TYPE_OPTIONS,
+      minWageOptions: MIN_HOURLY_WAGE_OPTIONS,
     });
   } catch (error) {
     return NextResponse.json(
@@ -100,6 +155,8 @@ export async function PUT(request: Request) {
   }
   const payload = (await request.json()) as SettingsPayload;
   const supabase = createSupabaseAdmin();
+  const minHourlyWage = normalizeMinWage(payload.minHourlyWage);
+
   const { data, error } = await supabase
     .from("user_notification_settings")
     .upsert(
@@ -108,6 +165,7 @@ export async function PUT(request: Request) {
         notify_new_jobs: payload.notifyNewJobs ?? true,
         notify_pickup_jobs: payload.notifyPickupJobs ?? true,
         notify_favorite_updates: payload.notifyFavoriteUpdates ?? true,
+        min_hourly_wage: minHourlyWage,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
@@ -119,22 +177,24 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const notificationAreas = await saveNotificationAreas(
-      userId,
-      payload.notificationAreas ?? [],
-    );
+    const [notificationAreas, notificationJobTypes] = await Promise.all([
+      saveNotificationAreas(userId, payload.notificationAreas ?? []),
+      saveNotificationJobTypes(userId, payload.notificationJobTypes ?? []),
+    ]);
     return NextResponse.json({
       ok: true,
       notifyNewJobs: data.notify_new_jobs,
       notifyPickupJobs: data.notify_pickup_jobs,
       notifyFavoriteUpdates: data.notify_favorite_updates,
+      minHourlyWage: Number(data.min_hourly_wage ?? 0),
       notificationAreas,
+      notificationJobTypes,
     });
   } catch (areaError) {
     return NextResponse.json(
       {
         message:
-          areaError instanceof Error ? areaError.message : "通知エリアの保存に失敗しました。",
+          areaError instanceof Error ? areaError.message : "通知条件の保存に失敗しました。",
       },
       { status: 500 },
     );

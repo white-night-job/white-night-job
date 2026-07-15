@@ -49,7 +49,13 @@ export function compareJobsForListing(
   boostMap: BoostStatsMap,
   aCreatedAt: string,
   bCreatedAt: string,
+  aListingPriority = 1,
+  bListingPriority = 1,
 ): number {
+  if (aListingPriority !== bListingPriority) {
+    return bListingPriority - aListingPriority;
+  }
+
   const a = boostMap[aId] ?? { todayCount: 0, latestBoostAt: null };
   const b = boostMap[bId] ?? { todayCount: 0, latestBoostAt: null };
 

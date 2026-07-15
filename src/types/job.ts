@@ -125,6 +125,8 @@ export interface Job {
   postedAt: string;
   createdAt?: string;
   pickupEnabled?: boolean;
+  /** 表示順位: normal=通常 / priority=優先 / top=最優先 */
+  listingPriority?: "normal" | "priority" | "top";
   shopLoginId?: string;
   /** 管理画面のみ。公開APIでは返さない */
   shopLoginPassword?: string;

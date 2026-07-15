@@ -14,6 +14,10 @@ import {
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
 import {
+  countMatchingNewJobRecipients,
+  countMatchingPickupRecipients,
+} from "@/lib/line-auto-notify";
+import {
   aggregateViewCounts,
   fetchViewRows,
   type ViewRow,
@@ -98,6 +102,17 @@ export async function GET() {
       boostRemaining = DAILY_BOOST_LIMIT;
     }
 
+    let newJobNotifyCount = 0;
+    let pickupNotifyCount = 0;
+    try {
+      [newJobNotifyCount, pickupNotifyCount] = await Promise.all([
+        countMatchingNewJobRecipients(job),
+        countMatchingPickupRecipients(job),
+      ]);
+    } catch (error) {
+      console.error("[shop-dashboard] notify count failed", error);
+    }
+
     return NextResponse.json({
       job,
       applicationRows,
@@ -108,6 +123,8 @@ export async function GET() {
       districtTotal,
       boostRemaining,
       boostLimit,
+      newJobNotifyCount,
+      pickupNotifyCount,
     });
   } catch (error) {
     return NextResponse.json(

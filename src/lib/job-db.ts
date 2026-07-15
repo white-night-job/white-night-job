@@ -85,6 +85,7 @@ type JobRow = {
   posted_at: string;
   created_at?: string;
   pickup_enabled?: boolean | null;
+  listing_priority?: string | null;
   shop_login_id?: string | null;
   shop_login_password?: string | null;
   chat_recommend_enabled?: boolean | null;
@@ -146,6 +147,10 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     postedAt: row.posted_at,
     createdAt: row.created_at,
     pickupEnabled: row.pickup_enabled ?? false,
+    listingPriority:
+      row.listing_priority === "priority" || row.listing_priority === "top"
+        ? row.listing_priority
+        : "normal",
     shopLoginId: row.shop_login_id?.trim() || undefined,
     ...(options?.includeShopLoginPassword
       ? {

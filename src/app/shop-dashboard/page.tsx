@@ -31,6 +31,12 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
+import {
+  LISTING_PRIORITIES,
+  LISTING_PRIORITY_LABELS,
+  type ListingPriority,
+  parseListingPriority,
+} from "@/lib/listing-priority";
 
 type ShopForm = {
   shopName: string;
@@ -60,6 +66,7 @@ type ShopForm = {
   youtubeUrl: string;
   websiteUrl: string;
   lineUrl: string;
+  listingPriority: ListingPriority;
 };
 
 const emptyCastVoiceEntry = (): CastVoiceEntry => ({
@@ -111,6 +118,7 @@ function toForm(job: Job): ShopForm {
     youtubeUrl: job.youtubeUrl ?? "",
     websiteUrl: job.websiteUrl ?? "",
     lineUrl: job.lineUrl,
+    listingPriority: parseListingPriority(job.listingPriority),
   };
 }
 
@@ -140,6 +148,7 @@ function toPayload(form: ShopForm) {
     youtubeUrl: form.youtubeUrl || undefined,
     websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
+    listingPriority: form.listingPriority,
   };
 }
 
@@ -175,6 +184,8 @@ export default function ShopDashboardPage() {
   const [districtTotal, setDistrictTotal] = useState(1);
   const [boostRemaining, setBoostRemaining] = useState(5);
   const [boostLimit, setBoostLimit] = useState(5);
+  const [newJobNotifyCount, setNewJobNotifyCount] = useState(0);
+  const [pickupNotifyCount, setPickupNotifyCount] = useState(0);
 
   async function loadDashboard() {
     const data = await readJson<{
@@ -187,6 +198,8 @@ export default function ShopDashboardPage() {
       districtTotal: number;
       boostRemaining: number;
       boostLimit: number;
+      newJobNotifyCount?: number;
+      pickupNotifyCount?: number;
     }>(
       await fetch("/api/shop-dashboard", {
         cache: "no-store",
@@ -203,6 +216,8 @@ export default function ShopDashboardPage() {
     setDistrictTotal(data.districtTotal ?? 1);
     setBoostRemaining(data.boostRemaining ?? 5);
     setBoostLimit(data.boostLimit ?? 5);
+    setNewJobNotifyCount(data.newJobNotifyCount ?? 0);
+    setPickupNotifyCount(data.pickupNotifyCount ?? 0);
     setAuthenticated(true);
   }
 
@@ -865,7 +880,67 @@ export default function ShopDashboardPage() {
       </div>
 
       <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-5">
+          <p className="text-sm font-medium text-gold-light/90">表示順位</p>
+          <p className="mt-1 text-xs text-gold-light/70">
+            通常・優先・最優先。最優先へ変更すると、条件一致ユーザーへPickUp通知が送られます。
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {LISTING_PRIORITIES.map((priority) => {
+              const selected = form.listingPriority === priority;
+              return (
+                <button
+                  key={priority}
+                  type="button"
+                  onClick={() => setField("listingPriority", priority)}
+                  className={`rounded-xl border px-2 py-3 text-center text-sm font-semibold transition ${
+                    selected
+                      ? "border-gold bg-gradient-to-b from-gold-light to-gold text-charcoal shadow-gold"
+                      : "border-gold/35 bg-black/25 text-gold-light hover:border-gold/60"
+                  }`}
+                >
+                  {LISTING_PRIORITY_LABELS[priority]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-gold-light/65">
+            ※変更後は「表示順位を保存」を押してください。最優先保存時のみPickUp通知が送信されます。
+          </p>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!form || !jobId) return;
+              setLoading(true);
+              setMessage("");
+              try {
+                const data = await readJson<{ job: Job }>(
+                  await fetch("/api/shop-dashboard/job", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(toPayload(form)),
+                  }),
+                );
+                setForm(toForm(data.job));
+                setMessage("表示順位を保存しました。");
+                await loadDashboard();
+              } catch (error) {
+                setMessage(
+                  error instanceof Error ? error.message : "表示順位の保存に失敗しました。",
+                );
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="mt-3 w-full rounded-full border border-gold/50 bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-sm font-semibold text-charcoal disabled:opacity-60 sm:w-auto"
+          >
+            {loading ? "保存中..." : "表示順位を保存"}
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4 border-t border-gold/20 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gold-light/90">
               {form.district}エリア内 表示順位
@@ -908,6 +983,29 @@ export default function ShopDashboardPage() {
             本日の上位表示回数を使い切りました
           </p>
         )}
+      </section>
+
+      <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+        <h2 className="font-serif text-lg font-semibold text-charcoal">
+          通知対象人数
+        </h2>
+        <p className="mt-1 text-xs text-muted">
+          現在の求人内容・ユーザー希望条件から算出した、実際に送信される想定人数です。
+        </p>
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
+            <dt className="text-xs text-muted">新着求人通知予定</dt>
+            <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+              約{newJobNotifyCount.toLocaleString("ja-JP")}人
+            </dd>
+          </div>
+          <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
+            <dt className="text-xs text-muted">PickUp通知予定</dt>
+            <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+              約{pickupNotifyCount.toLocaleString("ja-JP")}人
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <section className="space-y-6">
