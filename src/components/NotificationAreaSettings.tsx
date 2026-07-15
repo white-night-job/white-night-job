@@ -11,6 +11,7 @@ export type NotificationSettingsState = {
   notifyNewJobs: boolean;
   notifyPickupJobs: boolean;
   notifyFavoriteUpdates: boolean;
+  notifyDailyPickup: boolean;
   notificationAreas: string[];
   notificationJobTypes: string[];
   minHourlyWage: number;
@@ -20,6 +21,7 @@ export const EMPTY_NOTIFICATION_SETTINGS: NotificationSettingsState = {
   notifyNewJobs: true,
   notifyPickupJobs: true,
   notifyFavoriteUpdates: true,
+  notifyDailyPickup: false,
   notificationAreas: [],
   notificationJobTypes: [],
   minHourlyWage: 0,
@@ -87,12 +89,30 @@ export function NotificationPreferenceForm({
             }
           />
         </label>
+        <div className="rounded-xl border border-gold/20 bg-ivory/40 px-3 py-3">
+          <label className="flex items-center justify-between gap-3 text-sm text-charcoal">
+            <span>PickUp店舗の毎日通知</span>
+            <input
+              type="checkbox"
+              checked={settings.notifyDailyPickup}
+              onChange={(event) =>
+                onChange({
+                  ...settings,
+                  notifyDailyPickup: event.target.checked,
+                })
+              }
+            />
+          </label>
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            設定した地域のおすすめPickUp店舗を、毎日20時に1店舗お届けします。
+          </p>
+        </div>
       </div>
 
       <div>
         <p className="text-sm font-semibold text-charcoal">地域（複数選択可）</p>
         <p className="mt-1 text-xs text-muted">
-          未選択の場合はすべての地域が対象になります。
+          毎日PickUp通知には地域の設定が必須です。1つ以上選択してください。
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {NOTIFICATION_AREA_OPTIONS.filter((area) => area !== "その他").map(
@@ -203,6 +223,7 @@ export function useNotificationSettings() {
             notifyNewJobs: data.notifyNewJobs,
             notifyPickupJobs: data.notifyPickupJobs,
             notifyFavoriteUpdates: data.notifyFavoriteUpdates,
+            notifyDailyPickup: data.notifyDailyPickup ?? false,
             notificationAreas: data.notificationAreas ?? [],
             notificationJobTypes: data.notificationJobTypes ?? [],
             minHourlyWage: Number(data.minHourlyWage ?? 0),

@@ -73,6 +73,7 @@ export default function MyPage() {
             notificationAreas: data.notificationAreas ?? [],
             notificationJobTypes: data.notificationJobTypes ?? [],
             minHourlyWage: Number(data.minHourlyWage ?? 0),
+            notifyDailyPickup: data.notifyDailyPickup ?? false,
           });
         }
         if (diagnosisResponse.ok) {

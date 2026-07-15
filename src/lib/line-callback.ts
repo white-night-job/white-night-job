@@ -16,7 +16,10 @@ import {
 async function ensureUserNotificationSettings(userId: string) {
   const supabase = createSupabaseAdmin();
   const { error } = await supabase.from("user_notification_settings").upsert(
-    { user_id: userId },
+    {
+      user_id: userId,
+      notify_daily_pickup: false,
+    },
     { onConflict: "user_id", ignoreDuplicates: true },
   );
   if (error) {

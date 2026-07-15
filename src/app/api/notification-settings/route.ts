@@ -17,6 +17,7 @@ type SettingsPayload = {
   notifyNewJobs?: boolean;
   notifyPickupJobs?: boolean;
   notifyFavoriteUpdates?: boolean;
+  notifyDailyPickup?: boolean;
   notificationAreas?: string[];
   notificationJobTypes?: string[];
   minHourlyWage?: number;
@@ -38,6 +39,7 @@ async function ensureSettingsRow(userId: string) {
       notify_new_jobs: true,
       notify_pickup_jobs: true,
       notify_favorite_updates: true,
+      notify_daily_pickup: false,
       min_hourly_wage: 0,
     })
     .select("*")
@@ -133,6 +135,7 @@ export async function GET(request: Request) {
       notifyNewJobs: row.notify_new_jobs,
       notifyPickupJobs: row.notify_pickup_jobs,
       notifyFavoriteUpdates: row.notify_favorite_updates,
+      notifyDailyPickup: row.notify_daily_pickup ?? false,
       minHourlyWage: Number(row.min_hourly_wage ?? 0),
       notificationAreas,
       notificationJobTypes,
@@ -165,6 +168,7 @@ export async function PUT(request: Request) {
         notify_new_jobs: payload.notifyNewJobs ?? true,
         notify_pickup_jobs: payload.notifyPickupJobs ?? true,
         notify_favorite_updates: payload.notifyFavoriteUpdates ?? true,
+        notify_daily_pickup: payload.notifyDailyPickup ?? false,
         min_hourly_wage: minHourlyWage,
         updated_at: new Date().toISOString(),
       },
@@ -186,6 +190,7 @@ export async function PUT(request: Request) {
       notifyNewJobs: data.notify_new_jobs,
       notifyPickupJobs: data.notify_pickup_jobs,
       notifyFavoriteUpdates: data.notify_favorite_updates,
+      notifyDailyPickup: data.notify_daily_pickup ?? false,
       minHourlyWage: Number(data.min_hourly_wage ?? 0),
       notificationAreas,
       notificationJobTypes,

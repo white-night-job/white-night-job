@@ -84,6 +84,32 @@ export async function fetchLineProfile(accessToken: string): Promise<LineProfile
   return data;
 }
 
+export class LinePushError extends Error {
+  status: number;
+  body: string;
+  blocked: boolean;
+
+  constructor(status: number, body: string) {
+    super(`LINE通知送信に失敗しました。(${status})`);
+    this.name = "LinePushError";
+    this.status = status;
+    this.body = body;
+    this.blocked = isLineBlockedError(status, body);
+  }
+}
+
+export function isLineBlockedError(status: number, body: string): boolean {
+  const lower = body.toLowerCase();
+  return (
+    status === 403 ||
+    lower.includes("not a friend") ||
+    lower.includes("blocked") ||
+    lower.includes("forbidden") ||
+    lower.includes("user not found") ||
+    lower.includes("no friendship")
+  );
+}
+
 export async function sendLinePushMessage(
   lineUserId: string,
   message: string,
@@ -118,6 +144,6 @@ export async function sendLinePushMessages(
       errorBody,
       messages,
     });
-    throw new Error("LINE通知送信に失敗しました。");
+    throw new LinePushError(response.status, errorBody);
   }
 }

@@ -1,7 +1,6 @@
 import { SITE_URL } from "@/lib/site";
 import type { Job } from "@/types/job";
 
-const MAX_CAROUSEL_ITEMS = 10;
 const DEFAULT_HERO_IMAGE =
   "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png";
 
@@ -27,15 +26,114 @@ function getJobHeroImage(job: Job): string {
   return `${SITE_URL}${candidate.startsWith("/") ? candidate : `/${candidate}`}`;
 }
 
-function buildBenefitsText(job: Job): string {
-  const tags = [...job.benefits, ...(job.otherBenefits ?? [])].filter(Boolean);
-  if (tags.length === 0) return "待遇情報は詳細ページでご確認ください";
-  return truncate(tags.slice(0, 4).join(" / "), 120);
+function benefitTags(job: Job, max = 3): string[] {
+  return [...job.benefits, ...(job.otherBenefits ?? [])]
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, max);
 }
 
-function buildShopBubble(job: Job) {
+function buildBenefitsText(job: Job, max = 4): string {
+  const tags = benefitTags(job, max);
+  if (tags.length === 0) return "待遇情報は詳細ページでご確認ください";
+  return truncate(tags.join(" / "), 120);
+}
+
+function buildShopBubble(
+  job: Job,
+  options?: { benefitLimit?: number; showAddress?: boolean },
+) {
   const detailUrl = `${SITE_URL}/jobs/${job.id}`;
   const favoriteUrl = `${SITE_URL}/api/favorites/from-line?jobId=${encodeURIComponent(job.id)}`;
+  const benefitLimit = options?.benefitLimit ?? 4;
+  const showAddress = options?.showAddress ?? true;
+
+  const infoRows: Record<string, unknown>[] = [
+    {
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "エリア", color: "#8b6f3e", size: "sm", flex: 2 },
+        {
+          type: "text",
+          text: `${job.area} ${job.district}`,
+          wrap: true,
+          size: "sm",
+          flex: 5,
+          color: "#333333",
+        },
+      ],
+    },
+    {
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "職種", color: "#8b6f3e", size: "sm", flex: 2 },
+        {
+          type: "text",
+          text: job.jobType,
+          wrap: true,
+          size: "sm",
+          flex: 5,
+          color: "#333333",
+        },
+      ],
+    },
+    {
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "時給", color: "#8b6f3e", size: "sm", flex: 2 },
+        {
+          type: "text",
+          text: job.salary,
+          wrap: true,
+          size: "sm",
+          flex: 5,
+          color: "#333333",
+        },
+      ],
+    },
+    {
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "営業", color: "#8b6f3e", size: "sm", flex: 2 },
+        {
+          type: "text",
+          text: job.businessHours?.trim() || job.workHours || "詳細ページ参照",
+          wrap: true,
+          size: "sm",
+          flex: 5,
+          color: "#333333",
+        },
+      ],
+    },
+  ];
+
+  if (showAddress) {
+    infoRows.push({
+      type: "box",
+      layout: "baseline",
+      spacing: "sm",
+      contents: [
+        { type: "text", text: "住所", color: "#8b6f3e", size: "sm", flex: 2 },
+        {
+          type: "text",
+          text: job.address?.trim() || "詳細ページ参照",
+          wrap: true,
+          size: "sm",
+          flex: 5,
+          color: "#333333",
+        },
+      ],
+    });
+  }
+
   const bodyContents: Record<string, unknown>[] = [
     {
       type: "text",
@@ -49,78 +147,11 @@ function buildShopBubble(job: Job) {
       layout: "vertical",
       margin: "md",
       spacing: "xs",
-      contents: [
-        {
-          type: "box",
-          layout: "baseline",
-          spacing: "sm",
-          contents: [
-            { type: "text", text: "エリア", color: "#8b6f3e", size: "sm", flex: 2 },
-            {
-              type: "text",
-              text: `${job.area} ${job.district}`,
-              wrap: true,
-              size: "sm",
-              flex: 5,
-              color: "#333333",
-            },
-          ],
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          spacing: "sm",
-          contents: [
-            { type: "text", text: "職種", color: "#8b6f3e", size: "sm", flex: 2 },
-            { type: "text", text: job.jobType, wrap: true, size: "sm", flex: 5, color: "#333333" },
-          ],
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          spacing: "sm",
-          contents: [
-            { type: "text", text: "時給", color: "#8b6f3e", size: "sm", flex: 2 },
-            { type: "text", text: job.salary, wrap: true, size: "sm", flex: 5, color: "#333333" },
-          ],
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          spacing: "sm",
-          contents: [
-            { type: "text", text: "営業", color: "#8b6f3e", size: "sm", flex: 2 },
-            {
-              type: "text",
-              text: job.businessHours?.trim() || job.workHours || "詳細ページ参照",
-              wrap: true,
-              size: "sm",
-              flex: 5,
-              color: "#333333",
-            },
-          ],
-        },
-        {
-          type: "box",
-          layout: "baseline",
-          spacing: "sm",
-          contents: [
-            { type: "text", text: "住所", color: "#8b6f3e", size: "sm", flex: 2 },
-            {
-              type: "text",
-              text: job.address?.trim() || "詳細ページ参照",
-              wrap: true,
-              size: "sm",
-              flex: 5,
-              color: "#333333",
-            },
-          ],
-        },
-      ],
+      contents: infoRows,
     },
     {
       type: "text",
-      text: buildBenefitsText(job),
+      text: buildBenefitsText(job, benefitLimit),
       size: "xs",
       color: "#666666",
       wrap: true,
@@ -190,7 +221,7 @@ function buildShopBubble(job: Job) {
           style: "secondary",
           action: {
             type: "uri",
-            label: "お気に入り登録",
+            label: "お気に入りに追加",
             uri: favoriteUrl,
           },
         },
@@ -198,6 +229,8 @@ function buildShopBubble(job: Job) {
     },
   };
 }
+
+const MAX_CAROUSEL_ITEMS = 10;
 
 export function buildShopCarouselMessage(jobs: Job[], altText: string): LineMessage {
   if (jobs.length === 0) {
@@ -211,6 +244,44 @@ export function buildShopCarouselMessage(jobs: Job[], altText: string): LineMess
     contents: {
       type: "carousel",
       contents: bubbles,
+    },
+  };
+}
+
+/** 毎日20時 PickUp 1店舗配信用 Flex */
+export function buildDailyPickupFlexMessage(job: Job): FlexMessage {
+  const bubble = buildShopBubble(job, { benefitLimit: 3, showAddress: false });
+  return {
+    type: "flex",
+    altText: `今日のPickUp求人｜${job.shopName}`,
+    contents: {
+      type: "bubble",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#111111",
+        paddingAll: "16px",
+        contents: [
+          {
+            type: "text",
+            text: "今日のPickUp求人",
+            color: "#d4bc8e",
+            weight: "bold",
+            size: "md",
+          },
+          {
+            type: "text",
+            text: "あなたが設定した地域から、本日のおすすめ店舗をご紹介します。",
+            color: "#faf7f2",
+            size: "xs",
+            wrap: true,
+            margin: "sm",
+          },
+        ],
+      },
+      hero: bubble.hero,
+      body: bubble.body,
+      footer: bubble.footer,
     },
   };
 }
