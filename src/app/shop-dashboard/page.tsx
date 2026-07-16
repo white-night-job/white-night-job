@@ -883,9 +883,6 @@ export default function ShopDashboardPage() {
             <p className="mt-1 text-xs text-gold-light/70">
               全{districtTotal}店舗中（本日の上位表示・更新順で算出）
             </p>
-            <p className="mt-3 text-xs text-gold-light/65">
-              表示順位（通常／優先／最優先）・PickUp・AIおすすめ優先度・掲載プランは運営が設定します。
-            </p>
           </div>
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
             <p className="text-center text-sm font-medium text-gold-light sm:text-right">
