@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { LineIcon } from "@/components/LineIcon";
+import { LineLoginButton } from "@/components/LineLoginButton";
 
 type HeaderLoginModalProps = {
   open: boolean;
   onClose: () => void;
-  lineLoginHref: string;
+  redirectPath: string;
 };
 
 export function HeaderLoginModal({
   open,
   onClose,
-  lineLoginHref,
+  redirectPath,
 }: HeaderLoginModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -95,10 +95,14 @@ export function HeaderLoginModal({
               登録無料・30日間自動ログイン
             </p>
 
-            <a href={lineLoginHref} className="header-login-modal-line-btn">
-              <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+            <LineLoginButton
+              className="header-login-modal-line-btn"
+              redirectPath={redirectPath}
+              action="general"
+              showIcon
+            >
               LINEでログイン
-            </a>
+            </LineLoginButton>
           </section>
 
           <div className="header-login-modal-divider" aria-hidden />

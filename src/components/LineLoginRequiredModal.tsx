@@ -1,15 +1,19 @@
 "use client";
 
+import { LineLoginButton } from "@/components/LineLoginButton";
+
 type LineLoginRequiredModalProps = {
   open: boolean;
   onClose: () => void;
   redirectPath: string;
+  favoriteJobId?: string;
 };
 
 export function LineLoginRequiredModal({
   open,
   onClose,
   redirectPath,
+  favoriteJobId,
 }: LineLoginRequiredModalProps) {
   if (!open) return null;
 
@@ -23,12 +27,14 @@ export function LineLoginRequiredModal({
           お気に入り登録にはLINEログインが必要です。
         </p>
         <div className="mt-5 space-y-2">
-          <a
-            href={`/api/line/login?redirect=${encodeURIComponent(redirectPath)}`}
+          <LineLoginButton
             className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#06c755] px-4 text-sm font-semibold text-white"
+            redirectPath={redirectPath}
+            action={favoriteJobId ? "favorite" : "general"}
+            favoriteJobId={favoriteJobId}
           >
             LINEでログイン
-          </a>
+          </LineLoginButton>
           <button
             type="button"
             onClick={onClose}

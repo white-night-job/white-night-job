@@ -346,6 +346,7 @@ export function HeaderDrawer() {
         title="AI相談はLINEログイン後に利用できます"
         description="LINEログインすると、相談履歴を保存しながらAIへ相談できます。"
         redirectPath={MEMBER_PATHS.consultation}
+        action="consultation"
       />
       <MemberGateModal
         open={memberGate === "diagnosis"}
@@ -353,6 +354,7 @@ export function HeaderDrawer() {
         title="職種診断はLINEログイン後に利用できます"
         description="診断結果を保存して、あなたに合う職種や求人をいつでも確認できます。"
         redirectPath={MEMBER_PATHS.diagnosis}
+        action="diagnosis"
       />
     </>
   );

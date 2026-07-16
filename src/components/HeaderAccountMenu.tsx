@@ -14,10 +14,6 @@ function AccountIcon() {
   );
 }
 
-function buildLineLoginHref(redirectPath: string) {
-  return `/api/line/login?redirect=${encodeURIComponent(redirectPath)}`;
-}
-
 export function HeaderAccountMenu() {
   const pathname = usePathname();
   const router = useRouter();
@@ -27,7 +23,6 @@ export function HeaderAccountMenu() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const lineLoginRedirect = pathname || "/";
-  const lineLoginHref = buildLineLoginHref(lineLoginRedirect);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -167,7 +162,7 @@ export function HeaderAccountMenu() {
         <HeaderLoginModal
           open={loginModalOpen}
           onClose={() => setLoginModalOpen(false)}
-          lineLoginHref={lineLoginHref}
+          redirectPath={lineLoginRedirect}
         />
       )}
     </>

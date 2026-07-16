@@ -20,26 +20,13 @@ function wantsJson(request: Request, url: URL): boolean {
   return accept.includes("application/json");
 }
 
-function attachLiffRedirectCookie(
-  response: NextResponse,
-  redirect: string,
-  requestUrl: URL,
-): NextResponse {
-  response.cookies.set("white-night-liff-redirect", redirect, {
-    httpOnly: true,
-    secure: requestUrl.protocol === "https:",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 10,
-  });
-  return response;
-}
-
 /**
- * LINE Login entry.
- * - format=json: returns authorizeUrl (for client prefetch → direct Universal Link tap)
- * - otherwise: 303 straight to access.line.me (no intermediate bridge UI)
- * - when LIFF is configured on mobile: 303 to liff.line.me (opens LINE app)
+ * Existing Web LINE Login entry (fallback when LIFF is unavailable).
+ * - format=json: returns authorizeUrl
+ * - otherwise: 303 to access.line.me
+ *
+ * LIFF login is started only from client tap via LineLoginButton / @line/liff.
+ * This route must not auto-redirect to LIFF.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -47,18 +34,6 @@ export async function GET(request: Request) {
   const disableAutoLogin =
     url.searchParams.get("disable_auto_login") === "1" ||
     url.searchParams.get("disable_auto_login") === "true";
-
-  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
-  const ua = request.headers.get("user-agent") ?? "";
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
-
-  // Prefer LIFF Universal Link — opens LINE app directly on mobile.
-  if (liffId && isMobile && !disableAutoLogin && !wantsJson(request, url)) {
-    const response = NextResponse.redirect(`https://liff.line.me/${liffId}`, {
-      status: 303,
-    });
-    return attachLiffRedirectCookie(response, redirect, url);
-  }
 
   const state = createLineLoginState();
   const nonce = createLineLoginNonce();
@@ -77,17 +52,12 @@ export async function GET(request: Request) {
       fallbackUrl,
       redirect,
       disableAutoLogin,
-      liffId: liffId || null,
-      liffUrl: liffId ? `https://liff.line.me/${liffId}` : null,
+      liffId: process.env.NEXT_PUBLIC_LIFF_ID?.trim() || null,
     });
     attachLineStateCookie(response, state, redirect, request);
-    if (liffId) {
-      attachLiffRedirectCookie(response, redirect, url);
-    }
     return response;
   }
 
-  // No bridge page — go straight to the official authorize URL.
   const response = NextResponse.redirect(authorizeUrl, { status: 303 });
   return attachLineStateCookie(response, state, redirect, request);
 }

@@ -16,10 +16,6 @@ let favoriteCacheUserId: string | null = null;
 let favoriteCache = new Set<string>();
 let favoriteCacheReady = false;
 
-function buildLineLoginHref(redirectPath: string) {
-  return `/api/line/login?redirect=${encodeURIComponent(redirectPath)}`;
-}
-
 function clearAutoFavoriteQueryParam() {
   const url = new URL(window.location.href);
   if (!url.searchParams.has("autoFavorite")) return;
@@ -42,10 +38,6 @@ export function FavoriteButton({
   const [autoFavoriteHandled, setAutoFavoriteHandled] = useState(false);
 
   const redirectPath = useMemo(() => pathname || "/", [pathname]);
-  const lineLoginHref = useMemo(
-    () => buildLineLoginHref(`${redirectPath}?autoFavorite=1`),
-    [redirectPath],
-  );
   const userId = currentUser?.id ?? null;
 
   async function fetchFavoriteState(activeUserId: string) {
@@ -276,7 +268,8 @@ export function FavoriteButton({
         <FavoriteLoginBottomSheet
           open={sheetOpen}
           onClose={() => setSheetOpen(false)}
-          lineLoginHref={lineLoginHref}
+          redirectPath={redirectPath}
+          favoriteJobId={jobId}
         />
       )}
     </>

@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { LineIcon } from "@/components/LineIcon";
-import { buildLineLoginHref } from "@/lib/member-access";
+import { LineLoginButton } from "@/components/LineLoginButton";
 
 type MemberGateModalProps = {
   open: boolean;
@@ -11,6 +10,7 @@ type MemberGateModalProps = {
   title: string;
   description: string;
   redirectPath: string;
+  action?: "consultation" | "diagnosis" | "general";
 };
 
 export function MemberGateModal({
@@ -19,9 +19,9 @@ export function MemberGateModal({
   title,
   description,
   redirectPath,
+  action = "general",
 }: MemberGateModalProps) {
   const [mounted, setMounted] = useState(false);
-  const lineLoginHref = buildLineLoginHref(redirectPath);
 
   useEffect(() => {
     setMounted(true);
@@ -88,10 +88,14 @@ export function MemberGateModal({
           </h2>
           <p className="member-gate-modal-desc">{description}</p>
 
-          <a href={lineLoginHref} className="member-gate-modal-primary">
-            <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+          <LineLoginButton
+            className="member-gate-modal-primary"
+            redirectPath={redirectPath}
+            action={action}
+            showIcon
+          >
             LINEでかんたんログイン
-          </a>
+          </LineLoginButton>
 
           <button type="button" onClick={onClose} className="member-gate-modal-secondary">
             今はしない

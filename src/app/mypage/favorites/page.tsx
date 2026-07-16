@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { LineLoginButton } from "@/components/LineLoginButton";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
 import { useUserSession } from "@/components/UserSessionProvider";
 import type { Job } from "@/types/job";
@@ -71,12 +72,13 @@ export default function MyPageFavoritesPage() {
           <p className="mt-2 text-sm text-muted">
             お気に入り一覧はLINEログイン後にご利用いただけます。
           </p>
-          <a
-            href="/api/line/login?redirect=/mypage/favorites"
+          <LineLoginButton
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#06c755] px-5 text-sm font-semibold text-white"
+            redirectPath="/mypage/favorites"
+            action="general"
           >
             LINEでログイン
-          </a>
+          </LineLoginButton>
         </div>
       </div>
     );

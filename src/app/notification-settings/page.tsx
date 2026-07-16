@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LineLoginButton } from "@/components/LineLoginButton";
 import {
   NotificationPreferenceForm,
   useNotificationSettings,
@@ -48,12 +49,13 @@ export default function NotificationSettingsPage() {
           <p className="mt-2 text-sm text-muted">
             通知設定はLINEログイン後に利用できます。
           </p>
-          <a
-            href="/api/line/login?redirect=/notification-settings"
+          <LineLoginButton
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#06c755] px-5 text-sm font-semibold text-white"
+            redirectPath="/notification-settings"
+            action="general"
           >
             LINEでログイン
-          </a>
+          </LineLoginButton>
         </div>
       </div>
     );

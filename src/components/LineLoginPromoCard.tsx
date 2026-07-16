@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LineIcon } from "@/components/LineIcon";
+import { LineLoginButton } from "@/components/LineLoginButton";
 import { useUserSession } from "@/components/UserSessionProvider";
 
 const DISMISS_STORAGE_KEY = "wn-line-promo-dismissed";
@@ -57,13 +57,14 @@ export function LineLoginPromoCard() {
         </div>
 
         <div className="line-login-promo-cta">
-          <a
-            href="/api/line/login?redirect=%2Fmypage"
+          <LineLoginButton
             className="line-login-promo-btn"
+            redirectPath="/mypage"
+            action="general"
+            showIcon
           >
-            <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
             LINEでかんたんログイン
-          </a>
+          </LineLoginButton>
 
           <p className="line-login-promo-note">登録不要・30日間ログイン状態を保持</p>
         </div>

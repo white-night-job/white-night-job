@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LineLoginButton } from "@/components/LineLoginButton";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
 import {
   EMPTY_NOTIFICATION_SETTINGS,
@@ -162,12 +163,13 @@ export default function MyPage() {
           <p className="mt-2 text-sm text-muted">
             マイページはLINEログイン後にご利用いただけます。
           </p>
-          <a
-            href="/api/line/login?redirect=/mypage"
+          <LineLoginButton
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#06c755] px-5 text-sm font-semibold text-white"
+            redirectPath="/mypage"
+            action="general"
           >
             LINEでログイン
-          </a>
+          </LineLoginButton>
         </div>
       </div>
     );

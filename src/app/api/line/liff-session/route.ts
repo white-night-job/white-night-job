@@ -7,10 +7,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type VerifyIdTokenResponse = {
-  sub: string;
-  name?: string;
-  picture?: string;
+type VerifiedLineUser = {
+  lineUserId: string;
+  displayName: string;
+  pictureUrl: string | null;
 };
 
 function sanitizeRedirect(raw: unknown): string {
@@ -20,7 +20,7 @@ function sanitizeRedirect(raw: unknown): string {
   return "/";
 }
 
-async function verifyLineIdToken(idToken: string): Promise<VerifyIdTokenResponse> {
+async function verifyLineIdToken(idToken: string): Promise<VerifiedLineUser> {
   const channelId = process.env.LINE_LOGIN_CHANNEL_ID?.trim();
   if (!channelId) {
     throw new Error("LINE_LOGIN_CHANNEL_ID is not set.");
@@ -43,33 +43,103 @@ async function verifyLineIdToken(idToken: string): Promise<VerifyIdTokenResponse
     });
     throw new Error("LINE IDトークンの検証に失敗しました。");
   }
-  return (await response.json()) as VerifyIdTokenResponse;
+
+  const data = (await response.json()) as {
+    sub?: string;
+    name?: string;
+    picture?: string;
+  };
+  if (!data.sub) {
+    throw new Error("LINE IDトークンに sub がありません。");
+  }
+
+  return {
+    lineUserId: data.sub,
+    displayName: data.name?.trim() || "LINEユーザー",
+    pictureUrl: data.picture ?? null,
+  };
+}
+
+async function verifyLineAccessToken(accessToken: string): Promise<VerifiedLineUser> {
+  const verifyResponse = await fetch(
+    `https://api.line.me/oauth2/v2.1/verify?access_token=${encodeURIComponent(accessToken)}`,
+  );
+  if (!verifyResponse.ok) {
+    const errorBody = await verifyResponse.text();
+    console.error("[liff-session] access token verify failed", {
+      status: verifyResponse.status,
+      errorBody,
+    });
+    throw new Error("LINEアクセストークンの検証に失敗しました。");
+  }
+
+  const channelId = process.env.LINE_LOGIN_CHANNEL_ID?.trim();
+  if (channelId) {
+    const verifyData = (await verifyResponse.json()) as { client_id?: string };
+    if (verifyData.client_id && verifyData.client_id !== channelId) {
+      throw new Error("アクセストークンの client_id が一致しません。");
+    }
+  }
+
+  const profileResponse = await fetch("https://api.line.me/v2/profile", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!profileResponse.ok) {
+    const errorBody = await profileResponse.text();
+    console.error("[liff-session] profile fetch failed", {
+      status: profileResponse.status,
+      errorBody,
+    });
+    throw new Error("LINEプロフィールの取得に失敗しました。");
+  }
+
+  const profile = (await profileResponse.json()) as {
+    userId?: string;
+    displayName?: string;
+    pictureUrl?: string;
+  };
+  if (!profile.userId) {
+    throw new Error("LINEプロフィールに userId がありません。");
+  }
+
+  return {
+    lineUserId: profile.userId,
+    displayName: profile.displayName?.trim() || "LINEユーザー",
+    pictureUrl: profile.pictureUrl ?? null,
+  };
 }
 
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as {
       idToken?: string;
+      accessToken?: string;
       redirect?: string;
     };
+
     const idToken = payload.idToken?.trim();
-    if (!idToken) {
-      return NextResponse.json({ message: "idToken is required" }, { status: 400 });
+    const accessToken = payload.accessToken?.trim();
+
+    if (!idToken && !accessToken) {
+      return NextResponse.json(
+        { message: "idToken or accessToken is required" },
+        { status: 400 },
+      );
     }
 
-    const verified = await verifyLineIdToken(idToken);
-    if (!verified.sub) {
-      return NextResponse.json({ message: "invalid token" }, { status: 401 });
-    }
+    // Never trust client-sent profile/userId — verify with LINE official APIs only.
+    const verified = idToken
+      ? await verifyLineIdToken(idToken)
+      : await verifyLineAccessToken(accessToken!);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("users")
       .upsert(
         {
-          line_user_id: verified.sub,
-          display_name: verified.name ?? "LINEユーザー",
-          picture_url: verified.picture ?? null,
+          line_user_id: verified.lineUserId,
+          display_name: verified.displayName,
+          picture_url: verified.pictureUrl,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "line_user_id" },

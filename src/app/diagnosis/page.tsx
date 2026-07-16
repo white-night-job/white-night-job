@@ -18,6 +18,7 @@ export default async function DiagnosisPage() {
         title="職種診断はLINEログイン後に利用できます"
         description="診断結果を保存して、あなたに合う職種や求人をいつでも確認できます。"
         redirectPath={MEMBER_PATHS.diagnosis}
+        action="diagnosis"
       />
     );
   }

@@ -1,20 +1,21 @@
+"use client";
+
 import Link from "next/link";
-import { LineIcon } from "@/components/LineIcon";
-import { buildLineLoginHref } from "@/lib/member-access";
+import { LineLoginButton } from "@/components/LineLoginButton";
 
 type MemberGatePageProps = {
   title: string;
   description: string;
   redirectPath: string;
+  action?: "consultation" | "diagnosis" | "general";
 };
 
 export function MemberGatePage({
   title,
   description,
   redirectPath,
+  action = "general",
 }: MemberGatePageProps) {
-  const lineLoginHref = buildLineLoginHref(redirectPath);
-
   return (
     <div className="member-gate-page">
       <div className="member-gate-page-card">
@@ -22,10 +23,14 @@ export function MemberGatePage({
         <h1 className="member-gate-page-title font-serif">{title}</h1>
         <p className="member-gate-page-desc">{description}</p>
 
-        <a href={lineLoginHref} className="member-gate-modal-primary">
-          <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+        <LineLoginButton
+          className="member-gate-modal-primary"
+          redirectPath={redirectPath}
+          action={action}
+          showIcon
+        >
           LINEでかんたんログイン
-        </a>
+        </LineLoginButton>
 
         <Link href="/" className="member-gate-modal-secondary member-gate-page-home-link">
           ホームへ戻る

@@ -1,18 +1,19 @@
-import { Suspense } from "react";
-import LiffLoginClient from "./LiffLoginClient";
+import { redirect } from "next/navigation";
 
-export default function LiffLoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center px-6 py-16 text-center">
-          <p className="text-sm leading-7 text-charcoal/80">
-            LINEログインを準備しています…
-          </p>
-        </div>
-      }
-    >
-      <LiffLoginClient />
-    </Suspense>
-  );
+/**
+ * Legacy LIFF path — keep for old Endpoint URL / bookmarks.
+ * Canonical Endpoint / redirectUri is /auth/line/liff.
+ */
+export default async function LegacyLiffLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>;
+}) {
+  const params = await searchParams;
+  const redirectTo = params.redirect?.trim();
+  const qs =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? `?redirect=${encodeURIComponent(redirectTo)}`
+      : "";
+  redirect(`/auth/line/liff${qs}`);
 }

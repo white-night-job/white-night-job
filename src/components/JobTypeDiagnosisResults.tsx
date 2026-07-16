@@ -17,6 +17,8 @@ import {
 } from "@/lib/job-type-diagnosis";
 import { pickRecommendedDiagnosisShops } from "@/lib/job-type-diagnosis-recommendations";
 import { fetchJobs } from "@/lib/job-storage";
+import { startLiffLogin } from "@/lib/liff-auth-client";
+import { buildWebLineLoginHref } from "@/lib/liff-login-intent";
 import { MEMBER_PATHS } from "@/lib/member-access";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 
@@ -204,7 +206,20 @@ export function JobTypeDiagnosisResults({
   async function saveToMyPage() {
     if (!isLoggedIn) {
       const redirect = MEMBER_PATHS.diagnosis;
-      window.location.href = `/api/line/login?redirect=${encodeURIComponent(redirect)}`;
+      const result = await startLiffLogin({
+        redirectPath: redirect,
+        action: "diagnosis",
+      });
+      if (result.status === "completed") {
+        window.location.assign(result.redirectPath);
+        return;
+      }
+      if (result.status === "redirected") return;
+      if (result.status === "fallback_web") {
+        window.location.assign(buildWebLineLoginHref(redirect));
+        return;
+      }
+      setMessage(result.message);
       return;
     }
 

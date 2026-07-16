@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { LineIcon } from "@/components/LineIcon";
+import { LineLoginButton } from "@/components/LineLoginButton";
 
 type FavoriteLoginBottomSheetProps = {
   open: boolean;
   onClose: () => void;
-  lineLoginHref: string;
+  redirectPath: string;
+  favoriteJobId: string;
 };
 
 export function FavoriteLoginBottomSheet({
   open,
   onClose,
-  lineLoginHref,
+  redirectPath,
+  favoriteJobId,
 }: FavoriteLoginBottomSheetProps) {
   useEffect(() => {
     if (!open) return;
@@ -58,10 +60,15 @@ export function FavoriteLoginBottomSheet({
           LINEログインすると、お気に入り店舗を保存して、次回もすぐ確認できます。
         </p>
         <div className="favorite-login-sheet-actions">
-          <a href={lineLoginHref} className="favorite-login-sheet-primary">
-            <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+          <LineLoginButton
+            className="favorite-login-sheet-primary"
+            redirectPath={redirectPath}
+            action="favorite"
+            favoriteJobId={favoriteJobId}
+            showIcon
+          >
             LINEでログインして保存
-          </a>
+          </LineLoginButton>
           <button
             type="button"
             onClick={onClose}
