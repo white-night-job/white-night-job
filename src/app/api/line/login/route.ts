@@ -20,99 +20,27 @@ function wantsJson(request: Request, url: URL): boolean {
   return accept.includes("application/json");
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function attachLiffRedirectCookie(
+  response: NextResponse,
+  redirect: string,
+  requestUrl: URL,
+): NextResponse {
+  response.cookies.set("white-night-liff-redirect", redirect, {
+    httpOnly: true,
+    secure: requestUrl.protocol === "https:",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10,
+  });
+  return response;
 }
 
 /**
- * Bridge page: sets CSRF cookie then navigates to the official authorize URL.
- * iOS Universal Links need a real user tap on access.line.me — so the page
- * exposes a direct <a> and only auto-navigates on non-iOS where App Links
- * often still work from location.replace.
+ * LINE Login entry.
+ * - format=json: returns authorizeUrl (for client prefetch → direct Universal Link tap)
+ * - otherwise: 303 straight to access.line.me (no intermediate bridge UI)
+ * - when LIFF is configured on mobile: 303 to liff.line.me (opens LINE app)
  */
-function buildBridgeHtml(authorizeUrl: string, fallbackUrl: string): string {
-  const safeAuthorize = escapeHtml(authorizeUrl);
-  const safeFallback = escapeHtml(fallbackUrl);
-  return `<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
-  <title>LINEログイン</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0d0d0d;
-      color: #faf7f2;
-    }
-    .card {
-      width: min(100%, 22rem);
-      text-align: center;
-    }
-    .card p {
-      margin: 0 0 1.25rem;
-      font-size: 0.9375rem;
-      line-height: 1.6;
-      color: rgba(250, 247, 242, 0.88);
-    }
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 3.25rem;
-      width: 100%;
-      border-radius: 999px;
-      background: #06c755;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 700;
-      text-decoration: none;
-      letter-spacing: 0.02em;
-    }
-    .fallback {
-      display: inline-block;
-      margin-top: 1rem;
-      font-size: 0.8125rem;
-      color: rgba(212, 188, 142, 0.95);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <p>LINEアプリでログインします。<br />自動で開かない場合は下のボタンを押してください。</p>
-    <a id="line-continue" class="btn" href="${safeAuthorize}" rel="noopener">LINEアプリで続ける</a>
-    <a class="fallback" href="${safeFallback}" rel="noopener">ブラウザでログインする</a>
-  </div>
-  <script>
-    (function () {
-      var authorizeUrl = ${JSON.stringify(authorizeUrl)};
-      var ua = navigator.userAgent || "";
-      var isIOS = /iPhone|iPad|iPod/i.test(ua);
-      // iOS Universal Links need a real tap on access.line.me.
-      // Android App Links often still work with same-window navigation.
-      if (!isIOS) {
-        window.location.replace(authorizeUrl);
-      }
-    })();
-  </script>
-</body>
-</html>`;
-}
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const redirect = sanitizeRedirect(url.searchParams.get("redirect"));
@@ -120,14 +48,16 @@ export async function GET(request: Request) {
     url.searchParams.get("disable_auto_login") === "1" ||
     url.searchParams.get("disable_auto_login") === "true";
 
-  // Optional LIFF path for mobile when configured (most reliable LINE-app login).
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
   const ua = request.headers.get("user-agent") ?? "";
   const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+
+  // Prefer LIFF Universal Link — opens LINE app directly on mobile.
   if (liffId && isMobile && !disableAutoLogin && !wantsJson(request, url)) {
-    const liffPage = new URL("/liff/login", url.origin);
-    liffPage.searchParams.set("redirect", redirect);
-    return NextResponse.redirect(liffPage, { status: 303 });
+    const response = NextResponse.redirect(`https://liff.line.me/${liffId}`, {
+      status: 303,
+    });
+    return attachLiffRedirectCookie(response, redirect, url);
   }
 
   const state = createLineLoginState();
@@ -147,18 +77,17 @@ export async function GET(request: Request) {
       fallbackUrl,
       redirect,
       disableAutoLogin,
+      liffId: liffId || null,
+      liffUrl: liffId ? `https://liff.line.me/${liffId}` : null,
     });
-    return attachLineStateCookie(response, state, redirect, request);
+    attachLineStateCookie(response, state, redirect, request);
+    if (liffId) {
+      attachLiffRedirectCookie(response, redirect, url);
+    }
+    return response;
   }
 
-  // Prefer a bridge page over bare 303 so mobile can use a direct link to
-  // access.line.me (required for LINE Auto Login / Universal Links on iOS).
-  const response = new NextResponse(buildBridgeHtml(authorizeUrl, fallbackUrl), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+  // No bridge page — go straight to the official authorize URL.
+  const response = NextResponse.redirect(authorizeUrl, { status: 303 });
   return attachLineStateCookie(response, state, redirect, request);
 }

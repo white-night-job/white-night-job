@@ -35,15 +35,31 @@ function loadLiffSdk(): Promise<void> {
   });
 }
 
+function resolveRedirect(searchRedirect: string | null): string {
+  const fromQuery = searchRedirect?.trim();
+  if (fromQuery && fromQuery.startsWith("/") && !fromQuery.startsWith("//")) {
+    return fromQuery;
+  }
+  try {
+    const fromStorage = sessionStorage.getItem("white-night-liff-redirect");
+    if (fromStorage && fromStorage.startsWith("/") && !fromStorage.startsWith("//")) {
+      return fromStorage;
+    }
+  } catch {
+    // ignore
+  }
+  return "/";
+}
+
 /**
- * Optional LIFF login path. Enabled only when NEXT_PUBLIC_LIFF_ID is set.
- * Keeps the existing Web Login Channel callback intact as fallback.
+ * LIFF endpoint. When opened outside LINE, bounce to https://liff.line.me/{id}
+ * so the LINE app launches. Inside LINE, complete login without extra screens.
  */
 export default function LiffLoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
-  const [message, setMessage] = useState("LINEログインを準備しています…");
+  const redirect = resolveRedirect(searchParams.get("redirect"));
+  const [message, setMessage] = useState("LINEアプリを起動しています…");
   const started = useRef(false);
 
   useEffect(() => {
@@ -60,13 +76,30 @@ export default function LiffLoginClient() {
 
     async function run() {
       try {
+        // Outside LINE: open LIFF Universal Link → LINE app (no bridge UI).
+        const inLineApp = /Line\//i.test(navigator.userAgent);
+        if (!inLineApp) {
+          try {
+            sessionStorage.setItem("white-night-liff-redirect", redirect);
+          } catch {
+            // ignore
+          }
+          window.location.replace(`https://liff.line.me/${liffId}`);
+          return;
+        }
+
         await loadLiffSdk();
         if (!window.liff) throw new Error("LIFF is unavailable");
 
         await window.liff.init({ liffId: liffId! });
 
+        if (!window.liff.isInClient()) {
+          window.location.replace(`https://liff.line.me/${liffId}`);
+          return;
+        }
+
         if (!window.liff.isLoggedIn()) {
-          setMessage("LINEアプリでログインします…");
+          setMessage("認証しています…");
           window.liff.login({
             redirectUri: `${window.location.origin}/liff/login?redirect=${encodeURIComponent(redirect)}`,
           });
@@ -91,12 +124,17 @@ export default function LiffLoginClient() {
         }
 
         const data = (await response.json()) as { redirectPath?: string };
+        try {
+          sessionStorage.removeItem("white-night-liff-redirect");
+        } catch {
+          // ignore
+        }
         router.replace(data.redirectPath || redirect || "/");
       } catch (error) {
         console.error("[liff-login]", error);
-        setMessage("LINEアプリでのログインに失敗したため、ブラウザログインへ切り替えます…");
+        // Fall back to Web Login authorize URL (still no bridge HTML).
         window.location.replace(
-          `/api/line/login?redirect=${encodeURIComponent(redirect)}&disable_auto_login=1`,
+          `/api/line/login?redirect=${encodeURIComponent(redirect)}`,
         );
       }
     }

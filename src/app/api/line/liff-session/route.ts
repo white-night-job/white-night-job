@@ -90,9 +90,27 @@ export async function POST(request: Request) {
       { onConflict: "user_id", ignoreDuplicates: true },
     );
 
-    const redirectPath = sanitizeRedirect(payload.redirect);
+    const fromBody = sanitizeRedirect(payload.redirect);
+    const cookieHeader = request.headers.get("cookie") ?? "";
+    let fromCookie = "/";
+    for (const part of cookieHeader.split(";")) {
+      const [rawName, ...rest] = part.trim().split("=");
+      if (rawName === "white-night-liff-redirect") {
+        fromCookie = sanitizeRedirect(decodeURIComponent(rest.join("=")));
+        break;
+      }
+    }
+    const redirectPath = fromBody !== "/" ? fromBody : fromCookie;
+
     const response = NextResponse.json({ ok: true, redirectPath });
     clearLineStateCookieOnResponse(response, request);
+    response.cookies.set("white-night-liff-redirect", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
     attachUserSessionCookie(response, data.id, request);
     return response;
   } catch (error) {
