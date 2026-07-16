@@ -152,4 +152,21 @@ export async function insertShopBoost(
 ): Promise<void> {
   const { error } = await supabase.from("shop_boosts").insert({ job_id: jobId });
   if (error) throw error;
+
+  // Denormalized mirrors for ops/debug. Never touch listing_priority.
+  const todayCount = await countTodayBoosts(supabase, jobId);
+  const { error: updateError } = await supabase
+    .from("jobs")
+    .update({
+      boost_count: todayCount,
+      last_boost_at: new Date().toISOString(),
+    })
+    .eq("id", jobId);
+
+  if (updateError) {
+    console.warn(
+      "[shop-boosts] optional boost_count/last_boost_at update skipped:",
+      updateError.message,
+    );
+  }
 }

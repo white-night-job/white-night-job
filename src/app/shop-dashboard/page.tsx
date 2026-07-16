@@ -31,12 +31,6 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
-import {
-  LISTING_PRIORITIES,
-  LISTING_PRIORITY_LABELS,
-  type ListingPriority,
-  parseListingPriority,
-} from "@/lib/listing-priority";
 
 type ShopForm = {
   shopName: string;
@@ -66,7 +60,6 @@ type ShopForm = {
   youtubeUrl: string;
   websiteUrl: string;
   lineUrl: string;
-  listingPriority: ListingPriority;
 };
 
 const emptyCastVoiceEntry = (): CastVoiceEntry => ({
@@ -118,7 +111,6 @@ function toForm(job: Job): ShopForm {
     youtubeUrl: job.youtubeUrl ?? "",
     websiteUrl: job.websiteUrl ?? "",
     lineUrl: job.lineUrl,
-    listingPriority: parseListingPriority(job.listingPriority),
   };
 }
 
@@ -148,7 +140,6 @@ function toPayload(form: ShopForm) {
     youtubeUrl: form.youtubeUrl || undefined,
     websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
-    listingPriority: form.listingPriority,
   };
 }
 
@@ -880,67 +871,7 @@ export default function ShopDashboardPage() {
       </div>
 
       <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
-        <div className="mb-5">
-          <p className="text-sm font-medium text-gold-light/90">表示順位</p>
-          <p className="mt-1 text-xs text-gold-light/70">
-            通常・優先・最優先。最優先へ変更すると、条件一致ユーザーへPickUp通知が送られます。
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {LISTING_PRIORITIES.map((priority) => {
-              const selected = form.listingPriority === priority;
-              return (
-                <button
-                  key={priority}
-                  type="button"
-                  onClick={() => setField("listingPriority", priority)}
-                  className={`rounded-xl border px-2 py-3 text-center text-sm font-semibold transition ${
-                    selected
-                      ? "border-gold bg-gradient-to-b from-gold-light to-gold text-charcoal shadow-gold"
-                      : "border-gold/35 bg-black/25 text-gold-light hover:border-gold/60"
-                  }`}
-                >
-                  {LISTING_PRIORITY_LABELS[priority]}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-[11px] text-gold-light/65">
-            ※変更後は「表示順位を保存」を押してください。最優先保存時のみPickUp通知が送信されます。
-          </p>
-          <button
-            type="button"
-            onClick={async () => {
-              if (!form || !jobId) return;
-              setLoading(true);
-              setMessage("");
-              try {
-                const data = await readJson<{ job: Job }>(
-                  await fetch("/api/shop-dashboard/job", {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(toPayload(form)),
-                  }),
-                );
-                setForm(toForm(data.job));
-                setMessage("表示順位を保存しました。");
-                await loadDashboard();
-              } catch (error) {
-                setMessage(
-                  error instanceof Error ? error.message : "表示順位の保存に失敗しました。",
-                );
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="mt-3 w-full rounded-full border border-gold/50 bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-sm font-semibold text-charcoal disabled:opacity-60 sm:w-auto"
-          >
-            {loading ? "保存中..." : "表示順位を保存"}
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 border-t border-gold/20 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gold-light/90">
               {form.district}エリア内 表示順位
@@ -952,8 +883,27 @@ export default function ShopDashboardPage() {
             <p className="mt-1 text-xs text-gold-light/70">
               全{districtTotal}店舗中（本日の上位表示・更新順で算出）
             </p>
+            <p className="mt-3 text-xs text-gold-light/65">
+              表示順位（通常／優先／最優先）・PickUp・AIおすすめ優先度・掲載プランは運営が設定します。
+            </p>
           </div>
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <p className="text-center text-sm font-medium text-gold-light sm:text-right">
+              本日の上位表示
+            </p>
+            <p
+              className="text-center font-serif text-lg tracking-wide text-white sm:text-right"
+              aria-label={`本日の上位表示 ${boostLimit - boostRemaining} / ${boostLimit}回`}
+            >
+              {"★".repeat(Math.max(0, boostLimit - boostRemaining))}
+              {"☆".repeat(Math.max(0, boostRemaining))}
+              <span className="ml-2 text-sm font-sans font-medium text-gold-light">
+                {boostLimit - boostRemaining} / {boostLimit}回
+              </span>
+            </p>
+            <p className="text-center text-xs text-gold-light/80 sm:text-right">
+              残り{boostRemaining}回（毎日0:00にリセット）
+            </p>
             <button
               type="button"
               onClick={handleBoost}
@@ -962,9 +912,6 @@ export default function ShopDashboardPage() {
             >
               {boostLoading ? "適用中..." : "上位表示する"}
             </button>
-            <p className="text-center text-xs text-gold-light/80 sm:text-right">
-              本日の残り: {boostRemaining}回 / {boostLimit}回
-            </p>
           </div>
         </div>
         {boostMessage && (

@@ -45,6 +45,9 @@ export async function POST(request: Request) {
 
     await insertShopBoost(supabase, jobId);
 
+    // Never mutate listing_priority / pickup / AI recommend / plan here.
+    // Ranking within priority tier uses today's shop_boosts rows only.
+
     const { data: jobRow, error: jobError } = await supabase
       .from("jobs")
       .select("id, district, created_at")

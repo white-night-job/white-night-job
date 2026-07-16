@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
 import { rowToJob } from "@/lib/job-db";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
-import {
-  listingPriorityToRow,
-  parseListingPriorityFromBody,
-} from "@/lib/listing-priority";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
   normalizeShopJobPayload,
@@ -16,6 +12,45 @@ import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+/** Admin-only job columns — never accept from shop PATCH. */
+const ADMIN_ONLY_BODY_KEYS = [
+  "listing_priority",
+  "listingPriority",
+  "pickup_enabled",
+  "pickupEnabled",
+  "chat_recommend_enabled",
+  "chatRecommendEnabled",
+  "chat_recommend_priority",
+  "chatRecommendPriority",
+  "chat_recommend_beginner",
+  "chatRecommendBeginner",
+  "chat_recommend_no_alcohol_ok",
+  "chatRecommendNoAlcoholOk",
+  "chat_recommend_shuttle",
+  "chatRecommendShuttle",
+  "chat_recommend_privacy",
+  "chatRecommendPrivacy",
+  "chat_recommend_high_salary",
+  "chatRecommendHighSalary",
+  "chat_recommend_relaxed",
+  "chatRecommendRelaxed",
+  "chat_recommend_high_earning",
+  "chatRecommendHighEarning",
+  "listing_plan",
+  "listingPlan",
+  "plan",
+  "published",
+] as const;
+
+function stripAdminOnlyFields(body: unknown): Record<string, unknown> {
+  if (!body || typeof body !== "object") return {};
+  const next = { ...(body as Record<string, unknown>) };
+  for (const key of ADMIN_ONLY_BODY_KEYS) {
+    delete next[key];
+  }
+  return next;
+}
+
 export async function PATCH(request: Request) {
   const jobId = await getAuthenticatedShopJobId();
   if (!jobId) {
@@ -23,10 +58,11 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const rawBody = await request.json();
+    const body = stripAdminOnlyFields(rawBody);
 
-    if (body && typeof body === "object" && "jobId" in body) {
-      const requestedJobId = String((body as { jobId?: unknown }).jobId ?? "");
+    if ("jobId" in body) {
+      const requestedJobId = String(body.jobId ?? "");
       if (requestedJobId && requestedJobId !== jobId) {
         return NextResponse.json(
           { message: "他店舗の情報は編集できません。" },
@@ -41,9 +77,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
-    const listingPriorityRow = listingPriorityToRow(
-      parseListingPriorityFromBody(body as Record<string, unknown>),
-    );
+    // Shop updates must never touch listing_priority / pickup / AI priority / plan.
+    const row = shopPayloadToRow(payload);
 
     const supabase = createSupabaseAdmin();
     const { data: previous } = await supabase
@@ -54,10 +89,7 @@ export async function PATCH(request: Request) {
 
     const { data, error } = await supabase
       .from("jobs")
-      .update({
-        ...shopPayloadToRow(payload),
-        ...listingPriorityRow,
-      })
+      .update(row)
       .eq("id", jobId)
       .select("*")
       .single();
