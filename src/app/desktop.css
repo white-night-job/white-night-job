@@ -243,14 +243,20 @@
      PC Hero — full-bleed cinematic stage + floating search
      Overrides the 640px “card plate” from globals.css
      ========================================================= */
+  .top-page-shell,
+  .top-page-shell > .relative {
+    overflow: visible;
+  }
+
   .first-view {
     position: relative;
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0;
+    /* Space for search panel mostly below the hero edge */
+    padding: 0 0 12.5rem;
     background: #0d0d0d;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .first-view::before {
@@ -271,7 +277,8 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     background: #0d0d0d !important;
-    overflow: hidden !important;
+    /* Allow search to sit on the lower edge without clipping */
+    overflow: visible !important;
   }
 
   .hero-immersive-fx {
@@ -285,7 +292,7 @@
     z-index: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     align-items: flex-start !important;
     width: 100% !important;
     height: 100% !important;
@@ -305,8 +312,8 @@
     background-image: url("/images/top-hero.png") !important;
     background-repeat: no-repeat !important;
     background-size: cover !important;
-    /* People toward center-right; keep faces in frame */
-    background-position: 68% 22% !important;
+    /* Faces upper-right; clear of title and search */
+    background-position: 68% 8% !important;
     pointer-events: none !important;
   }
 
@@ -334,20 +341,28 @@
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 1.35rem !important;
-    width: min(55%, 560px) !important;
-    max-width: 560px !important;
+    justify-content: flex-start !important;
+    gap: 1.25rem !important;
+    width: min(52%, 540px) !important;
+    max-width: 540px !important;
+    height: auto !important;
+    max-height: none !important;
     margin: 0 !important;
-    padding: clamp(3rem, 7vh, 5rem) clamp(3rem, 5vw, 5rem) 7.5rem !important;
+    /* Upper: badge + catch / Mid: brand — leave lower hero clear */
+    padding:
+      clamp(3rem, 7vh, 4.75rem)
+      clamp(3rem, 5vw, 5rem)
+      0 !important;
     text-align: left !important;
+    box-sizing: border-box !important;
   }
 
   /* Catch copy — large, left-aligned */
   .hero-immersive-header .hero-title {
     margin: 0 !important;
     max-width: 560px !important;
-    font-size: clamp(1.75rem, 2.6vw, 2.625rem) !important;
-    line-height: 1.35 !important;
+    font-size: clamp(1.5rem, 2.2vw, 2.25rem) !important;
+    line-height: 1.38 !important;
     letter-spacing: 0.03em !important;
     text-align: left !important;
   }
@@ -374,7 +389,7 @@
   .hero-immersive-header .hero-brand {
     width: auto !important;
     justify-content: flex-start !important;
-    margin: 0 !important;
+    margin: 0.75rem 0 0 !important;
     padding: 0 !important;
   }
 
@@ -382,11 +397,13 @@
     align-items: flex-start !important;
     width: max-content !important;
     max-width: 100% !important;
+    gap: 0.28rem !important;
   }
 
+  /* ~25–30% smaller than clamp(64px, 7vw, 110px) */
   .hero-immersive-header .hero-brand-logo {
-    font-size: clamp(64px, 7vw, 110px) !important;
-    line-height: 0.92 !important;
+    font-size: clamp(46px, 5vw, 78px) !important;
+    line-height: 0.94 !important;
     letter-spacing: 0.01em !important;
     background: linear-gradient(
       165deg,
@@ -401,6 +418,8 @@
   }
 
   .hero-immersive-header .hero-brand-line {
+    height: 1px !important;
+    margin-block: 0.15rem !important;
     background: linear-gradient(
       90deg,
       transparent 0%,
@@ -414,30 +433,36 @@
     border-radius: 0 !important;
     border: 1px solid rgba(212, 188, 142, 0.75) !important;
     background: #111111 !important;
-    padding: 0.4rem 0.85rem !important;
+    padding: 0.3rem 0.65rem !important;
   }
 
   .hero-immersive-header .hero-brand-tag-text {
-    font-size: clamp(1rem, 1.2vw, 1.25rem) !important;
+    font-size: clamp(0.8125rem, 0.95vw, 1rem) !important;
     letter-spacing: 0.12em !important;
     color: #f0e6d4 !important;
   }
 
   .hero-immersive-header .hero-brand-sub {
-    font-size: clamp(0.875rem, 1.1vw, 1.125rem) !important;
-    letter-spacing: 0.42em !important;
+    font-size: clamp(0.75rem, 0.9vw, 0.875rem) !important;
+    letter-spacing: 0.38em !important;
     color: rgba(240, 230, 212, 0.88) !important;
+    margin-top: 0.15rem !important;
   }
 
   .hero-immersive-header .hero-safety-badge {
     align-self: flex-start;
   }
 
-  /* Floating search panel at bottom of hero */
+  /*
+   * Search accents the hero bottom edge only (~48px into the image).
+   * Most of the panel hangs below so it never covers the brand.
+   * Equivalent to shifting ~150px+ down from the old bottom: 36px placement.
+   */
   .hero-immersive-search {
     position: absolute !important;
     left: 50% !important;
-    bottom: 36px !important;
+    top: calc(100% - 48px) !important;
+    bottom: auto !important;
     transform: translateX(-50%) !important;
     z-index: 4 !important;
     width: calc(100% - 96px) !important;
