@@ -1,13 +1,21 @@
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 
 type LineTokenResponse = {
   access_token: string;
+  id_token?: string;
 };
 
 type LineProfile = {
   userId: string;
   displayName: string;
   pictureUrl?: string;
+};
+
+export type BuildLineLoginUrlOptions = {
+  /** When true, skip LINE app Auto Login and show SSO / email login. */
+  disableAutoLogin?: boolean;
+  /** OpenID nonce (recommended when scope includes openid). */
+  nonce?: string;
 };
 
 function requireEnv(name: string): string {
@@ -26,17 +34,46 @@ export function createLineLoginState(): string {
   return randomUUID();
 }
 
-export function buildLineLoginUrl(state: string): string {
+export function createLineLoginNonce(): string {
+  return randomBytes(16).toString("hex");
+}
+
+/**
+ * LINE Login v2.1 authorization URL.
+ * Uses https://access.line.me/oauth2/v2.1/authorize so mobile Auto Login
+ * (Universal Links / App Links) can open the LINE app when available.
+ */
+export function buildLineLoginUrl(
+  state: string,
+  options: BuildLineLoginUrlOptions = {},
+): string {
   const redirectUri = getLineLoginRedirectUri();
+  const nonce = options.nonce ?? createLineLoginNonce();
   const params = new URLSearchParams({
     response_type: "code",
     client_id: requireEnv("LINE_LOGIN_CHANNEL_ID"),
     redirect_uri: redirectUri,
     state,
     scope: "profile openid",
+    nonce,
   });
+
+  // Prefer adding the official account as a friend when Messaging is used.
+  const botPrompt = process.env.LINE_LOGIN_BOT_PROMPT?.trim();
+  if (botPrompt === "normal" || botPrompt === "aggressive") {
+    params.set("bot_prompt", botPrompt);
+  }
+
+  // Only set when Auto Login already failed — otherwise LINE shows email/password.
+  if (options.disableAutoLogin) {
+    params.set("disable_auto_login", "true");
+  }
+
   const url = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
-  console.log("[line-auth] authorize redirect_uri", redirectUri);
+  console.log("[line-auth] authorize redirect_uri", redirectUri, {
+    disableAutoLogin: Boolean(options.disableAutoLogin),
+    hasNonce: Boolean(nonce),
+  });
   return url;
 }
 

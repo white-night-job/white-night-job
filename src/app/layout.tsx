@@ -3,6 +3,7 @@ import { ChatBot } from "@/components/ChatBot";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
+import { LineLoginEnhancer } from "@/components/LineLoginEnhancer";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
 import { buildOrganizationJsonLd, buildRootMetadata } from "@/lib/seo";
@@ -32,6 +33,7 @@ export default async function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
           <ChatBot />
+          <LineLoginEnhancer />
         </UserSessionProvider>
       </body>
     </html>
