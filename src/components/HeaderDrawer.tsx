@@ -66,7 +66,7 @@ const MAIN_ITEMS: DrawerItem[] = [
 
 const SHOP_ITEMS: DrawerItem[] = [
   { href: "/shop-login", label: "店舗ログイン", match: "prefix" },
-  { href: "/for-shops", label: "掲載をご希望の方", match: "prefix" },
+  { href: "/for-shops", label: "掲載をご検討の方はこちら", match: "prefix" },
 ];
 
 const FOOTER_ITEMS: DrawerItem[] = [
