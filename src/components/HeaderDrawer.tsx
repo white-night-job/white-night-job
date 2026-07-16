@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Bot, ClipboardList, ShieldAlert } from "lucide-react";
+import { Bot, BookOpen, ClipboardList, Home, MapPin, ShieldAlert, Lock } from "lucide-react";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { MEMBER_PATHS } from "@/lib/member-access";
 
 type DrawerItem = {
@@ -16,6 +17,7 @@ type DrawerItem = {
   memberOnly?: boolean;
   match?: "exact" | "prefix" | "hash";
   icon?: ReactNode;
+  desktopIcon?: ReactNode;
 };
 
 const DRAWER_ICON_PROPS = {
@@ -24,9 +26,24 @@ const DRAWER_ICON_PROPS = {
 } as const;
 
 const MAIN_ITEMS: DrawerItem[] = [
-  { href: "/", label: "ホーム", match: "exact" },
-  { href: "/#shop-search", label: "お店を探す", match: "hash" },
-  { href: "/column", label: "コラム", match: "prefix" },
+  {
+    href: "/",
+    label: "ホーム",
+    match: "exact",
+    desktopIcon: <Home {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/#shop-search",
+    label: "お店を探す",
+    match: "hash",
+    desktopIcon: <MapPin {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/column",
+    label: "コラム",
+    match: "prefix",
+    desktopIcon: <BookOpen {...DRAWER_ICON_PROPS} />,
+  },
   {
     label: "AI相談",
     action: "chat",
@@ -87,6 +104,7 @@ function openChatBot() {
 
 export function HeaderDrawer() {
   const pathname = usePathname();
+  const isDesktop = useIsDesktop();
   const { isLoggedIn, ready } = useUserSession();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -163,6 +181,10 @@ export function HeaderDrawer() {
 
     if (item.action === "chat") {
       if (isLoggedIn) {
+        if (isDesktop) {
+          window.location.href = MEMBER_PATHS.consultation;
+          return;
+        }
         openChatBot();
         return;
       }
@@ -179,6 +201,12 @@ export function HeaderDrawer() {
     }
   }
 
+  function resolveItemIcon(item: DrawerItem) {
+    if (item.icon) return item.icon;
+    if (isDesktop && item.desktopIcon) return item.desktopIcon;
+    return null;
+  }
+
   function renderItem(item: DrawerItem, key: string) {
     const active =
       item.action === "diagnosis"
@@ -186,6 +214,7 @@ export function HeaderDrawer() {
         : isItemActive(pathname, item);
     const className = `header-drawer-item ${active ? "is-active" : ""}`;
     const showMemberBadge = item.memberOnly && ready && !isLoggedIn;
+    const itemIcon = resolveItemIcon(item);
 
     if (item.action === "chat" || item.action === "diagnosis") {
       return (
@@ -196,12 +225,19 @@ export function HeaderDrawer() {
             className={className}
           >
             <span className="header-drawer-item-main">
-              {item.icon}
+              {itemIcon}
               <span className="header-drawer-item-label">{item.label}</span>
             </span>
             {showMemberBadge && (
               <span className="header-drawer-member-badge">
-                <span aria-hidden>🔒</span>
+                <Lock
+                  className="header-drawer-member-lock-icon"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+                <span className="header-drawer-member-lock-emoji" aria-hidden>
+                  🔒
+                </span>
                 LINE会員限定
               </span>
             )}
@@ -222,7 +258,7 @@ export function HeaderDrawer() {
           aria-current={active ? "page" : undefined}
         >
           <span className="header-drawer-item-main">
-            {item.icon}
+            {itemIcon}
             <span className="header-drawer-item-label">{label}</span>
           </span>
         </Link>
@@ -233,7 +269,10 @@ export function HeaderDrawer() {
   const drawerPanel =
     open && mounted
       ? createPortal(
-          <div className="header-drawer-root" role="presentation">
+          <div
+            className={`header-drawer-root${isDesktop ? " is-pc" : ""}`}
+            role="presentation"
+          >
             <button
               type="button"
               aria-label="メニューを閉じる"
@@ -247,7 +286,9 @@ export function HeaderDrawer() {
               onClick={(event) => event.stopPropagation()}
             >
               <div className="header-drawer-head">
-                <p className="header-drawer-head-label font-serif">Menu</p>
+                <p className="header-drawer-head-label font-serif">
+                  {isDesktop ? "MENU" : "Menu"}
+                </p>
                 <button
                   type="button"
                   onClick={closeDrawer}
