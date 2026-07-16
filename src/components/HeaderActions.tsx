@@ -23,7 +23,7 @@ export function HeaderActions() {
 
   const hideShopLink = pathname.startsWith("/admin");
   const shopHref = shopAuthenticated ? "/shop-dashboard" : "/shop-login";
-  const shopLabel = shopAuthenticated ? "店舗管理" : "店舗様ログイン";
+  const shopLabel = shopAuthenticated ? "店舗ログイン" : "店舗様ログイン";
 
   return (
     <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">

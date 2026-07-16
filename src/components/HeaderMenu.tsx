@@ -309,7 +309,7 @@ export function HeaderMenu() {
       return {
         ...item,
         href: shopAuthenticated ? "/shop-dashboard" : "/shop-login",
-        label: shopAuthenticated ? "店舗管理" : "店舗様ログイン",
+        label: shopAuthenticated ? "店舗ログイン" : "店舗様ログイン",
       };
     }
     return item;

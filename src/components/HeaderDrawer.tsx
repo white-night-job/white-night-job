@@ -172,7 +172,7 @@ export function HeaderDrawer() {
 
   const hideShopSection = pathname.startsWith("/admin");
   const shopLoginHref = shopAuthenticated ? "/shop-dashboard" : "/shop-login";
-  const shopLoginLabel = shopAuthenticated ? "店舗管理" : "店舗ログイン";
+  const shopLoginLabel = "店舗ログイン";
 
   function handleMemberAction(item: DrawerItem) {
     closeDrawer();
