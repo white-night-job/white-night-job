@@ -3,14 +3,13 @@
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { LineIcon } from "@/components/LineIcon";
 import {
+  buildLiffAppUrl,
   buildWebLineLoginHref,
   getPublicLiffId,
+  logLiffDebug,
+  saveLiffLoginIntent,
+  type LiffLoginIntent,
 } from "@/lib/liff-login-intent";
-import {
-  startLiffLogin,
-  type StartLiffLoginResult,
-} from "@/lib/liff-auth-client";
-import type { LiffLoginIntent } from "@/lib/liff-login-intent";
 
 type LineLoginButtonProps = {
   className?: string;
@@ -19,17 +18,15 @@ type LineLoginButtonProps = {
   action?: LiffLoginIntent["action"];
   favoriteJobId?: string;
   showIcon?: boolean;
-  /** Fallback href when LIFF is unavailable / JS disabled */
-  href?: string;
 };
 
 function LiffErrorPanel({
   redirectPath,
-  onRetry,
+  onRetryLiff,
   onClose,
 }: {
   redirectPath: string;
-  onRetry: () => void;
+  onRetryLiff: () => void;
   onClose: () => void;
 }) {
   const webHref = buildWebLineLoginHref(redirectPath);
@@ -46,7 +43,7 @@ function LiffErrorPanel({
         <div className="mt-5 space-y-2">
           <button
             type="button"
-            onClick={onRetry}
+            onClick={onRetryLiff}
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#06c755] px-4 text-sm font-semibold text-white"
           >
             <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
@@ -54,6 +51,12 @@ function LiffErrorPanel({
           </button>
           <a
             href={webHref}
+            onClick={() => {
+              logLiffDebug("fallback_web_login", {
+                reason: "USER_CHOSE_BROWSER_LOGIN",
+                choseLiffUrl: false,
+              });
+            }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >
             ブラウザでログイン
@@ -71,9 +74,23 @@ function LiffErrorPanel({
   );
 }
 
+async function resolveLiffIdFromRuntime(): Promise<string | null> {
+  const fromBuild = getPublicLiffId();
+  if (fromBuild) return fromBuild;
+
+  try {
+    const response = await fetch("/api/line/liff-config", { cache: "no-store" });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { liffId?: string | null };
+    return data.liffId?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Drop-in replacement for LINE login anchors.
- * Same look via className; on tap uses LIFF when configured, else web login.
+ * LINE login CTA. When LIFF is configured, navigates to https://liff.line.me/{id}
+ * immediately — never to /api/line/login or access.line.me first.
  */
 export function LineLoginButton({
   className,
@@ -82,7 +99,6 @@ export function LineLoginButton({
   action,
   favoriteJobId,
   showIcon = false,
-  href,
 }: LineLoginButtonProps) {
   const [busy, setBusy] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
@@ -92,26 +108,33 @@ export function LineLoginButton({
     (typeof window !== "undefined"
       ? `${window.location.pathname}${window.location.search}${window.location.hash}`
       : "/");
-  const fallbackHref = href || buildWebLineLoginHref(resolvedRedirect);
-  const liffEnabled = Boolean(getPublicLiffId());
 
-  async function handleResult(result: StartLiffLoginResult) {
-    if (result.status === "completed") {
-      window.location.assign(result.redirectPath);
-      return;
-    }
-    if (result.status === "redirected") {
-      return;
-    }
-    if (result.status === "fallback_web") {
-      window.location.assign(fallbackHref);
-      return;
-    }
-    setErrorOpen(true);
+  const buildTimeLiffId = getPublicLiffId();
+  const primaryHref = buildTimeLiffId
+    ? buildLiffAppUrl(buildTimeLiffId, {
+        redirectPath: resolvedRedirect,
+        action,
+        favoriteJobId,
+      })
+    : buildWebLineLoginHref(resolvedRedirect);
+
+  function openLiff(liffId: string) {
+    const intent = saveLiffLoginIntent({
+      redirectPath: resolvedRedirect,
+      action,
+      favoriteJobId,
+    });
+    const liffUrl = buildLiffAppUrl(liffId, intent);
+    logLiffDebug("login_button_navigate", {
+      liffIdConfigured: true,
+      choseLiffUrl: true,
+      destinationHost: "liff.line.me",
+      navigationTarget: liffUrl.split("?")[0],
+    });
+    window.location.assign(liffUrl);
   }
 
   async function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    // Always intercept when JS is available so we can use LIFF on tap.
     event.preventDefault();
     if (busy) return;
 
@@ -119,17 +142,23 @@ export function LineLoginButton({
     setErrorOpen(false);
 
     try {
-      if (!liffEnabled) {
-        window.location.assign(fallbackHref);
+      const liffId = await resolveLiffIdFromRuntime();
+      logLiffDebug("login_button_tap", {
+        liffIdConfigured: Boolean(liffId),
+        buildTimeConfigured: Boolean(buildTimeLiffId),
+      });
+
+      if (liffId) {
+        openLiff(liffId);
         return;
       }
 
-      const result = await startLiffLogin({
-        redirectPath: resolvedRedirect,
-        action,
-        favoriteJobId,
+      logLiffDebug("fallback_web_login", {
+        reason: "LIFF_ID_MISSING",
+        choseLiffUrl: false,
+        navigationTarget: "/api/line/login",
       });
-      await handleResult(result);
+      window.location.assign(buildWebLineLoginHref(resolvedRedirect));
     } catch (error) {
       console.error("[LineLoginButton]", error);
       setErrorOpen(true);
@@ -138,17 +167,15 @@ export function LineLoginButton({
     }
   }
 
-  async function handleRetry() {
+  async function handleRetryLiff() {
     setErrorOpen(false);
     setBusy(true);
     try {
-      const result = await startLiffLogin({
-        redirectPath: resolvedRedirect,
-        action,
-        favoriteJobId,
-      });
-      await handleResult(result);
-    } catch {
+      const liffId = await resolveLiffIdFromRuntime();
+      if (liffId) {
+        openLiff(liffId);
+        return;
+      }
       setErrorOpen(true);
     } finally {
       setBusy(false);
@@ -158,7 +185,7 @@ export function LineLoginButton({
   return (
     <>
       <a
-        href={fallbackHref}
+        href={primaryHref}
         className={className}
         onClick={handleClick}
         aria-busy={busy}
@@ -171,7 +198,7 @@ export function LineLoginButton({
       {errorOpen ? (
         <LiffErrorPanel
           redirectPath={resolvedRedirect}
-          onRetry={() => void handleRetry()}
+          onRetryLiff={() => void handleRetryLiff()}
           onClose={() => setErrorOpen(false)}
         />
       ) : null}

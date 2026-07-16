@@ -3,22 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LineIcon } from "@/components/LineIcon";
+import { completeLiffEndpointFlow } from "@/lib/liff-auth-client";
 import {
-  completeLiffLoginAfterRedirect,
-  startLiffLogin,
-} from "@/lib/liff-auth-client";
-import {
+  buildLiffAppUrl,
   buildWebLineLoginHref,
   getPublicLiffId,
+  logLiffDebug,
   readLiffLoginIntent,
+  readLiffLoginIntentFromSearchParams,
   resolvePostLoginPath,
   saveLiffLoginIntent,
+  type LiffLoginIntent,
 } from "@/lib/liff-login-intent";
 
 /**
- * LIFF Endpoint / redirectUri completion page.
- * Completes session after liff.login() return. Does not auto-start login
- * without a prior user tap (shows recovery actions instead).
+ * LIFF Endpoint URL page.
+ * Opened via https://liff.line.me/{LIFF_ID} after the login button.
  */
 export default function LiffAuthClient() {
   const router = useRouter();
@@ -32,29 +32,33 @@ export default function LiffAuthClient() {
     if (started.current) return;
     started.current = true;
 
-    const queryRedirect = searchParams.get("redirect");
-    if (queryRedirect?.startsWith("/") && !queryRedirect.startsWith("//")) {
-      saveLiffLoginIntent({ redirectPath: queryRedirect });
+    const fromQuery = readLiffLoginIntentFromSearchParams(
+      new URLSearchParams(searchParams.toString()),
+    );
+    if (fromQuery?.redirectPath || fromQuery?.action || fromQuery?.favoriteJobId) {
+      saveLiffLoginIntent({
+        redirectPath: fromQuery.redirectPath,
+        action: fromQuery.action,
+        favoriteJobId: fromQuery.favoriteJobId,
+      });
     }
 
     const intent = readLiffLoginIntent();
     const redirectPath = resolvePostLoginPath(intent);
     setFallbackHref(buildWebLineLoginHref(redirectPath));
 
-    const liffId = getPublicLiffId();
-    if (!liffId) {
-      window.location.replace(buildWebLineLoginHref(redirectPath));
-      return;
-    }
-
     async function run() {
       try {
-        const result = await completeLiffLoginAfterRedirect();
+        const result = await completeLiffEndpointFlow();
         if (result.status === "completed") {
           router.replace(result.redirectPath);
           return;
         }
         if (result.status === "fallback_web") {
+          logLiffDebug("endpoint_fallback_web", {
+            reason: result.reason,
+            choseLiffUrl: false,
+          });
           window.location.replace(buildWebLineLoginHref(redirectPath));
           return;
         }
@@ -74,27 +78,33 @@ export default function LiffAuthClient() {
     void run();
   }, [router, searchParams]);
 
-  async function handleRetry() {
+  function handleRetryLiff() {
+    const liffId = getPublicLiffId();
     const intent = readLiffLoginIntent();
     const redirectPath = resolvePostLoginPath(intent);
     setStatus("working");
     setMessage("LINEアプリを起動しています…");
-    const result = await startLiffLogin({
-      redirectPath,
-      action: intent?.action,
-      favoriteJobId: intent?.favoriteJobId,
-    });
-    if (result.status === "completed") {
-      router.replace(result.redirectPath);
-      return;
-    }
-    if (result.status === "redirected") return;
-    if (result.status === "fallback_web") {
+
+    if (!liffId) {
+      logLiffDebug("retry_fallback_web", {
+        reason: "LIFF_ID_MISSING",
+        choseLiffUrl: false,
+      });
       window.location.assign(buildWebLineLoginHref(redirectPath));
       return;
     }
-    setStatus("error");
-    setMessage(result.message);
+
+    const nextIntent: LiffLoginIntent = intent ?? {
+      redirectPath,
+      createdAt: Date.now(),
+    };
+    saveLiffLoginIntent(nextIntent);
+    const liffUrl = buildLiffAppUrl(liffId, nextIntent);
+    logLiffDebug("retry_open_liff_url", {
+      choseLiffUrl: true,
+      destinationHost: "liff.line.me",
+    });
+    window.location.assign(liffUrl);
   }
 
   if (status === "error") {
@@ -107,7 +117,7 @@ export default function LiffAuthClient() {
         <div className="mt-6 flex w-full flex-col gap-2">
           <button
             type="button"
-            onClick={() => void handleRetry()}
+            onClick={handleRetryLiff}
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#06c755] px-4 text-sm font-semibold text-white"
           >
             <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
@@ -115,6 +125,12 @@ export default function LiffAuthClient() {
           </button>
           <a
             href={fallbackHref}
+            onClick={() => {
+              logLiffDebug("fallback_web_login", {
+                reason: "USER_CHOSE_BROWSER_LOGIN",
+                choseLiffUrl: false,
+              });
+            }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >
             ブラウザでログイン

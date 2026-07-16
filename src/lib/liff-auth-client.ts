@@ -2,9 +2,11 @@
 
 import liff from "@line/liff";
 import {
+  buildLiffAppUrl,
   clearLiffLoginIntent,
-  getLiffRedirectUri,
   getPublicLiffId,
+  LIFF_LOGIN_ATTEMPT_KEY,
+  logLiffDebug,
   readLiffLoginIntent,
   resolvePostLoginPath,
   saveLiffLoginIntent,
@@ -13,13 +15,18 @@ import {
 
 let initPromise: Promise<boolean> | null = null;
 
-export async function ensureLiffInitialized(): Promise<boolean> {
+export async function ensureLiffInitialized(
+  options?: { withLoginOnExternalBrowser?: boolean },
+): Promise<boolean> {
   const liffId = getPublicLiffId();
   if (!liffId) return false;
 
   if (!initPromise) {
     initPromise = liff
-      .init({ liffId })
+      .init({
+        liffId,
+        withLoginOnExternalBrowser: options?.withLoginOnExternalBrowser === true,
+      })
       .then(() => true)
       .catch((error) => {
         console.error("[liff] init failed", error);
@@ -60,16 +67,14 @@ export async function exchangeLiffSession(redirectPath: string): Promise<string>
 }
 
 export type StartLiffLoginResult =
-  | { status: "redirected" }
+  | { status: "redirected"; destination: "liff_url" | "liff_login" }
   | { status: "completed"; redirectPath: string }
   | { status: "fallback_web"; reason: string }
   | { status: "error"; message: string };
 
 /**
- * Must be called from a user tap.
- * - LIFF available + logged in → create session, return completed
- * - LIFF available + not logged in → liff.login (may leave the page)
- * - LIFF unavailable → fallback_web
+ * Must be called from a user tap on the site (not on the LIFF endpoint).
+ * When LIFF ID is set: ALWAYS open https://liff.line.me/{id} — never access.line.me first.
  */
 export async function startLiffLogin(input: {
   redirectPath?: string;
@@ -79,12 +84,55 @@ export async function startLiffLogin(input: {
   const intent = saveLiffLoginIntent(input);
   const liffId = getPublicLiffId();
 
+  logLiffDebug("login_button_tap", {
+    liffIdConfigured: Boolean(liffId),
+    liffIdLength: liffId ? String(liffId.length) : "0",
+  });
+
   if (!liffId) {
+    logLiffDebug("fallback_web_login", {
+      reason: "LIFF_ID_MISSING",
+      choseLiffUrl: false,
+    });
     return { status: "fallback_web", reason: "LIFF_ID_MISSING" };
   }
 
-  const ok = await ensureLiffInitialized();
+  const liffUrl = buildLiffAppUrl(liffId, intent);
+  logLiffDebug("chose_liff_url", {
+    choseLiffUrl: true,
+    destinationHost: "liff.line.me",
+    navigationTarget: "liff_app_url",
+  });
+
+  // Immediate navigation — do not call liff.login() here (that hits access.line.me).
+  window.location.assign(liffUrl);
+  return { status: "redirected", destination: "liff_url" };
+}
+
+/**
+ * Runs on /auth/line/liff (LIFF Endpoint).
+ * init with withLoginOnExternalBrowser, then session or liff.login().
+ */
+export async function completeLiffEndpointFlow(): Promise<StartLiffLoginResult> {
+  const liffId = getPublicLiffId();
+  logLiffDebug("liff_endpoint_start", {
+    liffIdConfigured: Boolean(liffId),
+    liffIdLength: liffId ? String(liffId.length) : "0",
+  });
+
+  if (!liffId) {
+    logLiffDebug("fallback_web_login", {
+      reason: "LIFF_ID_MISSING_ON_ENDPOINT",
+      choseLiffUrl: false,
+    });
+    return { status: "fallback_web", reason: "LIFF_ID_MISSING" };
+  }
+
+  // Reset cached init so withLoginOnExternalBrowser is applied on this page.
+  initPromise = null;
+  const ok = await ensureLiffInitialized({ withLoginOnExternalBrowser: true });
   if (!ok) {
+    logLiffDebug("liff_init_failed", { choseLiffUrl: false });
     return {
       status: "error",
       message: "LINEアプリを開けませんでした",
@@ -92,27 +140,54 @@ export async function startLiffLogin(input: {
   }
 
   try {
-    if (!liff.isLoggedIn()) {
-      if (liff.isInClient()) {
-        // LIFF browser: login without leaving to a custom redirect when possible.
-        liff.login();
-      } else {
-        // External browser (Safari/Chrome): return to our completion page.
-        liff.login({ redirectUri: getLiffRedirectUri() });
+    if (liff.isLoggedIn()) {
+      try {
+        sessionStorage.removeItem(LIFF_LOGIN_ATTEMPT_KEY);
+      } catch {
+        // ignore
       }
-      return { status: "redirected" };
+
+      const intent = readLiffLoginIntent();
+      const redirectPath = await exchangeLiffSession(
+        resolvePostLoginPath(intent),
+      );
+      clearLiffLoginIntent();
+      logLiffDebug("session_issued", { choseLiffUrl: true });
+      return { status: "completed", redirectPath };
     }
 
-    // Re-init after login is recommended by LINE when returning to the app.
-    await liff.init({ liffId });
+    // Prevent login loops: only call liff.login() once per attempt.
+    let alreadyAttempted = false;
+    try {
+      alreadyAttempted = sessionStorage.getItem(LIFF_LOGIN_ATTEMPT_KEY) === "1";
+    } catch {
+      // ignore
+    }
 
-    const redirectPath = await exchangeLiffSession(
-      resolvePostLoginPath(intent),
-    );
-    clearLiffLoginIntent();
-    return { status: "completed", redirectPath };
+    if (alreadyAttempted) {
+      logLiffDebug("login_loop_guard", {
+        choseLiffUrl: false,
+        reason: "LOGIN_ALREADY_ATTEMPTED",
+      });
+      return {
+        status: "error",
+        message: "LINEアプリを開けませんでした",
+      };
+    }
+
+    try {
+      sessionStorage.setItem(LIFF_LOGIN_ATTEMPT_KEY, "1");
+    } catch {
+      // ignore
+    }
+
+    logLiffDebug("calling_liff_login_on_endpoint", {
+      inClient: liff.isInClient(),
+    });
+    liff.login({ redirectUri: `${window.location.origin}/auth/line/liff` });
+    return { status: "redirected", destination: "liff_login" };
   } catch (error) {
-    console.error("[liff] startLiffLogin failed", error);
+    console.error("[liff] complete endpoint flow failed", error);
     return {
       status: "error",
       message: "LINEアプリを開けませんでした",
@@ -120,45 +195,9 @@ export async function startLiffLogin(input: {
   }
 }
 
+/** @deprecated Use completeLiffEndpointFlow */
 export async function completeLiffLoginAfterRedirect(): Promise<StartLiffLoginResult> {
-  const liffId = getPublicLiffId();
-  if (!liffId) {
-    return { status: "fallback_web", reason: "LIFF_ID_MISSING" };
-  }
-
-  const ok = await ensureLiffInitialized();
-  if (!ok) {
-    return {
-      status: "error",
-      message: "LINEアプリを開けませんでした",
-    };
-  }
-
-  try {
-    if (!liff.isLoggedIn()) {
-      // Avoid auto-login loops on the completion page. User can retry via UI.
-      return {
-        status: "error",
-        message: "LINEアプリを開けませんでした",
-      };
-    }
-
-    // Re-init after login return (LINE recommendation).
-    await liff.init({ liffId });
-
-    const intent = readLiffLoginIntent();
-    const redirectPath = await exchangeLiffSession(
-      resolvePostLoginPath(intent),
-    );
-    clearLiffLoginIntent();
-    return { status: "completed", redirectPath };
-  } catch (error) {
-    console.error("[liff] complete after redirect failed", error);
-    return {
-      status: "error",
-      message: "LINEアプリを開けませんでした",
-    };
-  }
+  return completeLiffEndpointFlow();
 }
 
 export function isLiffInClient(): boolean {
