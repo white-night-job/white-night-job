@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
-import { buildOrganizationJsonLd, buildRootMetadata } from "@/lib/seo";
+import { buildOrganizationJsonLd, buildRootMetadata, buildWebSiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import "./desktop.css";
 
@@ -27,6 +27,7 @@ export default async function RootLayout({
     <html lang="ja">
       <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
         <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
           <Header />
           <main className="flex-1">{children}</main>

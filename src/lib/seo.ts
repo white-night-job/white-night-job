@@ -21,7 +21,7 @@ export function buildRootMetadata(): Metadata {
       type: "website",
       locale: "ja_JP",
       url: SITE_URL,
-      siteName: SITE_FORMAL_NAME,
+      siteName: SITE_BRAND_JA,
       title: SITE_OG_TITLE,
       description: SITE_DESCRIPTION,
     },
@@ -51,7 +51,7 @@ export function buildPageMetadata(
       title: ogTitle,
       description,
       url: canonical,
-      siteName: SITE_FORMAL_NAME,
+      siteName: SITE_BRAND_JA,
     },
     twitter: {
       card: "summary_large_image",
@@ -67,24 +67,21 @@ export function buildPageMetadata(
 export function buildOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        name: SITE_FORMAL_NAME,
-        alternateName: [SITE_NAME, SITE_BRAND_JA],
-        url: SITE_URL,
-      },
-      {
-        "@type": "WebSite",
-        name: SITE_FORMAL_NAME,
-        alternateName: [SITE_BRAND_JA, SITE_NAME],
-        url: SITE_URL,
-        publisher: {
-          "@type": "Organization",
-          name: SITE_FORMAL_NAME,
-        },
-      },
-    ],
+    "@type": "Organization",
+    name: SITE_BRAND_JA,
+    alternateName: [SITE_NAME, SITE_FORMAL_NAME],
+    url: `${SITE_URL}/`,
+  };
+}
+
+/** WebSite schema（name / alternateName / url は Search Console 向けに固定）. */
+export function buildWebSiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_BRAND_JA,
+    alternateName: SITE_NAME,
+    url: `${SITE_URL}/`,
   };
 }
 
@@ -104,7 +101,7 @@ export function buildArticleMetadata(
       title: ogTitle,
       description,
       url: canonical,
-      siteName: SITE_FORMAL_NAME,
+      siteName: SITE_BRAND_JA,
     },
     twitter: {
       card: "summary_large_image",
@@ -143,8 +140,8 @@ export function buildArticleJsonLd(params: {
     articleSection: params.category,
     isPartOf: {
       "@type": "WebSite",
-      name: SITE_FORMAL_NAME,
-      url: SITE_URL,
+      name: SITE_BRAND_JA,
+      url: `${SITE_URL}/`,
     },
   };
 }
@@ -162,8 +159,8 @@ export function buildWebPageJsonLd(
     url: `${SITE_URL}${pathname}`,
     isPartOf: {
       "@type": "WebSite",
-      name: SITE_FORMAL_NAME,
-      url: SITE_URL,
+      name: SITE_BRAND_JA,
+      url: `${SITE_URL}/`,
     },
   };
 }

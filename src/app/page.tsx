@@ -10,19 +10,32 @@ import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
-import { SITE_DESCRIPTION, SITE_OG_TITLE, SITE_TITLE } from "@/lib/site";
+import { SITE_BRAND_JA, SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
+const HOME_TITLE =
+  "【体入ホワイトナイト】安心できるお店選びを、優良認定店専門サイト";
+
 export const metadata: Metadata = {
-  title: SITE_TITLE,
+  title: {
+    absolute: HOME_TITLE,
+  },
   description: SITE_DESCRIPTION,
   openGraph: {
-    title: SITE_OG_TITLE,
+    title: HOME_TITLE,
     description: SITE_DESCRIPTION,
+    siteName: SITE_BRAND_JA,
+    url: `${SITE_URL}/`,
+    type: "website",
+    locale: "ja_JP",
   },
   twitter: {
-    title: SITE_OG_TITLE,
+    card: "summary_large_image",
+    title: HOME_TITLE,
     description: SITE_DESCRIPTION,
+  },
+  alternates: {
+    canonical: `${SITE_URL}/`,
   },
 };
 
