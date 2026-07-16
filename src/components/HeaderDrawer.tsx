@@ -299,24 +299,26 @@ export function HeaderDrawer() {
                 </button>
               </div>
 
-              <ul className="header-drawer-list">
-                {MAIN_ITEMS.map((item) => renderItem(item, item.label))}
-              </ul>
+              <div className="header-drawer-body">
+                <ul className="header-drawer-list">
+                  {MAIN_ITEMS.map((item) => renderItem(item, item.label))}
+                </ul>
 
-              {!hideShopSection && (
-                <>
-                  <div className="header-drawer-divider" aria-hidden />
-                  <p className="header-drawer-section-label">店舗様</p>
-                  <ul className="header-drawer-list">
-                    {SHOP_ITEMS.map((item) => renderItem(item, item.label))}
-                  </ul>
-                </>
-              )}
+                {!hideShopSection && (
+                  <>
+                    <div className="header-drawer-divider" aria-hidden />
+                    <p className="header-drawer-section-label">店舗様</p>
+                    <ul className="header-drawer-list">
+                      {SHOP_ITEMS.map((item) => renderItem(item, item.label))}
+                    </ul>
+                  </>
+                )}
 
-              <div className="header-drawer-divider" aria-hidden />
-              <ul className="header-drawer-list header-drawer-list-footer">
-                {FOOTER_ITEMS.map((item) => renderItem(item, item.label))}
-              </ul>
+                <div className="header-drawer-divider" aria-hidden />
+                <ul className="header-drawer-list header-drawer-list-footer">
+                  {FOOTER_ITEMS.map((item) => renderItem(item, item.label))}
+                </ul>
+              </div>
             </nav>
           </div>,
           document.body,
