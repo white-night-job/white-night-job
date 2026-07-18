@@ -36,7 +36,7 @@ const MERITS = [
 const PLAN_FEATURE_ROWS = [
   { label: "掲載内容", light: "フル掲載", standard: "フル掲載", premium: "フル掲載" },
   { label: "表示順位", light: "通常", standard: "優先", premium: "最優先" },
-  { label: "新着店舗掲載", light: "○", standard: "○", premium: "○" },
+  { label: "新着店舗掲載", light: "1ヶ月", standard: "2ヶ月", premium: "2ヶ月" },
   { label: "ピックアップ掲載", light: "－", standard: "－", premium: "○" },
   { label: "AIおすすめ表示", light: "－", standard: "優先", premium: "最優先" },
   { label: "上位表示ボタン", light: "1日5回", standard: "1日5回", premium: "1日5回" },
