@@ -5,20 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LineIcon } from "@/components/LineIcon";
 import { completeLiffEndpointFlow } from "@/lib/liff-auth-client";
 import {
-  buildLiffAppUrl,
   buildWebLineLoginHref,
-  getPublicLiffId,
   logLiffDebug,
   readLiffLoginIntent,
   readLiffLoginIntentFromSearchParams,
   resolvePostLoginPath,
   saveLiffLoginIntent,
-  type LiffLoginIntent,
 } from "@/lib/liff-login-intent";
 
 /**
- * LIFF Endpoint URL page.
- * Opened via https://liff.line.me/{LIFF_ID} after the login button.
+ * LIFF Endpoint URL — opened inside LINE.
+ * Already logged-in users complete without an extra auth screen.
+ * External browsers are sent to Web LINE Login (bot_prompt).
  */
 export default function LiffAuthClient() {
   const router = useRouter();
@@ -78,33 +76,23 @@ export default function LiffAuthClient() {
     void run();
   }, [router, searchParams]);
 
-  function handleRetryLiff() {
-    const liffId = getPublicLiffId();
+  async function handleRetry() {
+    setStatus("working");
+    setMessage("ログインを完了しています…");
     const intent = readLiffLoginIntent();
     const redirectPath = resolvePostLoginPath(intent);
-    setStatus("working");
-    setMessage("LINEアプリを起動しています…");
-
-    if (!liffId) {
-      logLiffDebug("retry_fallback_web", {
-        reason: "LIFF_ID_MISSING",
-        choseLiffUrl: false,
-      });
+    const result = await completeLiffEndpointFlow();
+    if (result.status === "completed") {
+      router.replace(result.redirectPath);
+      return;
+    }
+    if (result.status === "fallback_web") {
       window.location.assign(buildWebLineLoginHref(redirectPath));
       return;
     }
-
-    const nextIntent: LiffLoginIntent = intent ?? {
-      redirectPath,
-      createdAt: Date.now(),
-    };
-    saveLiffLoginIntent(nextIntent);
-    const liffUrl = buildLiffAppUrl(liffId, nextIntent);
-    logLiffDebug("retry_open_liff_url", {
-      choseLiffUrl: true,
-      destinationHost: "liff.line.me",
-    });
-    window.location.assign(liffUrl);
+    if (result.status === "redirected") return;
+    setStatus("error");
+    setMessage(result.message);
   }
 
   if (status === "error") {
@@ -117,7 +105,7 @@ export default function LiffAuthClient() {
         <div className="mt-6 flex w-full flex-col gap-2">
           <button
             type="button"
-            onClick={handleRetryLiff}
+            onClick={() => void handleRetry()}
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#06c755] px-4 text-sm font-semibold text-white"
           >
             <LineIcon className="h-[1.125rem] w-[1.125rem] shrink-0" />
