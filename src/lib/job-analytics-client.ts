@@ -6,7 +6,7 @@ const SESSION_KEY = "wn-analytics-session-id";
 const IMPRESSION_PREFIX = "wn-impression:";
 const DETAIL_PREFIX = "wn-detail-click:";
 const DETAIL_DEDUP_MS = 10_000;
-const IMPRESSION_DEDUP_MS = 30 * 60 * 1000;
+const IMPRESSION_DEDUP_MS = 3 * 60 * 1000;
 
 function getOrCreateSessionId(): string {
   try {
