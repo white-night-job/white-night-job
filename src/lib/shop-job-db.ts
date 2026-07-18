@@ -22,7 +22,6 @@ export type ShopJobPayload = {
   recruiterImage?: string | null;
   recruiterMessage?: string;
   managerComment?: string;
-  chatRecommendComment?: string;
   benefits: string[];
   otherBenefits?: string[];
   phone?: string;
@@ -89,11 +88,6 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
       : (data as { manager_comment?: unknown }).manager_comment
         ? String((data as { manager_comment?: unknown }).manager_comment)
         : undefined,
-    chatRecommendComment: data.chatRecommendComment
-      ? String(data.chatRecommendComment)
-      : (data as { chat_recommend_comment?: unknown }).chat_recommend_comment
-        ? String((data as { chat_recommend_comment?: unknown }).chat_recommend_comment)
-        : undefined,
     benefits: Array.isArray(data.benefits) ? data.benefits.map(String) : [],
     otherBenefits: Array.isArray(data.otherBenefits)
       ? data.otherBenefits.map(String)
@@ -129,7 +123,6 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     recruiter_title: payload.recruiterTitle?.trim() || null,
     recruiter_message: payload.recruiterMessage?.trim() || null,
     manager_comment: payload.managerComment?.trim() || null,
-    chat_recommend_comment: payload.chatRecommendComment?.trim() || null,
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
     phone: payload.phone?.trim() || null,

@@ -106,14 +106,6 @@ type JobForm = {
   lineRecommendNotify: boolean;
   chatRecommendEnabled: boolean;
   chatRecommendPriority: string;
-  chatRecommendComment: string;
-  chatRecommendBeginner: boolean;
-  chatRecommendNoAlcoholOk: boolean;
-  chatRecommendShuttle: boolean;
-  chatRecommendPrivacy: boolean;
-  chatRecommendHighSalary: boolean;
-  chatRecommendRelaxed: boolean;
-  chatRecommendHighEarning: boolean;
   pickupEnabled: boolean;
   listingPriority: "normal" | "priority" | "top";
 };
@@ -153,14 +145,6 @@ const emptyForm: JobForm = {
   shopLoginPassword: "",
   ...planToFormPatch("light"),
   postedAt: toPostedAtDateInputValue(),
-  chatRecommendComment: "",
-  chatRecommendBeginner: false,
-  chatRecommendNoAlcoholOk: false,
-  chatRecommendShuttle: false,
-  chatRecommendPrivacy: false,
-  chatRecommendHighSalary: false,
-  chatRecommendRelaxed: false,
-  chatRecommendHighEarning: false,
 };
 
 const inputClass =
@@ -221,14 +205,6 @@ function toPayload(form: JobForm) {
       : {}),
     chat_recommend_enabled: form.chatRecommendEnabled,
     chat_recommend_priority: Number(form.chatRecommendPriority) || 0,
-    chat_recommend_comment: form.chatRecommendComment.trim() || undefined,
-    chat_recommend_beginner: form.chatRecommendBeginner,
-    chat_recommend_no_alcohol_ok: form.chatRecommendNoAlcoholOk,
-    chat_recommend_shuttle: form.chatRecommendShuttle,
-    chat_recommend_privacy: form.chatRecommendPrivacy,
-    chat_recommend_high_salary: form.chatRecommendHighSalary,
-    chat_recommend_relaxed: form.chatRecommendRelaxed,
-    chat_recommend_high_earning: form.chatRecommendHighEarning,
     pickup_enabled: form.pickupEnabled,
     listing_priority: form.listingPriority,
     plan: form.plan,
@@ -289,14 +265,6 @@ function toForm(job: Job): JobForm {
     lineRecommendNotify: job.lineRecommendNotify ?? false,
     chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
     chatRecommendPriority: String(job.chatRecommend?.priority ?? 0),
-    chatRecommendComment: job.chatRecommend?.comment ?? "",
-    chatRecommendBeginner: job.chatRecommend?.beginner ?? false,
-    chatRecommendNoAlcoholOk: job.chatRecommend?.noAlcoholOk ?? false,
-    chatRecommendShuttle: job.chatRecommend?.shuttle ?? false,
-    chatRecommendPrivacy: job.chatRecommend?.privacy ?? false,
-    chatRecommendHighSalary: job.chatRecommend?.highSalary ?? false,
-    chatRecommendRelaxed: job.chatRecommend?.relaxed ?? false,
-    chatRecommendHighEarning: job.chatRecommend?.highEarning ?? false,
     pickupEnabled: job.pickupEnabled ?? false,
     listingPriority:
       job.listingPriority === "priority" || job.listingPriority === "top"
@@ -953,7 +921,7 @@ export default function AdminPage() {
               チャットおすすめ設定
             </h3>
             <p className="mt-1 text-xs text-white/75 sm:text-sm">
-              プラン選択でON/OFFと優先度が自動設定されます。管理者のみ手動調整できます。
+              プラン選択でON/OFFと優先度が自動設定されます。おすすめ内容は待遇・紹介文などからAIが自動判断します。
             </p>
           </div>
 
@@ -996,54 +964,6 @@ export default function AdminPage() {
               <p className="mt-1 text-xs text-white/65">
                 数値が大きいほど上位に表示されます
               </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="chatRecommendComment"
-                className="mb-1.5 block text-sm font-medium text-gold-light"
-              >
-                おすすめコメント
-              </label>
-              <textarea
-                id="chatRecommendComment"
-                value={form.chatRecommendComment}
-                onChange={(event) =>
-                  setField("chatRecommendComment", event.target.value)
-                }
-                className={`${inputClass} min-h-[96px]`}
-                placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
-              />
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-medium text-gold-light/90">おすすめタグ</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                ["chatRecommendBeginner", "未経験向け"],
-                ["chatRecommendNoAlcoholOk", "お酒NG可"],
-                ["chatRecommendShuttle", "送迎あり"],
-                ["chatRecommendPrivacy", "身バレ配慮あり"],
-                ["chatRecommendHighSalary", "高時給推し"],
-                ["chatRecommendRelaxed", "ゆるく働ける"],
-                ["chatRecommendHighEarning", "しっかり稼げる"],
-              ] as const
-            ).map(([field, label]) => (
-              <label
-                key={field}
-                className="flex items-center gap-2 text-sm text-white/90"
-              >
-                <input
-                  type="checkbox"
-                  checked={form[field]}
-                  onChange={(event) => setField(field, event.target.checked)}
-                  className="rounded border-gold/40 text-gold focus:ring-gold/30"
-                />
-                {label}
-              </label>
-            ))}
             </div>
           </div>
         </div>

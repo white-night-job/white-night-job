@@ -72,30 +72,7 @@ export function parseChatRecommendFromBody(
   const priority = source.chat_recommend_priority ?? source.priority;
   if (priority !== undefined) parsed.priority = Number(priority) || 0;
 
-  const comment = source.chat_recommend_comment ?? source.comment;
-  if (comment !== undefined) parsed.comment = String(comment).trim() || undefined;
-
-  const beginner = source.chat_recommend_beginner ?? source.beginner;
-  if (beginner !== undefined) parsed.beginner = Boolean(beginner);
-
-  const noAlcoholOk = source.chat_recommend_no_alcohol_ok ?? source.noAlcoholOk;
-  if (noAlcoholOk !== undefined) parsed.noAlcoholOk = Boolean(noAlcoholOk);
-
-  const shuttle = source.chat_recommend_shuttle ?? source.shuttle;
-  if (shuttle !== undefined) parsed.shuttle = Boolean(shuttle);
-
-  const privacy = source.chat_recommend_privacy ?? source.privacy;
-  if (privacy !== undefined) parsed.privacy = Boolean(privacy);
-
-  const highSalary = source.chat_recommend_high_salary ?? source.highSalary;
-  if (highSalary !== undefined) parsed.highSalary = Boolean(highSalary);
-
-  const relaxed = source.chat_recommend_relaxed ?? source.relaxed;
-  if (relaxed !== undefined) parsed.relaxed = Boolean(relaxed);
-
-  const highEarning = source.chat_recommend_high_earning ?? source.highEarning;
-  if (highEarning !== undefined) parsed.highEarning = Boolean(highEarning);
-
+  // Comment / tags are no longer editable — AI uses benefits and job text.
   return parsed;
 }
 
@@ -109,30 +86,6 @@ export function chatRecommendToRow(
   }
   if (settings.priority !== undefined) {
     row.chat_recommend_priority = settings.priority;
-  }
-  if (settings.comment !== undefined) {
-    row.chat_recommend_comment = settings.comment?.trim() || null;
-  }
-  if (settings.beginner !== undefined) {
-    row.chat_recommend_beginner = settings.beginner;
-  }
-  if (settings.noAlcoholOk !== undefined) {
-    row.chat_recommend_no_alcohol_ok = settings.noAlcoholOk;
-  }
-  if (settings.shuttle !== undefined) {
-    row.chat_recommend_shuttle = settings.shuttle;
-  }
-  if (settings.privacy !== undefined) {
-    row.chat_recommend_privacy = settings.privacy;
-  }
-  if (settings.highSalary !== undefined) {
-    row.chat_recommend_high_salary = settings.highSalary;
-  }
-  if (settings.relaxed !== undefined) {
-    row.chat_recommend_relaxed = settings.relaxed;
-  }
-  if (settings.highEarning !== undefined) {
-    row.chat_recommend_high_earning = settings.highEarning;
   }
 
   return row;

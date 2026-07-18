@@ -22,6 +22,8 @@ const ADMIN_ONLY_BODY_KEYS = [
   "chatRecommendEnabled",
   "chat_recommend_priority",
   "chatRecommendPriority",
+  "chat_recommend_comment",
+  "chatRecommendComment",
   "chat_recommend_beginner",
   "chatRecommendBeginner",
   "chat_recommend_no_alcohol_ok",
