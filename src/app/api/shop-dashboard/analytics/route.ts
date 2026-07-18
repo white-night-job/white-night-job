@@ -8,6 +8,7 @@ import {
   percentChange,
   type AnalyticsPeriod,
 } from "@/lib/job-analytics";
+import { getPlanFeatures, parseJobPlan } from "@/lib/job-plan";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -30,6 +31,7 @@ function parsePeriod(raw: string | null): AnalyticsPeriod {
 
 /**
  * Shop-only analytics. Always scoped to the authenticated shop's job_id.
+ * Standard / Premium plans only (plan.analytics).
  */
 export async function GET(request: Request) {
   const jobId = await getAuthenticatedShopJobId();
@@ -38,11 +40,31 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = createSupabaseAdmin();
+    const { data: jobRow, error: jobError } = await supabase
+      .from("jobs")
+      .select("plan")
+      .eq("id", jobId)
+      .maybeSingle();
+
+    if (jobError) throw jobError;
+
+    const features = getPlanFeatures(parseJobPlan(jobRow?.plan));
+    if (!features.analytics) {
+      return NextResponse.json(
+        {
+          message:
+            "応募分析はスタンダード以上のプランでご利用いただけます。",
+          plan: parseJobPlan(jobRow?.plan),
+        },
+        { status: 403 },
+      );
+    }
+
     const url = new URL(request.url);
     const period = parsePeriod(url.searchParams.get("period"));
     const range = getAnalyticsPeriodRange(period);
     const previousRange = getPreviousComparableRange(period);
-    const supabase = createSupabaseAdmin();
 
     const [current, monthly] = await Promise.all([
       fetchJobAnalyticsCounts(supabase, jobId, range.startIso, range.endIso),

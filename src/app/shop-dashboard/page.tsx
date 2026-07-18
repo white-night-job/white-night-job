@@ -32,6 +32,12 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
+import {
+  getPlanDefinition,
+  getPlanFeatures,
+  parseJobPlan,
+  type JobPlan,
+} from "@/lib/job-plan";
 
 type ShopForm = {
   shopName: string;
@@ -178,6 +184,7 @@ export default function ShopDashboardPage() {
   const [boostLimit, setBoostLimit] = useState(5);
   const [newJobNotifyCount, setNewJobNotifyCount] = useState(0);
   const [pickupNotifyCount, setPickupNotifyCount] = useState(0);
+  const [jobPlan, setJobPlan] = useState<JobPlan>("light");
 
   async function loadDashboard() {
     const data = await readJson<{
@@ -200,6 +207,7 @@ export default function ShopDashboardPage() {
     );
     setForm(toForm(data.job));
     setJobId(data.job.id);
+    setJobPlan(parseJobPlan(data.job.plan));
     setApplicationRows(data.applicationRows);
     setViewRows(data.viewRows);
     setApplicationDetail(data.applicationDetail);
@@ -237,6 +245,10 @@ export default function ShopDashboardPage() {
       jobId ? aggregateMonthlyApplicationsForJob(applicationRows, jobId) : [],
     [applicationRows, jobId],
   );
+
+  const planDefinition = getPlanDefinition(jobPlan);
+  const planFeatures = getPlanFeatures(jobPlan);
+  const analyticsEnabled = planFeatures.analytics;
 
   function setField<K extends keyof ShopForm>(key: K, value: ShopForm[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -884,6 +896,9 @@ export default function ShopDashboardPage() {
             <p className="mt-1 text-xs text-gold-light/70">
               全{districtTotal}店舗中（本日の上位表示・更新順で算出）
             </p>
+            <p className="mt-2 inline-flex rounded-full border border-gold/40 bg-black/25 px-3 py-1 text-xs font-medium text-gold-light">
+              掲載プラン：{planDefinition.label}（{planDefinition.priceLabel}）
+            </p>
           </div>
           <div className="flex flex-col items-stretch gap-2 sm:items-end">
             <p className="text-center text-sm font-medium text-gold-light sm:text-right">
@@ -953,12 +968,26 @@ export default function ShopDashboardPage() {
         </dl>
       </section>
 
-      <ShopAnalyticsSection />
+      {analyticsEnabled ? (
+        <ShopAnalyticsSection />
+      ) : (
+        <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+          <h2 className="font-serif text-lg font-semibold text-charcoal">
+            アクセス・応募分析
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            応募分析はスタンダード以上のプランでご利用いただけます。現在のプランは
+            {planDefinition.label}です。プラン変更は運営までご連絡ください。
+          </p>
+        </section>
+      )}
 
       <section className="space-y-6">
         <h2 className="text-lg font-semibold text-charcoal">応募・表示回数（累計）</h2>
         <p className="text-xs text-muted">
-          従来の累計値です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。
+          {analyticsEnabled
+            ? "従来の累計値です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。"
+            : "累計の応募・表示回数です。"}
         </p>
 
         <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">

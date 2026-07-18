@@ -127,6 +127,10 @@ export interface Job {
   pickupEnabled?: boolean;
   /** 表示順位: normal=通常 / priority=優先 / top=最優先 */
   listingPriority?: "normal" | "priority" | "top";
+  /** 掲載プラン: light / standard / premium */
+  plan?: "light" | "standard" | "premium";
+  lineRecommendNotify?: boolean;
+  newListingEnabled?: boolean;
   shopLoginId?: string;
   /** 管理画面のみ。公開APIでは返さない */
   shopLoginPassword?: string;

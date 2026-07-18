@@ -18,6 +18,7 @@ import {
   listingPriorityToRow,
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
+import { parsePlanFromBody } from "@/lib/job-plan";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -26,6 +27,23 @@ export const dynamic = "force-dynamic";
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
+
+/** Persist plan + related flags; ranking/pickup/AI come from form (admin may override). */
+function planMetaToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const plan = parsePlanFromBody(body);
+  if (!plan) return {};
+  const lineNotifyRaw = body.line_recommend_notify ?? body.lineRecommendNotify;
+  const newListingRaw = body.new_listing_enabled ?? body.newListingEnabled;
+  return {
+    plan,
+    ...(typeof lineNotifyRaw === "boolean"
+      ? { line_recommend_notify: lineNotifyRaw }
+      : {}),
+    ...(typeof newListingRaw === "boolean"
+      ? { new_listing_enabled: newListingRaw }
+      : {}),
+  };
+}
 
 export async function GET(_request: Request, { params }: RouteContext) {
   try {
@@ -72,6 +90,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const listingPriorityRow = listingPriorityToRow(
       parseListingPriorityFromBody(body),
     );
+    const planRow = planMetaToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data: previous } = await supabase
@@ -88,6 +107,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...chatRecommendRow,
         ...pickupRow,
         ...listingPriorityRow,
+        ...planRow,
       })
       .eq("id", id)
       .select("*")

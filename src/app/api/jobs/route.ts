@@ -18,6 +18,7 @@ import {
   listingPriorityToRow,
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
+import { parsePlanFromBody } from "@/lib/job-plan";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import {
   emptyApplicationDetail,
@@ -43,6 +44,23 @@ import {
 } from "@/lib/listing-priority";
 import { isNewListingJob } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
+
+/** Persist plan + related flags; ranking/pickup/AI come from form (admin may override). */
+function planMetaToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const plan = parsePlanFromBody(body);
+  if (!plan) return {};
+  const lineNotifyRaw = body.line_recommend_notify ?? body.lineRecommendNotify;
+  const newListingRaw = body.new_listing_enabled ?? body.newListingEnabled;
+  return {
+    plan,
+    ...(typeof lineNotifyRaw === "boolean"
+      ? { line_recommend_notify: lineNotifyRaw }
+      : {}),
+    ...(typeof newListingRaw === "boolean"
+      ? { new_listing_enabled: newListingRaw }
+      : {}),
+  };
+}
 
 export async function GET(request: Request) {
   try {
@@ -74,11 +92,13 @@ export async function GET(request: Request) {
     let rows = data ?? [];
 
     if (listing === "new") {
-      rows = rows.filter((row) =>
-        isNewListingJob({
-          postedAt: String(row.posted_at),
-          createdAt: String(row.created_at),
-        }),
+      rows = rows.filter(
+        (row) =>
+          row.new_listing_enabled !== false &&
+          isNewListingJob({
+            postedAt: String(row.posted_at),
+            createdAt: String(row.created_at),
+          }),
       );
     }
 
@@ -222,6 +242,7 @@ export async function POST(request: Request) {
     const listingPriorityRow = listingPriorityToRow(
       parseListingPriorityFromBody(body),
     );
+    const planRow = planMetaToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -232,6 +253,7 @@ export async function POST(request: Request) {
         ...chatRecommendRow,
         ...pickupRow,
         ...listingPriorityRow,
+        ...planRow,
       })
       .select("*")
       .single();

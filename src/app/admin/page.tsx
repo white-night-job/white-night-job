@@ -46,6 +46,14 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
+import {
+  getEnabledFeatureLabels,
+  JOB_PLAN_DEFINITIONS,
+  JOB_PLANS,
+  parseJobPlan,
+  planToFormPatch,
+  type JobPlan,
+} from "@/lib/job-plan";
 
 const emptyCastVoiceEntry = (): CastVoiceEntry => ({
   name: "",
@@ -86,6 +94,9 @@ type JobForm = {
   lineUrl: string;
   shopLoginId: string;
   shopLoginPassword: string;
+  plan: JobPlan;
+  newListingEnabled: boolean;
+  lineRecommendNotify: boolean;
   chatRecommendEnabled: boolean;
   chatRecommendPriority: string;
   chatRecommendComment: string;
@@ -133,8 +144,7 @@ const emptyForm: JobForm = {
   lineUrl: "",
   shopLoginId: "",
   shopLoginPassword: "",
-  chatRecommendEnabled: true,
-  chatRecommendPriority: "0",
+  ...planToFormPatch("light"),
   chatRecommendComment: "",
   chatRecommendBeginner: false,
   chatRecommendNoAlcoholOk: false,
@@ -143,8 +153,6 @@ const emptyForm: JobForm = {
   chatRecommendHighSalary: false,
   chatRecommendRelaxed: false,
   chatRecommendHighEarning: false,
-  pickupEnabled: false,
-  listingPriority: "normal",
 };
 
 const inputClass =
@@ -215,6 +223,9 @@ function toPayload(form: JobForm) {
     chat_recommend_high_earning: form.chatRecommendHighEarning,
     pickup_enabled: form.pickupEnabled,
     listing_priority: form.listingPriority,
+    plan: form.plan,
+    line_recommend_notify: form.lineRecommendNotify,
+    new_listing_enabled: form.newListingEnabled,
   };
 }
 
@@ -263,6 +274,9 @@ function toForm(job: Job): JobForm {
     lineUrl: job.lineUrl,
     shopLoginId: job.shopLoginId ?? "",
     shopLoginPassword: job.shopLoginPassword ?? "",
+    plan: parseJobPlan(job.plan),
+    newListingEnabled: job.newListingEnabled ?? true,
+    lineRecommendNotify: job.lineRecommendNotify ?? false,
     chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
     chatRecommendPriority: String(job.chatRecommend?.priority ?? 0),
     chatRecommendComment: job.chatRecommend?.comment ?? "",
@@ -431,6 +445,13 @@ export default function AdminPage() {
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function applyPlan(plan: JobPlan) {
+    setForm((current) => ({
+      ...current,
+      ...planToFormPatch(plan),
+    }));
   }
 
   function toggleBenefit(benefit: string) {
@@ -851,6 +872,69 @@ export default function AdminPage() {
             {editingId && (
               <h2 className="text-lg font-semibold text-charcoal">求人を編集</h2>
             )}
+
+        <div className="rounded-2xl border border-gold/30 bg-ivory/60 p-4 sm:p-5">
+          <h3 className="text-base font-semibold text-charcoal">掲載プラン</h3>
+          <p className="mt-1 text-xs text-muted sm:text-sm">
+            プランを選ぶと表示順位・PickUp・AIおすすめ等が自動設定されます。店舗側では変更できません。
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {JOB_PLANS.map((planKey) => {
+              const definition = JOB_PLAN_DEFINITIONS[planKey];
+              const selected = form.plan === planKey;
+              return (
+                <button
+                  key={planKey}
+                  type="button"
+                  onClick={() => applyPlan(planKey)}
+                  aria-pressed={selected}
+                  className={`rounded-2xl border px-4 py-4 text-left transition ${
+                    selected
+                      ? "border-gold bg-white shadow-md ring-2 ring-gold/40"
+                      : "border-gold/25 bg-white/70 hover:border-gold/50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                        selected
+                          ? "border-gold bg-gold"
+                          : "border-charcoal/30 bg-white"
+                      }`}
+                      aria-hidden
+                    >
+                      {selected && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      )}
+                    </span>
+                    <span className="font-serif text-lg font-semibold text-charcoal">
+                      {definition.label}
+                    </span>
+                  </span>
+                  <span className="mt-2 block text-sm text-gold-dark">
+                    {definition.priceLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-gold/20 bg-white p-4">
+            <p className="text-sm font-semibold text-charcoal">
+              このプランで有効になる機能
+            </p>
+            <ul className="mt-3 space-y-1.5 text-sm text-charcoal">
+              {getEnabledFeatureLabels(form.plan).map((label) => (
+                <li key={label} className="flex items-start gap-2">
+                  <span className="mt-0.5 text-gold-dark" aria-hidden>
+                    ✓
+                  </span>
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
         <div>
           <label htmlFor="shopName" className={labelClass}>
@@ -1520,7 +1604,7 @@ export default function AdminPage() {
               チャットおすすめ設定
             </h3>
             <p className="mt-1 text-xs text-white/75 sm:text-sm">
-              White Night相談Botでおすすめ表示する店舗の設定です。
+              プラン選択でON/OFFと優先度が自動設定されます。管理者のみ手動調整できます。
             </p>
           </div>
 
@@ -1641,7 +1725,45 @@ export default function AdminPage() {
             <span>
               <span className="font-semibold text-charcoal">ピックアップ掲載</span>
               <span className="mt-1 block text-xs text-muted">
-                ONにするとトップページの「ピックアップ店舗一覧」に表示されます。
+                プラン選択で自動設定されます。ONにするとトップの「ピックアップ店舗一覧」に表示されます（管理者のみ手動変更可）。
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.newListingEnabled}
+              onChange={(event) =>
+                setField("newListingEnabled", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">新着掲載</span>
+              <span className="mt-1 block text-xs text-muted">
+                プラン選択で自動設定。オフにすると新着一覧の対象外になります（管理者のみ）。
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.lineRecommendNotify}
+              onChange={(event) =>
+                setField("lineRecommendNotify", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">LINEおすすめ通知</span>
+              <span className="mt-1 block text-xs text-muted">
+                プラン選択で自動設定されます（プレミアムでON）。管理者のみ手動変更可。
               </span>
             </span>
           </label>
@@ -1650,7 +1772,7 @@ export default function AdminPage() {
         <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
           <p className="text-sm font-semibold text-charcoal">表示順位</p>
           <p className="mt-1 text-xs text-muted">
-            最優先へ変更すると、条件一致ユーザーへPickUp店舗通知が自動送信されます。
+            プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
           </p>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(
@@ -1879,6 +2001,9 @@ export default function AdminPage() {
                       </p>
                       <p className="mt-1 text-lg font-semibold text-charcoal">
                         {job.shopName}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-gold-dark">
+                        プラン：{JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
                       </p>
                       <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
                       <p className="mt-0.5 text-xs text-muted">

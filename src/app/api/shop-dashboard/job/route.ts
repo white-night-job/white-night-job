@@ -39,6 +39,10 @@ const ADMIN_ONLY_BODY_KEYS = [
   "listing_plan",
   "listingPlan",
   "plan",
+  "line_recommend_notify",
+  "lineRecommendNotify",
+  "new_listing_enabled",
+  "newListingEnabled",
   "published",
 ] as const;
 

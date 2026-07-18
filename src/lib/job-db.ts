@@ -1,4 +1,5 @@
 import { rowToChatRecommend } from "@/lib/chat-recommend-db";
+import { inferJobPlan, parseJobPlan } from "@/lib/job-plan";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -86,6 +87,9 @@ type JobRow = {
   created_at?: string;
   pickup_enabled?: boolean | null;
   listing_priority?: string | null;
+  plan?: string | null;
+  line_recommend_notify?: boolean | null;
+  new_listing_enabled?: boolean | null;
   shop_login_id?: string | null;
   shop_login_password?: string | null;
   chat_recommend_enabled?: boolean | null;
@@ -151,6 +155,15 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
       row.listing_priority === "priority" || row.listing_priority === "top"
         ? row.listing_priority
         : "normal",
+    plan: row.plan
+      ? parseJobPlan(row.plan)
+      : inferJobPlan({
+          listingPriority: row.listing_priority,
+          pickupEnabled: row.pickup_enabled,
+          chatRecommendEnabled: row.chat_recommend_enabled,
+        }),
+    lineRecommendNotify: row.line_recommend_notify ?? false,
+    newListingEnabled: row.new_listing_enabled ?? true,
     shopLoginId: row.shop_login_id?.trim() || undefined,
     ...(options?.includeShopLoginPassword
       ? {
