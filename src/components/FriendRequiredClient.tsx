@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LineIcon } from "@/components/LineIcon";
 
@@ -9,52 +9,101 @@ type FriendRequiredClientProps = {
   accountId: string;
 };
 
+type CheckResult = {
+  ok?: boolean;
+  isFriend?: boolean;
+  redirectPath?: string;
+  message?: string;
+  expired?: boolean;
+};
+
 export function FriendRequiredClient({
   addFriendUrl,
   accountId,
 }: FriendRequiredClientProps) {
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const checkingRef = useRef(false);
+  const doneRef = useRef(false);
 
-  async function handleConfirm() {
-    if (busy) return;
-    setBusy(true);
-    setMessage("");
+  const confirmFriendship = useCallback(async (reason: string) => {
+    if (doneRef.current || checkingRef.current) return;
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+
+    checkingRef.current = true;
+    setChecking(true);
+    setErrorMessage("");
+    console.info("[friend-required] check start", reason);
 
     try {
       const response = await fetch("/api/line/friendship-confirm", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
+        cache: "no-store",
       });
-      const data = (await response.json()) as {
-        ok?: boolean;
-        isFriend?: boolean;
-        redirectPath?: string;
-        message?: string;
-        expired?: boolean;
-      };
+      const data = (await response.json()) as CheckResult;
 
-      if (data.ok && data.redirectPath) {
-        window.location.assign(data.redirectPath);
+      if (data.ok && data.isFriend) {
+        doneRef.current = true;
+        // Spec: complete login and go to top page.
+        const nextPath = "/";
+        console.info("[friend-required] friend confirmed →", nextPath);
+        window.location.replace(nextPath);
         return;
       }
 
       if (data.expired) {
-        setMessage(data.message || "再度ログインしてください。");
+        setErrorMessage(
+          data.message || "ログイン情報の有効期限が切れました。再度ログインしてください。",
+        );
         return;
       }
 
-      setMessage(
-        data.message ||
-          "まだ友だち追加が確認できません。公式アカウントを追加してから、もう一度お試しください。",
+      // Not followed yet — keep this screen, no error spam on every return.
+      setErrorMessage("");
+      console.info("[friend-required] not a friend yet", reason);
+    } catch (error) {
+      console.error("[friend-required] check failed", error);
+      setErrorMessage(
+        "確認に失敗しました。通信環境をご確認のうえ、この画面に戻ると再試行します。",
       );
-    } catch {
-      setMessage("確認に失敗しました。通信環境をご確認のうえ、再度お試しください。");
     } finally {
-      setBusy(false);
+      checkingRef.current = false;
+      setChecking(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    function onFocus() {
+      void confirmFriendship("window.focus");
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void confirmFriendship("visibilitychange:visible");
+      }
+    }
+
+    function onPageShow() {
+      void confirmFriendship("pageshow");
+    }
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pageshow", onPageShow);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [confirmFriendship]);
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-5 py-12">
@@ -81,25 +130,25 @@ export function FriendRequiredClient({
             友だち追加する
           </a>
 
-          <button
-            type="button"
-            onClick={() => void handleConfirm()}
-            disabled={busy}
-            className="flex min-h-12 w-full items-center justify-center rounded-full border border-gold/40 bg-ivory px-5 text-sm font-semibold text-gold-dark transition hover:bg-white disabled:opacity-60"
-          >
-            {busy ? "確認中..." : "追加しました"}
-          </button>
+          <p className="text-center text-xs leading-relaxed text-muted sm:text-sm">
+            友だち追加後、この画面に戻ると自動でログインします
+          </p>
+
+          {checking ? (
+            <p
+              className="rounded-xl border border-gold/25 bg-ivory/80 px-3 py-2.5 text-center text-sm font-medium text-gold-dark"
+              aria-live="polite"
+            >
+              友だち追加を確認しています…
+            </p>
+          ) : null}
         </div>
 
-        {message ? (
+        {errorMessage ? (
           <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {message}
+            {errorMessage}
           </p>
-        ) : (
-          <p className="mt-4 text-xs leading-relaxed text-muted">
-            友だち追加が終わったら「追加しました」を押してください。サーバーでフォロー状態を確認します。
-          </p>
-        )}
+        ) : null}
 
         <div className="mt-8 border-t border-gold/15 pt-4 text-center">
           <Link

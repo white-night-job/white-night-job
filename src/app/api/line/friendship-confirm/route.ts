@@ -23,7 +23,7 @@ function readCookie(request: Request, name: string): string | null {
 }
 
 /**
- * Re-check Official Account follow after the user taps「追加しました」.
+ * Re-check Official Account follow when the user returns to the friend-required page.
  * Issues the session cookie only when Messaging API confirms friendship.
  */
 export async function POST(request: Request) {
@@ -56,8 +56,6 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: false,
         isFriend: false,
-        message:
-          "まだ友だち追加が確認できません。公式アカウントを追加してから、もう一度お試しください。",
       });
     }
 
@@ -67,7 +65,8 @@ export async function POST(request: Request) {
       pictureUrl: pending.pictureUrl,
     });
 
-    const redirectPath = pending.redirectPath || "/";
+    // Friend-required gate always lands on top after login is finalized.
+    const redirectPath = "/";
     const response = NextResponse.json({
       ok: true,
       isFriend: true,
