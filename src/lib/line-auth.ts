@@ -42,6 +42,10 @@ export function createLineLoginNonce(): string {
  * LINE Login v2.1 authorization URL.
  * Uses https://access.line.me/oauth2/v2.1/authorize so mobile Auto Login
  * (Universal Links / App Links) can open the LINE app when available.
+ *
+ * Always includes bot_prompt (default: aggressive) so users who have not
+ * added the linked official account are prompted once after consent.
+ * Already-friended users are not repeatedly prompted by LINE.
  */
 export function buildLineLoginUrl(
   state: string,
@@ -58,11 +62,14 @@ export function buildLineLoginUrl(
     nonce,
   });
 
-  // Prefer adding the official account as a friend when Messaging is used.
-  const botPrompt = process.env.LINE_LOGIN_BOT_PROMPT?.trim();
-  if (botPrompt === "normal" || botPrompt === "aggressive") {
-    params.set("bot_prompt", botPrompt);
-  }
+  // Friend-add / unblock prompt after login (linked Messaging API account).
+  // Default aggressive; env may override to normal. Never set twice (URLSearchParams.set).
+  const envBotPrompt = process.env.LINE_LOGIN_BOT_PROMPT?.trim().replace(/\r?\n/g, "");
+  const botPrompt =
+    envBotPrompt === "normal" || envBotPrompt === "aggressive"
+      ? envBotPrompt
+      : "aggressive";
+  params.set("bot_prompt", botPrompt);
 
   // Only set when Auto Login already failed — otherwise LINE shows email/password.
   if (options.disableAutoLogin) {
@@ -73,6 +80,7 @@ export function buildLineLoginUrl(
   console.log("[line-auth] authorize redirect_uri", redirectUri, {
     disableAutoLogin: Boolean(options.disableAutoLogin),
     hasNonce: Boolean(nonce),
+    botPrompt,
   });
   return url;
 }
