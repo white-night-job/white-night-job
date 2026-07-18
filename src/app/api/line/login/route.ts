@@ -3,6 +3,7 @@ import {
   buildLineLoginUrl,
   createLineLoginNonce,
   createLineLoginState,
+  ensureBotPromptOnAuthorizeUrl,
 } from "@/lib/line-auth";
 import { attachLineStateCookie } from "@/lib/user-auth";
 
@@ -21,12 +22,12 @@ function wantsJson(request: Request, url: URL): boolean {
 }
 
 /**
- * Existing Web LINE Login entry (fallback when LIFF is unavailable).
- * - format=json: returns authorizeUrl
+ * Existing Web LINE Login entry (Safari / Chrome / fallback).
+ * - format=json: returns authorizeUrl (includes bot_prompt=aggressive)
  * - otherwise: 303 to access.line.me
  *
- * LIFF login is started only from client tap via LineLoginButton / @line/liff.
- * This route must not auto-redirect to LIFF.
+ * LIFF login is started only from client tap via LineLoginButton / @line/liff
+ * inside the LINE app. This route must not auto-redirect to LIFF.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -37,13 +38,23 @@ export async function GET(request: Request) {
 
   const state = createLineLoginState();
   const nonce = createLineLoginNonce();
-  const authorizeUrl = buildLineLoginUrl(state, {
-    nonce,
+  const authorizeUrl = ensureBotPromptOnAuthorizeUrl(
+    buildLineLoginUrl(state, {
+      nonce,
+      disableAutoLogin,
+    }),
+  );
+  const fallbackUrl = ensureBotPromptOnAuthorizeUrl(
+    buildLineLoginUrl(state, {
+      nonce,
+      disableAutoLogin: true,
+    }),
+  );
+
+  console.log("[api/line/login] authorize query", new URL(authorizeUrl).search);
+  console.log("[api/line/login] bot_prompt", new URL(authorizeUrl).searchParams.get("bot_prompt"), {
     disableAutoLogin,
-  });
-  const fallbackUrl = buildLineLoginUrl(state, {
-    nonce,
-    disableAutoLogin: true,
+    redirect,
   });
 
   if (wantsJson(request, url)) {
@@ -52,6 +63,7 @@ export async function GET(request: Request) {
       fallbackUrl,
       redirect,
       disableAutoLogin,
+      botPrompt: new URL(authorizeUrl).searchParams.get("bot_prompt"),
       liffId: process.env.NEXT_PUBLIC_LIFF_ID?.trim() || null,
     });
     attachLineStateCookie(response, state, redirect, request);

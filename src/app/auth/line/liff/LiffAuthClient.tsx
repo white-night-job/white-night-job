@@ -7,6 +7,7 @@ import { completeLiffEndpointFlow } from "@/lib/liff-auth-client";
 import {
   buildWebLineLoginHref,
   logLiffDebug,
+  navigateToWebLineOAuth,
   readLiffLoginIntent,
   readLiffLoginIntentFromSearchParams,
   resolvePostLoginPath,
@@ -43,7 +44,7 @@ export default function LiffAuthClient() {
 
     const intent = readLiffLoginIntent();
     const redirectPath = resolvePostLoginPath(intent);
-    setFallbackHref(buildWebLineLoginHref(redirectPath));
+    setFallbackHref(buildWebLineLoginHref(redirectPath, { disableAutoLogin: true }));
 
     async function run() {
       try {
@@ -57,7 +58,7 @@ export default function LiffAuthClient() {
             reason: result.reason,
             choseLiffUrl: false,
           });
-          window.location.replace(buildWebLineLoginHref(redirectPath));
+          await navigateToWebLineOAuth(redirectPath);
           return;
         }
         if (result.status === "redirected") {
@@ -87,7 +88,7 @@ export default function LiffAuthClient() {
       return;
     }
     if (result.status === "fallback_web") {
-      window.location.assign(buildWebLineLoginHref(redirectPath));
+      await navigateToWebLineOAuth(redirectPath);
       return;
     }
     if (result.status === "redirected") return;
@@ -113,11 +114,15 @@ export default function LiffAuthClient() {
           </button>
           <a
             href={fallbackHref}
-            onClick={() => {
+            onClick={(event) => {
+              event.preventDefault();
+              const intent = readLiffLoginIntent();
+              const path = resolvePostLoginPath(intent);
               logLiffDebug("fallback_web_login", {
                 reason: "USER_CHOSE_BROWSER_LOGIN",
                 choseLiffUrl: false,
               });
+              void navigateToWebLineOAuth(path);
             }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >

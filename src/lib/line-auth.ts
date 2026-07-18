@@ -43,9 +43,9 @@ export function createLineLoginNonce(): string {
  * Uses https://access.line.me/oauth2/v2.1/authorize so mobile Auto Login
  * (Universal Links / App Links) can open the LINE app when available.
  *
- * Always includes bot_prompt (default: aggressive) so users who have not
- * added the linked official account are prompted once after consent.
- * Already-friended users are not repeatedly prompted by LINE.
+ * Always includes bot_prompt=aggressive (or LINE_LOGIN_BOT_PROMPT=normal)
+ * so users who have not added the linked official account are prompted
+ * after consent. Already-friended users are not repeatedly blocked.
  */
 export function buildLineLoginUrl(
   state: string,
@@ -53,17 +53,16 @@ export function buildLineLoginUrl(
 ): string {
   const redirectUri = getLineLoginRedirectUri();
   const nonce = options.nonce ?? createLineLoginNonce();
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: requireEnv("LINE_LOGIN_CHANNEL_ID"),
-    redirect_uri: redirectUri,
-    state,
-    scope: "profile openid",
-    nonce,
-  });
+  const params = new URLSearchParams();
+  params.set("response_type", "code");
+  params.set("client_id", requireEnv("LINE_LOGIN_CHANNEL_ID"));
+  params.set("redirect_uri", redirectUri);
+  params.set("state", state);
+  params.set("scope", "profile openid");
+  params.set("nonce", nonce);
 
   // Friend-add / unblock prompt after login (linked Messaging API account).
-  // Default aggressive; env may override to normal. Never set twice (URLSearchParams.set).
+  // Force a single set — never omit; never rely on constructor defaults alone.
   const envBotPrompt = process.env.LINE_LOGIN_BOT_PROMPT?.trim().replace(/\r?\n/g, "");
   const botPrompt =
     envBotPrompt === "normal" || envBotPrompt === "aggressive"
@@ -76,13 +75,40 @@ export function buildLineLoginUrl(
     params.set("disable_auto_login", "true");
   }
 
-  const url = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
+  // Defensive: guarantee bot_prompt survives any future param edits.
+  if (params.get("bot_prompt") !== "aggressive" && params.get("bot_prompt") !== "normal") {
+    params.set("bot_prompt", "aggressive");
+  }
+
+  const query = params.toString();
+  const url = `https://access.line.me/oauth2/v2.1/authorize?${query}`;
+
+  console.log("[line-auth] authorize URL query", query);
   console.log("[line-auth] authorize redirect_uri", redirectUri, {
     disableAutoLogin: Boolean(options.disableAutoLogin),
     hasNonce: Boolean(nonce),
-    botPrompt,
+    botPrompt: params.get("bot_prompt"),
   });
+
+  if (!query.includes("bot_prompt=")) {
+    console.error("[line-auth] FATAL: bot_prompt missing from authorize URL");
+  }
+
   return url;
+}
+
+/** Ensure authorize URL always has bot_prompt=aggressive (client/server guard). */
+export function ensureBotPromptOnAuthorizeUrl(authorizeUrl: string): string {
+  const url = new URL(authorizeUrl);
+  const current = url.searchParams.get("bot_prompt");
+  if (current !== "aggressive" && current !== "normal") {
+    url.searchParams.set("bot_prompt", "aggressive");
+  }
+  // Prefer aggressive for friend-add reliability unless explicitly normal.
+  if (current !== "normal") {
+    url.searchParams.set("bot_prompt", "aggressive");
+  }
+  return url.toString();
 }
 
 export async function exchangeLineCodeForToken(code: string): Promise<string> {

@@ -164,8 +164,75 @@ export function getLiffRedirectUri(): string {
   return `${window.location.origin}/auth/line/liff`;
 }
 
-export function buildWebLineLoginHref(redirectPath: string): string {
-  return `/api/line/login?redirect=${encodeURIComponent(sanitizePath(redirectPath))}`;
+export function buildWebLineLoginHref(
+  redirectPath: string,
+  options?: { disableAutoLogin?: boolean },
+): string {
+  const params = new URLSearchParams();
+  params.set("redirect", sanitizePath(redirectPath));
+  // Safari / external browser: keep auth in the browser so bot_prompt friend-add
+  // is not skipped by iOS Universal Links Auto Login into the LINE app.
+  if (options?.disableAutoLogin) {
+    params.set("disable_auto_login", "1");
+  }
+  return `/api/line/login?${params.toString()}`;
+}
+
+/** Guarantee bot_prompt=aggressive on an authorize URL (never strip / overwrite to empty). */
+export function ensureBotPromptAggressive(authorizeUrl: string): string {
+  const url = new URL(authorizeUrl);
+  url.searchParams.set("bot_prompt", "aggressive");
+  return url.toString();
+}
+
+/**
+ * Safari / Chrome: resolve the final OAuth authorize URL (with bot_prompt),
+ * log it, then navigate. Never uses LIFF.
+ */
+export async function navigateToWebLineOAuth(redirectPath: string): Promise<void> {
+  const href = buildWebLineLoginHref(redirectPath, { disableAutoLogin: true });
+  const jsonHref = href.includes("?")
+    ? `${href}&format=json`
+    : `${href}?format=json`;
+
+  try {
+    const response = await fetch(jsonHref, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      console.error("[line-oauth] /api/line/login json failed", response.status);
+      window.location.assign(href);
+      return;
+    }
+    const data = (await response.json()) as {
+      authorizeUrl?: string;
+      fallbackUrl?: string;
+    };
+    const raw = data.authorizeUrl || data.fallbackUrl;
+    if (!raw) {
+      console.error("[line-oauth] authorizeUrl missing in response", data);
+      window.location.assign(href);
+      return;
+    }
+
+    const authorizeUrl = ensureBotPromptAggressive(raw);
+    const query = new URL(authorizeUrl).searchParams.toString();
+    console.info("[line-oauth] final authorize URL query", query);
+    console.info("[line-oauth] bot_prompt", new URL(authorizeUrl).searchParams.get("bot_prompt"));
+    logLiffDebug("web_oauth_navigate", {
+      choseLiffUrl: false,
+      botPrompt: new URL(authorizeUrl).searchParams.get("bot_prompt"),
+      disableAutoLogin: new URL(authorizeUrl).searchParams.get("disable_auto_login"),
+      navigationTarget: "access.line.me",
+    });
+
+    window.location.assign(authorizeUrl);
+  } catch (error) {
+    console.error("[line-oauth] navigate failed, falling back to /api/line/login", error);
+    window.location.assign(href);
+  }
 }
 
 /** Temporary production debug (no secrets). */

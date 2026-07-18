@@ -18,7 +18,7 @@ import {
 import { pickRecommendedDiagnosisShops } from "@/lib/job-type-diagnosis-recommendations";
 import { fetchJobs } from "@/lib/job-storage";
 import { startLiffLogin } from "@/lib/liff-auth-client";
-import { buildWebLineLoginHref, logLiffDebug } from "@/lib/liff-login-intent";
+import { logLiffDebug, navigateToWebLineOAuth } from "@/lib/liff-login-intent";
 import { MEMBER_PATHS } from "@/lib/member-access";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 
@@ -220,7 +220,7 @@ export function JobTypeDiagnosisResults({
           reason: result.reason,
           choseLiffUrl: false,
         });
-        window.location.assign(buildWebLineLoginHref(redirect));
+        await navigateToWebLineOAuth(redirect);
         return;
       }
       setMessage(result.message);

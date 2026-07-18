@@ -1,8 +1,4 @@
-import {
-  buildLiffAppUrl,
-  buildWebLineLoginHref,
-  getPublicLiffId,
-} from "@/lib/liff-login-intent";
+import { buildWebLineLoginHref } from "@/lib/liff-login-intent";
 
 export const MEMBER_PATHS = {
   consultation: "/consultation",
@@ -10,12 +6,9 @@ export const MEMBER_PATHS = {
 } as const;
 
 /**
- * Prefer LIFF Universal Link when configured; otherwise Web LINE Login.
+ * Always Web LINE Login (bot_prompt=aggressive).
+ * LIFF is only started from LineLoginButton inside the LINE in-app browser.
  */
 export function buildLineLoginHref(redirectPath: string): string {
-  const liffId = getPublicLiffId();
-  if (liffId) {
-    return buildLiffAppUrl(liffId, { redirectPath });
-  }
-  return buildWebLineLoginHref(redirectPath);
+  return buildWebLineLoginHref(redirectPath, { disableAutoLogin: true });
 }

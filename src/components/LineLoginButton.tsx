@@ -10,6 +10,7 @@ import {
   buildWebLineLoginHref,
   getPublicLiffId,
   logLiffDebug,
+  navigateToWebLineOAuth,
   type LiffLoginIntent,
 } from "@/lib/liff-login-intent";
 
@@ -31,7 +32,7 @@ function LiffErrorPanel({
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const webHref = buildWebLineLoginHref(redirectPath);
+  const webHref = buildWebLineLoginHref(redirectPath, { disableAutoLogin: true });
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-4">
@@ -53,11 +54,13 @@ function LiffErrorPanel({
           </button>
           <a
             href={webHref}
-            onClick={() => {
+            onClick={(event) => {
+              event.preventDefault();
               logLiffDebug("fallback_web_login", {
                 reason: "USER_CHOSE_BROWSER_LOGIN",
                 choseLiffUrl: false,
               });
+              void navigateToWebLineOAuth(redirectPath);
             }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >
@@ -98,7 +101,9 @@ export function LineLoginButton({
       ? `${window.location.pathname}${window.location.search}${window.location.hash}`
       : "/");
 
-  const webHref = buildWebLineLoginHref(resolvedRedirect);
+  const webHref = buildWebLineLoginHref(resolvedRedirect, {
+    disableAutoLogin: true,
+  });
   // Progressive enhancement: default to Web Login (works everywhere; bot_prompt on server).
   const primaryHref = webHref;
 
@@ -117,7 +122,8 @@ export function LineLoginButton({
         navigationTarget: "/api/line/login",
         liffIdConfigured: Boolean(getPublicLiffId()),
       });
-      window.location.assign(webHref);
+      // Safari / external: resolve authorize URL (bot_prompt=aggressive) then go.
+      await navigateToWebLineOAuth(resolvedRedirect);
       return;
     }
     setErrorOpen(true);
