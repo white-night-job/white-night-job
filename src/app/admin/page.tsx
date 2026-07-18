@@ -918,7 +918,7 @@ export default function AdminPage() {
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
-              チャットおすすめ設定
+              AI相談おすすめ設定
             </h3>
             <p className="mt-1 text-xs text-white/75 sm:text-sm">
               プラン選択でON/OFFと優先度が自動設定されます。おすすめ内容は待遇・紹介文などからAIが自動判断します。
@@ -936,9 +936,11 @@ export default function AdminPage() {
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
               />
               <span>
-                <span className="font-medium text-gold-light">チャットおすすめON/OFF</span>
+                <span className="font-medium text-gold-light">
+                  AI相談おすすめON/OFF
+                </span>
                 <span className="mt-0.5 block text-xs text-white/70">
-                  オンにすると相談Botのおすすめ候補に含まれます
+                  ONにするとAI相談でおすすめ候補に含まれます
                 </span>
               </span>
             </label>
@@ -968,48 +970,71 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.pickupEnabled}
-              onChange={(event) =>
-                setField("pickupEnabled", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">PickUp掲載</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定されます。ONにするとトップの「ピックアップ店舗一覧」に表示されます（管理者のみ手動変更可）。
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              PickUp掲載
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プラン選択で自動設定されます。管理者のみ手動変更できます。
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
+              <input
+                type="checkbox"
+                checked={form.pickupEnabled}
+                onChange={(event) =>
+                  setField("pickupEnabled", event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
+              />
+              <span>
+                <span className="font-medium text-gold-light">PickUp掲載ON/OFF</span>
+                <span className="mt-0.5 block text-xs text-white/70">
+                  ONにするとトップの「ピックアップ店舗一覧」に表示されます
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.newListingEnabled}
-              onChange={(event) =>
-                setField("newListingEnabled", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">新着掲載</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定。オフにすると新着一覧の対象外になります（管理者のみ）。
-                ライトは公開日から{getNewListingDays("light")}
-                日間、スタンダード・プレミアムは
-                {getNewListingDays("standard")}日間表示されます。
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              新着掲載
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プラン選択で自動設定されます。ライトは公開日から
+              {getNewListingDays("light")}
+              日間、スタンダード・プレミアムは
+              {getNewListingDays("standard")}
+              日間表示されます。
+            </p>
+          </div>
+          <div className="space-y-4 rounded-xl border border-white/15 bg-white/10 p-4">
+            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
+              <input
+                type="checkbox"
+                checked={form.newListingEnabled}
+                onChange={(event) =>
+                  setField("newListingEnabled", event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
+              />
+              <span>
+                <span className="font-medium text-gold-light">新着掲載ON/OFF</span>
+                <span className="mt-0.5 block text-xs text-white/70">
+                  OFFにすると新着一覧の対象外になります（管理者のみ）
+                </span>
               </span>
-            </span>
-          </label>
-          <div className="mt-4 space-y-3 border-t border-gold/20 pt-4">
+            </label>
+
             <div>
-              <label htmlFor="postedAt" className={labelClass}>
+              <label
+                htmlFor="postedAt"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
                 公開日
               </label>
               <input
@@ -1020,13 +1045,14 @@ export default function AdminPage() {
                 className={inputClass}
                 required
               />
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-white/65">
                 新着期間はこの公開日を基準に再計算されます。
               </p>
             </div>
-            <p className="text-sm font-medium text-charcoal">
+
+            <p className="text-sm font-medium text-gold-light">
               新着掲載終了日：
-              <span className="ml-1 font-semibold text-gold-dark">
+              <span className="ml-1 font-semibold text-white">
                 {form.newListingEnabled
                   ? formatNewListingEndDate({
                       postedAt: form.postedAt,
@@ -1038,73 +1064,97 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.lineRecommendNotify}
-              onChange={(event) =>
-                setField("lineRecommendNotify", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">LINEおすすめ通知</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定されます（プレミアムでON）。管理者のみ手動変更可。
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              LINEおすすめ通知
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プラン選択で自動設定されます（プレミアムでON）。管理者のみ手動変更できます。
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
+              <input
+                type="checkbox"
+                checked={form.lineRecommendNotify}
+                onChange={(event) =>
+                  setField("lineRecommendNotify", event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
+              />
+              <span>
+                <span className="font-medium text-gold-light">
+                  LINEおすすめ通知ON/OFF
+                </span>
+                <span className="mt-0.5 block text-xs text-white/70">
+                  ONにするとLINEおすすめ通知の対象になります
+                </span>
               </span>
-            </span>
-          </label>
-        </div>
-
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <p className="text-sm font-semibold text-charcoal">表示順位</p>
-          <p className="mt-1 text-xs text-muted">
-            プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {(
-              [
-                ["normal", "通常"],
-                ["priority", "優先"],
-                ["top", "最優先"],
-              ] as const
-            ).map(([value, label]) => (
-              <label
-                key={value}
-                className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-semibold ${
-                  form.listingPriority === value
-                    ? "border-gold bg-gold/15 text-charcoal"
-                    : "border-gold/25 bg-white text-muted"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="listingPriority"
-                  checked={form.listingPriority === value}
-                  onChange={() => setField("listingPriority", value)}
-                  className="sr-only"
-                />
-                {label}
-              </label>
-            ))}
+            </label>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <p className="text-sm font-semibold text-charcoal">応募分析</p>
-          <p className="mt-1 text-xs text-muted">
-            プランに連動します（スタンダード・プレミアムでON）。店舗ダッシュボードのアクセス・応募分析の利用可否に反映されます。
-          </p>
-          <p
-            className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${
-              getPlanFeatures(form.plan).analytics
-                ? "bg-gold/15 text-gold-dark"
-                : "bg-charcoal/5 text-muted"
-            }`}
-          >
-            {getPlanFeatures(form.plan).analytics ? "ON" : "OFF"}
-          </p>
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              表示順位
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ["normal", "通常"],
+                  ["priority", "優先"],
+                  ["top", "最優先"],
+                ] as const
+              ).map(([value, label]) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
+                    form.listingPriority === value
+                      ? "border-gold bg-gold/25 text-gold-light"
+                      : "border-white/20 bg-white/5 text-white/70 hover:border-gold/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="listingPriority"
+                    checked={form.listingPriority === value}
+                    onChange={() => setField("listingPriority", value)}
+                    className="sr-only"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              応募分析
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プランに連動します（スタンダード・プレミアムでON）。店舗ダッシュボードのアクセス・応募分析の利用可否に反映されます。
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <p
+              className={`inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${
+                getPlanFeatures(form.plan).analytics
+                  ? "border border-gold/40 bg-gold/20 text-gold-light"
+                  : "border border-white/15 bg-white/5 text-white/60"
+              }`}
+            >
+              {getPlanFeatures(form.plan).analytics ? "ON" : "OFF"}
+            </p>
+          </div>
         </div>
 
         <div>
