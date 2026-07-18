@@ -48,6 +48,7 @@ import {
 } from "@/types/job";
 import {
   getEnabledFeatureLabels,
+  getPlanFeatures,
   JOB_PLAN_DEFINITIONS,
   JOB_PLANS,
   parseJobPlan,
@@ -329,6 +330,7 @@ export default function AdminPage() {
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
+  const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -934,6 +936,214 @@ export default function AdminPage() {
               ))}
             </ul>
           </div>
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
+          <div className="border-b border-gold/35 pb-3">
+            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
+              チャットおすすめ設定
+            </h3>
+            <p className="mt-1 text-xs text-white/75 sm:text-sm">
+              プラン選択でON/OFFと優先度が自動設定されます。管理者のみ手動調整できます。
+            </p>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-white/15 bg-white/10 p-4">
+            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
+              <input
+                type="checkbox"
+                checked={form.chatRecommendEnabled}
+                onChange={(event) =>
+                  setField("chatRecommendEnabled", event.target.checked)
+                }
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
+              />
+              <span>
+                <span className="font-medium text-gold-light">チャットおすすめON/OFF</span>
+                <span className="mt-0.5 block text-xs text-white/70">
+                  オンにすると相談Botのおすすめ候補に含まれます
+                </span>
+              </span>
+            </label>
+
+            <div>
+              <label
+                htmlFor="chatRecommendPriority"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
+                おすすめ優先順位
+              </label>
+              <input
+                id="chatRecommendPriority"
+                type="number"
+                inputMode="numeric"
+                value={form.chatRecommendPriority}
+                onChange={(event) =>
+                  setField("chatRecommendPriority", event.target.value)
+                }
+                className={inputClass}
+                min={0}
+              />
+              <p className="mt-1 text-xs text-white/65">
+                数値が大きいほど上位に表示されます
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="chatRecommendComment"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
+                おすすめコメント
+              </label>
+              <textarea
+                id="chatRecommendComment"
+                value={form.chatRecommendComment}
+                onChange={(event) =>
+                  setField("chatRecommendComment", event.target.value)
+                }
+                className={`${inputClass} min-h-[96px]`}
+                placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium text-gold-light/90">おすすめタグ</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                ["chatRecommendBeginner", "未経験向け"],
+                ["chatRecommendNoAlcoholOk", "お酒NG可"],
+                ["chatRecommendShuttle", "送迎あり"],
+                ["chatRecommendPrivacy", "身バレ配慮あり"],
+                ["chatRecommendHighSalary", "高時給推し"],
+                ["chatRecommendRelaxed", "ゆるく働ける"],
+                ["chatRecommendHighEarning", "しっかり稼げる"],
+              ] as const
+            ).map(([field, label]) => (
+              <label
+                key={field}
+                className="flex items-center gap-2 text-sm text-white/90"
+              >
+                <input
+                  type="checkbox"
+                  checked={form[field]}
+                  onChange={(event) => setField(field, event.target.checked)}
+                  className="rounded border-gold/40 text-gold focus:ring-gold/30"
+                />
+                {label}
+              </label>
+            ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.pickupEnabled}
+              onChange={(event) =>
+                setField("pickupEnabled", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">PickUp掲載</span>
+              <span className="mt-1 block text-xs text-muted">
+                プラン選択で自動設定されます。ONにするとトップの「ピックアップ店舗一覧」に表示されます（管理者のみ手動変更可）。
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.newListingEnabled}
+              onChange={(event) =>
+                setField("newListingEnabled", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">新着掲載</span>
+              <span className="mt-1 block text-xs text-muted">
+                プラン選択で自動設定。オフにすると新着一覧の対象外になります（管理者のみ）。
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <label className="flex items-start gap-3 text-sm text-charcoal">
+            <input
+              type="checkbox"
+              checked={form.lineRecommendNotify}
+              onChange={(event) =>
+                setField("lineRecommendNotify", event.target.checked)
+              }
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
+            />
+            <span>
+              <span className="font-semibold text-charcoal">LINEおすすめ通知</span>
+              <span className="mt-1 block text-xs text-muted">
+                プラン選択で自動設定されます（プレミアムでON）。管理者のみ手動変更可。
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <p className="text-sm font-semibold text-charcoal">表示順位</p>
+          <p className="mt-1 text-xs text-muted">
+            プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(
+              [
+                ["normal", "通常"],
+                ["priority", "優先"],
+                ["top", "最優先"],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-semibold ${
+                  form.listingPriority === value
+                    ? "border-gold bg-gold/15 text-charcoal"
+                    : "border-gold/25 bg-white text-muted"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="listingPriority"
+                  checked={form.listingPriority === value}
+                  onChange={() => setField("listingPriority", value)}
+                  className="sr-only"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
+          <p className="text-sm font-semibold text-charcoal">応募分析</p>
+          <p className="mt-1 text-xs text-muted">
+            プランに連動します（スタンダード・プレミアムでON）。店舗ダッシュボードのアクセス・応募分析の利用可否に反映されます。
+          </p>
+          <p
+            className={`mt-3 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${
+              getPlanFeatures(form.plan).analytics
+                ? "bg-gold/15 text-gold-dark"
+                : "bg-charcoal/5 text-muted"
+            }`}
+          >
+            {getPlanFeatures(form.plan).analytics ? "ON" : "OFF"}
+          </p>
         </div>
 
         <div>
@@ -1598,107 +1808,6 @@ export default function AdminPage() {
           </p>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
-          <div className="border-b border-gold/35 pb-3">
-            <h3 className="text-base font-semibold text-gold-light sm:text-lg">
-              チャットおすすめ設定
-            </h3>
-            <p className="mt-1 text-xs text-white/75 sm:text-sm">
-              プラン選択でON/OFFと優先度が自動設定されます。管理者のみ手動調整できます。
-            </p>
-          </div>
-
-          <div className="space-y-4 rounded-xl border border-white/15 bg-white/10 p-4">
-            <label className="flex items-start gap-3 text-sm text-white sm:items-center">
-              <input
-                type="checkbox"
-                checked={form.chatRecommendEnabled}
-                onChange={(event) =>
-                  setField("chatRecommendEnabled", event.target.checked)
-                }
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30 sm:mt-0"
-              />
-              <span>
-                <span className="font-medium text-gold-light">チャットおすすめON/OFF</span>
-                <span className="mt-0.5 block text-xs text-white/70">
-                  オンにすると相談Botのおすすめ候補に含まれます
-                </span>
-              </span>
-            </label>
-
-            <div>
-              <label
-                htmlFor="chatRecommendPriority"
-                className="mb-1.5 block text-sm font-medium text-gold-light"
-              >
-                おすすめ優先順位
-              </label>
-              <input
-                id="chatRecommendPriority"
-                type="number"
-                inputMode="numeric"
-                value={form.chatRecommendPriority}
-                onChange={(event) =>
-                  setField("chatRecommendPriority", event.target.value)
-                }
-                className={inputClass}
-                min={0}
-              />
-              <p className="mt-1 text-xs text-white/65">
-                数値が大きいほど上位に表示されます
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="chatRecommendComment"
-                className="mb-1.5 block text-sm font-medium text-gold-light"
-              >
-                おすすめコメント
-              </label>
-              <textarea
-                id="chatRecommendComment"
-                value={form.chatRecommendComment}
-                onChange={(event) =>
-                  setField("chatRecommendComment", event.target.value)
-                }
-                className={`${inputClass} min-h-[96px]`}
-                placeholder="例：未経験の方にも丁寧に教えてくれるお店です"
-              />
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-2 text-xs font-medium text-gold-light/90">おすすめタグ</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                ["chatRecommendBeginner", "未経験向け"],
-                ["chatRecommendNoAlcoholOk", "お酒NG可"],
-                ["chatRecommendShuttle", "送迎あり"],
-                ["chatRecommendPrivacy", "身バレ配慮あり"],
-                ["chatRecommendHighSalary", "高時給推し"],
-                ["chatRecommendRelaxed", "ゆるく働ける"],
-                ["chatRecommendHighEarning", "しっかり稼げる"],
-              ] as const
-            ).map(([field, label]) => (
-              <label
-                key={field}
-                className="flex items-center gap-2 text-sm text-white/90"
-              >
-                <input
-                  type="checkbox"
-                  checked={form[field]}
-                  onChange={(event) => setField(field, event.target.checked)}
-                  className="rounded border-gold/40 text-gold focus:ring-gold/30"
-                />
-                {label}
-              </label>
-            ))}
-            </div>
-          </div>
-        </div>
-
         <div>
           <label htmlFor="address" className={labelClass}>
             住所
@@ -1710,97 +1819,6 @@ export default function AdminPage() {
             className={inputClass}
             placeholder="例：北海道札幌市中央区南○条西○丁目"
           />
-        </div>
-
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.pickupEnabled}
-              onChange={(event) =>
-                setField("pickupEnabled", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">ピックアップ掲載</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定されます。ONにするとトップの「ピックアップ店舗一覧」に表示されます（管理者のみ手動変更可）。
-              </span>
-            </span>
-          </label>
-        </div>
-
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.newListingEnabled}
-              onChange={(event) =>
-                setField("newListingEnabled", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">新着掲載</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定。オフにすると新着一覧の対象外になります（管理者のみ）。
-              </span>
-            </span>
-          </label>
-        </div>
-
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <label className="flex items-start gap-3 text-sm text-charcoal">
-            <input
-              type="checkbox"
-              checked={form.lineRecommendNotify}
-              onChange={(event) =>
-                setField("lineRecommendNotify", event.target.checked)
-              }
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gold/40 text-gold focus:ring-gold/30"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">LINEおすすめ通知</span>
-              <span className="mt-1 block text-xs text-muted">
-                プラン選択で自動設定されます（プレミアムでON）。管理者のみ手動変更可。
-              </span>
-            </span>
-          </label>
-        </div>
-
-        <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">
-          <p className="text-sm font-semibold text-charcoal">表示順位</p>
-          <p className="mt-1 text-xs text-muted">
-            プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {(
-              [
-                ["normal", "通常"],
-                ["priority", "優先"],
-                ["top", "最優先"],
-              ] as const
-            ).map(([value, label]) => (
-              <label
-                key={value}
-                className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-sm font-semibold ${
-                  form.listingPriority === value
-                    ? "border-gold bg-gold/15 text-charcoal"
-                    : "border-gold/25 bg-white text-muted"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="listingPriority"
-                  checked={form.listingPriority === value}
-                  onChange={() => setField("listingPriority", value)}
-                  className="sr-only"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-gold/30 bg-white p-4 shadow-gold sm:p-5">
@@ -1876,139 +1894,167 @@ export default function AdminPage() {
       </section>
 
       <section id="admin-jobs" className="mt-8">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-charcoal">
-            求人一覧
-            {hasActiveFilters ? (
-              <span className="ml-1 text-base font-normal text-muted">
-                （{displayedJobs.length}件 / 全{jobs.length}件）
-              </span>
-            ) : (
-              <span className="ml-1 text-base font-normal text-muted">
+        <button
+          type="button"
+          onClick={() => setIsShopSearchOpen((open) => !open)}
+          aria-expanded={isShopSearchOpen}
+          aria-controls="admin-shop-search-panel"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gold/30 bg-white px-4 py-3.5 text-left shadow-gold transition hover:bg-ivory/60 sm:px-5"
+        >
+          <span className="text-base font-semibold text-charcoal sm:text-lg">
+            {isShopSearchOpen ? "▲" : "▼"} 掲載店舗検索
+            {!isShopSearchOpen && (
+              <span className="ml-2 text-sm font-normal text-muted">
                 （{jobs.length}件）
               </span>
             )}
-          </h2>
-          <button
-            type="button"
-            onClick={() => setSortByApplications((current) => !current)}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-              sortByApplications
-                ? "border-gold bg-gold-light/30 text-gold-dark"
-                : "border-gold/40 text-muted hover:text-charcoal"
-            }`}
-          >
-            {sortByApplications ? "合計応募数順 ✓" : "合計応募数順で並べ替え"}
-          </button>
-        </div>
+          </span>
+          <span className="shrink-0 text-xs text-muted sm:text-sm">
+            {isShopSearchOpen ? "閉じる" : "開く"}
+          </span>
+        </button>
 
-        <div className="mb-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="region-filter" className={labelClass}>
-              地域で絞り込み
-            </label>
-            <select
-              id="region-filter"
-              value={regionFilter}
-              onChange={(event) => setRegionFilter(event.target.value)}
-              className={inputClass}
-            >
-              {REGION_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-muted">
-              エリア（{FIXED_AREA}）または地区で絞り込みます。
-            </p>
-          </div>
-          <div>
-            <label htmlFor="shop-search" className={labelClass}>
-              店舗名で検索
-            </label>
-            <input
-              id="shop-search"
-              type="search"
-              value={shopSearchQuery}
-              onChange={(event) => setShopSearchQuery(event.target.value)}
-              placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-muted">
-              ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
-            </p>
-          </div>
-        </div>
+        {isShopSearchOpen && (
+          <div id="admin-shop-search-panel" className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
+              <h3 className="text-base font-semibold text-charcoal">店舗検索</h3>
+              <p className="mt-1 text-xs text-muted">
+                地域や店舗名で掲載中の求人を絞り込めます。
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="region-filter" className={labelClass}>
+                    地域で絞り込み
+                  </label>
+                  <select
+                    id="region-filter"
+                    value={regionFilter}
+                    onChange={(event) => setRegionFilter(event.target.value)}
+                    className={inputClass}
+                  >
+                    {REGION_FILTER_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-muted">
+                    エリア（{FIXED_AREA}）または地区で絞り込みます。
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="shop-search" className={labelClass}>
+                    店舗名で検索
+                  </label>
+                  <input
+                    id="shop-search"
+                    type="search"
+                    value={shopSearchQuery}
+                    onChange={(event) => setShopSearchQuery(event.target.value)}
+                    placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
+                    className={inputClass}
+                  />
+                  <p className="mt-1 text-xs text-muted">
+                    ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        <div className="mb-4">
-          <MonthlyViewChart
-            data={monthlyViewStats}
-            filterDescription={chartFilterDescription}
-          />
-        </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-charcoal sm:text-lg">
+                求人一覧
+                {hasActiveFilters ? (
+                  <span className="ml-1 text-sm font-normal text-muted sm:text-base">
+                    （{displayedJobs.length}件 / 全{jobs.length}件）
+                  </span>
+                ) : (
+                  <span className="ml-1 text-sm font-normal text-muted sm:text-base">
+                    （{jobs.length}件）
+                  </span>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSortByApplications((current) => !current)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  sortByApplications
+                    ? "border-gold bg-gold-light/30 text-gold-dark"
+                    : "border-gold/40 text-muted hover:text-charcoal"
+                }`}
+              >
+                {sortByApplications ? "合計応募数順 ✓" : "合計応募数順で並べ替え"}
+              </button>
+            </div>
 
-        <div className="mb-4">
-          <MonthlyApplicationChart
-            data={monthlyApplicationStats}
-            filterDescription={chartFilterDescription}
-          />
-        </div>
+            <div>
+              <MonthlyViewChart
+                data={monthlyViewStats}
+                filterDescription={chartFilterDescription}
+              />
+            </div>
 
-        <section className="mb-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
-          <h3 className="text-base font-semibold text-charcoal">
-            店舗別 月別グラフ
-          </h3>
-          <p className="mt-1 text-xs text-muted">
-            各店舗カードで直近12ヶ月の表示回数・応募数の推移を確認できます（日本時間）
-          </p>
-          {hasActiveFilters && (
-            <p className="mt-3 text-xs font-medium text-gold-dark">
-              {chartFilterDescription}
-            </p>
-          )}
-        </section>
+            <div>
+              <MonthlyApplicationChart
+                data={monthlyApplicationStats}
+                filterDescription={chartFilterDescription}
+              />
+            </div>
 
-        {displayedJobs.length === 0 ? (
-          <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
-            {hasActiveFilters
-              ? "検索・絞り込み条件に一致する店舗がありません。"
-              : "掲載中の求人がありません。"}
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {displayedJobs.map((job) => {
-              const detail =
-                applicationDetails[job.id] ?? emptyApplicationDetail();
-              const historyOpen = expandedHistoryJobIds.has(job.id);
-              const monthlyViewStatsForJob = aggregateMonthlyViewsForJob(
-                viewRows,
-                job.id,
-              );
-              const monthlyApplicationStatsForJob =
-                aggregateMonthlyApplicationsForJob(applicationRows, job.id);
-              const viewCount = resolvedViewCounts[job.id] ?? 0;
+            <section className="rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
+              <h3 className="text-base font-semibold text-charcoal">
+                店舗別 月別グラフ
+              </h3>
+              <p className="mt-1 text-xs text-muted">
+                各店舗カードで直近12ヶ月の表示回数・応募数の推移を確認できます（日本時間）
+              </p>
+              {hasActiveFilters && (
+                <p className="mt-3 text-xs font-medium text-gold-dark">
+                  {chartFilterDescription}
+                </p>
+              )}
+            </section>
 
-              return (
-                <li
-                  key={job.id}
-                  className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gold-dark">
-                        {formatLocation(job)} · {job.jobType}
-                      </p>
-                      <p className="mt-1 text-lg font-semibold text-charcoal">
-                        {job.shopName}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-gold-dark">
-                        プラン：{JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
-                      </p>
-                      <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
-                      <p className="mt-0.5 text-xs text-muted">
-                        店舗トップ画像: {job.imageUrl ? "設定済み" : "未設定"}
-                      </p>
+            {displayedJobs.length === 0 ? (
+              <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
+                {hasActiveFilters
+                  ? "検索・絞り込み条件に一致する店舗がありません。"
+                  : "掲載中の求人がありません。"}
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {displayedJobs.map((job) => {
+                  const detail =
+                    applicationDetails[job.id] ?? emptyApplicationDetail();
+                  const historyOpen = expandedHistoryJobIds.has(job.id);
+                  const monthlyViewStatsForJob = aggregateMonthlyViewsForJob(
+                    viewRows,
+                    job.id,
+                  );
+                  const monthlyApplicationStatsForJob =
+                    aggregateMonthlyApplicationsForJob(applicationRows, job.id);
+                  const viewCount = resolvedViewCounts[job.id] ?? 0;
+
+                  return (
+                    <li
+                      key={job.id}
+                      className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-gold-dark">
+                            {formatLocation(job)} · {job.jobType}
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-charcoal">
+                            {job.shopName}
+                          </p>
+                          <p className="mt-1 text-xs font-medium text-gold-dark">
+                            プラン：{JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
+                          </p>
+                          <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
+                          <p className="mt-0.5 text-xs text-muted">
+                            店舗トップ画像: {job.imageUrl ? "設定済み" : "未設定"}
+                          </p>
 
                       <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">
                         <div className="flex flex-wrap gap-x-2">
@@ -2119,6 +2165,8 @@ export default function AdminPage() {
               );
             })}
           </ul>
+            )}
+          </div>
         )}
       </section>
       </div>
