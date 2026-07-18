@@ -100,6 +100,7 @@ export function HeaderLoginModal({
               redirectPath={redirectPath}
               action="general"
               showIcon
+              preferWebOAuthOutsideLine
             >
               LINEでログイン
             </LineLoginButton>

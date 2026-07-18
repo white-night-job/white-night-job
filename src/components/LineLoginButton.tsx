@@ -3,6 +3,7 @@
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { LineIcon } from "@/components/LineIcon";
 import {
+  isLineInAppBrowser,
   startLiffLogin,
   type StartLiffLoginResult,
 } from "@/lib/liff-auth-client";
@@ -21,6 +22,12 @@ type LineLoginButtonProps = {
   action?: LiffLoginIntent["action"];
   favoriteJobId?: string;
   showIcon?: boolean;
+  /**
+   * Header login: in Safari/Chrome always use Web OAuth
+   * (/api/line/login → buildLineLoginUrl with bot_prompt=aggressive).
+   * LIFF is only used inside the LINE app.
+   */
+  preferWebOAuthOutsideLine?: boolean;
 };
 
 function LiffErrorPanel({
@@ -60,7 +67,6 @@ function LiffErrorPanel({
                 reason: "USER_CHOSE_BROWSER_LOGIN",
                 choseLiffUrl: false,
               });
-              // Explicit browser login only — disable Auto Login intentionally.
               void navigateToWebLineOAuth(redirectPath, { disableAutoLogin: true });
             }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
@@ -82,8 +88,8 @@ function LiffErrorPanel({
 
 /**
  * LINE login CTA.
- * - LINE app: LIFF (isLoggedIn → session / else liff.login)
- * - External browser: /api/line/login (bot_prompt=aggressive)
+ * - LINE app: LIFF
+ * - Safari / Chrome: /api/line/login → buildLineLoginUrl (bot_prompt=aggressive)
  */
 export function LineLoginButton({
   className,
@@ -92,6 +98,7 @@ export function LineLoginButton({
   action,
   favoriteJobId,
   showIcon = false,
+  preferWebOAuthOutsideLine = false,
 }: LineLoginButtonProps) {
   const [busy, setBusy] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
@@ -102,10 +109,24 @@ export function LineLoginButton({
       ? `${window.location.pathname}${window.location.search}${window.location.hash}`
       : "/");
 
+  // href fallback (no-JS / middle-click): server 303 includes bot_prompt=aggressive
   const webHref = buildWebLineLoginHref(resolvedRedirect);
-  // Progressive enhancement: default to Web Login (works everywhere; bot_prompt on server).
-  // No disable_auto_login — iPhone Safari Auto Login can open the LINE app.
   const primaryHref = webHref;
+
+  async function goWebOAuth(reason: string) {
+    logLiffDebug("header_or_web_oauth", {
+      reason,
+      choseLiffUrl: false,
+      navigationTarget: "/api/line/login",
+      liffIdConfigured: Boolean(getPublicLiffId()),
+      action: action ?? null,
+    });
+    console.info("[header-line-login] starting Web OAuth via buildLineLoginUrl", {
+      reason,
+      redirect: resolvedRedirect,
+    });
+    await navigateToWebLineOAuth(resolvedRedirect);
+  }
 
   async function handleResult(result: StartLiffLoginResult) {
     if (result.status === "completed") {
@@ -116,14 +137,7 @@ export function LineLoginButton({
       return;
     }
     if (result.status === "fallback_web") {
-      logLiffDebug("navigate_web_login", {
-        reason: result.reason,
-        choseLiffUrl: false,
-        navigationTarget: "/api/line/login",
-        liffIdConfigured: Boolean(getPublicLiffId()),
-      });
-      // Safari: Auto Login + bot_prompt=aggressive (opens LINE app when installed).
-      await navigateToWebLineOAuth(resolvedRedirect);
+      await goWebOAuth(result.reason);
       return;
     }
     setErrorOpen(true);
@@ -137,6 +151,12 @@ export function LineLoginButton({
     setErrorOpen(false);
 
     try {
+      // Header login on Safari: skip LIFF, use OAuth with bot_prompt=aggressive only.
+      if (preferWebOAuthOutsideLine && !isLineInAppBrowser()) {
+        await goWebOAuth("HEADER_SAFARI_WEB_OAUTH");
+        return;
+      }
+
       const result = await startLiffLogin({
         redirectPath: resolvedRedirect,
         action,
@@ -155,6 +175,10 @@ export function LineLoginButton({
     setErrorOpen(false);
     setBusy(true);
     try {
+      if (preferWebOAuthOutsideLine && !isLineInAppBrowser()) {
+        await goWebOAuth("HEADER_SAFARI_WEB_OAUTH_RETRY");
+        return;
+      }
       const result = await startLiffLogin({
         redirectPath: resolvedRedirect,
         action,

@@ -20,6 +20,7 @@ export function HeaderDesktopNav() {
           className="site-header-desktop-action"
           redirectPath={pathname || "/"}
           action="general"
+          preferWebOAuthOutsideLine
         >
           ログイン
         </LineLoginButton>

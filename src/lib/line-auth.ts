@@ -39,13 +39,9 @@ export function createLineLoginNonce(): string {
 }
 
 /**
- * LINE Login v2.1 authorization URL.
- * Uses https://access.line.me/oauth2/v2.1/authorize so mobile Auto Login
- * (Universal Links / App Links) can open the LINE app when available.
- *
- * Always includes bot_prompt=aggressive (or LINE_LOGIN_BOT_PROMPT=normal)
- * so users who have not added the linked official account are prompted
- * after consent. Already-friended users are not repeatedly blocked.
+ * LINE Login v2.1 authorization URL (Web OAuth).
+ * Always includes bot_prompt=aggressive for Official Account friend-add after consent.
+ * Do not set disable_auto_login unless Auto Login already failed.
  */
 export function buildLineLoginUrl(
   state: string,
@@ -53,61 +49,47 @@ export function buildLineLoginUrl(
 ): string {
   const redirectUri = getLineLoginRedirectUri();
   const nonce = options.nonce ?? createLineLoginNonce();
-  const params = new URLSearchParams();
-  params.set("response_type", "code");
-  params.set("client_id", requireEnv("LINE_LOGIN_CHANNEL_ID"));
-  params.set("redirect_uri", redirectUri);
-  params.set("state", state);
-  params.set("scope", "profile openid");
-  params.set("nonce", nonce);
+  const clientId = requireEnv("LINE_LOGIN_CHANNEL_ID");
 
-  // Friend-add / unblock prompt after login (linked Messaging API account).
-  // Force a single set — never omit; never rely on constructor defaults alone.
-  const envBotPrompt = process.env.LINE_LOGIN_BOT_PROMPT?.trim().replace(/\r?\n/g, "");
-  const botPrompt =
-    envBotPrompt === "normal" || envBotPrompt === "aggressive"
-      ? envBotPrompt
-      : "aggressive";
-  params.set("bot_prompt", botPrompt);
+  // Build query explicitly so scope uses %20 (not +) and bot_prompt cannot be dropped.
+  const parts: string[] = [
+    `response_type=code`,
+    `client_id=${encodeURIComponent(clientId)}`,
+    `redirect_uri=${encodeURIComponent(redirectUri)}`,
+    `state=${encodeURIComponent(state)}`,
+    // LINE sample form: openid%20profile
+    `scope=${encodeURIComponent("openid profile")}`,
+    `nonce=${encodeURIComponent(nonce)}`,
+    // Required for friend-add option after login (linked Messaging API OA).
+    `bot_prompt=aggressive`,
+  ];
 
-  // Only set when Auto Login already failed — otherwise LINE shows email/password.
   if (options.disableAutoLogin) {
-    params.set("disable_auto_login", "true");
+    parts.push(`disable_auto_login=true`);
   }
 
-  // Defensive: guarantee bot_prompt survives any future param edits.
-  if (params.get("bot_prompt") !== "aggressive" && params.get("bot_prompt") !== "normal") {
-    params.set("bot_prompt", "aggressive");
-  }
-
-  const query = params.toString();
+  const query = parts.join("&");
   const url = `https://access.line.me/oauth2/v2.1/authorize?${query}`;
 
-  console.log("[line-auth] authorize URL query", query);
-  console.log("[line-auth] authorize redirect_uri", redirectUri, {
-    disableAutoLogin: Boolean(options.disableAutoLogin),
-    hasNonce: Boolean(nonce),
-    botPrompt: params.get("bot_prompt"),
-  });
-
-  if (!query.includes("bot_prompt=")) {
-    console.error("[line-auth] FATAL: bot_prompt missing from authorize URL");
+  if (!query.includes("bot_prompt=aggressive")) {
+    console.error("[line-auth] FATAL: bot_prompt=aggressive missing from authorize URL");
+    throw new Error("LINE authorize URL missing bot_prompt=aggressive");
   }
+
+  console.log("[line-auth] authorize URL", url);
+  console.log("[line-auth] authorize URL query", query);
+  console.log("[line-auth] bot_prompt", "aggressive", {
+    disableAutoLogin: Boolean(options.disableAutoLogin),
+    redirectUri,
+  });
 
   return url;
 }
 
-/** Ensure authorize URL always has bot_prompt=aggressive (client/server guard). */
+/** Ensure authorize URL always has bot_prompt=aggressive. */
 export function ensureBotPromptOnAuthorizeUrl(authorizeUrl: string): string {
   const url = new URL(authorizeUrl);
-  const current = url.searchParams.get("bot_prompt");
-  if (current !== "aggressive" && current !== "normal") {
-    url.searchParams.set("bot_prompt", "aggressive");
-  }
-  // Prefer aggressive for friend-add reliability unless explicitly normal.
-  if (current !== "normal") {
-    url.searchParams.set("bot_prompt", "aggressive");
-  }
+  url.searchParams.set("bot_prompt", "aggressive");
   return url.toString();
 }
 

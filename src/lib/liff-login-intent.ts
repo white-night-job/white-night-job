@@ -237,6 +237,14 @@ export async function navigateToWebLineOAuth(
     const finalUrl = parsed.toString();
     const query = parsed.searchParams.toString();
 
+    if (!parsed.searchParams.get("bot_prompt") || !query.includes("bot_prompt=aggressive")) {
+      console.error("[line-oauth] refusing navigate: bot_prompt=aggressive missing", finalUrl);
+      window.location.assign(href);
+      return;
+    }
+
+    console.info("[header-line-login] final authorize URL", finalUrl);
+    console.info("[header-line-login] final authorize URL query", query);
     console.info("[line-oauth] final authorize URL", finalUrl);
     console.info("[line-oauth] final authorize URL query", query);
     console.info("[line-oauth] bot_prompt", parsed.searchParams.get("bot_prompt"));
