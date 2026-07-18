@@ -3,9 +3,8 @@ import {
   exchangeLineCodeForToken,
   fetchLineProfile,
 } from "@/lib/line-auth";
-import { createSupabaseAdmin } from "@/lib/supabase";
+import { completeLineLoginRedirect } from "@/lib/line-complete-login";
 import {
-  attachUserSessionCookie,
   clearLineStateCookieOnResponse,
   describeUserCookieOptions,
   getLineStateCookie,
@@ -14,33 +13,6 @@ import {
 } from "@/lib/user-auth";
 
 const AUTO_LOGIN_FALLBACK_COOKIE = "white-night-line-fallback";
-
-async function ensureUserNotificationSettings(userId: string) {
-  const supabase = createSupabaseAdmin();
-  const { error } = await supabase.from("user_notification_settings").upsert(
-    {
-      user_id: userId,
-      notify_daily_pickup: false,
-    },
-    { onConflict: "user_id", ignoreDuplicates: true },
-  );
-  if (error) {
-    console.error("[line-callback] notification settings upsert failed:", error);
-  }
-}
-
-function resolvePostLoginRedirect(redirectPath: string): string {
-  return redirectPath.trim() || "/";
-}
-
-function buildRedirectDestination(requestUrl: URL, redirectPath: string): URL {
-  const resolved = resolvePostLoginRedirect(redirectPath);
-  const destination = resolved.startsWith("http")
-    ? new URL(resolved)
-    : new URL(resolved, requestUrl.origin);
-  destination.searchParams.set("lineLogin", "success");
-  return destination;
-}
 
 function readCookie(request: Request, name: string): string | null {
   const header = request.headers.get("cookie");
@@ -125,7 +97,6 @@ export async function handleLineCallback(request: Request) {
       receivedState: state,
       parsedState,
     });
-    // LINE docs: state mismatch often means Auto Login failure — retry without Auto Login.
     return redirectToAutoLoginFallback(request, requestUrl, parsedState.redirectPath);
   }
 
@@ -140,51 +111,31 @@ export async function handleLineCallback(request: Request) {
       hasPicture: Boolean(profile.pictureUrl),
     });
 
-    const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("users")
-      .upsert(
-        {
-          line_user_id: profile.userId,
-          display_name: profile.displayName,
-          picture_url: profile.pictureUrl ?? null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "line_user_id" },
-      )
-      .select("id, line_user_id")
-      .single();
-
-    if (error || !data?.id) {
-      console.error("[line-callback] users upsert failed:", error);
-      throw error ?? new Error("ユーザー情報保存に失敗しました。");
-    }
-
-    console.log("[line-callback] users saved", {
-      userId: data.id,
-      lineUserId: data.line_user_id,
+    const response = await completeLineLoginRedirect({
+      lineUserId: profile.userId,
+      displayName: profile.displayName,
+      pictureUrl: profile.pictureUrl,
+      accessToken,
+      redirectPath: parsedState.redirectPath,
+      request,
+      requestUrl,
+      beforeRedirect: (res) => {
+        clearLineStateCookieOnResponse(res, request);
+        res.cookies.set(AUTO_LOGIN_FALLBACK_COOKIE, "", {
+          httpOnly: true,
+          secure: requestUrl.protocol === "https:",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 0,
+        });
+      },
     });
-
-    await ensureUserNotificationSettings(data.id);
-
-    const destination = buildRedirectDestination(requestUrl, parsedState.redirectPath);
-    console.log("[line-callback] redirect destination", destination.toString());
-
-    const response = NextResponse.redirect(destination, { status: 303 });
-    clearLineStateCookieOnResponse(response, request);
-    response.cookies.set(AUTO_LOGIN_FALLBACK_COOKIE, "", {
-      httpOnly: true,
-      secure: requestUrl.protocol === "https:",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-    });
-    attachUserSessionCookie(response, data.id, request);
 
     const cookieOptions = describeUserCookieOptions(request);
     const setCookieHeader = response.headers.get("set-cookie");
-    console.log("[line-callback] session cookie attached to redirect", {
+    console.log("[line-callback] response prepared", {
       ...cookieOptions,
+      location: response.headers.get("location"),
       hasSetCookieHeader: Boolean(setCookieHeader),
       includesUserCookie: Boolean(setCookieHeader?.includes(USER_COOKIE_NAME)),
       setCookiePreview: setCookieHeader?.slice(0, 240) ?? null,

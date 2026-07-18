@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdmin } from "@/lib/supabase";
+import {
+  attachLinePendingLoginCookie,
+  clearLinePendingLoginCookie,
+  upsertLineUser,
+} from "@/lib/line-complete-login";
+import { isLineOfficialAccountFriend } from "@/lib/line-friendship";
 import {
   attachUserSessionCookie,
   clearLineStateCookieOnResponse,
@@ -127,38 +132,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Never trust client-sent profile/userId — verify with LINE official APIs only.
     const verified = idToken
       ? await verifyLineIdToken(idToken)
       : await verifyLineAccessToken(accessToken!);
-
-    const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("users")
-      .upsert(
-        {
-          line_user_id: verified.lineUserId,
-          display_name: verified.displayName,
-          picture_url: verified.pictureUrl,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "line_user_id" },
-      )
-      .select("id")
-      .single();
-
-    if (error || !data?.id) {
-      console.error("[liff-session] users upsert failed:", error);
-      return NextResponse.json({ message: "user save failed" }, { status: 500 });
-    }
-
-    await supabase.from("user_notification_settings").upsert(
-      {
-        user_id: data.id,
-        notify_daily_pickup: false,
-      },
-      { onConflict: "user_id", ignoreDuplicates: true },
-    );
 
     const fromBody = sanitizeRedirect(payload.redirect);
     const cookieHeader = request.headers.get("cookie") ?? "";
@@ -172,8 +148,48 @@ export async function POST(request: Request) {
     }
     const redirectPath = fromBody !== "/" ? fromBody : fromCookie;
 
+    const friendship = await isLineOfficialAccountFriend({
+      lineUserId: verified.lineUserId,
+      accessToken: accessToken || null,
+    });
+
+    console.log("[liff-session] friendship check", {
+      lineUserId: verified.lineUserId,
+      isFriend: friendship.isFriend,
+      method: friendship.method,
+    });
+
+    if (!friendship.isFriend) {
+      const response = NextResponse.json({
+        ok: false,
+        needsFriendAdd: true,
+        redirectPath: "/auth/line/friend-required",
+      });
+      clearLineStateCookieOnResponse(response, request);
+      attachLinePendingLoginCookie(
+        response,
+        {
+          lineUserId: verified.lineUserId,
+          displayName: verified.displayName,
+          pictureUrl: verified.pictureUrl,
+          redirectPath,
+          accessToken: null,
+          createdAt: Date.now(),
+        },
+        request,
+      );
+      return response;
+    }
+
+    const userId = await upsertLineUser({
+      lineUserId: verified.lineUserId,
+      displayName: verified.displayName,
+      pictureUrl: verified.pictureUrl,
+    });
+
     const response = NextResponse.json({ ok: true, redirectPath });
     clearLineStateCookieOnResponse(response, request);
+    clearLinePendingLoginCookie(response, request);
     response.cookies.set("white-night-liff-redirect", "", {
       httpOnly: true,
       secure: true,
@@ -181,7 +197,7 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 0,
     });
-    attachUserSessionCookie(response, data.id, request);
+    attachUserSessionCookie(response, userId, request);
     return response;
   } catch (error) {
     console.error("[liff-session] failed:", error);

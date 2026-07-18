@@ -59,13 +59,21 @@ export async function exchangeLiffSession(redirectPath: string): Promise<string>
     }),
   });
 
+  const data = (await response.json().catch(() => ({}))) as {
+    redirectPath?: string;
+    needsFriendAdd?: boolean;
+    message?: string;
+  };
+
+  if (response.ok && data.needsFriendAdd) {
+    return data.redirectPath || "/auth/line/friend-required";
+  }
+
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    console.error("[liff] session exchange failed", response.status, body);
+    console.error("[liff] session exchange failed", response.status, data);
     throw new Error("session create failed");
   }
 
-  const data = (await response.json()) as { redirectPath?: string };
   return data.redirectPath || redirectPath || "/";
 }
 
