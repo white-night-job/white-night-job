@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
+import {
+  insertAnalyticsEvent,
+  isInternalAnalyticsRequest,
+} from "@/lib/job-analytics";
 import { insertJobViewRow } from "@/lib/insert-job-view";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -14,6 +18,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     const { id: jobId } = await params;
     const body = (await request.json().catch(() => ({}))) as {
       referrer?: string | null;
+      sessionId?: string | null;
     };
 
     const supabase = createSupabaseAdmin();
@@ -31,16 +36,31 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const userAgent = request.headers.get("user-agent");
     const referrer =
-      request.headers.get("referer") ??
-      (body.referrer?.trim() || null);
+      request.headers.get("referer") ?? (body.referrer?.trim() || null);
+    const isInternal = isInternalAnalyticsRequest(request);
 
-    await insertJobViewRow(supabase, {
-      jobId,
-      userAgent,
-      referrer,
-    });
+    // Keep legacy job_views for admin charts (skip internal noise).
+    if (!isInternal) {
+      await insertJobViewRow(supabase, {
+        jobId,
+        userAgent,
+        referrer,
+      });
+    }
 
-    console.info("job_views insert ok:", { jobId });
+    // Detail page open = job_detail_click (not list impression).
+    try {
+      await insertAnalyticsEvent(supabase, {
+        jobId,
+        eventType: "job_detail_click",
+        sessionId: body.sessionId,
+        referrer,
+        userAgent,
+        isInternal,
+      });
+    } catch {
+      // Analytics table may be missing until SQL migration.
+    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

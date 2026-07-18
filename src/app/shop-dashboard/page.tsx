@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ShopAnalyticsSection } from "@/components/ShopAnalyticsSection";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -952,8 +953,13 @@ export default function ShopDashboardPage() {
         </dl>
       </section>
 
+      <ShopAnalyticsSection />
+
       <section className="space-y-6">
-        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数</h2>
+        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数（累計）</h2>
+        <p className="text-xs text-muted">
+          従来の累計値です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。
+        </p>
 
         <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -975,12 +981,12 @@ export default function ShopDashboardPage() {
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted">表示回数</dt>
+            <dt className="text-xs text-muted">詳細ページ表示（累計）</dt>
             <dd className="text-lg font-semibold text-charcoal">{viewCount}</dd>
           </div>
         </dl>
 
-        <MonthlyViewChart data={monthlyViewStats} title="月間表示回数" />
+        <MonthlyViewChart data={monthlyViewStats} title="月間詳細ページ表示" />
 
         <MonthlyApplicationChart data={monthlyApplicationStats} />
       </section>

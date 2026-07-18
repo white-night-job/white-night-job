@@ -52,6 +52,7 @@ export default function JobDetailPage({
   }, [id]);
 
   useEffect(() => {
+    // job_views + job_detail_click（一覧 impression とは別）
     void recordJobView(id);
     void recordUserViewHistory(id);
   }, [id]);

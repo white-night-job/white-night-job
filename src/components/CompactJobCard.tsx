@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CompareButton } from "@/components/CompareButton";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { JobImpressionTracker } from "@/components/JobImpressionTracker";
 import {
   isPremiumTheme,
   luxuryMetalBtn,
@@ -40,6 +41,7 @@ export function CompactJobCard({
 
   if (isPremium) {
     return (
+      <JobImpressionTracker jobId={job.id}>
       <article className="listing-job-card relative">
         <div className="absolute right-2 top-2 z-10">
           <FavoriteButton jobId={job.id} />
@@ -88,10 +90,12 @@ export function CompactJobCard({
           </div>
         </div>
       </article>
+      </JobImpressionTracker>
     );
   }
 
   return (
+    <JobImpressionTracker jobId={job.id} className="h-full">
     <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5">
       <div className="absolute right-2 top-2 z-10">
         <FavoriteButton jobId={job.id} />
@@ -145,5 +149,6 @@ export function CompactJobCard({
         </div>
       </div>
     </article>
+    </JobImpressionTracker>
   );
 }
