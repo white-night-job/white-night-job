@@ -51,6 +51,7 @@ export async function GET(request: Request) {
     }),
   );
 
+  console.log("[api/line/login] authorize URL", authorizeUrl);
   console.log("[api/line/login] authorize query", new URL(authorizeUrl).search);
   console.log("[api/line/login] bot_prompt", new URL(authorizeUrl).searchParams.get("bot_prompt"), {
     disableAutoLogin,

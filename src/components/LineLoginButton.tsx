@@ -60,7 +60,8 @@ function LiffErrorPanel({
                 reason: "USER_CHOSE_BROWSER_LOGIN",
                 choseLiffUrl: false,
               });
-              void navigateToWebLineOAuth(redirectPath);
+              // Explicit browser login only — disable Auto Login intentionally.
+              void navigateToWebLineOAuth(redirectPath, { disableAutoLogin: true });
             }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >
@@ -101,10 +102,9 @@ export function LineLoginButton({
       ? `${window.location.pathname}${window.location.search}${window.location.hash}`
       : "/");
 
-  const webHref = buildWebLineLoginHref(resolvedRedirect, {
-    disableAutoLogin: true,
-  });
+  const webHref = buildWebLineLoginHref(resolvedRedirect);
   // Progressive enhancement: default to Web Login (works everywhere; bot_prompt on server).
+  // No disable_auto_login — iPhone Safari Auto Login can open the LINE app.
   const primaryHref = webHref;
 
   async function handleResult(result: StartLiffLoginResult) {
@@ -122,7 +122,7 @@ export function LineLoginButton({
         navigationTarget: "/api/line/login",
         liffIdConfigured: Boolean(getPublicLiffId()),
       });
-      // Safari / external: resolve authorize URL (bot_prompt=aggressive) then go.
+      // Safari: Auto Login + bot_prompt=aggressive (opens LINE app when installed).
       await navigateToWebLineOAuth(resolvedRedirect);
       return;
     }

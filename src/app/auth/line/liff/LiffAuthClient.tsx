@@ -58,6 +58,7 @@ export default function LiffAuthClient() {
             reason: result.reason,
             choseLiffUrl: false,
           });
+          // External browser on LIFF endpoint → OAuth with Auto Login (LINE app).
           await navigateToWebLineOAuth(redirectPath);
           return;
         }
@@ -122,7 +123,7 @@ export default function LiffAuthClient() {
                 reason: "USER_CHOSE_BROWSER_LOGIN",
                 choseLiffUrl: false,
               });
-              void navigateToWebLineOAuth(path);
+              void navigateToWebLineOAuth(path, { disableAutoLogin: true });
             }}
             className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/35 bg-white px-4 text-sm font-medium text-gold-dark"
           >

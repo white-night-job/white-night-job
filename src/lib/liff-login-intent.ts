@@ -170,8 +170,8 @@ export function buildWebLineLoginHref(
 ): string {
   const params = new URLSearchParams();
   params.set("redirect", sanitizePath(redirectPath));
-  // Safari / external browser: keep auth in the browser so bot_prompt friend-add
-  // is not skipped by iOS Universal Links Auto Login into the LINE app.
+  // Only when Auto Login already failed, or user explicitly chose browser login.
+  // Do NOT set this for normal Safari login — iOS needs Auto Login to open the LINE app.
   if (options?.disableAutoLogin) {
     params.set("disable_auto_login", "1");
   }
@@ -186,11 +186,18 @@ export function ensureBotPromptAggressive(authorizeUrl: string): string {
 }
 
 /**
- * Safari / Chrome: resolve the final OAuth authorize URL (with bot_prompt),
+ * Safari / Chrome: resolve the final OAuth authorize URL (bot_prompt=aggressive),
  * log it, then navigate. Never uses LIFF.
+ *
+ * Default: Auto Login enabled (no disable_auto_login) so iPhone can open the LINE app.
+ * Pass disableAutoLogin only for explicit "browser login" fallback.
  */
-export async function navigateToWebLineOAuth(redirectPath: string): Promise<void> {
-  const href = buildWebLineLoginHref(redirectPath, { disableAutoLogin: true });
+export async function navigateToWebLineOAuth(
+  redirectPath: string,
+  options?: { disableAutoLogin?: boolean },
+): Promise<void> {
+  const disableAutoLogin = options?.disableAutoLogin === true;
+  const href = buildWebLineLoginHref(redirectPath, { disableAutoLogin });
   const jsonHref = href.includes("?")
     ? `${href}&format=json`
     : `${href}?format=json`;
@@ -210,7 +217,10 @@ export async function navigateToWebLineOAuth(redirectPath: string): Promise<void
       authorizeUrl?: string;
       fallbackUrl?: string;
     };
-    const raw = data.authorizeUrl || data.fallbackUrl;
+    // Prefer authorizeUrl (Auto Login). fallbackUrl has disable_auto_login=true.
+    const raw = disableAutoLogin
+      ? data.fallbackUrl || data.authorizeUrl
+      : data.authorizeUrl || data.fallbackUrl;
     if (!raw) {
       console.error("[line-oauth] authorizeUrl missing in response", data);
       window.location.assign(href);
@@ -218,17 +228,30 @@ export async function navigateToWebLineOAuth(redirectPath: string): Promise<void
     }
 
     const authorizeUrl = ensureBotPromptAggressive(raw);
-    const query = new URL(authorizeUrl).searchParams.toString();
+    const parsed = new URL(authorizeUrl);
+    // Safety: never leave disable_auto_login on the primary Safari→LINE-app path.
+    if (!disableAutoLogin) {
+      parsed.searchParams.delete("disable_auto_login");
+    }
+    parsed.searchParams.set("bot_prompt", "aggressive");
+    const finalUrl = parsed.toString();
+    const query = parsed.searchParams.toString();
+
+    console.info("[line-oauth] final authorize URL", finalUrl);
     console.info("[line-oauth] final authorize URL query", query);
-    console.info("[line-oauth] bot_prompt", new URL(authorizeUrl).searchParams.get("bot_prompt"));
+    console.info("[line-oauth] bot_prompt", parsed.searchParams.get("bot_prompt"));
+    console.info(
+      "[line-oauth] disable_auto_login",
+      parsed.searchParams.get("disable_auto_login"),
+    );
     logLiffDebug("web_oauth_navigate", {
       choseLiffUrl: false,
-      botPrompt: new URL(authorizeUrl).searchParams.get("bot_prompt"),
-      disableAutoLogin: new URL(authorizeUrl).searchParams.get("disable_auto_login"),
+      botPrompt: parsed.searchParams.get("bot_prompt"),
+      disableAutoLogin: parsed.searchParams.get("disable_auto_login"),
       navigationTarget: "access.line.me",
     });
 
-    window.location.assign(authorizeUrl);
+    window.location.assign(finalUrl);
   } catch (error) {
     console.error("[line-oauth] navigate failed, falling back to /api/line/login", error);
     window.location.assign(href);

@@ -6,9 +6,9 @@ export const MEMBER_PATHS = {
 } as const;
 
 /**
- * Always Web LINE Login (bot_prompt=aggressive).
+ * Always Web LINE Login (bot_prompt=aggressive, Auto Login enabled).
  * LIFF is only started from LineLoginButton inside the LINE in-app browser.
  */
 export function buildLineLoginHref(redirectPath: string): string {
-  return buildWebLineLoginHref(redirectPath, { disableAutoLogin: true });
+  return buildWebLineLoginHref(redirectPath);
 }
