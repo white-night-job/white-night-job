@@ -6,7 +6,7 @@ import {
 } from "@/lib/line-friendship";
 
 export const metadata: Metadata = {
-  title: "友だち追加が必要です | 体入ホワイトナイト",
+  title: "まずはLINEを友だち追加 | 体入ホワイトナイト",
   robots: { index: false, follow: false },
 };
 
