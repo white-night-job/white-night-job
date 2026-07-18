@@ -19,6 +19,7 @@ import {
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
 import { parsePlanFromBody } from "@/lib/job-plan";
+import { parsePostedAtFromBody } from "@/lib/job-listing";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -43,6 +44,11 @@ function planMetaToRow(body: Record<string, unknown>): Record<string, unknown> {
       ? { new_listing_enabled: newListingRaw }
       : {}),
   };
+}
+
+function postedAtToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const postedAt = parsePostedAtFromBody(body);
+  return postedAt ? { posted_at: postedAt } : {};
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
@@ -91,6 +97,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       parseListingPriorityFromBody(body),
     );
     const planRow = planMetaToRow(body);
+    const postedAtRow = postedAtToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data: previous } = await supabase
@@ -108,6 +115,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...pickupRow,
         ...listingPriorityRow,
         ...planRow,
+        ...postedAtRow,
       })
       .eq("id", id)
       .select("*")

@@ -6,6 +6,8 @@ export type JobPlan = (typeof JOB_PLANS)[number];
 export type JobPlanFeatures = {
   listingPriority: ListingPriority;
   newListing: boolean;
+  /** 新着店舗一覧に表示する日数（公開日からの日数） */
+  newListingDays: number;
   pickup: boolean;
   aiRecommend: boolean;
   /** Higher = stronger AI ranking when enabled */
@@ -30,6 +32,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
     features: {
       listingPriority: "normal",
       newListing: true,
+      newListingDays: 30,
       pickup: false,
       aiRecommend: false,
       aiPriority: 0,
@@ -45,6 +48,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
     features: {
       listingPriority: "priority",
       newListing: true,
+      newListingDays: 60,
       pickup: false,
       aiRecommend: true,
       aiPriority: 50,
@@ -60,6 +64,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
     features: {
       listingPriority: "top",
       newListing: true,
+      newListingDays: 60,
       pickup: true,
       aiRecommend: true,
       aiPriority: 100,
@@ -173,7 +178,11 @@ export function getEnabledFeatureLabels(plan: JobPlan): string[] {
           : "通常"
     }`,
   );
+  if (features.newListing) {
+    labels.push(`新着掲載（公開日から${features.newListingDays}日間）`);
+  }
   for (const item of JOB_PLAN_FEATURE_LABELS) {
+    if (item.key === "newListing") continue;
     if (item.isBoolean && features[item.key] === true) {
       labels.push(item.label);
     }

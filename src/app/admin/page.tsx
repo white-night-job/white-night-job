@@ -47,6 +47,11 @@ import {
   type JobType,
 } from "@/types/job";
 import {
+  formatNewListingEndDate,
+  getNewListingDays,
+  toPostedAtDateInputValue,
+} from "@/lib/job-listing";
+import {
   getEnabledFeatureLabels,
   getPlanFeatures,
   JOB_PLAN_DEFINITIONS,
@@ -96,6 +101,7 @@ type JobForm = {
   shopLoginId: string;
   shopLoginPassword: string;
   plan: JobPlan;
+  postedAt: string;
   newListingEnabled: boolean;
   lineRecommendNotify: boolean;
   chatRecommendEnabled: boolean;
@@ -146,6 +152,7 @@ const emptyForm: JobForm = {
   shopLoginId: "",
   shopLoginPassword: "",
   ...planToFormPatch("light"),
+  postedAt: toPostedAtDateInputValue(),
   chatRecommendComment: "",
   chatRecommendBeginner: false,
   chatRecommendNoAlcoholOk: false,
@@ -225,6 +232,7 @@ function toPayload(form: JobForm) {
     pickup_enabled: form.pickupEnabled,
     listing_priority: form.listingPriority,
     plan: form.plan,
+    posted_at: form.postedAt,
     line_recommend_notify: form.lineRecommendNotify,
     new_listing_enabled: form.newListingEnabled,
   };
@@ -276,6 +284,7 @@ function toForm(job: Job): JobForm {
     shopLoginId: job.shopLoginId ?? "",
     shopLoginPassword: job.shopLoginPassword ?? "",
     plan: parseJobPlan(job.plan),
+    postedAt: toPostedAtDateInputValue(job.postedAt),
     newListingEnabled: job.newListingEnabled ?? true,
     lineRecommendNotify: job.lineRecommendNotify ?? false,
     chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
@@ -1072,9 +1081,41 @@ export default function AdminPage() {
               <span className="font-semibold text-charcoal">新着掲載</span>
               <span className="mt-1 block text-xs text-muted">
                 プラン選択で自動設定。オフにすると新着一覧の対象外になります（管理者のみ）。
+                ライトは公開日から{getNewListingDays("light")}
+                日間、スタンダード・プレミアムは
+                {getNewListingDays("standard")}日間表示されます。
               </span>
             </span>
           </label>
+          <div className="mt-4 space-y-3 border-t border-gold/20 pt-4">
+            <div>
+              <label htmlFor="postedAt" className={labelClass}>
+                公開日
+              </label>
+              <input
+                id="postedAt"
+                type="date"
+                value={form.postedAt}
+                onChange={(event) => setField("postedAt", event.target.value)}
+                className={inputClass}
+                required
+              />
+              <p className="mt-1 text-xs text-muted">
+                新着期間はこの公開日を基準に再計算されます。
+              </p>
+            </div>
+            <p className="text-sm font-medium text-charcoal">
+              新着掲載終了日：
+              <span className="ml-1 font-semibold text-gold-dark">
+                {form.newListingEnabled
+                  ? formatNewListingEndDate({
+                      postedAt: form.postedAt,
+                      plan: form.plan,
+                    })
+                  : "（新着掲載オフ）"}
+              </span>
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-gold/25 bg-ivory/50 p-4">

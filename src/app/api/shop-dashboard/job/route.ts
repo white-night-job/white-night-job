@@ -43,6 +43,8 @@ const ADMIN_ONLY_BODY_KEYS = [
   "lineRecommendNotify",
   "new_listing_enabled",
   "newListingEnabled",
+  "posted_at",
+  "postedAt",
   "published",
 ] as const;
 

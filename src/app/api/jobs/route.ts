@@ -42,7 +42,7 @@ import {
   listingPriorityRank,
   parseListingPriority,
 } from "@/lib/listing-priority";
-import { isNewListingJob } from "@/lib/job-listing";
+import { isNewListingJob, parsePostedAtFromBody } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 /** Persist plan + related flags; ranking/pickup/AI come from form (admin may override). */
@@ -60,6 +60,11 @@ function planMetaToRow(body: Record<string, unknown>): Record<string, unknown> {
       ? { new_listing_enabled: newListingRaw }
       : {}),
   };
+}
+
+function postedAtToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const postedAt = parsePostedAtFromBody(body);
+  return postedAt ? { posted_at: postedAt } : {};
 }
 
 export async function GET(request: Request) {
@@ -92,13 +97,12 @@ export async function GET(request: Request) {
     let rows = data ?? [];
 
     if (listing === "new") {
-      rows = rows.filter(
-        (row) =>
-          row.new_listing_enabled !== false &&
-          isNewListingJob({
-            postedAt: String(row.posted_at),
-            createdAt: String(row.created_at),
-          }),
+      rows = rows.filter((row) =>
+        isNewListingJob({
+          postedAt: String(row.posted_at),
+          plan: row.plan,
+          newListingEnabled: row.new_listing_enabled,
+        }),
       );
     }
 
@@ -243,6 +247,7 @@ export async function POST(request: Request) {
       parseListingPriorityFromBody(body),
     );
     const planRow = planMetaToRow(body);
+    const postedAtRow = postedAtToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -254,6 +259,7 @@ export async function POST(request: Request) {
         ...pickupRow,
         ...listingPriorityRow,
         ...planRow,
+        ...postedAtRow,
       })
       .select("*")
       .single();
