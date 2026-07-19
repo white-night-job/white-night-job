@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { ShopAnalyticsSection } from "@/components/ShopAnalyticsSection";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
   getUncategorizedBenefits,
 } from "@/data/benefits";
-import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
-import { MonthlyViewChart } from "@/components/MonthlyViewChart";
 import {
   aggregateMonthlyApplicationsForJob,
   type ApplicationRow,
@@ -24,7 +23,6 @@ import {
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import { JOBS_UPDATED_EVENT } from "@/lib/job-storage";
-import { aggregateMonthlyViewsForJob, type ViewRow } from "@/lib/job-views";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -162,7 +160,6 @@ export default function ShopDashboardPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [form, setForm] = useState<ShopForm | null>(null);
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
-  const [viewRows, setViewRows] = useState<ViewRow[]>([]);
   const [applicationDetail, setApplicationDetail] =
     useState<JobApplicationDetail | null>(null);
   const [viewCount, setViewCount] = useState(0);
@@ -187,7 +184,6 @@ export default function ShopDashboardPage() {
     const data = await readJson<{
       job: Job;
       applicationRows: ApplicationRow[];
-      viewRows: ViewRow[];
       applicationDetail: JobApplicationDetail;
       viewCount: number;
       districtRank: number;
@@ -206,7 +202,6 @@ export default function ShopDashboardPage() {
     setJobId(data.job.id);
     setJobPlan(parseJobPlan(data.job.plan));
     setApplicationRows(data.applicationRows);
-    setViewRows(data.viewRows);
     setApplicationDetail(data.applicationDetail);
     setViewCount(data.viewCount);
     setDistrictRank(data.districtRank ?? 1);
@@ -231,11 +226,6 @@ export default function ShopDashboardPage() {
       .catch(() => router.replace("/shop-login"))
       .finally(() => setChecking(false));
   }, [router]);
-
-  const monthlyViewStats = useMemo(
-    () => (jobId ? aggregateMonthlyViewsForJob(viewRows, jobId) : []),
-    [jobId, viewRows],
-  );
 
   const monthlyApplicationStats = useMemo(
     () =>
@@ -993,8 +983,6 @@ export default function ShopDashboardPage() {
             <dd className="text-lg font-semibold text-charcoal">{viewCount}</dd>
           </div>
         </dl>
-
-        <MonthlyViewChart data={monthlyViewStats} title="月間詳細ページ表示" />
 
         <MonthlyApplicationChart data={monthlyApplicationStats} />
       </section>

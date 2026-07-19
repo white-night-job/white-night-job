@@ -169,15 +169,6 @@ export function ShopAnalyticsSection() {
           </div>
 
           <ShopAnalyticsDualLineChart
-            title="表示・クリック数"
-            data={data?.monthly ?? []}
-            series={[
-              { key: "impressions", label: "表示回数", color: "#4b5563" },
-              { key: "detailClicks", label: "店舗詳細クリック", color: "#c9a962" },
-            ]}
-          />
-
-          <ShopAnalyticsDualLineChart
             title="応募クリック数"
             data={data?.monthly ?? []}
             series={[
