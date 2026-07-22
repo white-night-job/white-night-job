@@ -19,6 +19,18 @@ import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import type { Job } from "@/types/job";
 
+function sanitizeExternalHref(raw: string | undefined): string | null {
+  const value = String(raw ?? "").trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function PreviewBlockedButton({
   label,
   className,
@@ -166,10 +178,12 @@ export function JobDetailView({
       className:
         "border-gold bg-gradient-to-r from-gold to-gold-dark text-white hover:brightness-110",
     },
-  ].filter(
-    (link): link is { label: string; href: string; className: string } =>
-      Boolean(link.href),
-  );
+  ].flatMap((link) => {
+    const href = sanitizeExternalHref(link.href);
+    return href
+      ? [{ label: link.label, href, className: link.className }]
+      : [];
+  });
 
   return (
     <div className="job-detail-shell mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
@@ -425,32 +439,17 @@ export function JobDetailView({
                   公式SNS
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {socialLinks.map((link) =>
-                    preview ? (
-                      <button
-                        key={link.label}
-                        type="button"
-                        onClick={() =>
-                          showPreviewNotice(
-                            "プレビュー中のため、外部リンクは開けません。",
-                          )
-                        }
-                        className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
-                      >
-                        {link.label}を見る
-                      </button>
-                    ) : (
-                      <a
-                        key={link.label}
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
-                      >
-                        {link.label}を見る
-                      </a>
-                    ),
-                  )}
+                  {socialLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
+                    >
+                      {link.label}を見る
+                    </a>
+                  ))}
                 </div>
               </section>
             )}
