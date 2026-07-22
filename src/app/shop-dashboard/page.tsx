@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { ShopAnalyticsSection } from "@/components/ShopAnalyticsSection";
+import { JobListingPreview } from "@/components/JobListingPreview";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -22,7 +23,12 @@ import {
   sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
+import { buildPreviewJobFromShopForm } from "@/lib/job-preview";
 import { JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import {
+  promoteTempImagesInPayload,
+  uploadTempImage,
+} from "@/lib/upload-temp-client";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -159,6 +165,7 @@ export default function ShopDashboardPage() {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [form, setForm] = useState<ShopForm | null>(null);
+  const [publishedJob, setPublishedJob] = useState<Job | null>(null);
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
   const [applicationDetail, setApplicationDetail] =
     useState<JobApplicationDetail | null>(null);
@@ -168,6 +175,8 @@ export default function ShopDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [boostLoading, setBoostLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const publishLockRef = useRef(false);
   const [uploadingTopImage, setUploadingTopImage] = useState(false);
   const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
@@ -199,6 +208,7 @@ export default function ShopDashboardPage() {
       }),
     );
     setForm(toForm(data.job));
+    setPublishedJob(data.job);
     setJobId(data.job.id);
     setJobPlan(parseJobPlan(data.job.plan));
     setApplicationRows(data.applicationRows);
@@ -305,15 +315,17 @@ export default function ShopDashboardPage() {
   }
 
   async function persistForm(nextForm: ShopForm) {
+    const promoted = await promoteTempImagesInPayload(toPayload(nextForm));
     const { job } = await readJson<{ job: Job }>(
       await fetch("/api/shop-dashboard/job", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(toPayload(nextForm)),
+        body: JSON.stringify(promoted),
       }),
     );
     setForm(toForm(job));
+    setPublishedJob(job);
     window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
     return job;
   }
@@ -321,16 +333,30 @@ export default function ShopDashboardPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form) return;
+    setMessage("");
+    if (!form.salary.trim() || !form.lineUrl.trim()) {
+      setMessage("時給とLINE URLは必須です。");
+      return;
+    }
+    setShowPreview(true);
+  }
+
+  async function handleConfirmPublish() {
+    if (!form || publishLockRef.current || loading) return;
+    publishLockRef.current = true;
     setLoading(true);
     setMessage("");
     try {
       await persistForm(form);
       await loadDashboard();
-      setMessage("求人情報を保存しました。");
+      setShowPreview(false);
+      setMessage("求人情報を更新しました。");
     } catch (error) {
+      setShowPreview(false);
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
       setLoading(false);
+      publishLockRef.current = false;
     }
   }
 
@@ -342,19 +368,13 @@ export default function ShopDashboardPage() {
     setUploadingTopImage(true);
     setMessage("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uploadType", "top-image");
-      formData.append("jobId", jobId);
-      const { imageUrl } = await readJson<{ imageUrl: string }>(
-        await fetch("/api/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }),
-      );
-      await persistForm({ ...form, imageUrl });
-      setMessage("店舗トップ画像をアップロードしました。");
+      const imageUrl = await uploadTempImage({
+        file,
+        uploadType: "top-image",
+        ownerId: jobId,
+      });
+      setForm({ ...form, imageUrl });
+      setMessage("店舗トップ画像を選択しました（確定まで公開反映されません）。");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -369,21 +389,11 @@ export default function ShopDashboardPage() {
 
   async function handleTopImageRemove() {
     if (!form || !form.imageUrl) return;
-    if (!window.confirm("店舗トップ画像を削除しますか？")) return;
-    setUploadingTopImage(true);
-    setMessage("");
-    try {
-      await persistForm({ ...form, imageUrl: "" });
-      setMessage("店舗トップ画像を削除しました。");
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "店舗トップ画像の削除に失敗しました。",
-      );
-    } finally {
-      setUploadingTopImage(false);
+    if (!window.confirm("店舗トップ画像を削除しますか？（確定するまで公開内容は変わりません）")) {
+      return;
     }
+    setForm({ ...form, imageUrl: "" });
+    setMessage("店舗トップ画像を削除候補にしました（確定まで公開反映されません）。");
   }
 
   async function handleRecruiterImageUpload(
@@ -394,19 +404,13 @@ export default function ShopDashboardPage() {
     setUploadingRecruiterImage(true);
     setMessage("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uploadType", "recruiter-image");
-      formData.append("jobId", jobId);
-      const { imageUrl } = await readJson<{ imageUrl: string }>(
-        await fetch("/api/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }),
-      );
-      await persistForm({ ...form, recruiterImage: imageUrl });
-      setMessage("採用担当者の顔写真をアップロードしました。");
+      const imageUrl = await uploadTempImage({
+        file,
+        uploadType: "recruiter-image",
+        ownerId: jobId,
+      });
+      setForm({ ...form, recruiterImage: imageUrl });
+      setMessage("採用担当者の顔写真を選択しました（確定まで公開反映されません）。");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -421,20 +425,8 @@ export default function ShopDashboardPage() {
 
   async function handleRecruiterImageRemove() {
     if (!form || !form.recruiterImage) return;
-    setUploadingRecruiterImage(true);
-    setMessage("");
-    try {
-      await persistForm({ ...form, recruiterImage: "" });
-      setMessage("採用担当者の顔写真を削除しました。");
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "採用担当者の顔写真の削除に失敗しました。",
-      );
-    } finally {
-      setUploadingRecruiterImage(false);
-    }
+    setForm({ ...form, recruiterImage: "" });
+    setMessage("採用担当者の顔写真を削除候補にしました（確定まで公開反映されません）。");
   }
 
   async function handleStoreImagesUpload(
@@ -447,20 +439,17 @@ export default function ShopDashboardPage() {
     try {
       const uploadedUrls: string[] = [];
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("uploadType", "store-image");
-        formData.append("jobId", jobId);
-        const { publicUrl } = await readJson<{ publicUrl: string }>(
-          await fetch("/api/upload", {
-            method: "POST",
-            credentials: "include",
-            body: formData,
-          }),
-        );
+        const publicUrl = await uploadTempImage({
+          file,
+          uploadType: "store-image",
+          ownerId: jobId,
+        });
         uploadedUrls.push(publicUrl);
       }
       setField("storeImages", [...form.storeImages, ...uploadedUrls]);
+      setMessage(
+        `${uploadedUrls.length}枚の店舗ギャラリー画像を追加しました（確定まで公開反映されません）。`,
+      );
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "店舗ギャラリー画像の追加に失敗しました。",
@@ -476,6 +465,21 @@ export default function ShopDashboardPage() {
       <div className="mx-auto max-w-4xl p-8">
         <div className="h-64 animate-pulse rounded-2xl bg-white" />
       </div>
+    );
+  }
+
+  if (showPreview && publishedJob) {
+    const previewJob = buildPreviewJobFromShopForm(form, publishedJob);
+    return (
+      <JobListingPreview
+        job={previewJob}
+        mode="edit"
+        submitting={loading}
+        onBack={() => setShowPreview(false)}
+        onConfirm={() => {
+          void handleConfirmPublish();
+        }}
+      />
     );
   }
 
@@ -504,8 +508,12 @@ export default function ShopDashboardPage() {
         <p
           className={`mb-4 rounded-xl px-3 py-2 text-sm ${
             message.includes("保存しました") ||
+            message.includes("更新しました") ||
             message.includes("アップロードしました") ||
-            message.includes("削除しました")
+            message.includes("選択しました") ||
+            message.includes("追加しました") ||
+            message.includes("削除しました") ||
+            message.includes("削除候補")
               ? "border border-green-200 bg-green-50 text-green-800"
               : "border border-red-200 bg-red-50 text-red-700"
           }`}
@@ -846,7 +854,7 @@ export default function ShopDashboardPage() {
         </div>
 
         <button type="submit" disabled={loading || uploadingTopImage || uploadingRecruiterImage || uploadingStoreImages} className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto">
-          {loading ? "保存中..." : "保存する"}
+          変更内容を確認する
         </button>
           </form>
         )}

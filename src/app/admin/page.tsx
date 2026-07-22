@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { LineBroadcastPanel } from "@/components/admin/LineBroadcastPanel";
 import { LineNotificationHistoryPanel } from "@/components/admin/LineNotificationHistoryPanel";
+import { JobListingPreview } from "@/components/JobListingPreview";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BENEFIT_CATEGORIES,
@@ -38,6 +39,11 @@ import {
   sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
+import { buildPreviewJobFromAdminForm } from "@/lib/job-preview";
+import {
+  promoteTempImagesInPayload,
+  uploadTempImage,
+} from "@/lib/upload-temp-client";
 import {
   FIXED_AREA,
   JOB_TYPES,
@@ -308,6 +314,8 @@ export default function AdminPage() {
     Set<string>
   >(new Set());
   const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const publishLockRef = useRef(false);
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -480,6 +488,7 @@ export default function AdminPage() {
     setForm(emptyForm);
     setEditingId(null);
     setIsAddFormOpen(false);
+    setShowPreview(false);
     setDraftJobId(crypto.randomUUID());
   }
 
@@ -513,12 +522,23 @@ export default function AdminPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setMessage("");
+    if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
+      setMessage("店舗名・時給・LINE URLは必須です。");
+      return;
+    }
+    setShowPreview(true);
+  }
+
+  async function handleConfirmPublish() {
+    if (publishLockRef.current || loading) return;
+    publishLockRef.current = true;
     setLoading(true);
     setMessage("");
     try {
       const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
       const method = editingId ? "PUT" : "POST";
-      const payload = toPayload(form);
+      const payload = await promoteTempImagesInPayload(toPayload(form));
       const { job: savedJob } = await readJson<{ job: Job }>(
         await fetch(url, {
           method,
@@ -544,6 +564,7 @@ export default function AdminPage() {
       );
       await loadJobs();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+      setShowPreview(false);
       if (editingId) {
         setEditingId(savedJob.id);
         setForm(toForm(savedJob));
@@ -553,8 +574,10 @@ export default function AdminPage() {
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
+      setShowPreview(false);
     } finally {
       setLoading(false);
+      publishLockRef.current = false;
     }
   }
 
@@ -583,17 +606,13 @@ export default function AdminPage() {
     setUploading(true);
     setMessage("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const data = await readJson<{ imageUrl: string }>(
-        await fetch("/api/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }),
-      );
-      setField("imageUrl", data.imageUrl);
-      setMessage("店舗トップ画像をアップロードしました。");
+      const imageUrl = await uploadTempImage({
+        file,
+        uploadType: "shop",
+        ownerId: editingId ?? draftJobId,
+      });
+      setField("imageUrl", imageUrl);
+      setMessage("店舗トップ画像をアップロードしました（確定まで公開反映されません）。");
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "画像アップロードに失敗しました。",
@@ -614,19 +633,13 @@ export default function AdminPage() {
     const ownerJobId = editingId ?? draftJobId;
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("uploadType", "recruiter-image");
-      formData.append("jobId", ownerJobId);
-      const data = await readJson<{ imageUrl: string }>(
-        await fetch("/api/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }),
-      );
-      setField("recruiterImage", data.imageUrl);
-      setMessage("採用担当者の顔写真をアップロードしました。");
+      const imageUrl = await uploadTempImage({
+        file,
+        uploadType: "recruiter-image",
+        ownerId: ownerJobId,
+      });
+      setField("recruiterImage", imageUrl);
+      setMessage("採用担当者の顔写真をアップロードしました（確定まで公開反映されません）。");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -655,19 +668,11 @@ export default function AdminPage() {
 
       for (const file of Array.from(files)) {
         try {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("uploadType", "store-image");
-          formData.append("jobId", ownerJobId);
-
-          const data = await readJson<{ imageUrl?: string; publicUrl?: string }>(
-            await fetch("/api/upload", {
-              method: "POST",
-              credentials: "include",
-              body: formData,
-            }),
-          );
-          const imageUrl = (data.imageUrl ?? data.publicUrl ?? "").trim();
+          const imageUrl = await uploadTempImage({
+            file,
+            uploadType: "store-image",
+            ownerId: ownerJobId,
+          });
           if (!imageUrl) {
             throw new Error("公開URLの取得に失敗しました。");
           }
@@ -692,7 +697,9 @@ export default function AdminPage() {
       }
 
       if (uploadedUrls.length > 0 && failedFiles.length === 0) {
-        setMessage(`${uploadedUrls.length}枚の店舗ギャラリー画像を追加しました。`);
+        setMessage(
+          `${uploadedUrls.length}枚の店舗ギャラリー画像を追加しました（確定まで公開反映されません）。`,
+        );
       } else if (uploadedUrls.length > 0) {
         setMessage(
           `${uploadedUrls.length}枚をアップロードしました。失敗: ${failedFiles.join(" / ")}`,
@@ -719,6 +726,7 @@ export default function AdminPage() {
     setEditingId(job.id);
     setForm(toForm(job));
     setIsAddFormOpen(false);
+    setShowPreview(false);
     setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -766,6 +774,23 @@ export default function AdminPage() {
           </button>
         </form>
       </div>
+    );
+  }
+
+  if (showPreview) {
+    const previewJob = buildPreviewJobFromAdminForm(form, {
+      id: editingId ?? draftJobId,
+    });
+    return (
+      <JobListingPreview
+        job={previewJob}
+        mode={editingId ? "edit" : "create"}
+        submitting={loading}
+        onBack={() => setShowPreview(false)}
+        onConfirm={() => {
+          void handleConfirmPublish();
+        }}
+      />
     );
   }
 
@@ -1888,7 +1913,7 @@ export default function AdminPage() {
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
             className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60"
           >
-            {loading ? "保存中..." : editingId ? "更新する" : "保存する"}
+            {editingId ? "変更内容を確認する" : "掲載内容を確認する"}
           </button>
           {editingId && (
             <button

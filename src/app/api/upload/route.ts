@@ -35,26 +35,34 @@ function buildStoragePath(
   uploadType: string,
   file: File,
   jobId: string | null,
+  asTemp: boolean,
 ): string {
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const safeExtension = ALLOWED_EXTENSIONS.has(extension) ? extension : "jpg";
+  const ownerId = jobId?.trim() || randomUUID();
+  const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
+  const filePart = `${Date.now()}-${safeName}.${safeExtension}`;
+
+  if (asTemp) {
+    const kind =
+      uploadType === "store-image" ||
+      uploadType === "top-image" ||
+      uploadType === "recruiter-image"
+        ? uploadType
+        : "shop";
+    return `temp/${kind}/${ownerId}/${filePart}`;
+  }
 
   if (uploadType === "store-image") {
-    const ownerId = jobId?.trim() || randomUUID();
-    const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
-    return `store-images/${ownerId}/${Date.now()}-${safeName}.${safeExtension}`;
+    return `store-images/${ownerId}/${filePart}`;
   }
 
   if (uploadType === "top-image") {
-    const ownerId = jobId?.trim() || randomUUID();
-    const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
-    return `top-images/${ownerId}/${Date.now()}-${safeName}.${safeExtension}`;
+    return `top-images/${ownerId}/${filePart}`;
   }
 
   if (uploadType === "recruiter-image") {
-    const ownerId = jobId?.trim() || randomUUID();
-    const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
-    return `recruiters/${ownerId}/${Date.now()}-${safeName}.${safeExtension}`;
+    return `recruiters/${ownerId}/${filePart}`;
   }
 
   return `shops/${randomUUID()}.${safeExtension}`;
@@ -64,6 +72,9 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const uploadType = String(formData.get("uploadType") ?? "shop");
   const jobId = String(formData.get("jobId") ?? "").trim() || null;
+  const asTemp =
+    String(formData.get("temp") ?? "") === "1" ||
+    String(formData.get("temp") ?? "").toLowerCase() === "true";
 
   const isAdmin = await isAdminAuthenticated();
   const shopJobId = await getAuthenticatedShopJobId();
@@ -93,7 +104,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
-    const path = buildStoragePath(uploadType, file, jobId);
+    const path = buildStoragePath(uploadType, file, jobId, asTemp);
     const supabase = createSupabaseAdmin();
     const buffer = await file.arrayBuffer();
     const contentType =
