@@ -5,6 +5,7 @@ import { LineBroadcastPanel } from "@/components/admin/LineBroadcastPanel";
 import { LineNotificationHistoryPanel } from "@/components/admin/LineNotificationHistoryPanel";
 import { JobListingPreview } from "@/components/JobListingPreview";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -316,6 +317,7 @@ export default function AdminPage() {
   const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
+  const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
 
   async function loadJobs() {
     const jobsResponse = await fetch("/api/jobs", {
@@ -527,6 +529,7 @@ export default function AdminPage() {
       setMessage("店舗名・時給・LINE URLは必須です。");
       return;
     }
+    requestScrollToTop();
     setShowPreview(true);
   }
 
@@ -564,6 +567,7 @@ export default function AdminPage() {
       );
       await loadJobs();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+      requestScrollToTop();
       setShowPreview(false);
       if (editingId) {
         setEditingId(savedJob.id);
@@ -574,6 +578,7 @@ export default function AdminPage() {
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
+      requestScrollToTop();
       setShowPreview(false);
     } finally {
       setLoading(false);
@@ -786,7 +791,10 @@ export default function AdminPage() {
         job={previewJob}
         mode={editingId ? "edit" : "create"}
         submitting={loading}
-        onBack={() => setShowPreview(false)}
+        onBack={() => {
+          requestScrollToTop();
+          setShowPreview(false);
+        }}
         onConfirm={() => {
           void handleConfirmPublish();
         }}

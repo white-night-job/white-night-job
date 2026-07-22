@@ -11,6 +11,7 @@ import {
   getKnownBenefits,
   getUncategorizedBenefits,
 } from "@/data/benefits";
+import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import {
   aggregateMonthlyApplicationsForJob,
   type ApplicationRow,
@@ -177,6 +178,7 @@ export default function ShopDashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
+  const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
   const [uploadingTopImage, setUploadingTopImage] = useState(false);
   const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
@@ -338,6 +340,7 @@ export default function ShopDashboardPage() {
       setMessage("時給とLINE URLは必須です。");
       return;
     }
+    requestScrollToTop();
     setShowPreview(true);
   }
 
@@ -349,9 +352,11 @@ export default function ShopDashboardPage() {
     try {
       await persistForm(form);
       await loadDashboard();
+      requestScrollToTop();
       setShowPreview(false);
       setMessage("求人情報を更新しました。");
     } catch (error) {
+      requestScrollToTop();
       setShowPreview(false);
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
@@ -475,7 +480,10 @@ export default function ShopDashboardPage() {
         job={previewJob}
         mode="edit"
         submitting={loading}
-        onBack={() => setShowPreview(false)}
+        onBack={() => {
+          requestScrollToTop();
+          setShowPreview(false);
+        }}
         onConfirm={() => {
           void handleConfirmPublish();
         }}
