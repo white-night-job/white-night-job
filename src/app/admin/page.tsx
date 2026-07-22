@@ -303,6 +303,7 @@ export default function AdminPage() {
   const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
   const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyMounted, setHistoryMounted] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
@@ -323,10 +324,12 @@ export default function AdminPage() {
       changePercent: number | null;
     };
   } | null>(null);
-  const [monthlySummaryLoading, setMonthlySummaryLoading] = useState(false);
+  const [monthlySummaryLoading, setMonthlySummaryLoading] = useState(true);
+  const [broadcastMounted, setBroadcastMounted] = useState(false);
 
   async function loadMonthlySummary() {
     setMonthlySummaryLoading(true);
+    console.time("admin:monthly-summary");
     try {
       const data = await readJson<{
         periodLabel: string;
@@ -345,7 +348,9 @@ export default function AdminPage() {
         }),
       );
       setMonthlySummary(data);
+      console.timeEnd("admin:monthly-summary");
     } catch (error) {
+      console.timeEnd("admin:monthly-summary");
       console.error("[admin] monthly summary failed", error);
     } finally {
       setMonthlySummaryLoading(false);
@@ -382,6 +387,7 @@ export default function AdminPage() {
 
     setSearchLoading(true);
     setMessage("");
+    console.time("admin:shop-search");
     try {
       const params = new URLSearchParams({
         q,
@@ -416,7 +422,9 @@ export default function AdminPage() {
       setViewCounts((current) =>
         append ? { ...current, ...data.viewCounts } : data.viewCounts,
       );
+      console.timeEnd("admin:shop-search");
     } catch (error) {
+      console.timeEnd("admin:shop-search");
       setMessage(error instanceof Error ? error.message : "検索に失敗しました。");
     } finally {
       setSearchLoading(false);
@@ -425,7 +433,9 @@ export default function AdminPage() {
 
   async function refreshAfterMutation() {
     await loadMonthlySummary();
-    await loadBroadcastOptions();
+    if (broadcastMounted || isBroadcastOpen) {
+      await loadBroadcastOptions();
+    }
     if (shopSearchQuery.trim() || regionFilter !== "all") {
       await runShopSearch(1, false);
     }
@@ -441,19 +451,35 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    console.time("admin:basic-ui");
+    // Shell paints on next frame; session check does not block basic UI.
+    requestAnimationFrame(() => {
+      console.timeEnd("admin:basic-ui");
+    });
+
     fetch("/api/admin/session", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { authenticated: boolean }) => {
         setAuthenticated(data.authenticated);
-        if (data.authenticated) return loadMonthlySummary();
+        if (data.authenticated) {
+          void loadMonthlySummary();
+        } else {
+          setMonthlySummaryLoading(false);
+        }
       })
-      .catch(() => setAuthenticated(false))
+      .catch(() => {
+        setAuthenticated(false);
+        setMonthlySummaryLoading(false);
+      })
       .finally(() => setCheckingSession(false));
   }, []);
 
   useEffect(() => {
     if (isBroadcastOpen && broadcastJobs.length === 0) {
-      void loadBroadcastOptions();
+      console.time("admin:broadcast-options");
+      void loadBroadcastOptions().finally(() => {
+        console.timeEnd("admin:broadcast-options");
+      });
     }
   }, [isBroadcastOpen, broadcastJobs.length]);
 
@@ -768,15 +794,8 @@ export default function AdminPage() {
 
   const isFormVisible = editingId !== null || isAddFormOpen;
 
-  if (checkingSession) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <div className="h-40 animate-pulse rounded-2xl bg-white" />
-      </div>
-    );
-  }
-
-  if (!authenticated) {
+  // Show login only after session check finishes. While checking, paint the shell.
+  if (!checkingSession && !authenticated) {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <form
@@ -881,6 +900,79 @@ export default function AdminPage() {
           {message}
         </p>
       )}
+
+      <section className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
+          <p className="text-sm font-medium text-muted">今月の表示回数</p>
+          {monthlySummaryLoading && !monthlySummary ? (
+            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
+          ) : (
+            <>
+              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
+                {(monthlySummary?.views.current ?? 0).toLocaleString("ja-JP")}
+                <span className="ml-1 text-base font-sans font-medium text-muted">
+                  回
+                </span>
+              </p>
+              {monthlySummary?.views.changePercent != null && (
+                <p
+                  className={`mt-2 text-xs font-medium ${
+                    monthlySummary.views.changePercent >= 0
+                      ? "text-[#047a3b]"
+                      : "text-red-600"
+                  }`}
+                >
+                  前月比{" "}
+                  {monthlySummary.views.changePercent > 0 ? "+" : ""}
+                  {monthlySummary.views.changePercent}%
+                  <span className="ml-1 text-muted">
+                    （{monthlySummary.previousPeriodLabel}:{" "}
+                    {monthlySummary.views.previous.toLocaleString("ja-JP")}回）
+                  </span>
+                </p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
+          <p className="text-sm font-medium text-muted">今月の応募回数</p>
+          {monthlySummaryLoading && !monthlySummary ? (
+            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
+          ) : (
+            <>
+              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
+                {(monthlySummary?.applications.current ?? 0).toLocaleString(
+                  "ja-JP",
+                )}
+                <span className="ml-1 text-base font-sans font-medium text-muted">
+                  回
+                </span>
+              </p>
+              {monthlySummary?.applications.changePercent != null && (
+                <p
+                  className={`mt-2 text-xs font-medium ${
+                    monthlySummary.applications.changePercent >= 0
+                      ? "text-[#047a3b]"
+                      : "text-red-600"
+                  }`}
+                >
+                  前月比{" "}
+                  {monthlySummary.applications.changePercent > 0 ? "+" : ""}
+                  {monthlySummary.applications.changePercent}%
+                  <span className="ml-1 text-muted">
+                    （{monthlySummary.previousPeriodLabel}:{" "}
+                    {monthlySummary.applications.previous.toLocaleString("ja-JP")}
+                    回）
+                  </span>
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted">
+                LINE応募クリック + 電話応募クリックの合計
+              </p>
+            </>
+          )}
+        </div>
+      </section>
 
       <section id="admin-jobs" className="mt-0">
         <button
@@ -2179,7 +2271,13 @@ export default function AdminPage() {
       <section id="admin-broadcast" className="mt-6 overflow-hidden rounded-2xl border border-gold/30 bg-white shadow-gold">
         <button
           type="button"
-          onClick={() => setIsBroadcastOpen((open) => !open)}
+          onClick={() => {
+            setIsBroadcastOpen((open) => {
+              const next = !open;
+              if (next) setBroadcastMounted(true);
+              return next;
+            });
+          }}
           aria-expanded={isBroadcastOpen}
           aria-controls="admin-broadcast-panel"
           className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-ivory/60 sm:px-5"
@@ -2188,23 +2286,35 @@ export default function AdminPage() {
             {isBroadcastOpen ? "▼" : "▶"} LINE配信管理
           </span>
         </button>
-        <div
-          id="admin-broadcast-panel"
-          className={isBroadcastOpen ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5" : "hidden"}
-        >
-          <LineBroadcastPanel
-            jobs={broadcastJobs}
-            selectedJobId={editingId}
-            onMessage={setMessage}
-            embedded
-          />
-        </div>
+        {broadcastMounted && (
+          <div
+            id="admin-broadcast-panel"
+            className={
+              isBroadcastOpen
+                ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5"
+                : "hidden"
+            }
+          >
+            <LineBroadcastPanel
+              jobs={broadcastJobs}
+              selectedJobId={editingId}
+              onMessage={setMessage}
+              embedded
+            />
+          </div>
+        )}
       </section>
 
       <section id="admin-history" className="mt-4 overflow-hidden rounded-2xl border border-gold/30 bg-white shadow-gold">
         <button
           type="button"
-          onClick={() => setIsHistoryOpen((open) => !open)}
+          onClick={() => {
+            setIsHistoryOpen((open) => {
+              const next = !open;
+              if (next) setHistoryMounted(true);
+              return next;
+            });
+          }}
           aria-expanded={isHistoryOpen}
           aria-controls="admin-history-panel"
           className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-ivory/60 sm:px-5"
@@ -2213,85 +2323,18 @@ export default function AdminPage() {
             {isHistoryOpen ? "▼" : "▶"} LINE通知履歴
           </span>
         </button>
-        <div
-          id="admin-history-panel"
-          className={isHistoryOpen ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5" : "hidden"}
-        >
-          <LineNotificationHistoryPanel embedded />
-        </div>
-      </section>
-
-      <section className="mt-6 mb-2 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
-          <p className="text-sm font-medium text-muted">今月の表示回数</p>
-          {monthlySummaryLoading && !monthlySummary ? (
-            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
-          ) : (
-            <>
-              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
-                {(monthlySummary?.views.current ?? 0).toLocaleString("ja-JP")}
-                <span className="ml-1 text-base font-sans font-medium text-muted">
-                  回
-                </span>
-              </p>
-              {monthlySummary?.views.changePercent != null && (
-                <p
-                  className={`mt-2 text-xs font-medium ${
-                    monthlySummary.views.changePercent >= 0
-                      ? "text-[#047a3b]"
-                      : "text-red-600"
-                  }`}
-                >
-                  前月比{" "}
-                  {monthlySummary.views.changePercent > 0 ? "+" : ""}
-                  {monthlySummary.views.changePercent}%
-                  <span className="ml-1 text-muted">
-                    （{monthlySummary.previousPeriodLabel}:{" "}
-                    {monthlySummary.views.previous.toLocaleString("ja-JP")}回）
-                  </span>
-                </p>
-              )}
-            </>
-          )}
-        </div>
-        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
-          <p className="text-sm font-medium text-muted">今月の応募回数</p>
-          {monthlySummaryLoading && !monthlySummary ? (
-            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
-          ) : (
-            <>
-              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
-                {(monthlySummary?.applications.current ?? 0).toLocaleString(
-                  "ja-JP",
-                )}
-                <span className="ml-1 text-base font-sans font-medium text-muted">
-                  回
-                </span>
-              </p>
-              {monthlySummary?.applications.changePercent != null && (
-                <p
-                  className={`mt-2 text-xs font-medium ${
-                    monthlySummary.applications.changePercent >= 0
-                      ? "text-[#047a3b]"
-                      : "text-red-600"
-                  }`}
-                >
-                  前月比{" "}
-                  {monthlySummary.applications.changePercent > 0 ? "+" : ""}
-                  {monthlySummary.applications.changePercent}%
-                  <span className="ml-1 text-muted">
-                    （{monthlySummary.previousPeriodLabel}:{" "}
-                    {monthlySummary.applications.previous.toLocaleString("ja-JP")}
-                    回）
-                  </span>
-                </p>
-              )}
-              <p className="mt-1 text-xs text-muted">
-                LINE応募クリック + 電話応募クリックの合計
-              </p>
-            </>
-          )}
-        </div>
+        {historyMounted && (
+          <div
+            id="admin-history-panel"
+            className={
+              isHistoryOpen
+                ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5"
+                : "hidden"
+            }
+          >
+            <LineNotificationHistoryPanel embedded active={isHistoryOpen} />
+          </div>
+        )}
       </section>
 
       </div>

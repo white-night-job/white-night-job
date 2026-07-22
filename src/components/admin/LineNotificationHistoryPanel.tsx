@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type HistoryRow = {
   id: string;
@@ -38,6 +38,8 @@ type ShopStat = {
   sendCount: number;
 };
 
+const PAGE_SIZE = 20;
+
 function formatDateTime(value: string) {
   try {
     return new Intl.DateTimeFormat("ja-JP", {
@@ -55,48 +57,84 @@ function formatDateTime(value: string) {
 
 export function LineNotificationHistoryPanel({
   embedded = false,
+  active = true,
 }: {
   embedded?: boolean;
+  /** When false, skip fetching (parent keeps panel closed). */
+  active?: boolean;
 } = {}) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [shopStats, setShopStats] = useState<ShopStat[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const historyLenRef = useRef(0);
+  historyLenRef.current = history.length;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (options?: { append?: boolean }) => {
+    const append = Boolean(options?.append);
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setError("");
+    const timerLabel = append
+      ? "admin:notification-history-more"
+      : "admin:notification-history-open";
+    console.time(timerLabel);
     try {
-      const response = await fetch("/api/admin/notification-history", {
-        cache: "no-store",
-        credentials: "include",
+      const offset = append ? historyLenRef.current : 0;
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+        extras: append ? "0" : "1",
       });
+      const response = await fetch(
+        `/api/admin/notification-history?${params.toString()}`,
+        {
+          cache: "no-store",
+          credentials: "include",
+        },
+      );
       const data = (await response.json()) as {
         history?: HistoryRow[];
         dailySummaries?: DailySummary[];
         shopStats30d?: ShopStat[];
+        hasMore?: boolean;
         message?: string;
       };
       if (!response.ok) {
         throw new Error(data.message ?? "履歴の取得に失敗しました。");
       }
-      setHistory(data.history ?? []);
-      setDailySummaries(data.dailySummaries ?? []);
-      setShopStats(data.shopStats30d ?? []);
+      setHistory((current) =>
+        append ? [...current, ...(data.history ?? [])] : data.history ?? [],
+      );
+      if (!append) {
+        setDailySummaries(data.dailySummaries ?? []);
+        setShopStats(data.shopStats30d ?? []);
+      }
+      setHasMore(Boolean(data.hasMore));
+      setLoadedOnce(true);
+      console.timeEnd(timerLabel);
     } catch (err) {
+      console.timeEnd(timerLabel);
       setError(err instanceof Error ? err.message : "履歴の取得に失敗しました。");
-      setHistory([]);
-      setDailySummaries([]);
-      setShopStats([]);
+      if (!append) {
+        setHistory([]);
+        setDailySummaries([]);
+        setShopStats([]);
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
+    if (!active || loadedOnce) return;
     void load();
-  }, [load]);
+  }, [active, loadedOnce, load]);
 
   return (
     <section
@@ -119,7 +157,7 @@ export function LineNotificationHistoryPanel({
         </div>
         <button
           type="button"
-          onClick={() => void load()}
+          onClick={() => void load({ append: false })}
           disabled={loading}
           className="rounded-full border border-gold/40 bg-ivory px-4 py-2 text-xs font-semibold text-gold-dark disabled:opacity-60"
         >
@@ -167,78 +205,84 @@ export function LineNotificationHistoryPanel({
         )}
       </div>
 
-      <div className="mt-6">
-        <h3 className="text-sm font-semibold text-charcoal">
-          店舗別 PickUp配信回数（直近30日）
-        </h3>
-        {shopStats.length === 0 ? (
-          <p className="mt-2 text-xs text-muted">まだ店舗別の配信回数はありません。</p>
+      <div className="mt-8">
+        <h3 className="text-sm font-semibold text-charcoal">直近30日 店舗別配信回数</h3>
+        {loading && shopStats.length === 0 ? (
+          <div className="mt-3 h-16 animate-pulse rounded-xl bg-ivory" />
+        ) : shopStats.length === 0 ? (
+          <p className="mt-2 text-xs text-muted">まだ集計できる配信はありません。</p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full border-collapse text-left text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-gold/25 text-muted">
-                  <th className="px-2 py-2 font-semibold">店舗名</th>
-                  <th className="px-2 py-2 font-semibold">地域</th>
-                  <th className="px-2 py-2 font-semibold">配信回数</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shopStats.map((row) => (
-                  <tr key={row.jobId} className="border-b border-gold/10 text-charcoal">
-                    <td className="px-2 py-2">{row.shopName}</td>
-                    <td className="px-2 py-2">{row.district}</td>
-                    <td className="px-2 py-2 font-semibold">{row.sendCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="mt-3 space-y-2">
+            {shopStats.slice(0, 15).map((row) => (
+              <li
+                key={row.jobId}
+                className="flex items-center justify-between rounded-xl border border-gold/15 bg-ivory/40 px-3 py-2 text-sm"
+              >
+                <span className="text-charcoal">
+                  {row.shopName}
+                  <span className="ml-2 text-xs text-muted">{row.district}</span>
+                </span>
+                <span className="font-semibold text-gold-dark">{row.sendCount}回</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
-      <div className="mt-6">
-        <h3 className="text-sm font-semibold text-charcoal">自動通知バッチ履歴</h3>
+      <div className="mt-8">
+        <h3 className="text-sm font-semibold text-charcoal">通知バッチ履歴</h3>
         {loading && history.length === 0 ? (
           <div className="mt-3 h-24 animate-pulse rounded-xl bg-ivory" />
         ) : history.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">まだ通知履歴はありません。</p>
+          <p className="mt-2 text-xs text-muted">まだ通知履歴はありません。</p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full border-collapse text-left text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-gold/25 text-muted">
-                  <th className="px-2 py-2 font-semibold">送信日時</th>
-                  <th className="px-2 py-2 font-semibold">店舗</th>
-                  <th className="px-2 py-2 font-semibold">通知種類</th>
-                  <th className="px-2 py-2 font-semibold">対象</th>
-                  <th className="px-2 py-2 font-semibold">成功</th>
-                  <th className="px-2 py-2 font-semibold">失敗</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((row) => (
-                  <tr key={row.id} className="border-b border-gold/10 text-charcoal">
-                    <td className="whitespace-nowrap px-2 py-2">
-                      {formatDateTime(row.sentAt)}
-                    </td>
-                    <td className="px-2 py-2">{row.shopName}</td>
-                    <td className="px-2 py-2">
-                      <span className="font-medium">{row.notifyTypeLabel}</span>
-                      {row.detail ? (
-                        <span className="mt-0.5 block text-[11px] text-muted">
-                          {row.detail}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-2 py-2">{row.targetCount}</td>
-                    <td className="px-2 py-2 text-[#047a3b]">{row.successCount}</td>
-                    <td className="px-2 py-2 text-red-600">{row.failCount}</td>
+          <>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full border-collapse text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-gold/25 text-muted">
+                    <th className="px-2 py-2 font-semibold">送信日時</th>
+                    <th className="px-2 py-2 font-semibold">店舗</th>
+                    <th className="px-2 py-2 font-semibold">通知種類</th>
+                    <th className="px-2 py-2 font-semibold">対象</th>
+                    <th className="px-2 py-2 font-semibold">成功</th>
+                    <th className="px-2 py-2 font-semibold">失敗</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {history.map((row) => (
+                    <tr key={row.id} className="border-b border-gold/10 text-charcoal">
+                      <td className="whitespace-nowrap px-2 py-2">
+                        {formatDateTime(row.sentAt)}
+                      </td>
+                      <td className="px-2 py-2">{row.shopName}</td>
+                      <td className="px-2 py-2">
+                        <span className="font-medium">{row.notifyTypeLabel}</span>
+                        {row.detail ? (
+                          <span className="mt-0.5 block text-[11px] text-muted">
+                            {row.detail}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2">{row.targetCount}</td>
+                      <td className="px-2 py-2 text-[#047a3b]">{row.successCount}</td>
+                      <td className="px-2 py-2 text-red-600">{row.failCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {hasMore && (
+              <button
+                type="button"
+                disabled={loadingMore}
+                onClick={() => void load({ append: true })}
+                className="mt-4 w-full rounded-full border border-gold/40 px-4 py-3 text-sm font-semibold text-gold-dark hover:bg-ivory disabled:opacity-60"
+              >
+                {loadingMore ? "読み込み中..." : "もっと見る（20件ずつ）"}
+              </button>
+            )}
+          </>
         )}
       </div>
     </section>

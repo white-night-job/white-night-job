@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   normalizeJobPayload,
@@ -133,6 +134,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const after = rowToJob(data, { includeShopLoginPassword: true });
     void runAutoNotificationsAfterJobChange({ before, after });
 
+    invalidateAdminCacheByPrefix("admin:");
     return NextResponse.json({ job: after });
   } catch (error) {
     return NextResponse.json(
@@ -153,6 +155,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     const { error } = await supabase.from("jobs").delete().eq("id", id);
     if (error) throw error;
 
+    invalidateAdminCacheByPrefix("admin:");
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

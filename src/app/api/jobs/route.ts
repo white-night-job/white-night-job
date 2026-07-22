@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   normalizeJobPayload,
@@ -278,6 +279,7 @@ export async function POST(request: Request) {
       wasCreate: true,
     });
 
+    invalidateAdminCacheByPrefix("admin:");
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
