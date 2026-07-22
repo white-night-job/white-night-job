@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
 
+const SHOP_BOOTSTRAP_KEY = "wnj-shop-bootstrap";
+
 export default function ShopLoginPage() {
   const router = useRouter();
   const [loginId, setLoginId] = useState("");
@@ -18,8 +20,24 @@ export default function ShopLoginPage() {
   useEffect(() => {
     fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
       .then((response) => response.json())
-      .then((data: { authenticated?: boolean }) => {
-        if (data.authenticated) router.replace("/shop-dashboard");
+      .then((data: { authenticated?: boolean; jobId?: string; shopName?: string }) => {
+        if (data.authenticated) {
+          if (data.jobId && data.shopName) {
+            try {
+              sessionStorage.setItem(
+                SHOP_BOOTSTRAP_KEY,
+                JSON.stringify({
+                  jobId: data.jobId,
+                  shopName: data.shopName,
+                  at: Date.now(),
+                }),
+              );
+            } catch {
+              // ignore
+            }
+          }
+          router.replace("/shop-dashboard");
+        }
       })
       .finally(() => setChecking(false));
   }, [router]);
@@ -28,6 +46,7 @@ export default function ShopLoginPage() {
     event.preventDefault();
     setLoading(true);
     setMessage("");
+    console.time("shop-login:button-to-auth");
 
     try {
       const response = await fetch("/api/shop-login", {
@@ -36,12 +55,38 @@ export default function ShopLoginPage() {
         credentials: "include",
         body: JSON.stringify({ loginId, password }),
       });
-      const data = (await response.json()) as { message?: string };
+      const data = (await response.json()) as {
+        message?: string;
+        jobId?: string;
+        shopName?: string;
+        published?: boolean;
+        plan?: string | null;
+      };
+      console.timeEnd("shop-login:button-to-auth");
       if (!response.ok) {
         throw new Error(data.message ?? "ログインIDまたはパスワードが違います");
       }
+
+      try {
+        sessionStorage.setItem(
+          SHOP_BOOTSTRAP_KEY,
+          JSON.stringify({
+            jobId: data.jobId,
+            shopName: data.shopName,
+            published: data.published,
+            plan: data.plan,
+            at: Date.now(),
+          }),
+        );
+      } catch {
+        // ignore
+      }
+
+      console.time("shop-login:auth-to-dashboard-nav");
       router.replace("/shop-dashboard");
+      console.timeEnd("shop-login:auth-to-dashboard-nav");
     } catch (error) {
+      console.timeEnd("shop-login:button-to-auth");
       setMessage(
         error instanceof Error
           ? error.message

@@ -324,6 +324,47 @@ export async function fetchApplicationRows(
   return data ?? [];
 }
 
+/** Scoped fetch for a single shop — use this instead of full-table scans. */
+export async function fetchApplicationRowsForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+  options?: { sinceIso?: string },
+): Promise<ApplicationRow[]> {
+  let query = supabase
+    .from("job_applications")
+    .select("job_id, type, created_at")
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: false });
+
+  if (options?.sinceIso) {
+    query = query.gte("created_at", options.sinceIso);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchApplicationCountsForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+): Promise<JobApplicationCounts> {
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select("type")
+    .eq("job_id", jobId);
+
+  if (error) throw error;
+
+  const counts = emptyApplicationCounts();
+  for (const row of data ?? []) {
+    if (row.type === "line") counts.line += 1;
+    else if (row.type === "phone") counts.phone += 1;
+  }
+  counts.total = counts.line + counts.phone;
+  return counts;
+}
+
 export async function fetchApplicationStats(
   supabase: SupabaseClient,
 ): Promise<Record<string, JobApplicationCounts>> {

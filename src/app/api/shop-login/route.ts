@@ -22,9 +22,10 @@ export async function POST(request: Request) {
     }
 
     const supabase = createSupabaseAdmin();
+    const authStarted = Date.now();
     const { data: job, error } = await supabase
       .from("jobs")
-      .select("id, shop_login_id, shop_login_password")
+      .select("id, shop_name, shop_login_id, shop_login_password, published, plan")
       .eq("shop_login_id", loginId)
       .maybeSingle();
 
@@ -42,7 +43,18 @@ export async function POST(request: Request) {
     }
 
     await setShopCookie(job.id);
-    return NextResponse.json({ ok: true });
+    console.info("[shop-login] auth-complete", {
+      jobId: job.id,
+      authMs: Date.now() - authStarted,
+    });
+    return NextResponse.json({
+      ok: true,
+      jobId: job.id,
+      shopName: job.shop_name,
+      published: job.published ?? true,
+      plan: job.plan ?? null,
+      timings: { authMs: Date.now() - authStarted },
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "ログインに失敗しました。") },

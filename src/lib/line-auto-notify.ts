@@ -378,6 +378,22 @@ export async function countMatchingPickupRecipients(job: Job): Promise<number> {
   ).length;
 }
 
+/** Load prefs once and return both notify audience sizes. */
+export async function countMatchingNotifyRecipients(job: Job): Promise<{
+  newJobNotifyCount: number;
+  pickupNotifyCount: number;
+}> {
+  const prefs = await loadAllUserPrefs();
+  let newJobNotifyCount = 0;
+  let pickupNotifyCount = 0;
+  for (const user of prefs) {
+    if (!jobMatchesNotifyPrefs(job, user)) continue;
+    if (user.notifyNewJobs) newJobNotifyCount += 1;
+    if (user.notifyPickupJobs) pickupNotifyCount += 1;
+  }
+  return { newJobNotifyCount, pickupNotifyCount };
+}
+
 export async function notifyNewJobListed(job: Job): Promise<SendBatchResult | null> {
   if (!process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim()) {
     console.warn("[line-auto-notify] skip new job: token missing");

@@ -165,6 +165,9 @@ export default function ShopDashboardPage() {
   const storeImageInputRef = useRef<HTMLInputElement>(null);
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [shellShopName, setShellShopName] = useState("");
+  const [deferredLoading, setDeferredLoading] = useState(true);
+  const shellTimedRef = useRef(false);
   const [form, setForm] = useState<ShopForm | null>(null);
   const [publishedJob, setPublishedJob] = useState<Job | null>(null);
   const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
@@ -191,52 +194,127 @@ export default function ShopDashboardPage() {
   const [pickupNotifyCount, setPickupNotifyCount] = useState(0);
   const [jobPlan, setJobPlan] = useState<JobPlan>("light");
 
-  async function loadDashboard() {
+  async function loadCoreDashboard() {
+    console.time("shop-dashboard:core-fetch");
     const data = await readJson<{
       job: Job;
-      applicationRows: ApplicationRow[];
       applicationDetail: JobApplicationDetail;
       viewCount: number;
       districtRank: number;
       districtTotal: number;
       boostRemaining: number;
       boostLimit: number;
-      newJobNotifyCount?: number;
-      pickupNotifyCount?: number;
+      timings?: Record<string, number>;
     }>(
       await fetch("/api/shop-dashboard", {
         cache: "no-store",
         credentials: "include",
       }),
     );
+    console.timeEnd("shop-dashboard:core-fetch");
+    if (data.timings) {
+      console.info("[shop-dashboard] core timings", data.timings);
+    }
+
     setForm(toForm(data.job));
     setPublishedJob(data.job);
     setJobId(data.job.id);
+    setShellShopName(data.job.shopName);
     setJobPlan(parseJobPlan(data.job.plan));
-    setApplicationRows(data.applicationRows);
     setApplicationDetail(data.applicationDetail);
     setViewCount(data.viewCount);
     setDistrictRank(data.districtRank ?? 1);
     setDistrictTotal(data.districtTotal ?? 1);
     setBoostRemaining(data.boostRemaining ?? 5);
     setBoostLimit(data.boostLimit ?? 5);
-    setNewJobNotifyCount(data.newJobNotifyCount ?? 0);
-    setPickupNotifyCount(data.pickupNotifyCount ?? 0);
     setAuthenticated(true);
   }
 
+  async function loadDeferredDashboard() {
+    setDeferredLoading(true);
+    console.time("shop-dashboard:deferred-fetch");
+    try {
+      const data = await readJson<{
+        applicationRows: ApplicationRow[];
+        newJobNotifyCount?: number;
+        pickupNotifyCount?: number;
+        timings?: Record<string, number>;
+      }>(
+        await fetch("/api/shop-dashboard/deferred", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      console.timeEnd("shop-dashboard:deferred-fetch");
+      if (data.timings) {
+        console.info("[shop-dashboard] deferred timings", data.timings);
+      }
+      setApplicationRows(data.applicationRows ?? []);
+      setNewJobNotifyCount(data.newJobNotifyCount ?? 0);
+      setPickupNotifyCount(data.pickupNotifyCount ?? 0);
+    } catch (error) {
+      console.timeEnd("shop-dashboard:deferred-fetch");
+      console.error("[shop-dashboard] deferred load failed", error);
+      // Keep core dashboard usable even if deferred data fails.
+    } finally {
+      setDeferredLoading(false);
+    }
+  }
+
+  async function loadDashboard() {
+    await loadCoreDashboard();
+    await loadDeferredDashboard();
+  }
+
   useEffect(() => {
-    fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
-      .then((response) => response.json())
-      .then((data: { authenticated?: boolean }) => {
-        if (!data.authenticated) {
-          router.replace("/shop-login");
-          return;
+    let cancelled = false;
+    console.time("shop-dashboard:auth-to-shell");
+
+    const markShellReady = () => {
+      if (shellTimedRef.current) return;
+      shellTimedRef.current = true;
+      console.timeEnd("shop-dashboard:auth-to-shell");
+    };
+
+    try {
+      const raw = sessionStorage.getItem("wnj-shop-bootstrap");
+      if (raw) {
+        const bootstrap = JSON.parse(raw) as {
+          shopName?: string;
+          jobId?: string;
+          plan?: string;
+        };
+        if (bootstrap.shopName) {
+          setShellShopName(bootstrap.shopName);
+          setAuthenticated(true);
+          setChecking(false);
+          markShellReady();
         }
-        return loadDashboard();
-      })
-      .catch(() => router.replace("/shop-login"))
-      .finally(() => setChecking(false));
+        if (bootstrap.jobId) setJobId(bootstrap.jobId);
+        if (bootstrap.plan) setJobPlan(parseJobPlan(bootstrap.plan));
+      }
+    } catch {
+      // ignore
+    }
+
+    void (async () => {
+      try {
+        await loadCoreDashboard();
+        if (cancelled) return;
+        setChecking(false);
+        markShellReady();
+        void loadDeferredDashboard();
+      } catch {
+        if (!cancelled) {
+          router.replace("/shop-login");
+          setChecking(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const monthlyApplicationStats = useMemo(
@@ -465,7 +543,7 @@ export default function ShopDashboardPage() {
     }
   }
 
-  if (checking || !authenticated || !form) {
+  if (checking && !shellShopName && !form) {
     return (
       <div className="mx-auto max-w-4xl p-8">
         <div className="h-64 animate-pulse rounded-2xl bg-white" />
@@ -473,7 +551,15 @@ export default function ShopDashboardPage() {
     );
   }
 
-  if (showPreview && publishedJob) {
+  if (!authenticated && !shellShopName) {
+    return (
+      <div className="mx-auto max-w-4xl p-8">
+        <div className="h-64 animate-pulse rounded-2xl bg-white" />
+      </div>
+    );
+  }
+
+  if (showPreview && publishedJob && form) {
     const previewJob = buildPreviewJobFromShopForm(form, publishedJob);
     return (
       <JobListingPreview
@@ -488,6 +574,36 @@ export default function ShopDashboardPage() {
           void handleConfirmPublish();
         }}
       />
+    );
+  }
+
+  const displayShopName = form?.shopName ?? shellShopName ?? "店舗";
+
+  if (!form) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-gold-dark">店舗ダッシュボード</p>
+            <h1 className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+              {displayShopName}
+            </h1>
+            <p className="mt-1 text-sm text-muted">基本情報を読み込み中です…</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+          >
+            ログアウト
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div className="h-24 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+          <div className="h-48 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+          <div className="h-40 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+        </div>
+      </div>
     );
   }
 
@@ -709,6 +825,8 @@ export default function ShopDashboardPage() {
               <img
                 src={form.recruiterImage}
                 alt="採用担当者プレビュー"
+                loading="lazy"
+                decoding="async"
                 className="mt-4 h-24 w-24 rounded-full border-4 border-gold/30 object-cover"
               />
             )}
@@ -773,6 +891,8 @@ export default function ShopDashboardPage() {
             <img
               src={form.imageUrl}
               alt="店舗トップ画像プレビュー"
+              loading="lazy"
+              decoding="async"
               className="mt-4 h-40 w-full rounded-xl object-cover"
             />
           ) : (
@@ -799,7 +919,13 @@ export default function ShopDashboardPage() {
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {form.storeImages.map((imageUrl, index) => (
                 <li key={`${imageUrl}-${index}`} className="overflow-hidden rounded-xl border border-gold/25 bg-white">
-                  <img src={imageUrl} alt={`店舗ギャラリー ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                  <img
+                    src={imageUrl}
+                    alt={`店舗ギャラリー ${index + 1}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="aspect-[4/3] w-full object-cover"
+                  />
                   <button type="button" onClick={() => setField("storeImages", form.storeImages.filter((_, i) => i !== index))} className="w-full px-2 py-2 text-xs text-muted hover:text-charcoal">削除</button>
                 </li>
               ))}
@@ -941,13 +1067,21 @@ export default function ShopDashboardPage() {
           <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
             <dt className="text-xs text-muted">新着求人通知予定</dt>
             <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-              約{newJobNotifyCount.toLocaleString("ja-JP")}人
+              {deferredLoading ? (
+                <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
+              ) : (
+                <>約{newJobNotifyCount.toLocaleString("ja-JP")}人</>
+              )}
             </dd>
           </div>
           <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
             <dt className="text-xs text-muted">PickUp通知予定</dt>
             <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-              約{pickupNotifyCount.toLocaleString("ja-JP")}人
+              {deferredLoading ? (
+                <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
+              ) : (
+                <>約{pickupNotifyCount.toLocaleString("ja-JP")}人</>
+              )}
             </dd>
           </div>
         </dl>
@@ -1000,7 +1134,11 @@ export default function ShopDashboardPage() {
           </div>
         </dl>
 
-        <MonthlyApplicationChart data={monthlyApplicationStats} />
+        {deferredLoading ? (
+          <div className="mt-4 h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />
+        ) : (
+          <MonthlyApplicationChart data={monthlyApplicationStats} />
+        )}
       </section>
 
       <p className="mt-6 text-center text-xs text-muted">

@@ -8,6 +8,7 @@ import {
   fetchBoostStatsForJobs,
   insertShopBoost,
 } from "@/lib/shop-boosts";
+import { invalidateShopScopedCache } from "@/lib/shop-scoped-cache";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     }
 
     await insertShopBoost(supabase, jobId);
+    invalidateShopScopedCache(jobId);
 
     // Never mutate listing_priority / pickup / AI recommend / plan here.
     // Ranking within priority tier uses today's shop_boosts rows only.

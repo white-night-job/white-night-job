@@ -70,6 +70,7 @@ export function ShopAnalyticsSection() {
   const load = useCallback(async (nextPeriod: AnalyticsPeriod) => {
     setLoading(true);
     setError("");
+    console.time("shop-dashboard:analytics-fetch");
     try {
       const response = await fetch(
         `/api/shop-dashboard/analytics?period=${nextPeriod}`,
@@ -80,7 +81,9 @@ export function ShopAnalyticsSection() {
         throw new Error(body.message ?? "分析データの取得に失敗しました。");
       }
       setData(body);
+      console.timeEnd("shop-dashboard:analytics-fetch");
     } catch (err) {
+      console.timeEnd("shop-dashboard:analytics-fetch");
       setData(null);
       setError(err instanceof Error ? err.message : "分析データの取得に失敗しました。");
     } finally {

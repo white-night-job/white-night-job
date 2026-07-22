@@ -142,3 +142,37 @@ export async function fetchViewRows(
   const { rows } = await fetchViewRowsWithStatus(supabase);
   return rows;
 }
+
+/** Count views for one job without downloading all view rows. */
+export async function countViewsForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("job_views")
+    .select("job_id", { count: "exact", head: true })
+    .eq("job_id", jobId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function fetchViewRowsForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+  options?: { sinceIso?: string },
+): Promise<ViewRow[]> {
+  let query = supabase
+    .from("job_views")
+    .select("job_id, created_at")
+    .eq("job_id", jobId)
+    .order("created_at", { ascending: false });
+
+  if (options?.sinceIso) {
+    query = query.gte("created_at", options.sinceIso);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}

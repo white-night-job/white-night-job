@@ -8,6 +8,7 @@ import {
   shopPayloadToRow,
   validateShopJobPayload,
 } from "@/lib/shop-job-db";
+import { invalidateShopScopedCache } from "@/lib/shop-scoped-cache";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -103,6 +104,8 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) throw error;
+
+    invalidateShopScopedCache(jobId);
 
     const before = previous ? rowToJob(previous) : null;
     const after = rowToJob(data);
