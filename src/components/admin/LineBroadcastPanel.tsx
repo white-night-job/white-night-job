@@ -8,6 +8,8 @@ type LineBroadcastPanelProps = {
   jobs: Job[];
   selectedJobId?: string | null;
   onMessage: (message: string) => void;
+  /** When true, omit outer card title (parent accordion provides chrome). */
+  embedded?: boolean;
 };
 
 type PendingAction =
@@ -42,6 +44,7 @@ export function LineBroadcastPanel({
   jobs,
   selectedJobId,
   onMessage,
+  embedded = false,
 }: LineBroadcastPanelProps) {
   const [loading, setLoading] = useState(false);
   const [selectedAreas, setSelectedAreas] = useState<string[]>(["すすきの"]);
@@ -118,14 +121,32 @@ export function LineBroadcastPanel({
   const effectiveJobId = targetJobId || selectedJobId || "";
 
   return (
-    <section className="mb-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
-      <h2 className="font-serif text-lg font-semibold text-charcoal">LINE配信管理</h2>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        Flex Messageのカルーセル形式で店舗情報を配信します。送信結果は notification_logs
-        に記録されます。
-      </p>
+    <section
+      className={
+        embedded
+          ? "pt-1"
+          : "mb-6 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6"
+      }
+    >
+      {!embedded && (
+        <>
+          <h2 className="font-serif text-lg font-semibold text-charcoal">
+            LINE配信管理
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Flex Messageのカルーセル形式で店舗情報を配信します。送信結果は notification_logs
+            に記録されます。
+          </p>
+        </>
+      )}
+      {embedded && (
+        <p className="mb-3 text-xs leading-relaxed text-muted">
+          Flex Messageのカルーセル形式で店舗情報を配信します。送信結果は notification_logs
+          に記録されます。
+        </p>
+      )}
 
-      <div className="mt-4 grid gap-4">
+      <div className={embedded ? "grid gap-4" : "mt-4 grid gap-4"}>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"

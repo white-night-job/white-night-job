@@ -53,7 +53,11 @@ function formatDateTime(value: string) {
   }
 }
 
-export function LineNotificationHistoryPanel() {
+export function LineNotificationHistoryPanel({
+  embedded = false,
+}: {
+  embedded?: boolean;
+} = {}) {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [shopStats, setShopStats] = useState<ShopStat[]>([]);
@@ -95,13 +99,21 @@ export function LineNotificationHistoryPanel() {
   }, [load]);
 
   return (
-    <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+    <section
+      className={
+        embedded
+          ? "pt-1"
+          : "mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6"
+      }
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-serif text-xl font-semibold text-charcoal">
-            LINE通知履歴
-          </h2>
-          <p className="mt-1 text-xs text-muted">
+          {!embedded && (
+            <h2 className="font-serif text-xl font-semibold text-charcoal">
+              LINE通知履歴
+            </h2>
+          )}
+          <p className={`${embedded ? "" : "mt-1"} text-xs text-muted`}>
             自動配信の送信日時・店舗・種類・件数を確認できます。
           </p>
         </div>
