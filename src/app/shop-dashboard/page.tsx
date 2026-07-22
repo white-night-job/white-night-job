@@ -1,11 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
-import { ShopAnalyticsSection } from "@/components/ShopAnalyticsSection";
-import { JobListingPreview } from "@/components/JobListingPreview";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -14,6 +12,7 @@ import {
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import {
   aggregateMonthlyApplicationsForJob,
+  emptyApplicationDetail,
   type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
@@ -43,6 +42,38 @@ import {
   parseJobPlan,
   type JobPlan,
 } from "@/lib/job-plan";
+
+const MonthlyApplicationChart = dynamic(
+  () =>
+    import("@/components/MonthlyApplicationChart").then(
+      (mod) => mod.MonthlyApplicationChart,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mt-4 h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />
+    ),
+  },
+);
+
+const ShopAnalyticsSection = dynamic(
+  () =>
+    import("@/components/ShopAnalyticsSection").then(
+      (mod) => mod.ShopAnalyticsSection,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mb-8 h-64 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+    ),
+  },
+);
+
+const JobListingPreview = dynamic(
+  () =>
+    import("@/components/JobListingPreview").then((mod) => mod.JobListingPreview),
+  { ssr: false },
+);
 
 type ShopForm = {
   shopName: string;
@@ -163,9 +194,12 @@ export default function ShopDashboardPage() {
   const topImageInputRef = useRef<HTMLInputElement>(null);
   const recruiterImageInputRef = useRef<HTMLInputElement>(null);
   const storeImageInputRef = useRef<HTMLInputElement>(null);
-  const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [shellShopName, setShellShopName] = useState("");
+  const [shellPublished, setShellPublished] = useState<boolean | null>(null);
+  const [shellDistrict, setShellDistrict] = useState("");
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [jobLoading, setJobLoading] = useState(true);
   const [deferredLoading, setDeferredLoading] = useState(true);
   const shellTimedRef = useRef(false);
   const [form, setForm] = useState<ShopForm | null>(null);
@@ -194,16 +228,20 @@ export default function ShopDashboardPage() {
   const [pickupNotifyCount, setPickupNotifyCount] = useState(0);
   const [jobPlan, setJobPlan] = useState<JobPlan>("light");
 
-  async function loadCoreDashboard() {
-    console.time("shop-dashboard:core-fetch");
+  function markShellReady() {
+    if (shellTimedRef.current) return;
+    shellTimedRef.current = true;
+    console.timeEnd("shop-dashboard:auth-to-shell");
+  }
+
+  async function loadShell() {
+    console.time("shop-dashboard:shell-fetch");
     const data = await readJson<{
-      job: Job;
-      applicationDetail: JobApplicationDetail;
-      viewCount: number;
-      districtRank: number;
-      districtTotal: number;
-      boostRemaining: number;
-      boostLimit: number;
+      jobId: string;
+      shopName: string;
+      published: boolean;
+      plan: string | null;
+      district: string;
       timings?: Record<string, number>;
     }>(
       await fetch("/api/shop-dashboard", {
@@ -211,23 +249,84 @@ export default function ShopDashboardPage() {
         credentials: "include",
       }),
     );
-    console.timeEnd("shop-dashboard:core-fetch");
+    console.timeEnd("shop-dashboard:shell-fetch");
     if (data.timings) {
-      console.info("[shop-dashboard] core timings", data.timings);
+      console.info("[shop-dashboard] shell timings", data.timings);
     }
-
-    setForm(toForm(data.job));
-    setPublishedJob(data.job);
-    setJobId(data.job.id);
-    setShellShopName(data.job.shopName);
-    setJobPlan(parseJobPlan(data.job.plan));
-    setApplicationDetail(data.applicationDetail);
-    setViewCount(data.viewCount);
-    setDistrictRank(data.districtRank ?? 1);
-    setDistrictTotal(data.districtTotal ?? 1);
-    setBoostRemaining(data.boostRemaining ?? 5);
-    setBoostLimit(data.boostLimit ?? 5);
+    setJobId(data.jobId);
+    setShellShopName(data.shopName);
+    setShellPublished(data.published);
+    setShellDistrict(data.district);
+    setJobPlan(parseJobPlan(data.plan));
     setAuthenticated(true);
+    markShellReady();
+  }
+
+  async function loadMetrics() {
+    setMetricsLoading(true);
+    console.time("shop-dashboard:metrics-fetch");
+    try {
+      const data = await readJson<{
+        applicationDetail: JobApplicationDetail;
+        viewCount: number;
+        districtRank: number;
+        districtTotal: number;
+        boostRemaining: number;
+        boostLimit: number;
+        district?: string;
+        timings?: Record<string, number>;
+      }>(
+        await fetch("/api/shop-dashboard/metrics", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      console.timeEnd("shop-dashboard:metrics-fetch");
+      if (data.timings) {
+        console.info("[shop-dashboard] metrics timings", data.timings);
+      }
+      setApplicationDetail(data.applicationDetail);
+      setViewCount(data.viewCount);
+      setDistrictRank(data.districtRank ?? 1);
+      setDistrictTotal(data.districtTotal ?? 1);
+      setBoostRemaining(data.boostRemaining ?? 5);
+      setBoostLimit(data.boostLimit ?? 5);
+      if (data.district) setShellDistrict(data.district);
+    } catch (error) {
+      console.timeEnd("shop-dashboard:metrics-fetch");
+      console.error("[shop-dashboard] metrics failed", error);
+      setApplicationDetail(emptyApplicationDetail());
+    } finally {
+      setMetricsLoading(false);
+    }
+  }
+
+  async function loadJobDetails() {
+    setJobLoading(true);
+    console.time("shop-dashboard:job-fetch");
+    try {
+      const data = await readJson<{ job: Job; timings?: Record<string, number> }>(
+        await fetch("/api/shop-dashboard/job", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      console.timeEnd("shop-dashboard:job-fetch");
+      if (data.timings) {
+        console.info("[shop-dashboard] job timings", data.timings);
+      }
+      setForm(toForm(data.job));
+      setPublishedJob(data.job);
+      setJobId(data.job.id);
+      setShellShopName(data.job.shopName);
+      setShellDistrict(data.job.district);
+      setJobPlan(parseJobPlan(data.job.plan));
+    } catch (error) {
+      console.timeEnd("shop-dashboard:job-fetch");
+      throw error;
+    } finally {
+      setJobLoading(false);
+    }
   }
 
   async function loadDeferredDashboard() {
@@ -255,26 +354,18 @@ export default function ShopDashboardPage() {
     } catch (error) {
       console.timeEnd("shop-dashboard:deferred-fetch");
       console.error("[shop-dashboard] deferred load failed", error);
-      // Keep core dashboard usable even if deferred data fails.
     } finally {
       setDeferredLoading(false);
     }
   }
 
-  async function loadDashboard() {
-    await loadCoreDashboard();
-    await loadDeferredDashboard();
+  async function refreshAfterSave() {
+    await Promise.all([loadJobDetails(), loadMetrics(), loadDeferredDashboard()]);
   }
 
   useEffect(() => {
     let cancelled = false;
     console.time("shop-dashboard:auth-to-shell");
-
-    const markShellReady = () => {
-      if (shellTimedRef.current) return;
-      shellTimedRef.current = true;
-      console.timeEnd("shop-dashboard:auth-to-shell");
-    };
 
     try {
       const raw = sessionStorage.getItem("wnj-shop-bootstrap");
@@ -283,15 +374,18 @@ export default function ShopDashboardPage() {
           shopName?: string;
           jobId?: string;
           plan?: string;
+          published?: boolean;
         };
         if (bootstrap.shopName) {
           setShellShopName(bootstrap.shopName);
           setAuthenticated(true);
-          setChecking(false);
           markShellReady();
         }
         if (bootstrap.jobId) setJobId(bootstrap.jobId);
         if (bootstrap.plan) setJobPlan(parseJobPlan(bootstrap.plan));
+        if (typeof bootstrap.published === "boolean") {
+          setShellPublished(bootstrap.published);
+        }
       }
     } catch {
       // ignore
@@ -299,15 +393,19 @@ export default function ShopDashboardPage() {
 
     void (async () => {
       try {
-        await loadCoreDashboard();
+        // Shell first (auth + name), then heavy data in parallel — never block redirect.
+        await loadShell();
         if (cancelled) return;
-        setChecking(false);
-        markShellReady();
-        void loadDeferredDashboard();
+        void Promise.all([
+          loadMetrics(),
+          loadJobDetails().catch((error) => {
+            console.error("[shop-dashboard] job details failed", error);
+          }),
+          loadDeferredDashboard(),
+        ]);
       } catch {
         if (!cancelled) {
           router.replace("/shop-login");
-          setChecking(false);
         }
       }
     })();
@@ -315,6 +413,7 @@ export default function ShopDashboardPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once bootstrap
   }, [router]);
 
   const monthlyApplicationStats = useMemo(
@@ -344,6 +443,11 @@ export default function ShopDashboardPage() {
   }
 
   async function handleLogout() {
+    try {
+      sessionStorage.removeItem("wnj-shop-bootstrap");
+    } catch {
+      // ignore
+    }
     await fetch("/api/shop-logout", { method: "POST", credentials: "include" });
     router.replace("/shop-login");
   }
@@ -429,7 +533,7 @@ export default function ShopDashboardPage() {
     setMessage("");
     try {
       await persistForm(form);
-      await loadDashboard();
+      await refreshAfterSave();
       requestScrollToTop();
       setShowPreview(false);
       setMessage("求人情報を更新しました。");
@@ -543,22 +647,6 @@ export default function ShopDashboardPage() {
     }
   }
 
-  if (checking && !shellShopName && !form) {
-    return (
-      <div className="mx-auto max-w-4xl p-8">
-        <div className="h-64 animate-pulse rounded-2xl bg-white" />
-      </div>
-    );
-  }
-
-  if (!authenticated && !shellShopName) {
-    return (
-      <div className="mx-auto max-w-4xl p-8">
-        <div className="h-64 animate-pulse rounded-2xl bg-white" />
-      </div>
-    );
-  }
-
   if (showPreview && publishedJob && form) {
     const previewJob = buildPreviewJobFromShopForm(form, publishedJob);
     return (
@@ -577,35 +665,34 @@ export default function ShopDashboardPage() {
     );
   }
 
-  const displayShopName = form?.shopName ?? shellShopName ?? "店舗";
-
-  if (!form) {
+  // Soft loading shell while auth cookie is being verified (no long white screen).
+  if (!authenticated && !shellShopName) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-gold-dark">店舗ダッシュボード</p>
-            <h1 className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-              {displayShopName}
-            </h1>
-            <p className="mt-1 text-sm text-muted">基本情報を読み込み中です…</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-          >
-            ログアウト
-          </button>
+        <div className="mb-6">
+          <p className="text-sm font-medium text-gold-dark">店舗ダッシュボード</p>
+          <h1 className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+            読み込み中…
+          </h1>
         </div>
         <div className="space-y-4">
-          <div className="h-24 animate-pulse rounded-2xl border border-gold/20 bg-white" />
-          <div className="h-48 animate-pulse rounded-2xl border border-gold/20 bg-white" />
-          <div className="h-40 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+          <div className="h-16 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((key) => (
+              <div
+                key={key}
+                className="h-20 animate-pulse rounded-xl border border-gold/20 bg-white"
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
+
+  const displayShopName = form?.shopName ?? shellShopName ?? "店舗";
+  const displayDistrict = form?.district ?? shellDistrict;
+  const isPublished = shellPublished ?? true;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -613,10 +700,24 @@ export default function ShopDashboardPage() {
         <div>
           <p className="text-sm font-medium text-gold-dark">店舗ダッシュボード</p>
           <h1 className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-            {form.shopName}
+            {displayShopName}
           </h1>
           <p className="mt-1 text-sm text-muted">
             自店舗の求人情報と応募・表示回数を確認できます。
+          </p>
+          <p className="mt-2 inline-flex items-center gap-2 text-xs font-medium">
+            <span
+              className={`rounded-full px-2.5 py-1 ${
+                isPublished
+                  ? "bg-[#047a3b]/10 text-[#047a3b]"
+                  : "bg-zinc-200 text-muted"
+              }`}
+            >
+              {isPublished ? "公開中" : "非公開"}
+            </span>
+            <span className="rounded-full border border-gold/30 bg-ivory px-2.5 py-1 text-gold-dark">
+              {planDefinition.label}
+            </span>
           </p>
         </div>
         <button
@@ -649,17 +750,23 @@ export default function ShopDashboardPage() {
       <div className="mb-8 overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold">
         <button
           type="button"
-          onClick={() => setIsFormOpen((current) => !current)}
-          className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-ivory/60 sm:px-6"
+          onClick={() => {
+            if (!form) return;
+            setIsFormOpen((current) => !current);
+          }}
+          disabled={!form || jobLoading}
+          className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-ivory/60 disabled:cursor-wait disabled:opacity-70 sm:px-6"
           aria-expanded={isFormOpen}
         >
-          <span className="text-lg font-semibold text-charcoal">求人情報の編集</span>
+          <span className="text-lg font-semibold text-charcoal">
+            {jobLoading && !form ? "求人情報を読み込み中…" : "求人情報の編集"}
+          </span>
           <span className="text-sm text-gold-dark" aria-hidden="true">
             {isFormOpen ? "▲" : "▼"}
           </span>
         </button>
 
-        {isFormOpen && (
+        {isFormOpen && form && (
           <form
             onSubmit={handleSubmit}
             className="space-y-6 border-t border-gold/15 px-5 py-5 sm:px-6 sm:py-6"
@@ -994,18 +1101,70 @@ export default function ShopDashboardPage() {
         )}
       </div>
 
+      <section className="mb-8 space-y-3">
+        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数（累計）</h2>
+        <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <dt className="text-xs text-muted">LINE応募数</dt>
+            <dd className="text-lg font-semibold text-[#047a3b]">
+              {metricsLoading ? (
+                <span className="mt-1 inline-block h-6 w-16 animate-pulse rounded bg-gold/20" />
+              ) : (
+                applicationDetail?.line ?? 0
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">電話応募数</dt>
+            <dd className="text-lg font-semibold text-gold-dark">
+              {metricsLoading ? (
+                <span className="mt-1 inline-block h-6 w-16 animate-pulse rounded bg-gold/20" />
+              ) : (
+                applicationDetail?.phone ?? 0
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">合計応募数</dt>
+            <dd className="text-lg font-semibold text-charcoal">
+              {metricsLoading ? (
+                <span className="mt-1 inline-block h-6 w-16 animate-pulse rounded bg-gold/20" />
+              ) : (
+                applicationDetail?.total ?? 0
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted">詳細ページ表示（累計）</dt>
+            <dd className="text-lg font-semibold text-charcoal">
+              {metricsLoading ? (
+                <span className="mt-1 inline-block h-6 w-16 animate-pulse rounded bg-gold/20" />
+              ) : (
+                viewCount
+              )}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gold-light/90">
-              {form.district}エリア内 表示順位
+              {displayDistrict || "—"}エリア内 表示順位
             </p>
-            <p className="mt-1 font-serif text-3xl font-semibold text-white">
-              {districtRank}
-              <span className="ml-1 text-lg font-medium text-gold-light">位</span>
-            </p>
+            {metricsLoading ? (
+              <div className="mt-2 h-10 w-28 animate-pulse rounded bg-white/20" />
+            ) : (
+              <p className="mt-1 font-serif text-3xl font-semibold text-white">
+                {districtRank}
+                <span className="ml-1 text-lg font-medium text-gold-light">位</span>
+              </p>
+            )}
             <p className="mt-1 text-xs text-gold-light/70">
-              全{districtTotal}店舗中（本日の上位表示・更新順で算出）
+              {metricsLoading
+                ? "順位を計算中…"
+                : `全${districtTotal}店舗中（本日の上位表示・更新順で算出）`}
             </p>
             <p className="mt-2 inline-flex rounded-full border border-gold/40 bg-black/25 px-3 py-1 text-xs font-medium text-gold-light">
               掲載プラン：{planDefinition.label}（{planDefinition.priceLabel}）
@@ -1015,23 +1174,29 @@ export default function ShopDashboardPage() {
             <p className="text-center text-sm font-medium text-gold-light sm:text-right">
               本日の上位表示
             </p>
-            <p
-              className="text-center font-serif text-lg tracking-wide text-white sm:text-right"
-              aria-label={`本日の上位表示 ${boostLimit - boostRemaining} / ${boostLimit}回`}
-            >
-              {"★".repeat(Math.max(0, boostLimit - boostRemaining))}
-              {"☆".repeat(Math.max(0, boostRemaining))}
-              <span className="ml-2 text-sm font-sans font-medium text-gold-light">
-                {boostLimit - boostRemaining} / {boostLimit}回
-              </span>
-            </p>
+            {metricsLoading ? (
+              <div className="h-8 w-40 animate-pulse rounded bg-white/20" />
+            ) : (
+              <p
+                className="text-center font-serif text-lg tracking-wide text-white sm:text-right"
+                aria-label={`本日の上位表示 ${boostLimit - boostRemaining} / ${boostLimit}回`}
+              >
+                {"★".repeat(Math.max(0, boostLimit - boostRemaining))}
+                {"☆".repeat(Math.max(0, boostRemaining))}
+                <span className="ml-2 text-sm font-sans font-medium text-gold-light">
+                  {boostLimit - boostRemaining} / {boostLimit}回
+                </span>
+              </p>
+            )}
             <p className="text-center text-xs text-gold-light/80 sm:text-right">
-              残り{boostRemaining}回（毎日0:00にリセット）
+              {metricsLoading
+                ? "読み込み中…"
+                : `残り${boostRemaining}回（毎日0:00にリセット）`}
             </p>
             <button
               type="button"
               onClick={handleBoost}
-              disabled={boostLoading || boostRemaining <= 0}
+              disabled={boostLoading || metricsLoading || boostRemaining <= 0}
               className="rounded-full border border-gold/50 bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-charcoal shadow-gold transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {boostLoading ? "適用中..." : "上位表示する"}
@@ -1102,37 +1267,12 @@ export default function ShopDashboardPage() {
       )}
 
       <section className="space-y-6">
-        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数（累計）</h2>
+        <h2 className="text-lg font-semibold text-charcoal">応募推移</h2>
         <p className="text-xs text-muted">
           {analyticsEnabled
-            ? "従来の累計値です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。"
-            : "累計の応募・表示回数です。"}
+            ? "月次の応募推移です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。"
+            : "月次の応募推移です。"}
         </p>
-
-        <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <dt className="text-xs text-muted">LINE応募数</dt>
-            <dd className="text-lg font-semibold text-[#047a3b]">
-              {applicationDetail?.line ?? 0}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted">電話応募数</dt>
-            <dd className="text-lg font-semibold text-gold-dark">
-              {applicationDetail?.phone ?? 0}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted">合計応募数</dt>
-            <dd className="text-lg font-semibold text-charcoal">
-              {applicationDetail?.total ?? 0}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted">詳細ページ表示（累計）</dt>
-            <dd className="text-lg font-semibold text-charcoal">{viewCount}</dd>
-          </div>
-        </dl>
 
         {deferredLoading ? (
           <div className="mt-4 h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />

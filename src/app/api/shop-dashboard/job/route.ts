@@ -60,6 +60,45 @@ function stripAdminOnlyFields(body: unknown): Record<string, unknown> {
   return next;
 }
 
+/** Load full job for the authenticated shop (edit form). */
+export async function GET() {
+  const startedAt = Date.now();
+  const jobId = await getAuthenticatedShopJobId();
+  if (!jobId) {
+    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+  }
+
+  try {
+    const supabase = createSupabaseAdmin();
+    // Single-row fetch for edit form; scoped by authenticated jobId.
+    const { data, error } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("id", jobId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+
+    console.info("[shop-dashboard/job]", {
+      jobId,
+      totalMs: Date.now() - startedAt,
+    });
+
+    return NextResponse.json({
+      job: rowToJob(data),
+      timings: { totalMs: Date.now() - startedAt },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { message: getErrorMessage(error, "求人の取得に失敗しました。") },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PATCH(request: Request) {
   const jobId = await getAuthenticatedShopJobId();
   if (!jobId) {

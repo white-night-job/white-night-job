@@ -46,6 +46,15 @@ export function shopSessionCacheKey(jobId: string): string {
   return `shop-session:${jobId}`;
 }
 
+export function shopDashboardShellCacheKey(jobId: string): string {
+  return `shop-dashboard-shell:${jobId}`;
+}
+
+/** @deprecated use shopDashboardShellCacheKey */
 export function shopDashboardCoreCacheKey(jobId: string): string {
-  return `shop-dashboard-core:${jobId}`;
+  return shopDashboardShellCacheKey(jobId);
+}
+
+export function shopDashboardMetricsCacheKey(jobId: string): string {
+  return `shop-dashboard-metrics:${jobId}`;
 }

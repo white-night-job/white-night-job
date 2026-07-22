@@ -15,31 +15,47 @@ export default function ShopLoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
+    console.time("shop-login:form-paint");
+    requestAnimationFrame(() => {
+      console.timeEnd("shop-login:form-paint");
+    });
+
+    // Background session check — never block the login form.
+    void fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
       .then((response) => response.json())
-      .then((data: { authenticated?: boolean; jobId?: string; shopName?: string }) => {
-        if (data.authenticated) {
-          if (data.jobId && data.shopName) {
-            try {
-              sessionStorage.setItem(
-                SHOP_BOOTSTRAP_KEY,
-                JSON.stringify({
-                  jobId: data.jobId,
-                  shopName: data.shopName,
-                  at: Date.now(),
-                }),
-              );
-            } catch {
-              // ignore
-            }
+      .then((data: {
+        authenticated?: boolean;
+        jobId?: string;
+        shopName?: string;
+        published?: boolean;
+        plan?: string | null;
+      }) => {
+        if (!data.authenticated) return;
+        if (data.jobId && data.shopName) {
+          try {
+            sessionStorage.setItem(
+              SHOP_BOOTSTRAP_KEY,
+              JSON.stringify({
+                jobId: data.jobId,
+                shopName: data.shopName,
+                published: data.published,
+                plan: data.plan,
+                at: Date.now(),
+              }),
+            );
+          } catch {
+            // ignore
           }
-          router.replace("/shop-dashboard");
         }
+        setRedirecting(true);
+        router.replace("/shop-dashboard");
       })
-      .finally(() => setChecking(false));
+      .catch(() => {
+        // stay on login form
+      });
   }, [router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -61,8 +77,12 @@ export default function ShopLoginPage() {
         shopName?: string;
         published?: boolean;
         plan?: string | null;
+        timings?: { authMs?: number };
       };
       console.timeEnd("shop-login:button-to-auth");
+      if (data.timings?.authMs != null) {
+        console.info("[shop-login] server authMs", data.timings.authMs);
+      }
       if (!response.ok) {
         throw new Error(data.message ?? "ログインIDまたはパスワードが違います");
       }
@@ -97,14 +117,6 @@ export default function ShopLoginPage() {
     }
   }
 
-  if (checking) {
-    return (
-      <div className="mx-auto flex min-h-[50vh] max-w-md items-center justify-center px-4">
-        <div className="h-10 w-10 animate-pulse rounded-full bg-gold/20" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12">
       <div className="rounded-2xl border border-gold/25 bg-white p-6 shadow-gold sm:p-8">
@@ -114,6 +126,9 @@ export default function ShopLoginPage() {
         <p className="mt-2 text-sm text-muted">
           掲載店舗担当者向けの管理画面です。
         </p>
+        {redirecting && (
+          <p className="mt-3 text-xs text-gold-dark">ログイン済みのため移動中…</p>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -128,6 +143,7 @@ export default function ShopLoginPage() {
               onChange={(event) => setLoginId(event.target.value)}
               className={inputClass}
               required
+              disabled={redirecting}
             />
           </div>
           <div>
@@ -142,6 +158,7 @@ export default function ShopLoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               className={inputClass}
               required
+              disabled={redirecting}
             />
           </div>
           {message && (
@@ -151,7 +168,7 @@ export default function ShopLoginPage() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || redirecting}
             className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60"
           >
             {loading ? "ログイン中..." : "ログイン"}

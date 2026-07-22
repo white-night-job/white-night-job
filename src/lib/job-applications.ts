@@ -349,20 +349,25 @@ export async function fetchApplicationCountsForJob(
   supabase: SupabaseClient,
   jobId: string,
 ): Promise<JobApplicationCounts> {
-  const { data, error } = await supabase
-    .from("job_applications")
-    .select("type")
-    .eq("job_id", jobId);
+  const [lineResult, phoneResult] = await Promise.all([
+    supabase
+      .from("job_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId)
+      .eq("type", "line"),
+    supabase
+      .from("job_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId)
+      .eq("type", "phone"),
+  ]);
 
-  if (error) throw error;
+  if (lineResult.error) throw lineResult.error;
+  if (phoneResult.error) throw phoneResult.error;
 
-  const counts = emptyApplicationCounts();
-  for (const row of data ?? []) {
-    if (row.type === "line") counts.line += 1;
-    else if (row.type === "phone") counts.phone += 1;
-  }
-  counts.total = counts.line + counts.phone;
-  return counts;
+  const line = lineResult.count ?? 0;
+  const phone = phoneResult.count ?? 0;
+  return { line, phone, total: line + phone };
 }
 
 export async function fetchApplicationStats(
