@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { NOTIFICATION_AREA_OPTIONS } from "@/lib/notification-areas";
-import type { Job } from "@/types/job";
+
+export type BroadcastJobOption = {
+  id: string;
+  shopName: string;
+  district: string;
+};
 
 type LineBroadcastPanelProps = {
-  jobs: Job[];
+  jobs: BroadcastJobOption[];
   selectedJobId?: string | null;
   onMessage: (message: string) => void;
   /** When true, omit outer card title (parent accordion provides chrome). */
@@ -19,7 +24,7 @@ type PendingAction =
   | { kind: "specific_shop"; jobId: string }
   | { kind: "favorited_users"; jobId: string };
 
-function getConfirmMessage(action: PendingAction, jobs: Job[]): string {
+function getConfirmMessage(action: PendingAction, jobs: BroadcastJobOption[]): string {
   switch (action.kind) {
     case "new_jobs":
       return "新着店舗をカルーセル形式でLINE配信します。よろしいですか？";

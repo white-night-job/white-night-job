@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LineBroadcastPanel } from "@/components/admin/LineBroadcastPanel";
 import { LineNotificationHistoryPanel } from "@/components/admin/LineNotificationHistoryPanel";
 import { JobListingPreview } from "@/components/JobListingPreview";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import {
   BENEFIT_CATEGORIES,
@@ -12,27 +12,15 @@ import {
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { DISTRICTS } from "@/data/districts";
-import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
-import { MonthlyViewChart } from "@/components/MonthlyViewChart";
 import {
-  aggregateMonthlyApplications,
-  aggregateMonthlyApplicationsForJob,
   emptyApplicationDetail,
   formatApplicationDateTime,
   getApplicationTypeLabel,
-  matchesRegionFilter,
-  matchesShopSearch,
   REGION_FILTER_OPTIONS,
-  type ApplicationRow,
   type JobApplicationDetail,
 } from "@/lib/job-applications";
-import {
-  aggregateMonthlyViews,
-  aggregateMonthlyViewsForJob,
-  aggregateViewCounts,
-  type ViewRow,
-} from "@/lib/job-views";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import type { BroadcastJobOption } from "@/components/admin/LineBroadcastPanel";
 import {
   getDisplayCastVoices,
   getDisplayStoreImages,
@@ -291,6 +279,7 @@ export default function AdminPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [password, setPassword] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [broadcastJobs, setBroadcastJobs] = useState<BroadcastJobOption[]>([]);
   const [form, setForm] = useState<JobForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
@@ -305,11 +294,8 @@ export default function AdminPage() {
   const [applicationDetails, setApplicationDetails] = useState<
     Record<string, JobApplicationDetail>
   >({});
-  const [sortByApplications, setSortByApplications] = useState(false);
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
-  const [applicationRows, setApplicationRows] = useState<ApplicationRow[]>([]);
-  const [viewRows, setViewRows] = useState<ViewRow[]>([]);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
@@ -320,38 +306,129 @@ export default function AdminPage() {
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
+  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const SEARCH_LIMIT = 20;
+  const [monthlySummary, setMonthlySummary] = useState<{
+    periodLabel: string;
+    previousPeriodLabel: string;
+    publishedJobCount: number;
+    views: { current: number; previous: number; changePercent: number | null };
+    applications: {
+      current: number;
+      previous: number;
+      changePercent: number | null;
+    };
+  } | null>(null);
+  const [monthlySummaryLoading, setMonthlySummaryLoading] = useState(false);
 
-  async function loadJobs() {
-    const jobsResponse = await fetch("/api/jobs", {
-      cache: "no-store",
-      credentials: "include",
-    });
-    const jobsData = await readJson<{ jobs: Job[] }>(jobsResponse);
-    setJobs(jobsData.jobs);
+  async function loadMonthlySummary() {
+    setMonthlySummaryLoading(true);
+    try {
+      const data = await readJson<{
+        periodLabel: string;
+        previousPeriodLabel: string;
+        publishedJobCount: number;
+        views: { current: number; previous: number; changePercent: number | null };
+        applications: {
+          current: number;
+          previous: number;
+          changePercent: number | null;
+        };
+      }>(
+        await fetch("/api/admin/monthly-summary", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      setMonthlySummary(data);
+    } catch (error) {
+      console.error("[admin] monthly summary failed", error);
+    } finally {
+      setMonthlySummaryLoading(false);
+    }
+  }
 
-    const statsResponse = await fetch("/api/admin/application-stats", {
-      cache: "no-store",
-      credentials: "include",
-    });
-    if (statsResponse.ok) {
-      const statsData = await readJson<{
-        details?: Record<string, JobApplicationDetail>;
-        stats?: Record<string, JobApplicationDetail>;
-        applicationRows?: ApplicationRow[];
-        viewRows?: ViewRow[];
-        viewCounts?: Record<string, number>;
-      }>(statsResponse);
-      setApplicationDetails(statsData.details ?? statsData.stats ?? {});
-      setApplicationRows(statsData.applicationRows ?? []);
-      setViewRows(statsData.viewRows ?? []);
-      setViewCounts(statsData.viewCounts ?? {});
+  async function loadBroadcastOptions() {
+    try {
+      const data = await readJson<{ jobs: BroadcastJobOption[] }>(
+        await fetch("/api/admin/jobs/options", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      setBroadcastJobs(data.jobs);
+    } catch (error) {
+      console.error("[admin] broadcast options failed", error);
+    }
+  }
+
+  async function runShopSearch(page = 1, append = false) {
+    const q = shopSearchQuery.trim();
+    if (!q && regionFilter === "all") {
+      setSearchPerformed(false);
+      setJobs([]);
+      setSearchTotal(0);
+      setSearchHasMore(false);
+      setSearchPage(1);
+      setApplicationDetails({});
+      setViewCounts({});
+      setMessage("店舗名やエリアを入力して検索してください");
       return;
     }
 
-    setApplicationDetails({});
-    setApplicationRows([]);
-    setViewRows([]);
-    setViewCounts({});
+    setSearchLoading(true);
+    setMessage("");
+    try {
+      const params = new URLSearchParams({
+        q,
+        region: regionFilter,
+        page: String(page),
+        limit: String(SEARCH_LIMIT),
+      });
+      const data = await readJson<{
+        jobs: Job[];
+        total: number;
+        page: number;
+        hasMore: boolean;
+        details: Record<string, JobApplicationDetail>;
+        viewCounts: Record<string, number>;
+        searched?: boolean;
+        message?: string;
+      }>(
+        await fetch(`/api/admin/jobs/search?${params.toString()}`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+
+      setSearchPerformed(Boolean(data.searched));
+      setSearchTotal(data.total);
+      setSearchHasMore(data.hasMore);
+      setSearchPage(data.page);
+      setJobs((current) => (append ? [...current, ...data.jobs] : data.jobs));
+      setApplicationDetails((current) =>
+        append ? { ...current, ...data.details } : data.details,
+      );
+      setViewCounts((current) =>
+        append ? { ...current, ...data.viewCounts } : data.viewCounts,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "検索に失敗しました。");
+    } finally {
+      setSearchLoading(false);
+    }
+  }
+
+  async function refreshAfterMutation() {
+    await loadMonthlySummary();
+    await loadBroadcastOptions();
+    if (shopSearchQuery.trim() || regionFilter !== "all") {
+      await runShopSearch(1, false);
+    }
   }
 
   function toggleApplicationHistory(jobId: string) {
@@ -363,76 +440,22 @@ export default function AdminPage() {
     });
   }
 
-  const hasActiveFilters =
-    shopSearchQuery.trim().length > 0 || regionFilter !== "all";
-
-  const jobsMatchingFilters = useMemo(
-    () =>
-      jobs.filter(
-        (job) =>
-          matchesShopSearch(job.shopName, shopSearchQuery) &&
-          matchesRegionFilter(job, regionFilter),
-      ),
-    [jobs, regionFilter, shopSearchQuery],
-  );
-
-  const filteredJobIds = useMemo(
-    () => new Set(jobsMatchingFilters.map((job) => job.id)),
-    [jobsMatchingFilters],
-  );
-
-  const monthlyApplicationStats = useMemo(
-    () => aggregateMonthlyApplications(applicationRows, filteredJobIds),
-    [applicationRows, filteredJobIds],
-  );
-
-  const monthlyViewStats = useMemo(
-    () => aggregateMonthlyViews(viewRows, filteredJobIds),
-    [viewRows, filteredJobIds],
-  );
-
-  const resolvedViewCounts = useMemo(() => {
-    const fromRows = aggregateViewCounts(viewRows);
-    return { ...viewCounts, ...fromRows };
-  }, [viewCounts, viewRows]);
-
-  const chartFilterDescription = useMemo(() => {
-    const parts: string[] = [];
-    if (regionFilter !== "all") {
-      parts.push(`地域: ${REGION_FILTER_OPTIONS.find((o) => o.value === regionFilter)?.label ?? regionFilter}`);
-    }
-    if (shopSearchQuery.trim()) {
-      parts.push(`店舗名: ${shopSearchQuery.trim()}`);
-    }
-    if (parts.length === 0) return "全店舗の応募を表示中";
-    return `${parts.join(" · ")} で絞り込み中`;
-  }, [regionFilter, shopSearchQuery]);
-
-  const displayedJobs = useMemo(() => {
-    const list = [...jobsMatchingFilters];
-
-    if (sortByApplications) {
-      list.sort((a, b) => {
-        const totalA = applicationDetails[a.id]?.total ?? 0;
-        const totalB = applicationDetails[b.id]?.total ?? 0;
-        if (totalB !== totalA) return totalB - totalA;
-        return a.shopName.localeCompare(b.shopName, "ja");
-      });
-    }
-
-    return list;
-  }, [applicationDetails, jobsMatchingFilters, sortByApplications]);
-
   useEffect(() => {
     fetch("/api/admin/session", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { authenticated: boolean }) => {
         setAuthenticated(data.authenticated);
-        if (data.authenticated) return loadJobs();
+        if (data.authenticated) return loadMonthlySummary();
       })
       .catch(() => setAuthenticated(false))
       .finally(() => setCheckingSession(false));
   }, []);
+
+  useEffect(() => {
+    if (isBroadcastOpen && broadcastJobs.length === 0) {
+      void loadBroadcastOptions();
+    }
+  }, [isBroadcastOpen, broadcastJobs.length]);
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -510,7 +533,7 @@ export default function AdminPage() {
       );
       setAuthenticated(true);
       setPassword("");
-      await loadJobs();
+      await refreshAfterMutation();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "ログインに失敗しました。");
     } finally {
@@ -522,6 +545,11 @@ export default function AdminPage() {
     await fetch("/api/admin/logout", { method: "POST" });
     setAuthenticated(false);
     setJobs([]);
+    setBroadcastJobs([]);
+    setMonthlySummary(null);
+    setSearchPerformed(false);
+    setApplicationDetails({});
+    setViewCounts({});
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -567,7 +595,7 @@ export default function AdminPage() {
           ? `求人を更新しました。${storeImageNote}${shopLoginNote}`
           : `求人を追加しました。${storeImageNote}${shopLoginNote}`,
       );
-      await loadJobs();
+      await refreshAfterMutation();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
       requestScrollToTop();
       setShowPreview(false);
@@ -598,7 +626,7 @@ export default function AdminPage() {
       );
       if (editingId === job.id) resetForm();
       setMessage("求人を削除しました。");
-      await loadJobs();
+      await refreshAfterMutation();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "削除に失敗しました。");
@@ -864,9 +892,9 @@ export default function AdminPage() {
         >
           <span className="text-base font-semibold text-charcoal sm:text-lg">
             {isShopSearchOpen ? "▼" : "▶"} 掲載店舗検索
-            {!isShopSearchOpen && (
+            {monthlySummary && !isShopSearchOpen && (
               <span className="ml-2 text-sm font-normal text-muted">
-                （{jobs.length}件）
+                （掲載 {monthlySummary.publishedJobCount.toLocaleString("ja-JP")}件）
               </span>
             )}
           </span>
@@ -877,252 +905,199 @@ export default function AdminPage() {
             <div className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
               <h3 className="text-base font-semibold text-charcoal">店舗検索</h3>
               <p className="mt-1 text-xs text-muted">
-                地域や店舗名で掲載中の求人を絞り込めます。
+                店舗名やエリアを指定して検索すると、該当店舗だけが表示されます。
               </p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="region-filter" className={labelClass}>
-                    地域で絞り込み
-                  </label>
-                  <select
-                    id="region-filter"
-                    value={regionFilter}
-                    onChange={(event) => setRegionFilter(event.target.value)}
-                    className={inputClass}
-                  >
-                    {REGION_FILTER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-muted">
-                    エリア（{FIXED_AREA}）または地区で絞り込みます。
-                  </p>
-                </div>
-                <div>
-                  <label htmlFor="shop-search" className={labelClass}>
-                    店舗名で検索
-                  </label>
-                  <input
-                    id="shop-search"
-                    type="search"
-                    value={shopSearchQuery}
-                    onChange={(event) => setShopSearchQuery(event.target.value)}
-                    placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
-                    className={inputClass}
-                  />
-                  <p className="mt-1 text-xs text-muted">
-                    ひらがな・カタカナ・英字に対応した部分一致で絞り込みます。
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-base font-semibold text-charcoal sm:text-lg">
-                求人一覧
-                {hasActiveFilters ? (
-                  <span className="ml-1 text-sm font-normal text-muted sm:text-base">
-                    （{displayedJobs.length}件 / 全{jobs.length}件）
-                  </span>
-                ) : (
-                  <span className="ml-1 text-sm font-normal text-muted sm:text-base">
-                    （{jobs.length}件）
-                  </span>
-                )}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setSortByApplications((current) => !current)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  sortByApplications
-                    ? "border-gold bg-gold-light/30 text-gold-dark"
-                    : "border-gold/40 text-muted hover:text-charcoal"
-                }`}
+              <form
+                className="mt-4 space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void runShopSearch(1, false);
+                }}
               >
-                {sortByApplications ? "合計応募数順 ✓" : "合計応募数順で並べ替え"}
-              </button>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="region-filter" className={labelClass}>
+                      地域で絞り込み
+                    </label>
+                    <select
+                      id="region-filter"
+                      value={regionFilter}
+                      onChange={(event) => setRegionFilter(event.target.value)}
+                      className={inputClass}
+                    >
+                      {REGION_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="shop-search" className={labelClass}>
+                      店舗名で検索
+                    </label>
+                    <input
+                      id="shop-search"
+                      type="search"
+                      value={shopSearchQuery}
+                      onChange={(event) => setShopSearchQuery(event.target.value)}
+                      placeholder="例：ロゼッタ、ろぜったあ、ROSETTA"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={searchLoading}
+                  className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto"
+                >
+                  {searchLoading ? "検索中..." : "検索する"}
+                </button>
+              </form>
             </div>
 
-            <div>
-              <MonthlyViewChart
-                data={monthlyViewStats}
-                filterDescription={chartFilterDescription}
-              />
-            </div>
-
-            <div>
-              <MonthlyApplicationChart
-                data={monthlyApplicationStats}
-                filterDescription={chartFilterDescription}
-              />
-            </div>
-
-            <section className="rounded-2xl border border-gold/25 bg-gradient-to-br from-ivory/80 to-white p-4 shadow-gold sm:p-5">
-              <h3 className="text-base font-semibold text-charcoal">
-                店舗別 月別グラフ
-              </h3>
-              <p className="mt-1 text-xs text-muted">
-                各店舗カードで直近12ヶ月の表示回数・応募数の推移を確認できます（日本時間）
-              </p>
-              {hasActiveFilters && (
-                <p className="mt-3 text-xs font-medium text-gold-dark">
-                  {chartFilterDescription}
-                </p>
-              )}
-            </section>
-
-            {displayedJobs.length === 0 ? (
+            {!searchPerformed ? (
+              <div className="rounded-2xl border border-dashed border-gold/30 bg-white px-4 py-10 text-center text-sm text-muted">
+                店舗名やエリアを入力して検索してください
+              </div>
+            ) : searchLoading && jobs.length === 0 ? (
+              <div className="h-32 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+            ) : jobs.length === 0 ? (
               <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
-                {hasActiveFilters
-                  ? "検索・絞り込み条件に一致する店舗がありません。"
-                  : "掲載中の求人がありません。"}
+                検索条件に一致する店舗がありません。
               </div>
             ) : (
-              <ul className="space-y-3">
-                {displayedJobs.map((job) => {
-                  const detail =
-                    applicationDetails[job.id] ?? emptyApplicationDetail();
-                  const historyOpen = expandedHistoryJobIds.has(job.id);
-                  const monthlyViewStatsForJob = aggregateMonthlyViewsForJob(
-                    viewRows,
-                    job.id,
-                  );
-                  const monthlyApplicationStatsForJob =
-                    aggregateMonthlyApplicationsForJob(applicationRows, job.id);
-                  const viewCount = resolvedViewCounts[job.id] ?? 0;
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold text-charcoal">
+                    検索結果
+                    <span className="ml-1 text-sm font-normal text-muted">
+                      （{jobs.length}件表示 / 全{searchTotal}件）
+                    </span>
+                  </h3>
+                </div>
+                <ul className="space-y-3">
+                  {jobs.map((job) => {
+                    const detail =
+                      applicationDetails[job.id] ?? emptyApplicationDetail();
+                    const historyOpen = expandedHistoryJobIds.has(job.id);
+                    const viewCount = viewCounts[job.id] ?? 0;
 
-                  return (
-                    <li
-                      key={job.id}
-                      className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-gold-dark">
-                            {formatLocation(job)} · {job.jobType}
-                          </p>
-                          <p className="mt-1 text-lg font-semibold text-charcoal">
-                            {job.shopName}
-                          </p>
-                          <p className="mt-1 text-xs font-medium text-gold-dark">
-                            プラン：{JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
-                          </p>
-                          <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
-                          <p className="mt-0.5 text-xs text-muted">
-                            店舗トップ画像: {job.imageUrl ? "設定済み" : "未設定"}
-                          </p>
-
-                      <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">
-                        <div className="flex flex-wrap gap-x-2">
-                          <dt className="font-medium text-muted">LINE応募数:</dt>
-                          <dd className="font-semibold text-[#047a3b]">
-                            {detail.line}
-                          </dd>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <dt className="font-medium text-muted">電話応募数:</dt>
-                          <dd className="font-semibold text-gold-dark">
-                            {detail.phone}
-                          </dd>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <dt className="font-medium text-muted">合計応募数:</dt>
-                          <dd className="font-semibold text-charcoal">
-                            {detail.total}
-                          </dd>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <dt className="font-medium text-muted">表示回数:</dt>
-                          <dd className="font-semibold text-charcoal">
-                            {viewCount}
-                          </dd>
-                        </div>
-                        <div className="flex flex-wrap gap-x-2">
-                          <dt className="font-medium text-muted">最新応募日:</dt>
-                          <dd className="font-medium text-charcoal">
-                            {detail.latestAt
-                              ? formatApplicationDateTime(detail.latestAt)
-                              : "応募なし"}
-                          </dd>
-                        </div>
-                      </dl>
-
-                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
-                        <MonthlyViewChart
-                          data={monthlyViewStatsForJob}
-                          title="月別表示回数（折れ線）"
-                          compact
-                        />
-                      </div>
-
-                      <div className="mt-3 rounded-xl border border-gold/15 bg-white px-3 py-3">
-                        <MonthlyApplicationChart
-                          data={monthlyApplicationStatsForJob}
-                          compact
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleApplicationHistory(job.id)}
-                        className="mt-3 rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
+                    return (
+                      <li
+                        key={job.id}
+                        className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
                       >
-                        {historyOpen ? "応募履歴を閉じる" : "応募履歴を見る"}
-                      </button>
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gold-dark">
+                              {formatLocation(job)} · {job.jobType}
+                            </p>
+                            <p className="mt-1 text-lg font-semibold text-charcoal">
+                              {job.shopName}
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-gold-dark">
+                              プラン：
+                              {JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
+                            </p>
+                            <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
 
-                      {historyOpen && (
-                        <div className="mt-3 rounded-xl border border-gold/20 bg-white px-3 py-3">
-                          <p className="text-xs font-semibold text-gold-dark">
-                            応募履歴
-                          </p>
-                          {detail.history.length === 0 ? (
-                            <p className="mt-2 text-sm text-muted">応募なし</p>
-                          ) : (
-                            <ul className="mt-2 space-y-2">
-                              {detail.history.map((entry, index) => (
-                                <li
-                                  key={`${entry.createdAt}-${entry.type}-${index}`}
-                                  className="rounded-lg border border-gold/15 bg-ivory/50 px-3 py-2 text-sm text-charcoal"
-                                >
-                                  <p className="font-medium">{job.shopName}</p>
-                                  <p className="mt-0.5 text-muted">
-                                    {formatApplicationDateTime(entry.createdAt)}
-                                  </p>
-                                  <p className="mt-0.5 font-medium text-gold-dark">
-                                    {getApplicationTypeLabel(entry.type)}
-                                  </p>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                            <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="font-medium text-muted">LINE応募数:</dt>
+                                <dd className="font-semibold text-[#047a3b]">
+                                  {detail.line}
+                                </dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="font-medium text-muted">電話応募数:</dt>
+                                <dd className="font-semibold text-gold-dark">
+                                  {detail.phone}
+                                </dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="font-medium text-muted">合計応募数:</dt>
+                                <dd className="font-semibold text-charcoal">
+                                  {detail.total}
+                                </dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="font-medium text-muted">表示回数:</dt>
+                                <dd className="font-semibold text-charcoal">
+                                  {viewCount}
+                                </dd>
+                              </div>
+                            </dl>
+
+                            <button
+                              type="button"
+                              onClick={() => toggleApplicationHistory(job.id)}
+                              className="mt-3 rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark transition hover:bg-ivory"
+                            >
+                              {historyOpen ? "応募履歴を閉じる" : "応募履歴を見る"}
+                            </button>
+
+                            {historyOpen && (
+                              <div className="mt-3 rounded-xl border border-gold/20 bg-white px-3 py-3">
+                                <p className="text-xs font-semibold text-gold-dark">
+                                  応募履歴
+                                </p>
+                                {detail.history.length === 0 ? (
+                                  <p className="mt-2 text-sm text-muted">応募なし</p>
+                                ) : (
+                                  <ul className="mt-2 space-y-2">
+                                    {detail.history.slice(0, 20).map((entry, index) => (
+                                      <li
+                                        key={entry.createdAt + "-" + entry.type + "-" + index}
+                                        className="rounded-lg border border-gold/15 bg-ivory/50 px-3 py-2 text-sm text-charcoal"
+                                      >
+                                        <p className="mt-0.5 text-muted">
+                                          {formatApplicationDateTime(entry.createdAt)}
+                                        </p>
+                                        <p className="mt-0.5 font-medium text-gold-dark">
+                                          {getApplicationTypeLabel(entry.type)}
+                                        </p>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(job)}
+                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                            >
+                              編集
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(job)}
+                              disabled={loading}
+                              className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              削除
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(job)}
-                        className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                      >
-                        編集
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(job)}
-                        disabled={loading}
-                        className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {searchHasMore && (
+                  <button
+                    type="button"
+                    disabled={searchLoading}
+                    onClick={() => void runShopSearch(searchPage + 1, true)}
+                    className="w-full rounded-full border border-gold/40 px-4 py-3 text-sm font-semibold text-gold-dark hover:bg-ivory disabled:opacity-60"
+                  >
+                    {searchLoading ? "読み込み中..." : "さらに表示（最大20件ずつ）"}
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}
@@ -2218,7 +2193,7 @@ export default function AdminPage() {
           className={isBroadcastOpen ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5" : "hidden"}
         >
           <LineBroadcastPanel
-            jobs={jobs}
+            jobs={broadcastJobs}
             selectedJobId={editingId}
             onMessage={setMessage}
             embedded
@@ -2226,7 +2201,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section id="admin-history" className="mt-4 mb-2 overflow-hidden rounded-2xl border border-gold/30 bg-white shadow-gold">
+      <section id="admin-history" className="mt-4 overflow-hidden rounded-2xl border border-gold/30 bg-white shadow-gold">
         <button
           type="button"
           onClick={() => setIsHistoryOpen((open) => !open)}
@@ -2243,6 +2218,79 @@ export default function AdminPage() {
           className={isHistoryOpen ? "border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5" : "hidden"}
         >
           <LineNotificationHistoryPanel embedded />
+        </div>
+      </section>
+
+      <section className="mt-6 mb-2 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
+          <p className="text-sm font-medium text-muted">今月の表示回数</p>
+          {monthlySummaryLoading && !monthlySummary ? (
+            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
+          ) : (
+            <>
+              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
+                {(monthlySummary?.views.current ?? 0).toLocaleString("ja-JP")}
+                <span className="ml-1 text-base font-sans font-medium text-muted">
+                  回
+                </span>
+              </p>
+              {monthlySummary?.views.changePercent != null && (
+                <p
+                  className={`mt-2 text-xs font-medium ${
+                    monthlySummary.views.changePercent >= 0
+                      ? "text-[#047a3b]"
+                      : "text-red-600"
+                  }`}
+                >
+                  前月比{" "}
+                  {monthlySummary.views.changePercent > 0 ? "+" : ""}
+                  {monthlySummary.views.changePercent}%
+                  <span className="ml-1 text-muted">
+                    （{monthlySummary.previousPeriodLabel}:{" "}
+                    {monthlySummary.views.previous.toLocaleString("ja-JP")}回）
+                  </span>
+                </p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
+          <p className="text-sm font-medium text-muted">今月の応募回数</p>
+          {monthlySummaryLoading && !monthlySummary ? (
+            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
+          ) : (
+            <>
+              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
+                {(monthlySummary?.applications.current ?? 0).toLocaleString(
+                  "ja-JP",
+                )}
+                <span className="ml-1 text-base font-sans font-medium text-muted">
+                  回
+                </span>
+              </p>
+              {monthlySummary?.applications.changePercent != null && (
+                <p
+                  className={`mt-2 text-xs font-medium ${
+                    monthlySummary.applications.changePercent >= 0
+                      ? "text-[#047a3b]"
+                      : "text-red-600"
+                  }`}
+                >
+                  前月比{" "}
+                  {monthlySummary.applications.changePercent > 0 ? "+" : ""}
+                  {monthlySummary.applications.changePercent}%
+                  <span className="ml-1 text-muted">
+                    （{monthlySummary.previousPeriodLabel}:{" "}
+                    {monthlySummary.applications.previous.toLocaleString("ja-JP")}
+                    回）
+                  </span>
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted">
+                LINE応募クリック + 電話応募クリックの合計
+              </p>
+            </>
+          )}
         </div>
       </section>
 
