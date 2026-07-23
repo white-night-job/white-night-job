@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { isScrollRestorePending } from "@/lib/scroll-restoration";
 
 const SECTION_IDS = new Set([
   "shop-search",
@@ -12,6 +13,7 @@ const SECTION_IDS = new Set([
 ]);
 
 function scrollToHash(hash: string, behavior: ScrollBehavior = "smooth") {
+  if (isScrollRestorePending()) return false;
   const id = hash.replace(/^#/, "");
   if (!id || !SECTION_IDS.has(id)) return false;
   const el = document.getElementById(id);
@@ -21,11 +23,14 @@ function scrollToHash(hash: string, behavior: ScrollBehavior = "smooth") {
 }
 
 function tryScrollWithRetry(hash: string) {
-  if (!hash) return;
+  if (!hash || isScrollRestorePending()) return;
   if (scrollToHash(hash)) return;
   const delays = [0, 200, 500, 900];
   for (const delay of delays) {
-    window.setTimeout(() => scrollToHash(hash), delay);
+    window.setTimeout(() => {
+      if (isScrollRestorePending()) return;
+      scrollToHash(hash);
+    }, delay);
   }
 }
 
@@ -35,13 +40,19 @@ export function HomeHashScroll() {
 
   useEffect(() => {
     if (pathname !== "/") return;
+    // Back/forward scroll restore wins over hash scrolling.
+    if (isScrollRestorePending()) return;
 
     tryScrollWithRetry(window.location.hash);
 
-    const onHashChange = () => tryScrollWithRetry(window.location.hash);
+    const onHashChange = () => {
+      if (isScrollRestorePending()) return;
+      tryScrollWithRetry(window.location.hash);
+    };
     window.addEventListener("hashchange", onHashChange);
 
     const onClick = (event: MouseEvent) => {
+      if (isScrollRestorePending()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const anchor = target.closest("a[href]");
