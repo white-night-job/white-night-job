@@ -29,7 +29,7 @@ export async function fetchJobs(filters?: JobFilters): Promise<Job[]> {
 }
 
 export async function fetchListingJobs(
-  kind: "new" | "pickup",
+  kind: "new" | "pickup" | "new-open",
 ): Promise<Job[]> {
   const data = await readJson<{ jobs: Job[] }>(
     await fetch(`/api/jobs?listing=${kind}`, { cache: "no-store" }),

@@ -124,6 +124,8 @@ export interface Job {
   lineUrl: string;
   postedAt: string;
   createdAt?: string;
+  /** 店舗オープン日 (YYYY-MM-DD)。未設定なら新規オープン一覧対象外 */
+  openDate?: string;
   pickupEnabled?: boolean;
   /** 表示順位: normal=通常 / priority=優先 / top=最優先 */
   listingPriority?: "normal" | "priority" | "top";

@@ -85,6 +85,7 @@ type JobRow = {
   line_url: string;
   posted_at: string;
   created_at?: string;
+  open_date?: string | null;
   pickup_enabled?: boolean | null;
   listing_priority?: string | null;
   plan?: string | null;
@@ -150,6 +151,7 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     lineUrl: row.line_url,
     postedAt: row.posted_at,
     createdAt: row.created_at,
+    openDate: row.open_date?.trim() || undefined,
     pickupEnabled: row.pickup_enabled ?? false,
     listingPriority:
       row.listing_priority === "priority" || row.listing_priority === "top"

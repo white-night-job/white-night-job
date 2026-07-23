@@ -2048,6 +2048,21 @@
     color: #e0d0b0;
   }
 
+  .listing-card-badge-new-open {
+    letter-spacing: 0.08em;
+    border-color: rgba(196, 165, 116, 0.75);
+    background: linear-gradient(160deg, #161412 0%, #111111 100%);
+    color: #dcc7a0;
+  }
+
+  .listing-panel-new-open {
+    border-color: rgba(196, 165, 116, 0.55);
+  }
+
+  .listing-panel-heading.is-new-open .listing-heading-text {
+    letter-spacing: 0.12em;
+  }
+
   .listing-card-image {
     overflow: hidden;
     margin: 0.5rem 0.5rem 0;

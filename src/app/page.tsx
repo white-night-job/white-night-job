@@ -10,6 +10,7 @@ import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
+import { HomeHashScroll } from "@/components/HomeHashScroll";
 import { SITE_BRAND_JA, SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
@@ -69,6 +70,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       hero={<TopHeroPanel initialFilters={filters} />}
       midBand={<TopMidBand />}
     >
+      <HomeHashScroll />
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">
         <ScrollReveal delayMs={40}>
           <Suspense

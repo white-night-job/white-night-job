@@ -11,6 +11,7 @@ type MenuIconName =
   | "list"
   | "new"
   | "pickup"
+  | "new-open"
   | "alert"
   | "building"
   | "book"
@@ -32,13 +33,14 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "ホーム", icon: "heart", match: "exact" },
   { href: "/#shop-search", label: "お店を探す", icon: "search", match: "hash" },
+  { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
+  { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
+  { href: "/#new-open-shops", label: "新規オープン店舗", icon: "new-open", match: "hash" },
   { href: "/column", label: "コラム", icon: "book", match: "prefix" },
   { href: "/consultation", label: "AI相談", icon: "line", match: "prefix" },
   { href: "/diagnosis", label: "あなたに合う職種診断", icon: "list", match: "prefix" },
   { href: "/report", label: "ブラック店報告", icon: "alert", match: "exact" },
   { href: "/#first-time-guide", label: "初めての方へ", icon: "beginner", match: "hash" },
-  { href: "/#new-shops", label: "新着店舗", icon: "new", match: "hash" },
-  { href: "/#pickup-shops", label: "PICK UP店舗", icon: "pickup", match: "hash" },
   { href: "/jobs", label: "求人一覧", icon: "list", match: "prefix" },
   { href: "/terms-user", label: "利用規約（求職者）", icon: "book", match: "exact" },
   { href: "/terms-shop", label: "利用規約（掲載店舗）", icon: "book", match: "exact" },
@@ -105,6 +107,21 @@ function MenuIcon({ name }: { name: MenuIconName }) {
           <path
             d="M12 4.5l1.9 4.8 5.1.4-3.9 3.3 1.2 5-4.3-2.7-4.3 2.7 1.2-5-3.9-3.3 5.1-.4L12 4.5z"
             strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "new-open":
+      return (
+        <svg {...common}>
+          <path
+            d="M4.5 20.5V9.8L12 4.5l7.5 5.3v10.7"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.5 20.5v-5.5h5v5.5"
+            strokeWidth="1.5"
             strokeLinejoin="round"
           />
         </svg>

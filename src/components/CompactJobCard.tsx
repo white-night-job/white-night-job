@@ -17,17 +17,22 @@ import type { Job } from "@/types/job";
 type CompactJobCardProps = {
   job: Job;
   theme?: LuxuryTheme;
-  badge?: "new" | "pickup";
+  badge?: "new" | "pickup" | "new-open";
 };
 
-function ListingBadge({ badge }: { badge: "new" | "pickup" }) {
+function ListingBadge({ badge }: { badge: "new" | "pickup" | "new-open" }) {
+  const label =
+    badge === "pickup" ? "PICK UP" : badge === "new-open" ? "NEW OPEN" : "NEW";
+  const className =
+    badge === "pickup"
+      ? "listing-card-badge-pickup"
+      : badge === "new-open"
+        ? "listing-card-badge-new-open"
+        : "listing-card-badge-new";
+
   return (
-    <span
-      className={`listing-card-badge ${
-        badge === "pickup" ? "listing-card-badge-pickup" : "listing-card-badge-new"
-      }`}
-    >
-      {badge === "pickup" ? "PICK UP" : "NEW"}
+    <span className={`listing-card-badge ${className}`}>
+      {label}
     </span>
   );
 }

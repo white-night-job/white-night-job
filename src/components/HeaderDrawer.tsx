@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Bot, BookOpen, ClipboardList, Home, MapPin, ShieldAlert, Lock } from "lucide-react";
+import { Bot, BookOpen, ClipboardList, Home, MapPin, ShieldAlert, Lock, Sparkles, Star, Store } from "lucide-react";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -37,6 +37,24 @@ const MAIN_ITEMS: DrawerItem[] = [
     label: "お店を探す",
     match: "hash",
     desktopIcon: <MapPin {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/#new-shops",
+    label: "新着店舗",
+    match: "hash",
+    desktopIcon: <Sparkles {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/#pickup-shops",
+    label: "PICK UP店舗",
+    match: "hash",
+    desktopIcon: <Star {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/#new-open-shops",
+    label: "新規オープン店舗",
+    match: "hash",
+    desktopIcon: <Store {...DRAWER_ICON_PROPS} />,
   },
   {
     href: "/column",

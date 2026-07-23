@@ -31,12 +31,19 @@ export type ShopJobPayload = {
   youtubeUrl?: string;
   websiteUrl?: string;
   lineUrl: string;
+  /** YYYY-MM-DD or null to clear */
+  openDate?: string | null;
 };
 
 export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
-  const data = body as Partial<ShopJobPayload> & { image_url?: unknown };
+  const data = body as Partial<ShopJobPayload> & {
+    image_url?: unknown;
+    open_date?: unknown;
+  };
   const hasImageUrl =
     data.imageUrl !== undefined || data.image_url !== undefined;
+  const hasOpenDate =
+    data.openDate !== undefined || data.open_date !== undefined;
   return {
     imageUrl: hasImageUrl
       ? String(data.imageUrl ?? data.image_url ?? "").trim() || null
@@ -99,6 +106,13 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
     youtubeUrl: data.youtubeUrl ? String(data.youtubeUrl) : undefined,
     websiteUrl: data.websiteUrl ? String(data.websiteUrl) : undefined,
     lineUrl: String(data.lineUrl ?? ""),
+    openDate: hasOpenDate
+      ? (() => {
+          const raw = String(data.openDate ?? data.open_date ?? "").trim().slice(0, 10);
+          if (!raw) return null;
+          return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+        })()
+      : undefined,
   };
 }
 
@@ -140,6 +154,10 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
 
   if (payload.recruiterImage !== undefined) {
     row.recruiter_image = payload.recruiterImage?.trim() || null;
+  }
+
+  if (payload.openDate !== undefined) {
+    row.open_date = payload.openDate;
   }
 
   return row;

@@ -5,10 +5,41 @@ import { fetchListingJobs, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 import { CompactJobCard } from "./CompactJobCard";
 
+type ListingKind = "new" | "pickup" | "new-open";
+
 type JobListingCarouselProps = {
   title: string;
-  kind: "new" | "pickup";
+  kind: ListingKind;
   theme?: "light" | "dark" | "premium";
+};
+
+const LISTING_META: Record<
+  ListingKind,
+  {
+    id: string;
+    badge: "new" | "pickup" | "new-open";
+    panelClass: string;
+    headingClass: string;
+  }
+> = {
+  new: {
+    id: "new-shops",
+    badge: "new",
+    panelClass: "listing-panel-new",
+    headingClass: "",
+  },
+  pickup: {
+    id: "pickup-shops",
+    badge: "pickup",
+    panelClass: "listing-panel-pickup",
+    headingClass: "is-pickup",
+  },
+  "new-open": {
+    id: "new-open-shops",
+    badge: "new-open",
+    panelClass: "listing-panel-new-open",
+    headingClass: "is-new-open",
+  },
 };
 
 export function JobListingCarousel({
@@ -18,8 +49,7 @@ export function JobListingCarousel({
   const [jobs, setJobs] = useState<Job[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const badge = kind === "new" ? "new" : "pickup";
-  const isPickup = kind === "pickup";
+  const meta = LISTING_META[kind];
 
   const load = useCallback(() => {
     fetchListingJobs(kind)
@@ -45,11 +75,11 @@ export function JobListingCarousel({
 
   return (
     <section
-      id={isPickup ? "pickup-shops" : "new-shops"}
-      className={`listing-panel scroll-mt-24 ${isPickup ? "listing-panel-pickup" : "listing-panel-new"}`}
+      id={meta.id}
+      className={`listing-panel scroll-mt-24 ${meta.panelClass}`}
     >
       <h2
-        className={`listing-panel-heading ${isPickup ? "is-pickup" : ""}`}
+        className={`listing-panel-heading ${meta.headingClass}`}
       >
         <span className="listing-heading-line" aria-hidden />
         <span className="listing-heading-text">{title}</span>
@@ -82,7 +112,7 @@ export function JobListingCarousel({
             <div className="listing-carousel-grid">
               {jobs.map((job) => (
                 <div key={job.id} className="listing-carousel-item snap-start">
-                  <CompactJobCard job={job} theme="premium" badge={badge} />
+                  <CompactJobCard job={job} theme="premium" badge={meta.badge} />
                 </div>
               ))}
             </div>

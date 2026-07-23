@@ -43,7 +43,7 @@ import {
   listingPriorityRank,
   parseListingPriority,
 } from "@/lib/listing-priority";
-import { isNewListingJob, parsePostedAtFromBody } from "@/lib/job-listing";
+import { isNewListingJob, isNewlyOpenedShopJob, parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 /** Persist plan + related flags; ranking/pickup/AI come from form (admin may override). */
@@ -68,6 +68,12 @@ function postedAtToRow(body: Record<string, unknown>): Record<string, unknown> {
   return postedAt ? { posted_at: postedAt } : {};
 }
 
+function openDateToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const openDate = parseOpenDateFromBody(body);
+  if (openDate === undefined) return {};
+  return { open_date: openDate };
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -89,6 +95,10 @@ export async function GET(request: Request) {
       query = query.eq("pickup_enabled", true);
     }
 
+    if (listing === "new-open") {
+      query = query.not("open_date", "is", null);
+    }
+
     if (district && district !== "all") query = query.eq("district", district);
     if (jobType && jobType !== "all") query = query.eq("job_type", jobType);
 
@@ -107,7 +117,19 @@ export async function GET(request: Request) {
       );
     }
 
-    if (listing === "new" || listing === "pickup") {
+    if (listing === "new-open") {
+      rows = rows
+        .filter((row) =>
+          isNewlyOpenedShopJob({
+            openDate: row.open_date ? String(row.open_date) : null,
+          }),
+        )
+        .sort((a, b) =>
+          String(b.open_date ?? "").localeCompare(String(a.open_date ?? "")),
+        );
+    }
+
+    if (listing === "new" || listing === "pickup" || listing === "new-open") {
       const jobs = rows.map((row) => rowToJob(row));
       return NextResponse.json({ jobs });
     }
@@ -249,6 +271,7 @@ export async function POST(request: Request) {
     );
     const planRow = planMetaToRow(body);
     const postedAtRow = postedAtToRow(body);
+    const openDateRow = openDateToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
@@ -261,6 +284,7 @@ export async function POST(request: Request) {
         ...listingPriorityRow,
         ...planRow,
         ...postedAtRow,
+        ...openDateRow,
       })
       .select("*")
       .single();

@@ -20,7 +20,7 @@ import {
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
 import { parsePlanFromBody } from "@/lib/job-plan";
-import { parsePostedAtFromBody } from "@/lib/job-listing";
+import { parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -50,6 +50,12 @@ function planMetaToRow(body: Record<string, unknown>): Record<string, unknown> {
 function postedAtToRow(body: Record<string, unknown>): Record<string, unknown> {
   const postedAt = parsePostedAtFromBody(body);
   return postedAt ? { posted_at: postedAt } : {};
+}
+
+function openDateToRow(body: Record<string, unknown>): Record<string, unknown> {
+  const openDate = parseOpenDateFromBody(body);
+  if (openDate === undefined) return {};
+  return { open_date: openDate };
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
@@ -99,6 +105,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     );
     const planRow = planMetaToRow(body);
     const postedAtRow = postedAtToRow(body);
+    const openDateRow = openDateToRow(body);
 
     const supabase = createSupabaseAdmin();
     const { data: previous } = await supabase
@@ -117,6 +124,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...listingPriorityRow,
         ...planRow,
         ...postedAtRow,
+        ...openDateRow,
       })
       .eq("id", id)
       .select("*")

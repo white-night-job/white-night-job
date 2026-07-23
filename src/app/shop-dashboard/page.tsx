@@ -24,6 +24,7 @@ import {
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import { buildPreviewJobFromShopForm } from "@/lib/job-preview";
+import { toOpenDateInputValue } from "@/lib/job-listing";
 import { JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import {
   promoteTempImagesInPayload,
@@ -83,6 +84,7 @@ type ShopForm = {
   salary: string;
   access: string;
   businessHours: string;
+  openDate: string;
   ageGroup: string;
   introductionText: string;
   descriptionText: string;
@@ -126,6 +128,7 @@ function toForm(job: Job): ShopForm {
     salary: job.salary,
     access: job.access ?? "",
     businessHours: job.businessHours ?? "",
+    openDate: toOpenDateInputValue(job.openDate),
     ageGroup: job.ageGroup ?? "",
     introductionText: job.introductionText ?? "",
     descriptionText: job.descriptionText ?? "",
@@ -161,6 +164,7 @@ function toPayload(form: ShopForm) {
     salary: form.salary,
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
+    openDate: form.openDate.trim() || null,
     ageGroup: form.ageGroup || undefined,
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
@@ -823,6 +827,19 @@ export default function ShopDashboardPage() {
           <div>
             <label htmlFor="businessHours" className={labelClass}>営業時間</label>
             <input id="businessHours" value={form.businessHours} onChange={(e) => setField("businessHours", e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <label htmlFor="openDate" className={labelClass}>オープン日</label>
+            <input
+              id="openDate"
+              type="date"
+              value={form.openDate}
+              onChange={(e) => setField("openDate", e.target.value)}
+              className={inputClass}
+            />
+            <p className="mt-1 text-xs text-muted">
+              入力するとオープン日から6か月間、トップの「新規オープン店舗」に表示されます。未入力の場合は対象外です。
+            </p>
           </div>
           <div>
             <label htmlFor="ageGroup" className={labelClass}>キャスト年齢</label>

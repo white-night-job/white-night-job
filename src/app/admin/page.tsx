@@ -44,6 +44,7 @@ import {
 import {
   formatNewListingEndDate,
   getNewListingDays,
+  toOpenDateInputValue,
   toPostedAtDateInputValue,
 } from "@/lib/job-listing";
 import {
@@ -97,6 +98,7 @@ type JobForm = {
   shopLoginPassword: string;
   plan: JobPlan;
   postedAt: string;
+  openDate: string;
   newListingEnabled: boolean;
   lineRecommendNotify: boolean;
   chatRecommendEnabled: boolean;
@@ -140,6 +142,7 @@ const emptyForm: JobForm = {
   shopLoginPassword: "",
   ...planToFormPatch("light"),
   postedAt: toPostedAtDateInputValue(),
+  openDate: "",
 };
 
 const inputClass =
@@ -204,6 +207,7 @@ function toPayload(form: JobForm) {
     listing_priority: form.listingPriority,
     plan: form.plan,
     posted_at: form.postedAt,
+    open_date: form.openDate.trim() || null,
     line_recommend_notify: form.lineRecommendNotify,
     new_listing_enabled: form.newListingEnabled,
   };
@@ -256,6 +260,7 @@ function toForm(job: Job): JobForm {
     shopLoginPassword: job.shopLoginPassword ?? "",
     plan: parseJobPlan(job.plan),
     postedAt: toPostedAtDateInputValue(job.postedAt),
+    openDate: toOpenDateInputValue(job.openDate),
     newListingEnabled: job.newListingEnabled ?? true,
     lineRecommendNotify: job.lineRecommendNotify ?? false,
     chatRecommendEnabled: job.chatRecommend?.enabled ?? true,
@@ -1411,6 +1416,25 @@ export default function AdminPage() {
               />
               <p className="mt-1 text-xs text-white/65">
                 新着期間はこの公開日を基準に再計算されます。
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="openDate"
+                className="mb-1.5 block text-sm font-medium text-gold-light"
+              >
+                オープン日
+              </label>
+              <input
+                id="openDate"
+                type="date"
+                value={form.openDate}
+                onChange={(event) => setField("openDate", event.target.value)}
+                className={inputClass}
+              />
+              <p className="mt-1 text-xs text-white/65">
+                入力するとオープン日から6か月間、トップの「新規オープン店舗」に表示されます。未入力の店舗は対象外です。
               </p>
             </div>
 
