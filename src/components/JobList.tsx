@@ -1,18 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchJobs, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
 import type { Job, JobFilters } from "@/types/job";
 import { JobCard } from "./JobCard";
 
+const jobsListCache = new Map<string, Job[]>();
+
+function filtersCacheKey(filters: JobFilters): string {
+  return JSON.stringify({
+    district: filters.district ?? null,
+    jobType: filters.jobType ?? null,
+    query: filters.query ?? null,
+    minSalary: filters.minSalary ?? null,
+    benefits: filters.benefits ?? [],
+  });
+}
+
 export function JobList({ filters }: { filters: JobFilters }) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [ready, setReady] = useState(false);
+  const cacheKey = useMemo(() => filtersCacheKey(filters), [filters]);
+  const cached = jobsListCache.get(cacheKey);
+  const [jobs, setJobs] = useState<Job[]>(() => cached ?? []);
+  const [ready, setReady] = useState(() => cached != null);
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
     fetchJobs(filters)
       .then((items) => {
+        jobsListCache.set(cacheKey, items);
         setJobs(items);
         setError("");
       })
@@ -20,9 +35,10 @@ export function JobList({ filters }: { filters: JobFilters }) {
         setError(err instanceof Error ? err.message : "求人を取得できませんでした。");
       })
       .finally(() => setReady(true));
-  }, [filters]);
+  }, [cacheKey, filters]);
 
   useEffect(() => {
+    // Keep cached cards on remount (browser back) so scroll height stays stable.
     load();
     const onUpdate = () => load();
     window.addEventListener(JOBS_UPDATED_EVENT, onUpdate);

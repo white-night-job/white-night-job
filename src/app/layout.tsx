@@ -3,7 +3,6 @@ import { ChatBot } from "@/components/ChatBot";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
-import { ScrollRestoration } from "@/components/ScrollRestoration";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
 import { buildOrganizationJsonLd, buildRootMetadata, buildWebSiteJsonLd } from "@/lib/seo";
@@ -30,7 +29,6 @@ export default async function RootLayout({
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
-          <ScrollRestoration />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />

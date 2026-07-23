@@ -33,8 +33,9 @@ export default function JobDetailPage({
     void recordUserViewHistory(id);
   }, [id]);
 
-  // Links use scroll={false} so listing scroll isn't wiped mid-navigation;
-  // bring the detail page to the top on forward entry.
+  // Forward entry only: listing Links use scroll={false} so history can keep
+  // the previous page's scroll. Bring the detail view to the top for reading.
+  // Must not run any scroll logic on the listing page when coming back.
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);

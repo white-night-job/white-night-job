@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchListingJobs, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import {
+  fetchListingJobs,
+  getCachedListingJobs,
+  JOBS_UPDATED_EVENT,
+} from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 import { CompactJobCard } from "./CompactJobCard";
 
@@ -46,12 +50,16 @@ export function JobListingCarousel({
   title,
   kind,
 }: JobListingCarouselProps) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [ready, setReady] = useState(false);
+  const cached = getCachedListingJobs(kind);
+  const [jobs, setJobs] = useState<Job[]>(() => cached ?? []);
+  const [ready, setReady] = useState(() => cached != null);
   const [error, setError] = useState("");
   const meta = LISTING_META[kind];
 
-  const load = useCallback(() => {
+  const load = useCallback((options?: { showSkeleton?: boolean }) => {
+    if (options?.showSkeleton && getCachedListingJobs(kind) == null) {
+      setReady(false);
+    }
     fetchListingJobs(kind)
       .then((items) => {
         setJobs(items);
@@ -66,9 +74,9 @@ export function JobListingCarousel({
   }, [kind]);
 
   useEffect(() => {
-    setReady(false);
-    load();
-    const onUpdate = () => load();
+    // Remount on browser back: keep cached cards visible (preserve scroll height).
+    load({ showSkeleton: false });
+    const onUpdate = () => load({ showSkeleton: false });
     window.addEventListener(JOBS_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(JOBS_UPDATED_EVENT, onUpdate);
   }, [load]);

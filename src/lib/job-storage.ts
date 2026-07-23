@@ -2,6 +2,11 @@ import type { Job, JobFilters } from "@/types/job";
 
 export const JOBS_UPDATED_EVENT = "jobs-updated";
 
+type ListingKind = "new" | "pickup" | "new-open";
+
+/** In-memory listing cache so back-navigation remounts keep page height (scroll). */
+const listingJobsCache = new Map<ListingKind, Job[]>();
+
 function buildJobQuery(filters?: JobFilters): string {
   const params = new URLSearchParams();
   if (filters?.district) params.set("district", filters.district);
@@ -28,12 +33,15 @@ export async function fetchJobs(filters?: JobFilters): Promise<Job[]> {
   return data.jobs;
 }
 
-export async function fetchListingJobs(
-  kind: "new" | "pickup" | "new-open",
-): Promise<Job[]> {
+export function getCachedListingJobs(kind: ListingKind): Job[] | null {
+  return listingJobsCache.get(kind) ?? null;
+}
+
+export async function fetchListingJobs(kind: ListingKind): Promise<Job[]> {
   const data = await readJson<{ jobs: Job[] }>(
     await fetch(`/api/jobs?listing=${kind}`, { cache: "no-store" }),
   );
+  listingJobsCache.set(kind, data.jobs);
   return data.jobs;
 }
 

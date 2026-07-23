@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { isScrollRestorePending } from "@/lib/scroll-restoration";
 
 const SECTION_IDS = new Set([
   "shop-search",
@@ -13,7 +12,6 @@ const SECTION_IDS = new Set([
 ]);
 
 function scrollToHash(hash: string, behavior: ScrollBehavior = "smooth") {
-  if (isScrollRestorePending()) return false;
   const id = hash.replace(/^#/, "");
   if (!id || !SECTION_IDS.has(id)) return false;
   const el = document.getElementById(id);
@@ -23,36 +21,48 @@ function scrollToHash(hash: string, behavior: ScrollBehavior = "smooth") {
 }
 
 function tryScrollWithRetry(hash: string) {
-  if (!hash || isScrollRestorePending()) return;
+  if (!hash) return;
   if (scrollToHash(hash)) return;
   const delays = [0, 200, 500, 900];
   for (const delay of delays) {
-    window.setTimeout(() => {
-      if (isScrollRestorePending()) return;
-      scrollToHash(hash);
-    }, delay);
+    window.setTimeout(() => scrollToHash(hash), delay);
   }
 }
 
-/** Scroll to top-page section anchors after client navigations (e.g. /#new-open-shops). */
+/**
+ * Menu / in-page hash jumps only.
+ * Does not run on BFCache restore and does not force scroll when there is no hash
+ * (so browser back can keep its own scroll position).
+ */
 export function HomeHashScroll() {
   const pathname = usePathname();
 
   useEffect(() => {
     if (pathname !== "/") return;
-    // Back/forward card restore wins over hash scrolling.
-    if (isScrollRestorePending()) return;
 
-    tryScrollWithRetry(window.location.hash);
+    // Only scroll when the URL actually has a section hash (menu jump).
+    // No hash → leave scroll alone (browser back restore).
+    if (window.location.hash) {
+      tryScrollWithRetry(window.location.hash);
+    }
+
+    const onPageShow = (event: PageTransitionEvent) => {
+      // Safari BFCache: browser already restored scroll — do not override.
+      if (event.persisted) return;
+      if (window.location.hash) {
+        tryScrollWithRetry(window.location.hash);
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
 
     const onHashChange = () => {
-      if (isScrollRestorePending()) return;
-      tryScrollWithRetry(window.location.hash);
+      if (window.location.hash) {
+        tryScrollWithRetry(window.location.hash);
+      }
     };
     window.addEventListener("hashchange", onHashChange);
 
     const onClick = (event: MouseEvent) => {
-      if (isScrollRestorePending()) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const anchor = target.closest("a[href]");
@@ -63,17 +73,15 @@ export function HomeHashScroll() {
         const url = new URL(href, window.location.origin);
         if (url.pathname !== "/" || !url.hash) return;
         if (!SECTION_IDS.has(url.hash.slice(1))) return;
-        window.setTimeout(() => {
-          if (isScrollRestorePending()) return;
-          tryScrollWithRetry(url.hash);
-        }, 0);
+        window.setTimeout(() => tryScrollWithRetry(url.hash), 0);
       } catch {
-        /* ignore invalid href */
+        /* ignore */
       }
     };
     document.addEventListener("click", onClick);
 
     return () => {
+      window.removeEventListener("pageshow", onPageShow);
       window.removeEventListener("hashchange", onHashChange);
       document.removeEventListener("click", onClick);
     };

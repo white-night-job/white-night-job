@@ -7,7 +7,7 @@ import { JobImpressionTracker } from "@/components/JobImpressionTracker";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
-import { shopCardDomId } from "@/lib/scroll-restoration";
+import { shopCardDomId } from "@/lib/shop-card-id";
 import type { Job } from "@/types/job";
 import { SafetyBadge } from "./SafetyBadge";
 
