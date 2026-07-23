@@ -11,6 +11,7 @@ import {
   type LuxuryTheme,
 } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
+import { shopCardDomId } from "@/lib/scroll-restoration";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
@@ -43,11 +44,12 @@ export function CompactJobCard({
   badge,
 }: CompactJobCardProps) {
   const isPremium = isPremiumTheme(theme);
+  const cardId = shopCardDomId(job.id, badge);
 
   if (isPremium) {
     return (
       <JobImpressionTracker jobId={job.id}>
-      <article className="listing-job-card relative">
+      <article id={cardId} className="listing-job-card relative">
         <div className="absolute right-2 top-2 z-10">
           <FavoriteButton jobId={job.id} />
         </div>
@@ -87,7 +89,7 @@ export function CompactJobCard({
               </dd>
             </div>
           </dl>
-          <Link href={`/jobs/${job.id}`} className="listing-card-link">
+          <Link href={`/jobs/${job.id}`} scroll={false} className="listing-card-link">
             求人詳細を見る
           </Link>
           <div className="mt-2 border-t border-gold/10 pt-2">
@@ -101,7 +103,10 @@ export function CompactJobCard({
 
   return (
     <JobImpressionTracker jobId={job.id} className="h-full">
-    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5">
+    <article
+      id={cardId}
+      className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5"
+    >
       <div className="absolute right-2 top-2 z-10">
         <FavoriteButton jobId={job.id} />
       </div>
@@ -145,6 +150,7 @@ export function CompactJobCard({
         </dl>
         <Link
           href={`/jobs/${job.id}`}
+          scroll={false}
           className={`mt-auto inline-flex min-h-9 items-center justify-center rounded-full px-3 pt-3 text-center text-xs ${luxuryMetalBtn}`}
         >
           求人詳細を見る

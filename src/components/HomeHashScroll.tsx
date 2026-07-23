@@ -40,7 +40,7 @@ export function HomeHashScroll() {
 
   useEffect(() => {
     if (pathname !== "/") return;
-    // Back/forward scroll restore wins over hash scrolling.
+    // Back/forward card restore wins over hash scrolling.
     if (isScrollRestorePending()) return;
 
     tryScrollWithRetry(window.location.hash);
@@ -63,8 +63,10 @@ export function HomeHashScroll() {
         const url = new URL(href, window.location.origin);
         if (url.pathname !== "/" || !url.hash) return;
         if (!SECTION_IDS.has(url.hash.slice(1))) return;
-        // Same-page hash: ensure scroll even when Next.js skips hashchange.
-        window.setTimeout(() => tryScrollWithRetry(url.hash), 0);
+        window.setTimeout(() => {
+          if (isScrollRestorePending()) return;
+          tryScrollWithRetry(url.hash);
+        }, 0);
       } catch {
         /* ignore invalid href */
       }

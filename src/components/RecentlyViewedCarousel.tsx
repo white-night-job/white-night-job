@@ -62,7 +62,11 @@ export function RecentlyViewedCarousel({
         <div className="listing-carousel-track recent-carousel-track">
           <div className="listing-carousel-grid recent-carousel-grid">
             {jobs.map((job) => (
-              <article key={job.id} className="recent-history-card snap-start">
+              <article
+                key={job.id}
+                id={`shop-card-${job.id}--recent`}
+                className="recent-history-card snap-start"
+              >
                 <div className="recent-history-card-image">
                   {job.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +87,11 @@ export function RecentlyViewedCarousel({
                   </p>
                   <p className="mt-1 text-xs text-muted">{job.district}</p>
                   <p className="mt-1 text-xs font-semibold text-gold-dark">{job.salary}</p>
-                  <Link href={`/jobs/${job.id}`} className="recent-history-card-link">
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    scroll={false}
+                    className="recent-history-card-link"
+                  >
                     詳細を見る
                   </Link>
                 </div>

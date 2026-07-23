@@ -33,6 +33,12 @@ export default function JobDetailPage({
     void recordUserViewHistory(id);
   }, [id]);
 
+  // Links use scroll={false} so listing scroll isn't wiped mid-navigation;
+  // bring the detail page to the top on forward entry.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
   if (job === undefined) {
     return (
       <div className="mx-auto max-w-3xl p-8">
