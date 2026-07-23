@@ -174,7 +174,6 @@ export function ShopAnalyticsSection() {
 
           <ShopMonthlyImpressionBarChart data={data?.monthly ?? []} />
 
-          {/* Keep application-click line chart; only the old bar chart was removed. */}
           <ShopAnalyticsDualLineChart
             title="応募クリック数"
             data={data?.monthly ?? []}

@@ -8,10 +8,11 @@ type ShopMonthlyImpressionBarChartProps = {
   data: MonthlyAnalyticsBucket[];
 };
 
-const BAR_COLOR = "#c9a962";
+const LINE_COLOR = "#c9a962";
 const CHART_HEIGHT = 200;
-const PADDING = { top: 28, right: 12, bottom: 36, left: 12 };
-const BAR_SLOT = 52;
+const AXIS_WIDTH = 40;
+const PADDING = { top: 28, right: 16, bottom: 36, left: 8 };
+const MONTH_SLOT = 64;
 
 function formatCount(value: number): string {
   if (value >= 10_000) {
@@ -23,16 +24,49 @@ function formatCount(value: number): string {
   return value.toLocaleString("ja-JP");
 }
 
+function getPointX(index: number, dataLength: number, innerWidth: number): number {
+  return (
+    PADDING.left +
+    (dataLength === 1 ? innerWidth / 2 : (index / (dataLength - 1)) * innerWidth)
+  );
+}
+
+function getPointY(value: number, innerHeight: number, maxY: number): number {
+  return PADDING.top + innerHeight - (value / maxY) * innerHeight;
+}
+
+function buildYTicks(maxY: number): number[] {
+  if (maxY <= 1) return [0, 1];
+  if (maxY <= 5) {
+    return Array.from({ length: maxY + 1 }, (_, i) => i);
+  }
+  const rough = maxY / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(rough));
+  const normalized = rough / magnitude;
+  const stepBase =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = stepBase * magnitude;
+  const ticks: number[] = [];
+  for (let value = 0; value <= maxY; value += step) {
+    ticks.push(value);
+  }
+  if (ticks[ticks.length - 1] !== maxY) ticks.push(maxY);
+  return ticks;
+}
+
+/**
+ * Impression line chart with a fixed Y-axis (outside scroll) and a
+ * horizontally scrollable plot (line, points, month labels, values).
+ */
 export function ShopMonthlyImpressionBarChart({
   data,
 }: ShopMonthlyImpressionBarChartProps) {
   const hasData = data.some((bucket) => bucket.impressions > 0);
-  const total = useMemo(
-    () => data.reduce((sum, bucket) => sum + bucket.impressions, 0),
-    [data],
-  );
 
-  const chartWidth = Math.max(560, data.length * BAR_SLOT + PADDING.left + PADDING.right);
+  const chartWidth = Math.max(
+    560,
+    data.length * MONTH_SLOT + PADDING.left + PADDING.right,
+  );
   const scrollKey = useMemo(
     () => data.map((bucket) => `${bucket.monthKey}:${bucket.impressions}`).join("|"),
     [data],
@@ -45,11 +79,18 @@ export function ShopMonthlyImpressionBarChart({
     () => Math.max(...data.map((bucket) => bucket.impressions), 1),
     [data],
   );
+  const yTicks = useMemo(() => buildYTicks(maxY), [maxY]);
 
-  const barWidth = Math.min(
-    28,
-    data.length > 0 ? Math.max(12, (innerWidth / data.length) * 0.55) : 28,
-  );
+  const linePath = useMemo(() => {
+    if (data.length === 0) return "";
+    return data
+      .map((bucket, index) => {
+        const x = getPointX(index, data.length, innerWidth);
+        const y = getPointY(bucket.impressions, innerHeight, maxY);
+        return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+      })
+      .join(" ");
+  }, [data, innerWidth, innerHeight, maxY]);
 
   return (
     <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
@@ -67,77 +108,108 @@ export function ShopMonthlyImpressionBarChart({
           直近12か月の表示はまだありません
         </div>
       ) : (
-        <div className="flex items-stretch gap-3">
-          {/* Fixed total — outside horizontal scroll */}
-          <div className="flex w-[5.5rem] shrink-0 flex-col justify-center rounded-xl border border-gold/25 bg-ivory/60 px-2.5 py-3 sm:w-28 sm:px-3">
-            <p className="text-[10px] font-medium text-muted sm:text-xs">表示回数</p>
-            <p className="mt-1 font-serif text-lg font-semibold leading-tight text-charcoal sm:text-2xl">
-              {total.toLocaleString("ja-JP")}
-              <span className="ml-0.5 text-xs font-sans font-medium text-muted sm:text-sm">
-                回
-              </span>
-            </p>
-            <p className="mt-1 text-[10px] text-muted">直近12か月計</p>
-          </div>
+        <div>
+          <div className="flex items-stretch">
+            {/* Fixed Y-axis labels — outside horizontal scroll */}
+            <svg
+              width={AXIS_WIDTH}
+              height={CHART_HEIGHT}
+              className="shrink-0"
+              aria-hidden
+            >
+              {yTicks.map((tick) => {
+                const y = getPointY(tick, innerHeight, maxY);
+                return (
+                  <text
+                    key={`axis-${tick}`}
+                    x={AXIS_WIDTH - 6}
+                    y={y + 3}
+                    textAnchor="end"
+                    className="fill-muted text-[10px]"
+                  >
+                    {tick.toLocaleString("ja-JP")}
+                  </text>
+                );
+              })}
+            </svg>
 
-          {/* Chart body scrolls independently */}
-          <div className="min-w-0 flex-1">
-            <div ref={chartScrollRef} className="overflow-x-auto pb-1">
-              <div style={{ width: chartWidth, minWidth: "100%" }}>
-                <svg
-                  width={chartWidth}
-                  height={CHART_HEIGHT}
-                  className="block"
-                  role="img"
-                  aria-label="表示回数の月別棒グラフ"
-                >
-                  {data.map((bucket, index) => {
-                    const slot = innerWidth / Math.max(data.length, 1);
-                    const x = PADDING.left + slot * index + slot / 2;
-                    const barHeight =
-                      maxY > 0
-                        ? (bucket.impressions / maxY) * innerHeight
-                        : 0;
-                    const y = PADDING.top + innerHeight - barHeight;
-                    const label = formatCount(bucket.impressions);
-
-                    return (
-                      <g key={bucket.monthKey}>
-                        <rect
-                          x={x - barWidth / 2}
-                          y={y}
-                          width={barWidth}
-                          height={Math.max(barHeight, bucket.impressions > 0 ? 2 : 0)}
-                          rx={3}
-                          fill={BAR_COLOR}
-                          opacity={0.92}
+            {/* Scrollable plot */}
+            <div className="min-w-0 flex-1">
+              <div ref={chartScrollRef} className="overflow-x-auto pb-1">
+                <div style={{ width: chartWidth, minWidth: "100%" }}>
+                  <svg
+                    width={chartWidth}
+                    height={CHART_HEIGHT}
+                    className="block"
+                    role="img"
+                    aria-label="表示回数の月別折れ線グラフ"
+                  >
+                    {yTicks.map((tick) => {
+                      const y = getPointY(tick, innerHeight, maxY);
+                      return (
+                        <line
+                          key={`grid-${tick}`}
+                          x1={PADDING.left}
+                          y1={y}
+                          x2={PADDING.left + innerWidth}
+                          y2={y}
+                          stroke="rgba(201, 169, 98, 0.2)"
+                          strokeWidth={1}
                         />
-                        <text
-                          x={x}
-                          y={Math.max(12, y - 6)}
-                          textAnchor="middle"
-                          className="fill-charcoal text-[9px] font-semibold sm:text-[10px]"
-                        >
-                          {bucket.impressions > 0 ? label : "0"}
-                        </text>
-                        <text
-                          x={x}
-                          y={CHART_HEIGHT - 10}
-                          textAnchor="middle"
-                          className="fill-muted text-[9px]"
-                        >
-                          {bucket.label.replace(/^\d{4}年/, "")}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
+                      );
+                    })}
+
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke={LINE_COLOR}
+                      strokeWidth={2.5}
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                    />
+
+                    {data.map((bucket, index) => {
+                      const x = getPointX(index, data.length, innerWidth);
+                      const y = getPointY(bucket.impressions, innerHeight, maxY);
+                      const valueLabel = formatCount(bucket.impressions);
+
+                      return (
+                        <g key={bucket.monthKey}>
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r={4}
+                            fill={LINE_COLOR}
+                            stroke="#fff"
+                            strokeWidth={1.5}
+                          />
+                          <text
+                            x={x}
+                            y={Math.max(12, y - 10)}
+                            textAnchor="middle"
+                            className="fill-charcoal text-[9px] font-semibold sm:text-[10px]"
+                          >
+                            {valueLabel}
+                          </text>
+                          <text
+                            x={x}
+                            y={CHART_HEIGHT - 10}
+                            textAnchor="middle"
+                            className="fill-muted text-[9px]"
+                          >
+                            {bucket.label.replace(/^\d{4}年/, "")}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
               </div>
             </div>
-            <p className="mt-2 text-[10px] text-muted">
-              グラフは横にスクロールできます（左側の合計は固定）
-            </p>
           </div>
+          <p className="mt-2 text-[10px] text-muted">
+            グラフは横にスクロールできます（左側の目盛りは固定）
+          </p>
         </div>
       )}
     </section>
