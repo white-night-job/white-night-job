@@ -1053,7 +1053,9 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    z-index: 1;
+    /* Above side slots so the logo link receives clicks; wrapper stays
+       pointer-events:none so empty space does not block header buttons. */
+    z-index: 3;
     transform: translate(-50%, -50%);
     pointer-events: none;
     width: max-content;
@@ -1065,6 +1067,13 @@
     display: block;
     text-decoration: none;
     overflow: hidden;
+    cursor: pointer;
+  }
+
+  .header-logo-link:focus-visible {
+    outline: 2px solid rgba(212, 188, 142, 0.85);
+    outline-offset: 4px;
+    border-radius: 2px;
   }
 
   .header-logo-wordmark {

@@ -180,7 +180,7 @@
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
     justify-self: center;
-    z-index: 1;
+    z-index: 3;
     pointer-events: none;
     width: max-content;
     max-width: calc(100% - 18rem);
@@ -188,6 +188,7 @@
 
   .site-header-logo .header-logo-link {
     pointer-events: auto;
+    cursor: pointer;
   }
 
   .site-header-logo .header-logo-wordmark {
