@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type StoreImagesGalleryProps = {
@@ -55,13 +56,16 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                   onClick={() => setActiveIndex(index)}
                   className="group block w-full overflow-hidden rounded-xl border border-gold/25 bg-white shadow-gold transition hover:border-gold/50"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt={`${shopName}の店舗ギャラリー ${index + 1}`}
-                    className="aspect-[4/3] w-full object-cover transition group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
+                  <span className="relative block aspect-[4/3] w-full bg-zinc-100">
+                    <Image
+                      src={imageUrl}
+                      alt={`${shopName}の店舗ギャラリー ${index + 1}`}
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 640px) 224px, (max-width: 1024px) 45vw, 240px"
+                      className="object-cover transition group-hover:scale-[1.02]"
+                    />
+                  </span>
                 </button>
               </li>
             ))}
@@ -122,13 +126,19 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[activeIndex]}
-            alt={`${shopName}の店舗ギャラリー ${activeIndex + 1}`}
-            className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
+          <div
+            className="relative h-[min(85vh,900px)] w-full max-w-5xl"
             onClick={(event) => event.stopPropagation()}
-          />
+          >
+            <Image
+              src={images[activeIndex]!}
+              alt={`${shopName}の店舗ギャラリー ${activeIndex + 1}`}
+              fill
+              sizes="90vw"
+              className="rounded-lg object-contain"
+              priority
+            />
+          </div>
         </div>
       )}
     </>

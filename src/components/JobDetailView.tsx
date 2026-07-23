@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { FavoriteButton } from "@/components/FavoriteButton";
 import { CompareButton } from "@/components/CompareButton";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
@@ -13,11 +16,32 @@ import {
   getDisplayStoreImages,
 } from "@/lib/job-db";
 import { formatLocation } from "@/lib/job-storage";
-import { IMAGE_ALT_BRAND } from "@/lib/site";
-import { RecruiterMessageSection } from "@/components/RecruiterMessageSection";
-import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import type { Job } from "@/types/job";
+
+const StoreImagesGallery = dynamic(
+  () =>
+    import("@/components/StoreImagesGallery").then((mod) => mod.StoreImagesGallery),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-36 animate-pulse rounded-2xl border border-gold/15 bg-ivory/70" />
+    ),
+  },
+);
+
+const RecruiterMessageSection = dynamic(
+  () =>
+    import("@/components/RecruiterMessageSection").then(
+      (mod) => mod.RecruiterMessageSection,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-28 animate-pulse rounded-2xl border border-gold/15 bg-ivory/70" />
+    ),
+  },
+);
 
 function sanitizeExternalHref(raw: string | undefined): string | null {
   const value = String(raw ?? "").trim();
@@ -105,6 +129,38 @@ function JobApplyButtons({
   );
 }
 
+function FavoriteSlot({
+  jobId,
+  preview,
+  onPreviewNotice,
+  ready,
+}: {
+  jobId: string;
+  preview: boolean;
+  onPreviewNotice: () => void;
+  ready: boolean;
+}) {
+  if (preview) {
+    return (
+      <button
+        type="button"
+        onClick={onPreviewNotice}
+        className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
+      >
+        ♡ お気に入り
+      </button>
+    );
+  }
+  if (!ready) {
+    return (
+      <span className="inline-flex min-h-8 min-w-[5.5rem] animate-pulse items-center justify-center rounded-full border border-gold/20 bg-ivory px-3 text-xs text-muted">
+        …
+      </span>
+    );
+  }
+  return <FavoriteButton jobId={jobId} allowLineLoginRedirect />;
+}
+
 export function JobDetailView({
   job,
   preview = false,
@@ -115,6 +171,28 @@ export function JobDetailView({
   showBreadcrumbs?: boolean;
 }) {
   const [previewNotice, setPreviewNotice] = useState("");
+  const [showExtras, setShowExtras] = useState(preview);
+  const [favoritesReady, setFavoritesReady] = useState(preview);
+
+  useEffect(() => {
+    if (preview) return;
+    let cancelled = false;
+    const reveal = () => {
+      if (!cancelled) setShowExtras(true);
+    };
+    const fav = () => {
+      if (!cancelled) setFavoritesReady(true);
+    };
+
+    const extrasTimer = window.setTimeout(reveal, 0);
+    const favTimer = window.setTimeout(fav, 120);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(extrasTimer);
+      window.clearTimeout(favTimer);
+    };
+  }, [preview, job.id]);
 
   function showPreviewNotice(message = "プレビュー中のため、この操作はできません。") {
     setPreviewNotice(message);
@@ -193,6 +271,18 @@ export function JobDetailView({
         </div>
       )}
 
+      {!preview && (
+        <div className="mb-3">
+          <Link
+            href="/jobs"
+            scroll={false}
+            className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
+          >
+            ← 戻る
+          </Link>
+        </div>
+      )}
+
       {showBreadcrumbs && (
         <Breadcrumbs
           items={[
@@ -203,26 +293,7 @@ export function JobDetailView({
       )}
       <div className="job-detail-layout">
         <article className="job-detail-main rounded-2xl border border-gold/25 bg-white shadow-gold">
-          {job.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={job.imageUrl}
-              alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
-              className="h-64 w-full rounded-t-2xl object-cover sm:h-80"
-            />
-          ) : (
-            <div className="relative flex h-64 w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-charcoal via-[#2b2418] to-gold-dark sm:h-80">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,213,163,0.35),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(201,169,98,0.22),transparent_35%)]" />
-              <div className="relative text-center">
-                <p className="font-serif text-2xl font-semibold tracking-wide text-gold-light">
-                  White Night Job
-                </p>
-                <p className="mt-2 text-xs tracking-[0.3em] text-gold-light/80">
-                  VERIFIED SHOP
-                </p>
-              </div>
-            </div>
-          )}
+          <JobHeroImage shopName={job.shopName} imageUrl={job.imageUrl} />
           <div className="border-b border-gold/20 px-5 py-6 sm:px-8">
             <p className="text-sm font-medium text-gold-dark">
               {formatLocation(job)} · {job.jobType}
@@ -232,28 +303,22 @@ export function JobDetailView({
                 {job.title}
               </h1>
               <div className="flex flex-col items-end gap-1">
+                <FavoriteSlot
+                  jobId={job.id}
+                  preview={preview}
+                  onPreviewNotice={() => showPreviewNotice()}
+                  ready={favoritesReady}
+                />
                 {preview ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => showPreviewNotice()}
-                      className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
-                    >
-                      ♡ お気に入り
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => showPreviewNotice()}
-                      className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
-                    >
-                      比較
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => showPreviewNotice()}
+                    className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
+                  >
+                    比較
+                  </button>
                 ) : (
-                  <>
-                    <FavoriteButton jobId={job.id} allowLineLoginRedirect />
-                    <CompareButton jobId={job.id} />
-                  </>
+                  <CompareButton jobId={job.id} />
                 )}
               </div>
             </div>
@@ -389,122 +454,133 @@ export function JobDetailView({
                 onPreviewNotice={() => showPreviewNotice()}
               />
             </div>
-            {displayStoreImages.length > 0 && (
-              <StoreImagesGallery
-                images={displayStoreImages}
-                shopName={job.shopName}
-              />
-            )}
-            {displayCastVoices.length > 0 && (
-              <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
-                <h2 className="mb-4 text-base font-semibold text-charcoal">
-                  入店・在籍キャストの声
-                </h2>
-                <ul className="space-y-3">
-                  {displayCastVoices.map((entry, index) => {
-                    const ageLabel = formatCastVoiceAge(entry.age);
-                    const hasProfile = Boolean(entry.name || ageLabel);
 
-                    return (
-                      <li
-                        key={`cast-voice-${index}-${entry.name}`}
-                        className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
-                      >
-                        {hasProfile && (
-                          <p className="text-sm font-semibold text-gold-dark sm:text-base">
-                            {entry.name}
-                            {entry.name && ageLabel ? " / " : ""}
-                            {ageLabel}
-                          </p>
-                        )}
-                        {entry.comment && (
-                          <p
-                            className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
-                              hasProfile ? "mt-2" : ""
-                            }`}
+            {showExtras ? (
+              <>
+                {displayStoreImages.length > 0 && (
+                  <StoreImagesGallery
+                    images={displayStoreImages}
+                    shopName={job.shopName}
+                  />
+                )}
+                {displayCastVoices.length > 0 && (
+                  <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
+                    <h2 className="mb-4 text-base font-semibold text-charcoal">
+                      入店・在籍キャストの声
+                    </h2>
+                    <ul className="space-y-3">
+                      {displayCastVoices.map((entry, index) => {
+                        const ageLabel = formatCastVoiceAge(entry.age);
+                        const hasProfile = Boolean(entry.name || ageLabel);
+
+                        return (
+                          <li
+                            key={`cast-voice-${index}-${entry.name}`}
+                            className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
                           >
-                            {entry.comment}
-                          </p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
-            <RecruiterMessageSection job={job} />
-            {socialLinks.length > 0 && (
-              <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
-                <h2 className="mb-3 text-base font-semibold text-charcoal">
-                  公式SNS
-                </h2>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {socialLinks.map((link) => (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
-                    >
-                      {link.label}を見る
-                    </a>
-                  ))}
-                </div>
-              </section>
-            )}
-            {benefitGroups.length > 0 && (
-              <section className="space-y-4">
-                <h2 className="text-base font-semibold text-charcoal">待遇</h2>
-                {benefitGroups.map((group) => (
-                  <div
-                    key={group.title}
-                    className="rounded-2xl border border-gold/20 bg-ivory p-4"
-                  >
-                    <h3 className="mb-3 text-sm font-semibold text-gold-dark">
-                      {group.title}
-                    </h3>
-                    <ul className="flex flex-wrap gap-2">
-                      {group.items.map((benefit) => (
+                            {hasProfile && (
+                              <p className="text-sm font-semibold text-gold-dark sm:text-base">
+                                {entry.name}
+                                {entry.name && ageLabel ? " / " : ""}
+                                {ageLabel}
+                              </p>
+                            )}
+                            {entry.comment && (
+                              <p
+                                className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
+                                  hasProfile ? "mt-2" : ""
+                                }`}
+                              >
+                                {entry.comment}
+                              </p>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                )}
+                <RecruiterMessageSection job={job} />
+                {socialLinks.length > 0 && (
+                  <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
+                    <h2 className="mb-3 text-base font-semibold text-charcoal">
+                      公式SNS
+                    </h2>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {socialLinks.map((link) => (
+                        <a
+                          key={link.label}
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex min-h-12 items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold shadow-md transition ${link.className}`}
+                        >
+                          {link.label}を見る
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {benefitGroups.length > 0 && (
+                  <section className="space-y-4">
+                    <h2 className="text-base font-semibold text-charcoal">待遇</h2>
+                    {benefitGroups.map((group) => (
+                      <div
+                        key={group.title}
+                        className="rounded-2xl border border-gold/20 bg-ivory p-4"
+                      >
+                        <h3 className="mb-3 text-sm font-semibold text-gold-dark">
+                          {group.title}
+                        </h3>
+                        <ul className="flex flex-wrap gap-2">
+                          {group.items.map((benefit) => (
+                            <li
+                              key={benefit}
+                              className="rounded-full border border-gold/30 bg-white px-3 py-1.5 text-sm text-charcoal"
+                            >
+                              {benefit}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </section>
+                )}
+                {otherBenefits.length > 0 && (
+                  <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
+                    <h2 className="mb-3 text-base font-semibold text-charcoal">
+                      その他待遇
+                    </h2>
+                    <ul className="space-y-2">
+                      {otherBenefits.map((benefit) => (
                         <li
                           key={benefit}
-                          className="rounded-full border border-gold/30 bg-white px-3 py-1.5 text-sm text-charcoal"
+                          className="rounded-xl border border-gold/20 bg-white px-3 py-2 text-sm text-charcoal"
                         >
                           {benefit}
                         </li>
                       ))}
                     </ul>
-                  </div>
-                ))}
-              </section>
+                  </section>
+                )}
+                {job.descriptionText && (
+                  <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
+                    <h2 className="mb-3 text-base font-semibold text-charcoal">
+                      どんなお店？
+                    </h2>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
+                      {job.descriptionText}
+                    </p>
+                  </section>
+                )}
+              </>
+            ) : (
+              <div className="space-y-3" aria-hidden>
+                <div className="h-32 animate-pulse rounded-2xl border border-gold/15 bg-ivory/70" />
+                <div className="h-24 animate-pulse rounded-2xl border border-gold/15 bg-ivory/70" />
+              </div>
             )}
-            {otherBenefits.length > 0 && (
-              <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
-                <h2 className="mb-3 text-base font-semibold text-charcoal">
-                  その他待遇
-                </h2>
-                <ul className="space-y-2">
-                  {otherBenefits.map((benefit) => (
-                    <li
-                      key={benefit}
-                      className="rounded-xl border border-gold/20 bg-white px-3 py-2 text-sm text-charcoal"
-                    >
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-            {job.descriptionText && (
-              <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
-                <h2 className="mb-3 text-base font-semibold text-charcoal">
-                  どんなお店？
-                </h2>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base">
-                  {job.descriptionText}
-                </p>
-              </section>
-            )}
+
             <div className="job-detail-apply-inline">
               <JobApplyButtons
                 job={job}
@@ -527,28 +603,22 @@ export function JobDetailView({
               {job.salary}
             </p>
             <div className="mt-4 flex items-center gap-2">
+              <FavoriteSlot
+                jobId={job.id}
+                preview={preview}
+                onPreviewNotice={() => showPreviewNotice()}
+                ready={favoritesReady}
+              />
               {preview ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => showPreviewNotice()}
-                    className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
-                  >
-                    ♡ お気に入り
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showPreviewNotice()}
-                    className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
-                  >
-                    比較
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => showPreviewNotice()}
+                  className="rounded-full border border-gold/30 px-3 py-1.5 text-xs font-medium text-gold-dark"
+                >
+                  比較
+                </button>
               ) : (
-                <>
-                  <FavoriteButton jobId={job.id} allowLineLoginRedirect />
-                  <CompareButton jobId={job.id} />
-                </>
+                <CompareButton jobId={job.id} />
               )}
             </div>
             <div className="mt-5">

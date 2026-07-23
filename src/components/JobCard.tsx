@@ -7,6 +7,7 @@ import { JobImpressionTracker } from "@/components/JobImpressionTracker";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import { luxuryCardSurface, luxuryImageFrame } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
+import { JobDetailPrefetch } from "@/components/JobDetailPrefetch";
 import { shopCardDomId } from "@/lib/shop-card-id";
 import type { Job } from "@/types/job";
 import { SafetyBadge } from "./SafetyBadge";
@@ -18,10 +19,11 @@ export function JobCard({ job }: { job: Job }) {
       id={shopCardDomId(job.id)}
       className={`relative overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
     >
+      <JobDetailPrefetch jobId={job.id} />
       <div className="absolute right-3 top-3 z-10">
         <FavoriteButton jobId={job.id} />
       </div>
-      <Link href={`/jobs/${job.id}`} scroll={false} className="block">
+      <Link href={`/jobs/${job.id}`} scroll={false} prefetch className="block">
         {job.imageUrl ? (
           <div className={`overflow-hidden ${luxuryImageFrame}`}>
             <img

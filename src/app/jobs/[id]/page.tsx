@@ -1,51 +1,48 @@
-"use client";
-
-import { use, useEffect, useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { JobDetailView } from "@/components/JobDetailView";
-import { recordJobView } from "@/lib/job-view-storage";
-import { recordUserViewHistory } from "@/lib/view-history-client";
-import { fetchJobById, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
-import type { Job } from "@/types/job";
+import { JobDetailClient } from "@/components/JobDetailClient";
+import { getPublishedJobDetail } from "@/lib/job-detail-data";
+import { SITE_BRAND_JA, SITE_URL } from "@/lib/site";
 
-export default function JobDetailPage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
-  const [job, setJob] = useState<Job | null | undefined>(undefined);
+};
 
-  useEffect(() => {
-    const load = () => {
-      fetchJobById(id)
-        .then(setJob)
-        .catch(() => setJob(null));
-    };
-    load();
-    window.addEventListener(JOBS_UPDATED_EVENT, load);
-    return () => window.removeEventListener(JOBS_UPDATED_EVENT, load);
-  }, [id]);
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const job = await getPublishedJobDetail(id);
+  if (!job) {
+    return { title: "求人が見つかりません" };
+  }
+  const title = `${job.shopName}｜${job.jobType}の求人`;
+  const description =
+    job.introductionText?.slice(0, 120) ||
+    `${job.shopName}（${job.district}）の求人情報。時給 ${job.salary}`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title: `${title}｜${SITE_BRAND_JA}`,
+      description,
+      url: `${SITE_URL}/jobs/${job.id}`,
+      type: "website",
+    },
+  };
+}
 
-  useEffect(() => {
-    // job_views + job_detail_click（一覧 impression とは別）
-    void recordJobView(id);
-    void recordUserViewHistory(id);
-  }, [id]);
+export default async function JobDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  const startedAt = Date.now();
+  const job = await getPublishedJobDetail(id);
 
-  // Forward entry only: listing Links use scroll={false} so history can keep
-  // the previous page's scroll. Bring the detail view to the top for reading.
-  // Must not run any scroll logic on the listing page when coming back.
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
-
-  if (job === undefined) {
-    return (
-      <div className="mx-auto max-w-3xl p-8">
-        <div className="h-64 animate-pulse rounded-2xl bg-white" />
-      </div>
-    );
+  if (process.env.NODE_ENV === "development") {
+    console.info("[job-detail] page render", {
+      jobId: id,
+      found: Boolean(job),
+      ms: Date.now() - startedAt,
+    });
   }
 
   if (!job) {
@@ -59,5 +56,5 @@ export default function JobDetailPage({
     );
   }
 
-  return <JobDetailView job={job} />;
+  return <JobDetailClient job={job} />;
 }

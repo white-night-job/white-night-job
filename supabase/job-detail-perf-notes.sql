@@ -1,0 +1,14 @@
+-- Job detail lookups use primary key (jobs.id).
+-- Published filter is cheap on a single-row PK fetch; no duplicate index needed.
+--
+-- Confirmed existing (do not recreate):
+--   jobs_pkey on jobs(id)
+--   jobs_published_idx / jobs_published_district_idx (list queries)
+--
+-- Optional (only if explain shows sequential scans on published filters for lists):
+-- create index concurrently if not exists jobs_id_published_idx
+--   on public.jobs (id)
+--   where published = true;
+--
+-- This file is documentation-only for the job-detail performance pass.
+select 1;

@@ -1,4 +1,4 @@
-const VIEW_DEDUP_MS = 10_000;
+const VIEW_DEDUP_MS = 2 * 60 * 1000; // 2 minutes
 
 function shouldSkipDuplicateView(jobId: string): boolean {
   if (typeof window === "undefined") return false;
@@ -16,10 +16,19 @@ function markViewRecorded(jobId: string): void {
   window.sessionStorage.setItem(`job-view-recorded-${jobId}`, String(Date.now()));
 }
 
+function shouldSkipInternalClientPath(): boolean {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname;
+  return (
+    path.startsWith("/admin") ||
+    path.startsWith("/shop-dashboard") ||
+    path.startsWith("/shop-login")
+  );
+}
+
 export async function recordJobView(jobId: string): Promise<void> {
-  if (shouldSkipDuplicateView(jobId)) {
-    return;
-  }
+  if (shouldSkipInternalClientPath()) return;
+  if (shouldSkipDuplicateView(jobId)) return;
 
   try {
     const response = await fetch(`/api/jobs/${jobId}/views`, {
@@ -29,6 +38,7 @@ export async function recordJobView(jobId: string): Promise<void> {
         referrer:
           typeof document !== "undefined" ? document.referrer || null : null,
       }),
+      keepalive: true,
     });
 
     if (!response.ok) {

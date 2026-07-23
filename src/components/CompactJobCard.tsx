@@ -14,6 +14,7 @@ import { formatLocation } from "@/lib/job-storage";
 import { shopCardDomId } from "@/lib/shop-card-id";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
+import { JobDetailPrefetch } from "@/components/JobDetailPrefetch";
 
 type CompactJobCardProps = {
   job: Job;
@@ -51,12 +52,13 @@ export function CompactJobCard({
     return (
       <JobImpressionTracker jobId={job.id}>
       <article id={cardId} className="listing-job-card relative">
+        <JobDetailPrefetch jobId={job.id} />
         <div className="absolute right-2 top-2 z-10">
           <FavoriteButton jobId={job.id} />
         </div>
         {badge && <ListingBadge badge={badge} />}
 
-        <Link href={detailHref} scroll={false} className="block">
+        <Link href={detailHref} scroll={false} prefetch className="block">
           {job.imageUrl ? (
             <div className="listing-card-image">
               <img
@@ -108,12 +110,13 @@ export function CompactJobCard({
       id={cardId}
       className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5"
     >
+      <JobDetailPrefetch jobId={job.id} />
       <div className="absolute right-2 top-2 z-10">
         <FavoriteButton jobId={job.id} />
       </div>
       {badge && <ListingBadge badge={badge} />}
 
-      <Link href={detailHref} scroll={false} className="flex flex-1 flex-col">
+      <Link href={detailHref} scroll={false} prefetch className="flex flex-1 flex-col">
         {job.imageUrl ? (
           <div className="overflow-hidden ring-1 ring-gold/40 ring-inset">
             <img

@@ -21,8 +21,10 @@ import {
 } from "@/lib/listing-priority";
 import { parsePlanFromBody } from "@/lib/job-plan";
 import { parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
+import { PUBLIC_JOB_DETAIL_COLUMNS } from "@/lib/job-detail-data";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { createSupabaseAdmin } from "@/lib/supabase";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -64,16 +66,24 @@ export async function GET(_request: Request, { params }: RouteContext) {
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
-      .select("*")
+      .select(PUBLIC_JOB_DETAIL_COLUMNS)
       .eq("id", id)
       .eq("published", true)
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
 
-    return NextResponse.json({ job: rowToJob(data) });
+    return NextResponse.json(
+      { job: rowToJob(data as unknown as Parameters<typeof rowToJob>[0]) },
+      {
+        headers: {
+          // Client prefetch / revisit: short private cache, must revalidate after edits.
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        },
+      },
+    );
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の取得に失敗しました。") },
@@ -143,6 +153,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     void runAutoNotificationsAfterJobChange({ before, after });
 
     invalidateAdminCacheByPrefix("admin:");
+    revalidateTag(`job-detail:${id}`);
     return NextResponse.json({ job: after });
   } catch (error) {
     return NextResponse.json(
@@ -164,6 +175,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     if (error) throw error;
 
     invalidateAdminCacheByPrefix("admin:");
+    revalidateTag(`job-detail:${id}`);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

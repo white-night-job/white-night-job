@@ -39,28 +39,33 @@ export async function POST(request: Request, { params }: RouteContext) {
       request.headers.get("referer") ?? (body.referrer?.trim() || null);
     const isInternal = isInternalAnalyticsRequest(request);
 
-    // Keep legacy job_views for admin charts (skip internal noise).
+    // Parallel writes — must not block the detail page (client already deferred).
+    const tasks: Promise<unknown>[] = [];
+
     if (!isInternal) {
-      await insertJobViewRow(supabase, {
-        jobId,
-        userAgent,
-        referrer,
-      });
+      tasks.push(
+        insertJobViewRow(supabase, {
+          jobId,
+          userAgent,
+          referrer,
+        }),
+      );
     }
 
-    // Detail page open = job_detail_click (not list impression).
-    try {
-      await insertAnalyticsEvent(supabase, {
+    tasks.push(
+      insertAnalyticsEvent(supabase, {
         jobId,
         eventType: "job_detail_click",
         sessionId: body.sessionId,
         referrer,
         userAgent,
         isInternal,
-      });
-    } catch {
-      // Analytics table may be missing until SQL migration.
-    }
+      }).catch(() => {
+        // Analytics table may be missing until SQL migration.
+      }),
+    );
+
+    await Promise.all(tasks);
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
