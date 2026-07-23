@@ -11,7 +11,7 @@ type JobImpressionTrackerProps = {
 
 /**
  * Fires job_impression when the card becomes meaningfully visible.
- * Deduping (same user/job within 3 minutes) is handled in trackJobImpression.
+ * Deduping (same user/job within 1 minute) is handled in trackJobImpression.
  */
 export function JobImpressionTracker({
   jobId,

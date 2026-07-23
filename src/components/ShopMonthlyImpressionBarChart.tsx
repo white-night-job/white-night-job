@@ -99,7 +99,7 @@ export function ShopMonthlyImpressionBarChart({
           表示回数の月別推移
         </h3>
         <p className="mt-1 text-xs text-muted">
-          直近12か月（同一端末・同一求人は3分以内1回／管理・プレビュー除外）
+          直近12か月（連続表示・管理・プレビュー除外）
         </p>
       </div>
 
