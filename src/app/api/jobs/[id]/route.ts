@@ -71,7 +71,19 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .eq("published", true)
       .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.error("[api/jobs/[id]] supabase select failed", {
+        jobId: id,
+        code: (error as { code?: string }).code,
+        message: getErrorMessage(error, "unknown supabase error"),
+      });
+      return NextResponse.json(
+        { message: "求人の取得に失敗しました。" },
+        { status: 500 },
+      );
+    }
+
+    if (!data) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
 

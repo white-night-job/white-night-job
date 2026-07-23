@@ -463,43 +463,44 @@ export function JobDetailView({
                     shopName={job.shopName}
                   />
                 )}
-                {displayCastVoices.length > 0 && (
-                  <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
-                    <h2 className="mb-4 text-base font-semibold text-charcoal">
-                      入店・在籍キャストの声
-                    </h2>
-                    <ul className="space-y-3">
-                      {displayCastVoices.map((entry, index) => {
-                        const ageLabel = formatCastVoiceAge(entry.age);
-                        const hasProfile = Boolean(entry.name || ageLabel);
+                {Array.isArray(displayCastVoices) &&
+                  displayCastVoices.length > 0 && (
+                    <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
+                      <h2 className="mb-4 text-base font-semibold text-charcoal">
+                        入店・在籍キャストの声
+                      </h2>
+                      <ul className="space-y-3">
+                        {displayCastVoices.map((entry, index) => {
+                          const ageLabel = formatCastVoiceAge(entry.age);
+                          const hasProfile = Boolean(entry.name || ageLabel);
 
-                        return (
-                          <li
-                            key={`cast-voice-${index}-${entry.name}`}
-                            className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
-                          >
-                            {hasProfile && (
-                              <p className="text-sm font-semibold text-gold-dark sm:text-base">
-                                {entry.name}
-                                {entry.name && ageLabel ? " / " : ""}
-                                {ageLabel}
-                              </p>
-                            )}
-                            {entry.comment && (
-                              <p
-                                className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
-                                  hasProfile ? "mt-2" : ""
-                                }`}
-                              >
-                                {entry.comment}
-                              </p>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                )}
+                          return (
+                            <li
+                              key={`cast-voice-${index}-${entry.name}`}
+                              className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
+                            >
+                              {hasProfile && (
+                                <p className="text-sm font-semibold text-gold-dark sm:text-base">
+                                  {entry.name}
+                                  {entry.name && ageLabel ? " / " : ""}
+                                  {ageLabel}
+                                </p>
+                              )}
+                              {entry.comment && (
+                                <p
+                                  className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
+                                    hasProfile ? "mt-2" : ""
+                                  }`}
+                                >
+                                  {entry.comment}
+                                </p>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  )}
                 <RecruiterMessageSection job={job} />
                 {socialLinks.length > 0 && (
                   <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">

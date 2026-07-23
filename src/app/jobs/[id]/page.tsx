@@ -12,7 +12,15 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const job = await getPublishedJobDetail(id);
+  let job = null;
+  try {
+    job = await getPublishedJobDetail(id);
+  } catch (error) {
+    console.error("[job-detail] generateMetadata failed", {
+      jobId: id,
+      error,
+    });
+  }
   if (!job) {
     return { title: "求人が見つかりません" };
   }
@@ -35,7 +43,16 @@ export async function generateMetadata({
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const startedAt = Date.now();
-  const job = await getPublishedJobDetail(id);
+  let job = null;
+  try {
+    job = await getPublishedJobDetail(id);
+  } catch (error) {
+    console.error("[job-detail] page fetch failed", {
+      jobId: id,
+      error,
+      ms: Date.now() - startedAt,
+    });
+  }
 
   if (process.env.NODE_ENV === "development") {
     console.info("[job-detail] page render", {

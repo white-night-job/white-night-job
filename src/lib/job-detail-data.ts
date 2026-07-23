@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { getErrorMessage } from "@/lib/api-error";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
@@ -21,7 +22,6 @@ export const PUBLIC_JOB_DETAIL_COLUMNS = [
   "introduction_text",
   "description_text",
   "description",
-  "cast_voice",
   "cast_voices",
   "store_images",
   "requirements",
@@ -53,25 +53,42 @@ export const PUBLIC_JOB_DETAIL_COLUMNS = [
 
 async function fetchPublishedJobDetailUncached(id: string): Promise<Job | null> {
   const startedAt = Date.now();
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select(PUBLIC_JOB_DETAIL_COLUMNS)
-    .eq("id", id)
-    .eq("published", true)
-    .maybeSingle();
+  try {
+    const supabase = createSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(PUBLIC_JOB_DETAIL_COLUMNS)
+      .eq("id", id)
+      .eq("published", true)
+      .maybeSingle();
 
-  if (error) throw error;
-  if (!data) return null;
+    if (error) {
+      console.error("[job-detail] supabase select failed", {
+        jobId: id,
+        code: (error as { code?: string }).code,
+        message: getErrorMessage(error, "unknown supabase error"),
+        ms: Date.now() - startedAt,
+      });
+      return null;
+    }
+    if (!data) return null;
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[job-detail] db fetch", {
+    if (process.env.NODE_ENV === "development") {
+      console.info("[job-detail] db fetch", {
+        jobId: id,
+        ms: Date.now() - startedAt,
+      });
+    }
+
+    return rowToJob(data as unknown as Parameters<typeof rowToJob>[0]);
+  } catch (error) {
+    console.error("[job-detail] unexpected fetch failure", {
       jobId: id,
+      message: getErrorMessage(error, "unknown error"),
       ms: Date.now() - startedAt,
     });
+    return null;
   }
-
-  return rowToJob(data as unknown as Parameters<typeof rowToJob>[0]);
 }
 
 /** Short-lived cache per job id (revalidated on admin/shop update via tag). */

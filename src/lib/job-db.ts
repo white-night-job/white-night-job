@@ -61,7 +61,8 @@ type JobRow = {
   introduction_text: string | null;
   description_text: string | null;
   description: string | null;
-  cast_voice: string | null;
+  /** Legacy text column — may be absent in some DBs; prefer cast_voices. */
+  cast_voice?: string | null;
   cast_voices?: unknown;
   store_images?: unknown;
   requirements: string[] | null;
@@ -520,8 +521,10 @@ function normalizeCastVoicesInput(value: unknown): CastVoiceEntry[] | undefined 
 }
 
 export function getDisplayCastVoices(
-  job: Pick<Job, "castVoices" | "castVoice">,
+  job: Pick<Job, "castVoices" | "castVoice"> | null | undefined,
 ): CastVoiceEntry[] {
+  if (!job) return [];
+
   const fromColumn = parseCastVoices(job.castVoices);
   if (fromColumn.length > 0) return fromColumn;
 
