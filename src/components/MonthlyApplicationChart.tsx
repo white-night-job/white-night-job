@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useChartScrollToEnd } from "@/hooks/useChartScrollToEnd";
 import type { MonthlyApplicationBucket } from "@/lib/job-applications";
 
@@ -16,10 +16,10 @@ const TOTAL_COLOR = "#9ca3af";
 
 const LINE_DASH = "7 4";
 const PHONE_DASH = "3 3";
-const CHART_HEIGHT = 220;
+const CHART_HEIGHT = 168;
 const AXIS_WIDTH = 40;
-const PADDING = { top: 36, right: 16, bottom: 36, left: 8 };
-const MONTH_SLOT = 72;
+const PADDING = { top: 12, right: 8, bottom: 40, left: 8 };
+const MONTH_SLOT = 64;
 
 type SeriesKey = "line" | "phone" | "total";
 type MarkerKind = "line" | "phone" | "total";
@@ -76,28 +76,8 @@ function buildYTicks(maxY: number): number[] {
   return ticks;
 }
 
-/** Offset labels so LINE / phone / total stay readable when values coincide. */
-function valueLabelOffset(
-  kind: MarkerKind,
-  bucket: MonthlyApplicationBucket,
-): { dx: number; dy: number } {
-  const sameLinePhone = bucket.line === bucket.phone;
-  const sameAll =
-    bucket.line === bucket.phone && bucket.phone === bucket.total;
-
-  if (kind === "total") {
-    return { dx: 0, dy: sameAll ? -26 : -20 };
-  }
-  if (kind === "line") {
-    return {
-      dx: sameLinePhone || sameAll ? -11 : -8,
-      dy: sameAll ? -14 : -10,
-    };
-  }
-  return {
-    dx: sameLinePhone || sameAll ? 11 : 8,
-    dy: sameAll ? -14 : -10,
-  };
+function shouldOffsetPhoneMarker(bucket: MonthlyApplicationBucket): boolean {
+  return bucket.line === bucket.phone && bucket.line > 0;
 }
 
 function SeriesMarker({
@@ -197,13 +177,15 @@ export function MonthlyApplicationChart({
   filterDescription,
   compact = false,
 }: MonthlyApplicationChartProps) {
-  const hasData = data.length > 0;
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const hasApplications = data.some((bucket) => bucket.total > 0);
   const chartWidth = compact
     ? Math.max(480, data.length * MONTH_SLOT)
     : Math.max(720, data.length * MONTH_SLOT);
   const scrollKey = useMemo(
     () =>
-      hasData
+      hasApplications
         ? data
             .map(
               (bucket) =>
@@ -211,7 +193,7 @@ export function MonthlyApplicationChart({
             )
             .join("|")
         : "",
-    [data, hasData],
+    [data, hasApplications],
   );
   const chartScrollRef = useChartScrollToEnd(scrollKey);
   const innerWidth = chartWidth - PADDING.left - PADDING.right;
@@ -241,7 +223,15 @@ export function MonthlyApplicationChart({
 
   const yTicks = useMemo(() => buildYTicks(maxY), [maxY]);
 
-  const content = !hasData ? (
+  const activeBucket = activeIndex !== null ? data[activeIndex] : null;
+
+  const tooltipLeft = useMemo(() => {
+    if (activeIndex === null) return 4;
+    const anchor = getPointX(activeIndex, data.length, innerWidth);
+    return Math.min(Math.max(anchor - 56, 4), chartWidth - 120);
+  }, [activeIndex, chartWidth, data.length, innerWidth]);
+
+  const content = !hasApplications ? (
     <div className="rounded-xl border border-gold/15 bg-ivory/30 px-3 py-4 text-center text-sm text-muted">
       直近12ヶ月の応募はありません
     </div>
@@ -263,11 +253,10 @@ export function MonthlyApplicationChart({
       </ul>
 
       <div className="flex items-stretch">
-        {/* Fixed Y-axis — outside horizontal scroll */}
         <svg
           width={AXIS_WIDTH}
           height={CHART_HEIGHT}
-          className="shrink-0"
+          className="mt-[4.75rem] shrink-0 sm:mt-0"
           aria-hidden
         >
           {yTicks.map((tick) => {
@@ -288,11 +277,32 @@ export function MonthlyApplicationChart({
 
         <div className="min-w-0 flex-1">
           <div ref={chartScrollRef} className="overflow-x-auto pb-1">
-            <div style={{ width: chartWidth, minWidth: "100%" }}>
+            <div
+              className="relative"
+              style={{ width: chartWidth, minWidth: "100%" }}
+            >
+              {activeBucket && (
+                <div
+                  className="pointer-events-none absolute top-0 z-10 min-w-[9.5rem] rounded-lg border border-gold/25 bg-white px-3 py-2 text-xs shadow-gold"
+                  style={{ left: tooltipLeft }}
+                >
+                  <p className="font-semibold text-charcoal">{activeBucket.label}</p>
+                  <ol className="mt-1.5 space-y-0.5">
+                    <li className="text-[#047a3b]">
+                      LINE応募: {activeBucket.line}件
+                    </li>
+                    <li className="text-gold-dark">
+                      電話応募: {activeBucket.phone}件
+                    </li>
+                    <li className="text-muted">合計: {activeBucket.total}件</li>
+                  </ol>
+                </div>
+              )}
+
               <svg
                 width={chartWidth}
                 height={CHART_HEIGHT}
-                className="block"
+                className="mt-[4.75rem] block sm:mt-0"
                 role="img"
                 aria-label="月別応募数の折れ線グラフ"
               >
@@ -316,8 +326,6 @@ export function MonthlyApplicationChart({
                   fill="none"
                   stroke={TOTAL_COLOR}
                   strokeWidth={1.5}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
                 <path
                   d={phonePath}
@@ -325,8 +333,6 @@ export function MonthlyApplicationChart({
                   stroke={PHONE_COLOR}
                   strokeWidth={2.5}
                   strokeDasharray={PHONE_DASH}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
                 <path
                   d={linePath}
@@ -334,59 +340,66 @@ export function MonthlyApplicationChart({
                   stroke={LINE_COLOR}
                   strokeWidth={2.5}
                   strokeDasharray={LINE_DASH}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
 
                 {data.map((bucket, index) => {
                   const x = getPointX(index, data.length, innerWidth);
+                  const isActive = activeIndex === index;
+                  const hitWidth =
+                    data.length > 1 ? innerWidth / (data.length - 1) : innerWidth;
+                  const phoneOffset = shouldOffsetPhoneMarker(bucket)
+                    ? { dx: 6, dy: -7 }
+                    : { dx: 0, dy: 0 };
                   const lineY = getPointY(bucket.line, innerHeight, maxY);
                   const phoneY = getPointY(bucket.phone, innerHeight, maxY);
                   const totalY = getPointY(bucket.total, innerHeight, maxY);
-                  const phoneMarkerOffset =
-                    bucket.line === bucket.phone ? { dx: 6, dy: -6 } : { dx: 0, dy: 0 };
-                  const lineOffset = valueLabelOffset("line", bucket);
-                  const phoneOffset = valueLabelOffset("phone", bucket);
-                  const totalOffset = valueLabelOffset("total", bucket);
 
                   return (
                     <g key={bucket.monthKey}>
-                      <SeriesMarker kind="total" cx={x} cy={totalY} />
-                      <SeriesMarker
-                        kind="phone"
-                        cx={x + phoneMarkerOffset.dx}
-                        cy={phoneY + phoneMarkerOffset.dy}
+                      <rect
+                        x={x - hitWidth / 2}
+                        y={PADDING.top}
+                        width={hitWidth}
+                        height={innerHeight}
+                        fill="transparent"
+                        className="cursor-pointer"
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onMouseLeave={() =>
+                          setActiveIndex((current) =>
+                            current === index ? null : current,
+                          )
+                        }
+                        onFocus={() => setActiveIndex(index)}
+                        onBlur={() => setActiveIndex(null)}
+                        onClick={() =>
+                          setActiveIndex((current) =>
+                            current === index ? null : index,
+                          )
+                        }
                       />
-                      <SeriesMarker kind="line" cx={x} cy={lineY} />
-
-                      <text
-                        x={x + totalOffset.dx}
-                        y={Math.max(11, totalY + totalOffset.dy)}
-                        textAnchor="middle"
-                        className="fill-muted text-[9px] font-semibold"
-                      >
-                        {bucket.total.toLocaleString("ja-JP")}
-                      </text>
-                      <text
-                        x={x + lineOffset.dx}
-                        y={Math.max(11, lineY + lineOffset.dy)}
-                        textAnchor="middle"
-                        className="fill-[#047a3b] text-[9px] font-semibold"
-                      >
-                        {bucket.line.toLocaleString("ja-JP")}
-                      </text>
-                      <text
-                        x={x + phoneOffset.dx}
-                        y={Math.max(11, phoneY + phoneOffset.dy)}
-                        textAnchor="middle"
-                        className="fill-gold-dark text-[9px] font-semibold"
-                      >
-                        {bucket.phone.toLocaleString("ja-JP")}
-                      </text>
-
+                      {isActive && (
+                        <>
+                          <line
+                            x1={x}
+                            y1={PADDING.top}
+                            x2={x}
+                            y2={PADDING.top + innerHeight}
+                            stroke="rgba(201, 169, 98, 0.45)"
+                            strokeWidth={1}
+                            strokeDasharray="3 3"
+                          />
+                          <SeriesMarker kind="total" cx={x} cy={totalY} />
+                          <SeriesMarker
+                            kind="phone"
+                            cx={x + phoneOffset.dx}
+                            cy={phoneY + phoneOffset.dy}
+                          />
+                          <SeriesMarker kind="line" cx={x} cy={lineY} />
+                        </>
+                      )}
                       <text
                         x={x}
-                        y={CHART_HEIGHT - 10}
+                        y={CHART_HEIGHT - 8}
                         textAnchor="middle"
                         className="fill-muted text-[9px]"
                       >
@@ -401,7 +414,7 @@ export function MonthlyApplicationChart({
         </div>
       </div>
       <p className="mt-2 text-[10px] text-muted">
-        グラフは横にスクロールできます（左側の目盛りは固定）
+        月をタップ・クリックすると内訳が表示されます
       </p>
     </div>
   );
