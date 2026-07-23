@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ShopAnalyticsDualLineChart } from "@/components/ShopAnalyticsDualLineChart";
 import { ShopMonthlyImpressionBarChart } from "@/components/ShopMonthlyImpressionBarChart";
 import type {
   AnalyticsCounts,
@@ -173,15 +172,6 @@ export function ShopAnalyticsSection() {
           </div>
 
           <ShopMonthlyImpressionBarChart data={data?.monthly ?? []} />
-
-          <ShopAnalyticsDualLineChart
-            title="応募クリック数"
-            data={data?.monthly ?? []}
-            series={[
-              { key: "lineClicks", label: "LINE応募クリック", color: "#047a3b" },
-              { key: "phoneClicks", label: "電話応募クリック", color: "#b45309" },
-            ]}
-          />
         </>
       )}
     </section>
