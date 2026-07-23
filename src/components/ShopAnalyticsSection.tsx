@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ShopAnalyticsDualLineChart } from "@/components/ShopAnalyticsDualLineChart";
+import { ShopMonthlyImpressionBarChart } from "@/components/ShopMonthlyImpressionBarChart";
 import type {
   AnalyticsCounts,
   AnalyticsPeriod,
@@ -171,6 +172,9 @@ export function ShopAnalyticsSection() {
             />
           </div>
 
+          <ShopMonthlyImpressionBarChart data={data?.monthly ?? []} />
+
+          {/* Keep application-click line chart; only the old bar chart was removed. */}
           <ShopAnalyticsDualLineChart
             title="応募クリック数"
             data={data?.monthly ?? []}
