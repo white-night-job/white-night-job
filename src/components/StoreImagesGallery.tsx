@@ -1,14 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type StoreImagesGalleryProps = {
-  images: string[];
+  images?: string[] | null;
   shopName: string;
 };
 
+function sanitizeImageUrls(images: string[] | null | undefined): string[] {
+  if (!Array.isArray(images)) return [];
+  return images
+    .map((url) => String(url ?? "").trim())
+    .filter((url) => url.length > 0);
+}
+
 export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps) {
+  const safeImages = useMemo(() => sanitizeImageUrls(images), [images]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -24,7 +32,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
       }
       if (event.key === "ArrowRight") {
         setActiveIndex((current) =>
-          current === null ? null : Math.min(current + 1, images.length - 1),
+          current === null ? null : Math.min(current + 1, safeImages.length - 1),
         );
       }
       if (event.key === "ArrowLeft") {
@@ -39,9 +47,12 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activeIndex, images.length]);
+  }, [activeIndex, safeImages.length]);
 
-  if (images.length === 0) return null;
+  if (safeImages.length === 0) return null;
+
+  const activeSrc =
+    activeIndex !== null ? safeImages[activeIndex] ?? null : null;
 
   return (
     <>
@@ -49,7 +60,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
         <h2 className="mb-3 text-base font-semibold text-charcoal">店舗ギャラリー</h2>
         <div className="-mx-1 overflow-x-auto px-1 pb-1">
           <ul className="flex gap-3 sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {images.map((imageUrl, index) => (
+            {safeImages.map((imageUrl, index) => (
               <li key={`${imageUrl}-${index}`} className="w-56 shrink-0 sm:w-auto">
                 <button
                   type="button"
@@ -76,7 +87,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
         </p>
       </section>
 
-      {activeIndex !== null && (
+      {activeIndex !== null && activeSrc && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
           role="dialog"
@@ -92,7 +103,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
             閉じる
           </button>
 
-          {images.length > 1 && activeIndex > 0 && (
+          {safeImages.length > 1 && activeIndex > 0 && (
             <button
               type="button"
               onClick={(event) => {
@@ -108,7 +119,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
             </button>
           )}
 
-          {images.length > 1 && activeIndex < images.length - 1 && (
+          {safeImages.length > 1 && activeIndex < safeImages.length - 1 && (
             <button
               type="button"
               onClick={(event) => {
@@ -116,7 +127,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                 setActiveIndex((current) =>
                   current === null
                     ? null
-                    : Math.min(current + 1, images.length - 1),
+                    : Math.min(current + 1, safeImages.length - 1),
                 );
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-black/50 px-3 py-2 text-white sm:right-6"
@@ -131,12 +142,11 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
             onClick={(event) => event.stopPropagation()}
           >
             <Image
-              src={images[activeIndex]!}
+              src={activeSrc}
               alt={`${shopName}の店舗ギャラリー ${activeIndex + 1}`}
               fill
               sizes="90vw"
               className="rounded-lg object-contain"
-              priority
             />
           </div>
         </div>

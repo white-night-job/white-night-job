@@ -21,6 +21,10 @@ export function RecruiterMessageSection({ job }: RecruiterMessageSectionProps) {
               src={job.recruiterImage}
               alt={job.recruiterName ? `${job.recruiterName}の顔写真` : "採用担当者の顔写真"}
               className="h-28 w-28 rounded-full border-4 border-gold/40 object-cover shadow-[0_0_24px_rgba(201,169,98,0.25)] sm:h-32 sm:w-32"
+              loading="lazy"
+              decoding="async"
+              width={128}
+              height={128}
             />
           </div>
         ) : (
