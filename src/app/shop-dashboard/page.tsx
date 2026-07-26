@@ -1261,23 +1261,13 @@ export default function ShopDashboardPage() {
         </section>
       )}
 
-      {/* プランはサーバー側（API）でも判定する。ここは表示制御のみ。 */}
-      {analyticsEnabled ? (
-        <ShopImprovementReport
-          monthlyApplications={monthlyApplicationStats}
-          monthlyApplicationsLoading={deferredLoading}
-        />
-      ) : (
-        <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
-          <h2 className="font-serif text-lg font-semibold text-charcoal">
-            アクセス・応募分析・レポート
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            アクセス・応募分析とレポートはスタンダード以上のプランでご利用いただけます。現在のプランは
-            {planDefinition.label}です。プラン変更は運営までご連絡ください。
-          </p>
-        </section>
-      )}
+      {/* 表示内容のプラン判定はサーバー側（API）が行う。
+          ライト＝簡易分析、スタンダード以上＝分析＋改善レポート。 */}
+      <ShopImprovementReport
+        monthlyApplications={monthlyApplicationStats}
+        monthlyApplicationsLoading={deferredLoading}
+        lightPlan={!analyticsEnabled}
+      />
 
       <p className="mt-6 text-center text-xs text-muted">
         <Link href="/" className="text-gold-dark hover:underline">トップページへ</Link>

@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { ShopMonthlyImpressionBarChart } from "@/components/ShopMonthlyImpressionBarChart";
 import type { MonthlyApplicationBucket } from "@/lib/job-applications";
-import type { ShopImprovementReport as ReportPayload } from "@/lib/shop-improvement-report";
+import type {
+  ShopImprovementReport as ReportPayload,
+  ShopLightAnalyticsSummary,
+} from "@/lib/shop-improvement-report";
 
 type ApiResponse = {
   report?: ReportPayload;
+  light?: ShopLightAnalyticsSummary;
   message?: string;
 };
 
@@ -15,6 +19,8 @@ type ShopImprovementReportProps = {
   /** 月間応募数グラフ用。ダッシュボードが deferred API で取得済みのデータを受け取り、二重取得しない。 */
   monthlyApplications: MonthlyApplicationBucket[];
   monthlyApplicationsLoading: boolean;
+  /** 見出しの初期表示用。実際の表示内容はサーバーのプラン判定（APIレスポンス）に従う。 */
+  lightPlan: boolean;
 };
 
 const REPORT_LOAD_ERROR_MESSAGE =
@@ -135,10 +141,12 @@ function AdviceBlock({
 export function ShopImprovementReport({
   monthlyApplications,
   monthlyApplicationsLoading,
+  lightPlan,
 }: ShopImprovementReportProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportPayload | null>(null);
+  const [light, setLight] = useState<ShopLightAnalyticsSummary | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,7 +160,7 @@ export function ShopImprovementReport({
         const body = (await response.json()) as ApiResponse;
         if (cancelled) return;
 
-        if (!response.ok || !body.report) {
+        if (!response.ok || (!body.report && !body.light)) {
           // 401/403 はプラン案内など店舗向け文言をそのまま表示。
           // それ以外（DBエラー等）は固定メッセージにし、英語の詳細は出さない。
           if (response.status === 401 || response.status === 403) {
@@ -161,13 +169,16 @@ export function ShopImprovementReport({
             setError(REPORT_LOAD_ERROR_MESSAGE);
           }
           setReport(null);
+          setLight(null);
           return;
         }
-        setReport(body.report);
+        setReport(body.report ?? null);
+        setLight(body.report ? null : (body.light ?? null));
         setError("");
       } catch (err) {
         if (cancelled) return;
         setReport(null);
+        setLight(null);
         console.error("[ShopImprovementReport] fetch failed", err);
         setError(REPORT_LOAD_ERROR_MESSAGE);
       } finally {
@@ -181,6 +192,8 @@ export function ShopImprovementReport({
   }, []);
 
   const premium = report?.premium ?? null;
+  // サーバーのプラン判定（レスポンス種別）を優先し、読み込み中は props で見出しを出し分ける。
+  const isLightView = light != null || (lightPlan && !report);
 
   // 月間応募数はダッシュボード側で取得済みのデータを使うため、レポート取得失敗時も表示できる。
   const monthlyApplicationsBlock = (
@@ -202,12 +215,14 @@ export function ShopImprovementReport({
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-serif text-lg font-semibold text-charcoal">
-            アクセス・応募分析・レポート
+            {isLightView ? "アクセス・応募分析" : "アクセス・応募分析・レポート"}
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted">
-            {report
-              ? `${report.monthLabel}の数値と求人内容から、応募を増やすための改善案をご提案します。`
-              : "今月の数値と求人内容から、応募を増やすための改善案をご提案します。"}
+            {isLightView
+              ? `${light?.monthLabel ?? "今月"}のアクセスと応募クリックの状況です。`
+              : report
+                ? `${report.monthLabel}の数値と求人内容から、応募を増やすための改善案をご提案します。`
+                : "今月の数値と求人内容から、応募を増やすための改善案をご提案します。"}
           </p>
         </div>
         {premium && (
@@ -226,6 +241,39 @@ export function ShopImprovementReport({
               {error}
             </div>
             {monthlyApplicationsBlock}
+          </div>
+        )}
+
+        {!loading && light && (
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-charcoal">
+                {light.monthLabel}の状況
+              </h3>
+              <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <MetricCard label="表示回数" value={light.current.impressions} />
+                <MetricCard
+                  label="LINE応募クリック"
+                  value={light.current.lineClicks}
+                />
+                <MetricCard
+                  label="電話応募クリック"
+                  value={light.current.phoneClicks}
+                />
+                <MetricCard
+                  label="応募クリック合計"
+                  value={light.current.applyTotal}
+                />
+              </div>
+            </div>
+
+            <ShopMonthlyImpressionBarChart data={light.monthly ?? []} />
+
+            {monthlyApplicationsBlock}
+
+            <p className="text-[11px] leading-relaxed text-muted">
+              応募クリック数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの2分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。
+            </p>
           </div>
         )}
 

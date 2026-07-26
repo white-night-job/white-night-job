@@ -69,6 +69,24 @@ export type ShopImprovementReport = {
   generatedAt: string;
 };
 
+/** ライトプラン向け。店舗詳細クリック数・率・改善判定は含めない。 */
+export type LightAnalyticsMetrics = {
+  impressions: number;
+  lineClicks: number;
+  phoneClicks: number;
+  applyTotal: number;
+};
+
+export type ShopLightAnalyticsSummary = {
+  jobId: string;
+  plan: JobPlan;
+  monthKey: string;
+  monthLabel: string;
+  current: LightAnalyticsMetrics;
+  monthly: MonthlyAnalyticsBucket[];
+  generatedAt: string;
+};
+
 type AnalyticsEventRow = {
   event_type: string;
   session_id: string | null;
@@ -662,6 +680,52 @@ export async function buildShopImprovementReport(
           missingFields: buildMissingFields(content),
         }
       : null,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * ライトプラン向けの簡易集計。当月の表示・応募クリックと月別推移のみで、
+ * 店舗詳細クリック数は表示にも判定にも使わない（改善レポートは含めない）。
+ * 集計方法（重複除外・is_internal除外・月別集計）はレポートと同一。
+ */
+export async function buildShopLightAnalyticsSummary(
+  supabase: SupabaseClient,
+  jobId: string,
+  plan: JobPlan,
+  referenceDate = new Date(),
+): Promise<ShopLightAnalyticsSummary> {
+  const ranges = getReportMonthRanges(referenceDate);
+
+  const [eventsResult, monthly] = await Promise.all([
+    supabase
+      .from("job_analytics_events")
+      .select("event_type, session_id, created_at")
+      .eq("job_id", jobId)
+      .eq("is_internal", false)
+      .gte("created_at", ranges.currentStartIso)
+      .lt("created_at", ranges.currentEndIso),
+    fetchJobMonthlyAnalytics(supabase, jobId),
+  ]);
+
+  if (eventsResult.error) throw eventsResult.error;
+
+  const counts = countEventsWithImpressionDedupe(
+    (eventsResult.data ?? []) as AnalyticsEventRow[],
+  );
+
+  return {
+    jobId,
+    plan,
+    monthKey: ranges.monthKey,
+    monthLabel: ranges.monthLabel,
+    current: {
+      impressions: counts.impressions,
+      lineClicks: counts.lineClicks,
+      phoneClicks: counts.phoneClicks,
+      applyTotal: counts.applyTotal,
+    },
+    monthly,
     generatedAt: new Date().toISOString(),
   };
 }
