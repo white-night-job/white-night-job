@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import {
-  getAuthenticatedUserId,
   parseUserSessionValue,
   readUserSessionCookieValue,
   USER_COOKIE_NAME,
@@ -74,18 +73,9 @@ export async function buildMeResponse(request: Request): Promise<MeResponse> {
     };
   }
 
-  const userId = (await getAuthenticatedUserId(request)) ?? parsedUserId;
-  if (!userId) {
-    console.log("[api/me] result: cookie_invalid (getAuthenticatedUserId)");
-    return {
-      authenticated: false,
-      userId: null,
-      reason: "cookie_invalid",
-      cookieName: USER_COOKIE_NAME,
-      hasCookieHeader,
-      hasCookieStore,
-    };
-  }
+  // `parsedUserId` already came from the same signed cookie, so re-reading and
+  // re-verifying it here would only repeat the work done above.
+  const userId = parsedUserId;
 
   const supabase = createSupabaseAdmin();
   const [{ data: user, error: userError }, { data: settings, error: settingsError }] =

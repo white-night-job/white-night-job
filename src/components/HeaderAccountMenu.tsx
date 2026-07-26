@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { HeaderLoginModal } from "@/components/HeaderLoginModal";
 import { useUserSession } from "@/components/UserSessionProvider";
+import { clearUserCache } from "@/lib/user-data-cache";
 
 function AccountIcon() {
   return (
@@ -59,6 +60,7 @@ export function HeaderAccountMenu() {
 
   async function handleLogout() {
     await fetch("/api/user/logout", { method: "POST", credentials: "include" });
+    clearUserCache();
     await refreshSession();
     setMenuOpen(false);
     router.push("/");
@@ -106,6 +108,7 @@ export function HeaderAccountMenu() {
                 <li>
                   <Link
                     href="/mypage"
+                    prefetch
                     onClick={() => setMenuOpen(false)}
                     className="header-account-item"
                   >

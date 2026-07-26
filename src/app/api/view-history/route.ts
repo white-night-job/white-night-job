@@ -2,16 +2,26 @@ import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
+import {
+  parseCardLimit,
+  USER_JOB_CARD_COLUMNS,
+} from "@/lib/user-job-card-columns";
 
 export const dynamic = "force-dynamic";
 
 const MAX_HISTORY = 20;
 
-export async function GET() {
-  const userId = await getAuthenticatedUserId();
+export async function GET(request: Request) {
+  const userId = await getAuthenticatedUserId(request);
   if (!userId) {
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
+
+  const limit = parseCardLimit(
+    new URL(request.url).searchParams.get("limit"),
+    MAX_HISTORY,
+    MAX_HISTORY,
+  );
 
   const supabase = createSupabaseAdmin();
   const { data: rows, error } = await supabase
@@ -19,10 +29,15 @@ export async function GET() {
     .select("job_id, viewed_at")
     .eq("user_id", userId)
     .order("viewed_at", { ascending: false })
-    .limit(MAX_HISTORY);
+    .limit(limit);
 
   if (error) {
-    console.error("[view-history] GET failed:", error);
+    console.error("[view-history] GET failed:", {
+      userId,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
@@ -33,16 +48,27 @@ export async function GET() {
 
   const { data: jobs, error: jobsError } = await supabase
     .from("jobs")
-    .select("*")
+    .select(USER_JOB_CARD_COLUMNS)
     .in("id", jobIds)
     .eq("published", true);
 
   if (jobsError) {
-    console.error("[view-history] jobs fetch failed:", jobsError);
+    console.error("[view-history] jobs fetch failed:", {
+      userId,
+      requested: jobIds.length,
+      code: jobsError.code,
+      message: jobsError.message,
+      details: jobsError.details,
+    });
     return NextResponse.json({ message: jobsError.message }, { status: 500 });
   }
 
-  const jobsById = new Map((jobs ?? []).map((row) => [row.id, rowToJob(row)]));
+  const jobsById = new Map(
+    (jobs ?? []).map((row) => {
+      const typedRow = row as unknown as Parameters<typeof rowToJob>[0];
+      return [typedRow.id, rowToJob(typedRow)];
+    }),
+  );
   const orderedJobs = jobIds
     .map((jobId) => jobsById.get(jobId))
     .filter(Boolean);

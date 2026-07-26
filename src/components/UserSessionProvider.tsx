@@ -6,11 +6,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
 import type { ServerUserSession } from "@/lib/server-user-session";
+import { clearUserCache } from "@/lib/user-data-cache";
 
 type NotificationSettings = {
   notify_new_jobs: boolean;
@@ -83,6 +85,18 @@ async function wait(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isSameSession(a: UserSession, b: UserSession): boolean {
+  return (
+    a.authenticated === b.authenticated &&
+    a.user?.id === b.user?.id &&
+    a.user?.displayName === b.user?.displayName &&
+    a.user?.pictureUrl === b.user?.pictureUrl
+  );
+}
+
+/** Background revalidation interval; the server already resolved the session. */
+const SESSION_REVALIDATE_MS = 60_000;
+
 export function UserSessionProvider({
   children,
   initialSession,
@@ -100,12 +114,22 @@ export function UserSessionProvider({
     }
     return { authenticated: false };
   });
-  const [ready, setReady] = useState(false);
+  // The root layout already resolved the cookie server-side, so an authenticated
+  // visitor can render immediately instead of waiting for a second /api/me call.
+  const [ready, setReady] = useState(
+    Boolean(initialSession?.authenticated && initialSession.user),
+  );
+  const lastCheckedAtRef = useRef(
+    initialSession?.authenticated && initialSession.user ? Date.now() : 0,
+  );
+  const knownUserIdRef = useRef<string | null>(initialSession?.user?.id ?? null);
 
   const refreshSession = useCallback(async () => {
     try {
       const nextSession = await fetchUserSession();
-      setSession(nextSession);
+      setSession((current) =>
+        isSameSession(current, nextSession) ? current : nextSession,
+      );
       return nextSession;
     } catch (error) {
       console.error("[UserSessionProvider] session fetch failed:", error);
@@ -113,6 +137,7 @@ export function UserSessionProvider({
       setSession(fallback);
       return fallback;
     } finally {
+      lastCheckedAtRef.current = Date.now();
       setReady(true);
     }
   }, []);
@@ -122,6 +147,12 @@ export function UserSessionProvider({
 
     async function loadSession() {
       const lineLogin = new URLSearchParams(window.location.search).get("lineLogin");
+
+      const sinceLastCheck = Date.now() - lastCheckedAtRef.current;
+      if (!lineLogin && sinceLastCheck < SESSION_REVALIDATE_MS) {
+        return;
+      }
+
       let nextSession = await refreshSession();
 
       if (!cancelled && lineLogin === "success" && !nextSession.authenticated) {
@@ -158,6 +189,13 @@ export function UserSessionProvider({
 
   const currentUser = session.authenticated ? (session.user ?? null) : null;
   const isLoggedIn = Boolean(currentUser?.id);
+
+  useEffect(() => {
+    const nextUserId = currentUser?.id ?? null;
+    if (knownUserIdRef.current === nextUserId) return;
+    knownUserIdRef.current = nextUserId;
+    clearUserCache();
+  }, [currentUser?.id]);
 
   const value = useMemo(
     () => ({ session, currentUser, isLoggedIn, ready, refreshSession }),

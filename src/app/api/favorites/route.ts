@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId, USER_COOKIE_NAME } from "@/lib/user-auth";
+import {
+  parseCardLimit,
+  USER_JOB_CARD_COLUMNS,
+} from "@/lib/user-job-card-columns";
 
 export const dynamic = "force-dynamic";
+
+const DEFAULT_JOB_LIMIT = 50;
 
 export async function GET(request: Request) {
   const userId = await getAuthenticatedUserId(request);
@@ -14,6 +20,11 @@ export async function GET(request: Request) {
     });
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
+  const limit = parseCardLimit(
+    new URL(request.url).searchParams.get("limit"),
+    DEFAULT_JOB_LIMIT,
+  );
+
   const supabase = createSupabaseAdmin();
   const { data: favorites, error } = await supabase
     .from("user_favorites")
@@ -21,30 +32,50 @@ export async function GET(request: Request) {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
-    console.error("[favorites] GET failed:", { userId, error });
+    console.error("[favorites] GET failed:", {
+      userId,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
   const jobIds = (favorites ?? []).map((row) => row.job_id);
   if (jobIds.length === 0) {
-    return NextResponse.json({ favorites: [], jobs: [] });
+    return NextResponse.json({ favorites: [], jobs: [], total: 0 });
   }
 
+  // Only the visible slice is hydrated; `favorites` keeps every id so the
+  // favorite state on job cards stays accurate.
+  const visibleIds = jobIds.slice(0, limit);
   const { data: jobs, error: jobsError } = await supabase
     .from("jobs")
-    .select("*")
-    .in("id", jobIds);
+    .select(USER_JOB_CARD_COLUMNS)
+    .in("id", visibleIds);
   if (jobsError) {
-    console.error("[favorites] jobs fetch failed:", { userId, jobIds, error: jobsError });
+    console.error("[favorites] jobs fetch failed:", {
+      userId,
+      requested: visibleIds.length,
+      code: jobsError.code,
+      message: jobsError.message,
+      details: jobsError.details,
+    });
     return NextResponse.json({ message: jobsError.message }, { status: 500 });
   }
 
-  const jobsById = new Map((jobs ?? []).map((row) => [row.id, rowToJob(row)]));
-  const orderedJobs = jobIds.map((jobId) => jobsById.get(jobId)).filter(Boolean);
+  const jobsById = new Map(
+    (jobs ?? []).map((row) => {
+      const typedRow = row as unknown as Parameters<typeof rowToJob>[0];
+      return [typedRow.id, rowToJob(typedRow)];
+    }),
+  );
+  const orderedJobs = visibleIds.map((jobId) => jobsById.get(jobId)).filter(Boolean);
 
   return NextResponse.json({
     favorites: favorites ?? [],
     jobs: orderedJobs,
+    total: jobIds.length,
   });
 }
 

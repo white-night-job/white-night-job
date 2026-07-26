@@ -1,50 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useUserSession } from "@/components/UserSessionProvider";
+import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
+import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
+const DEFAULT_LIMIT = 20;
+
+function parseHistory(raw: unknown): Job[] {
+  const payload = (raw ?? {}) as { jobs?: unknown };
+  return Array.isArray(payload.jobs) ? (payload.jobs as Job[]) : [];
+}
+
 export function ViewHistoryList({
   showTitle = true,
+  limit = DEFAULT_LIMIT,
 }: {
   showTitle?: boolean;
+  limit?: number;
 }) {
-  const { isLoggedIn, ready } = useUserSession();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, status } = useMyPageSection<Job[]>({
+    cacheKey: `mypage:view-history:${limit}`,
+    url: `/api/view-history?limit=${limit}`,
+    parse: parseHistory,
+    fallback: [],
+  });
 
-  useEffect(() => {
-    if (!ready) return;
-    if (!isLoggedIn) {
-      setLoading(false);
-      return;
-    }
+  const jobs = Array.isArray(data) ? data : [];
 
-    fetch("/api/view-history", { cache: "no-store", credentials: "include" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as { jobs?: Job[] };
-      })
-      .then((data) => setJobs(data?.jobs ?? []))
-      .finally(() => setLoading(false));
-  }, [isLoggedIn, ready]);
-
-  if (!ready || loading) {
-    return <div className="h-32 animate-pulse rounded-2xl bg-white" />;
+  if (status === "loading") {
+    return <MyPageSectionSkeleton height="h-32" />;
   }
 
-  if (!isLoggedIn) {
-    return (
-      <p className="text-sm text-muted">閲覧履歴はLINEログイン後に表示されます。</p>
-    );
+  if (status === "signed-out") {
+    return <p className="text-sm text-muted">閲覧履歴はLINEログイン後に表示されます。</p>;
+  }
+
+  if (status === "error") {
+    return <p className="text-sm text-muted">閲覧履歴を読み込めませんでした。</p>;
   }
 
   if (jobs.length === 0) {
-    return (
-      <p className="text-sm text-muted">まだ閲覧した店舗はありません。</p>
-    );
+    return <p className="text-sm text-muted">まだ閲覧した店舗はありません。</p>;
   }
 
   return (

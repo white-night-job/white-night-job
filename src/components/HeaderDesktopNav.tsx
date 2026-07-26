@@ -12,7 +12,7 @@ export function HeaderDesktopNav() {
   return (
     <div className="site-header-desktop-actions">
       {isLoggedIn ? (
-        <Link href="/mypage" className="site-header-desktop-action">
+        <Link href="/mypage" prefetch className="site-header-desktop-action">
           マイページ
         </Link>
       ) : (

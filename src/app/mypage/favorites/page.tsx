@@ -1,36 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LineLoginButton } from "@/components/LineLoginButton";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
+import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
+import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 import { useUserSession } from "@/components/UserSessionProvider";
 import type { Job } from "@/types/job";
 
+const PAGE_SIZE = 10;
+
+type FavoritesData = {
+  jobs: Job[];
+  total: number;
+};
+
+function parseFavorites(raw: unknown): FavoritesData {
+  const payload = (raw ?? {}) as { jobs?: unknown; total?: unknown };
+  const jobs = Array.isArray(payload.jobs) ? (payload.jobs as Job[]) : [];
+  const total = Number(payload.total);
+  return { jobs, total: Number.isFinite(total) ? total : jobs.length };
+}
+
 export default function MyPageFavoritesPage() {
   const { isLoggedIn, ready } = useUserSession();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const { data, setData, status, reload } = useMyPageSection<FavoritesData>({
+    cacheKey: "mypage:favorites:list",
+    url: `/api/favorites?limit=${PAGE_SIZE}`,
+    parse: parseFavorites,
+    fallback: { jobs: [], total: 0 },
+  });
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (!ready) return;
-    if (!isLoggedIn) {
-      setLoading(false);
-      return;
+  async function loadMore() {
+    const nextLimit = limit + PAGE_SIZE;
+    setLoadingMore(true);
+    try {
+      await reload(`/api/favorites?limit=${nextLimit}`, { silent: true });
+      setLimit(nextLimit);
+    } finally {
+      setLoadingMore(false);
     }
-
-    fetch("/api/favorites", { cache: "no-store", credentials: "include" })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        return (await response.json()) as { jobs?: Job[] };
-      })
-      .then((data) => {
-        if (data?.jobs) setJobs(data.jobs);
-      })
-      .finally(() => setLoading(false));
-  }, [isLoggedIn, ready]);
+  }
 
   async function sendFavoriteShopsToLine() {
     setSending(true);
@@ -40,13 +55,13 @@ export default function MyPageFavoritesPage() {
         method: "POST",
         credentials: "include",
       });
-      const data = (await response.json()) as { message?: string; count?: number };
+      const payload = (await response.json()) as { message?: string; count?: number };
       if (!response.ok) {
-        throw new Error(data.message ?? "LINE送信に失敗しました。");
+        throw new Error(payload.message ?? "LINE送信に失敗しました。");
       }
       setMessage(
-        data.count && data.count > 0
-          ? `お気に入り店舗${data.count}件をLINEで送信しました。`
+        payload.count && payload.count > 0
+          ? `お気に入り店舗${payload.count}件をLINEで送信しました。`
           : "LINEを確認してください。",
       );
     } catch (error) {
@@ -56,15 +71,7 @@ export default function MyPageFavoritesPage() {
     }
   }
 
-  if (!ready || loading) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-8 sm:max-w-2xl sm:px-6">
-        <div className="h-56 animate-pulse rounded-2xl border border-gold/15 bg-white" />
-      </div>
-    );
-  }
-
-  if (!isLoggedIn) {
+  if (ready && !isLoggedIn) {
     return (
       <div className="mx-auto max-w-md px-4 py-10">
         <div className="rounded-2xl border border-gold/25 bg-white p-6 text-center shadow-gold">
@@ -97,27 +104,51 @@ export default function MyPageFavoritesPage() {
           >
             {sending ? "送信中..." : "お気に入り店舗をLINEで受け取る"}
           </button>
-          <Link href="/mypage" className="text-sm font-medium text-gold-dark">
+          <Link href="/mypage" prefetch className="text-sm font-medium text-gold-dark">
             マイページへ
           </Link>
         </div>
       </div>
       {message && <p className="mb-4 text-sm text-muted">{message}</p>}
-      {jobs.length === 0 ? (
+
+      {status === "loading" && <MyPageSectionSkeleton height="h-56" />}
+
+      {status === "error" && (
+        <div className="rounded-2xl border border-gold/20 bg-white p-6 text-sm text-muted">
+          お気に入りを読み込めませんでした。時間をおいて再度お試しください。
+        </div>
+      )}
+
+      {status === "ready" && data.jobs.length === 0 && (
         <div className="rounded-2xl border border-gold/20 bg-white p-6 text-sm text-muted">
           まだお気に入り登録された店舗はありません。
         </div>
-      ) : (
+      )}
+
+      {status === "ready" && data.jobs.length > 0 && (
         <div className="space-y-3">
-          {jobs.map((job) => (
+          {data.jobs.map((job) => (
             <MyPageFavoriteCard
               key={job.id}
               job={job}
               onRemoved={(jobId) =>
-                setJobs((current) => current.filter((item) => item.id !== jobId))
+                setData((current) => ({
+                  jobs: current.jobs.filter((item) => item.id !== jobId),
+                  total: Math.max(0, current.total - 1),
+                }))
               }
             />
           ))}
+          {data.total > data.jobs.length && (
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-gold/40 bg-ivory px-4 text-sm font-semibold text-gold-dark disabled:opacity-60"
+            >
+              {loadingMore ? "読み込み中..." : `もっと見る（全${data.total}件）`}
+            </button>
+          )}
         </div>
       )}
     </div>
