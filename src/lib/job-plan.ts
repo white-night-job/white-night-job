@@ -20,15 +20,44 @@ export type JobPlanFeatures = {
 export type JobPlanDefinition = {
   key: JobPlan;
   label: string;
+  /** 月額（税込）。サイト内の料金表示はすべてここを参照する。 */
+  monthlyPrice: number;
   priceLabel: string;
   features: JobPlanFeatures;
 };
+
+/** Single source of truth for plan pricing (tax included, monthly). */
+export const JOB_PLAN_MONTHLY_PRICES: Record<JobPlan, number> = {
+  light: 18000,
+  standard: 33000,
+  premium: 55000,
+};
+
+/** 1234567 -> "1,234,567" */
+export function formatJpyAmount(amount: number): string {
+  return new Intl.NumberFormat("ja-JP").format(amount);
+}
+
+/** 18000 -> "18,000円" */
+export function formatJpyPrice(amount: number): string {
+  return `${formatJpyAmount(amount)}円`;
+}
+
+export function getPlanMonthlyPrice(plan: JobPlan): number {
+  return JOB_PLAN_MONTHLY_PRICES[plan];
+}
+
+/** 例: "税込18,000円/月" */
+export function formatPlanPriceLabel(plan: JobPlan): string {
+  return `税込${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}/月`;
+}
 
 export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
   light: {
     key: "light",
     label: "ライト",
-    priceLabel: "税込12,000円/月",
+    monthlyPrice: JOB_PLAN_MONTHLY_PRICES.light,
+    priceLabel: formatPlanPriceLabel("light"),
     features: {
       listingPriority: "normal",
       newListing: true,
@@ -44,7 +73,8 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
   standard: {
     key: "standard",
     label: "スタンダード",
-    priceLabel: "税込25,000円/月",
+    monthlyPrice: JOB_PLAN_MONTHLY_PRICES.standard,
+    priceLabel: formatPlanPriceLabel("standard"),
     features: {
       listingPriority: "priority",
       newListing: true,
@@ -60,7 +90,8 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
   premium: {
     key: "premium",
     label: "プレミアム",
-    priceLabel: "税込38,000円/月",
+    monthlyPrice: JOB_PLAN_MONTHLY_PRICES.premium,
+    priceLabel: formatPlanPriceLabel("premium"),
     features: {
       listingPriority: "top",
       newListing: true,

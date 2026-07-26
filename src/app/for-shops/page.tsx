@@ -4,6 +4,7 @@ import { ForShopsContactForm } from "@/components/for-shops/ForShopsContactForm"
 import { ForShopsFaq } from "@/components/for-shops/ForShopsFaq";
 import { ForShopsLandingFeatures } from "@/components/for-shops/ForShopsLandingFeatures";
 import { ForShopsLandingHero } from "@/components/for-shops/ForShopsLandingHero";
+import { formatJpyAmount, JOB_PLAN_MONTHLY_PRICES } from "@/lib/job-plan";
 import { buildPageMetadata } from "@/lib/seo";
 import { SITE_BRAND_JA, SITE_FORMAL_NAME } from "@/lib/site";
 import "./landing.css";
@@ -49,13 +50,16 @@ type PlanKey = "light" | "standard" | "premium";
 const PLANS: {
   key: PlanKey;
   name: string;
-  price: string;
   recommended: boolean;
 }[] = [
-  { key: "light", name: "ライトプラン", price: "12,000", recommended: false },
-  { key: "standard", name: "スタンダードプラン", price: "25,000", recommended: false },
-  { key: "premium", name: "プレミアムプラン", price: "38,000", recommended: true },
+  { key: "light", name: "ライトプラン", recommended: false },
+  { key: "standard", name: "スタンダードプラン", recommended: false },
+  { key: "premium", name: "プレミアムプラン", recommended: true },
 ];
+
+function planMonthlyPrice(key: PlanKey): string {
+  return formatJpyAmount(JOB_PLAN_MONTHLY_PRICES[key]);
+}
 
 function planFeatureTone(value: string): "yes" | "no" | "normal" | "priority" | "top" | "text" {
   if (value === "○") return "yes";
@@ -182,8 +186,10 @@ export default function ForShopsPage() {
                 <h3>{plan.name}</h3>
                 <p className="for-shops-plan-price">
                   <span className="for-shops-plan-price-currency">¥</span>
-                  <span className="for-shops-plan-price-amount">{plan.price}</span>
-                  <small>/ 月（税別）</small>
+                  <span className="for-shops-plan-price-amount">
+                    {planMonthlyPrice(plan.key)}
+                  </span>
+                  <small>/ 月（税込）</small>
                 </p>
                 <ul className="for-shops-plan-list">
                   {PLAN_FEATURE_ROWS.map((row) => (
@@ -219,15 +225,21 @@ export default function ForShopsPage() {
                 </thead>
                 <tbody>
                   <tr className="for-shops-plan-table-price-row">
-                    <th scope="row">月額料金</th>
+                    <th scope="row">月額料金（税込）</th>
                     <td>
-                      <span className="for-shops-plan-table-price">¥12,000</span>
+                      <span className="for-shops-plan-table-price">
+                        ¥{planMonthlyPrice("light")}
+                      </span>
                     </td>
                     <td>
-                      <span className="for-shops-plan-table-price">¥25,000</span>
+                      <span className="for-shops-plan-table-price">
+                        ¥{planMonthlyPrice("standard")}
+                      </span>
                     </td>
                     <td className="is-premium-col">
-                      <span className="for-shops-plan-table-price is-premium">¥38,000</span>
+                      <span className="for-shops-plan-table-price is-premium">
+                        ¥{planMonthlyPrice("premium")}
+                      </span>
                     </td>
                   </tr>
                   {PLAN_FEATURE_ROWS.map((row) => (
@@ -250,7 +262,7 @@ export default function ForShopsPage() {
           </div>
 
           <p className="for-shops-plan-note">
-            ※表示価格は税別の目安です。詳細・キャンペーンはお問い合わせ時にご案内します。
+            ※表示価格は税込の目安です。詳細・キャンペーンはお問い合わせ時にご案内します。
           </p>
         </div>
       </section>
