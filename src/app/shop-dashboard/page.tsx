@@ -44,6 +44,9 @@ import {
   type JobPlan,
 } from "@/lib/job-plan";
 
+// 集計・取得処理は維持したまま、将来すぐ再表示できるよう表示だけを制御する。
+const SHOW_NOTIFICATION_AUDIENCE = false;
+
 const MonthlyApplicationChart = dynamic(
   () =>
     import("@/components/MonthlyApplicationChart").then(
@@ -1238,36 +1241,38 @@ export default function ShopDashboardPage() {
         )}
       </section>
 
-      <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
-        <h2 className="font-serif text-lg font-semibold text-charcoal">
-          通知対象人数
-        </h2>
-        <p className="mt-1 text-xs text-muted">
-          現在の求人内容・ユーザー希望条件から算出した、実際に送信される想定人数です。
-        </p>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
-            <dt className="text-xs text-muted">新着求人通知予定</dt>
-            <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-              {deferredLoading ? (
-                <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
-              ) : (
-                <>約{newJobNotifyCount.toLocaleString("ja-JP")}人</>
-              )}
-            </dd>
-          </div>
-          <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
-            <dt className="text-xs text-muted">PickUp通知予定</dt>
-            <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
-              {deferredLoading ? (
-                <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
-              ) : (
-                <>約{pickupNotifyCount.toLocaleString("ja-JP")}人</>
-              )}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      {SHOW_NOTIFICATION_AUDIENCE && (
+        <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
+          <h2 className="font-serif text-lg font-semibold text-charcoal">
+            通知対象人数
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            現在の求人内容・ユーザー希望条件から算出した、実際に送信される想定人数です。
+          </p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
+              <dt className="text-xs text-muted">新着求人通知予定</dt>
+              <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+                {deferredLoading ? (
+                  <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
+                ) : (
+                  <>約{newJobNotifyCount.toLocaleString("ja-JP")}人</>
+                )}
+              </dd>
+            </div>
+            <div className="rounded-xl border border-gold/20 bg-ivory/60 p-4">
+              <dt className="text-xs text-muted">PickUp通知予定</dt>
+              <dd className="mt-1 font-serif text-2xl font-semibold text-charcoal">
+                {deferredLoading ? (
+                  <span className="inline-block h-8 w-24 animate-pulse rounded bg-gold/20" />
+                ) : (
+                  <>約{pickupNotifyCount.toLocaleString("ja-JP")}人</>
+                )}
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       {analyticsEnabled ? (
         <ShopAnalyticsSection />
