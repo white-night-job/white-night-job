@@ -8,6 +8,9 @@ type ApiResponse = {
   message?: string;
 };
 
+const REPORT_LOAD_ERROR_MESSAGE =
+  "レポートを読み込めませんでした。時間をおいて再度お試しください";
+
 function formatCount(value: number): string {
   return value.toLocaleString("ja-JP");
 }
@@ -138,19 +141,23 @@ export function ShopImprovementReport() {
         if (cancelled) return;
 
         if (!response.ok || !body.report) {
-          throw new Error(
-            body.message ?? "応募改善レポートの取得に失敗しました。",
-          );
+          // 401/403 はプラン案内など店舗向け文言をそのまま表示。
+          // それ以外（DBエラー等）は固定メッセージにし、英語の詳細は出さない。
+          if (response.status === 401 || response.status === 403) {
+            setError(body.message ?? REPORT_LOAD_ERROR_MESSAGE);
+          } else {
+            setError(REPORT_LOAD_ERROR_MESSAGE);
+          }
+          setReport(null);
+          return;
         }
         setReport(body.report);
+        setError("");
       } catch (err) {
         if (cancelled) return;
         setReport(null);
-        setError(
-          err instanceof Error
-            ? err.message
-            : "応募改善レポートの取得に失敗しました。",
-        );
+        console.error("[ShopImprovementReport] fetch failed", err);
+        setError(REPORT_LOAD_ERROR_MESSAGE);
       } finally {
         if (!cancelled) setLoading(false);
       }

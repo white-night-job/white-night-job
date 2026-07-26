@@ -78,7 +78,6 @@ type JobContentRow = {
   salary: string | null;
   benefits: string[] | null;
   other_benefits: string[] | null;
-  cast_voice: string | null;
   cast_voices: unknown;
   line_url: string | null;
   phone: string | null;
@@ -101,7 +100,6 @@ export const IMPROVEMENT_JOB_COLUMNS = [
   "salary",
   "benefits",
   "other_benefits",
-  "cast_voice",
   "cast_voices",
   "line_url",
   "phone",
@@ -253,8 +251,9 @@ function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
     };
   }
 
-  const castVoices = parseCastVoices(row.cast_voices);
-  const legacyCastVoice = hasText(row.cast_voice) ? 1 : 0;
+  // cast_voices が null / 非配列でも parseCastVoices は空配列を返す
+  const castVoices = parseCastVoices(row.cast_voices ?? []);
+  const castVoiceCount = Array.isArray(castVoices) ? castVoices.length : 0;
   const benefits = [...(row.benefits ?? []), ...(row.other_benefits ?? [])].filter(
     (item) => typeof item === "string" && item.trim().length > 0,
   );
@@ -273,7 +272,7 @@ function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
     hasDescription: hasText(row.description_text),
     hasSalary: hasText(row.salary),
     benefitCount: benefits.length,
-    castVoiceCount: castVoices.length > 0 ? castVoices.length : legacyCastVoice,
+    castVoiceCount,
     hasLineUrl: hasText(row.line_url),
     hasPhone: hasText(row.phone),
     snsCount,
