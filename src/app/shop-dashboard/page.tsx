@@ -47,32 +47,6 @@ import {
 // 集計・取得処理は維持したまま、将来すぐ再表示できるよう表示だけを制御する。
 const SHOW_NOTIFICATION_AUDIENCE = false;
 
-const MonthlyApplicationChart = dynamic(
-  () =>
-    import("@/components/MonthlyApplicationChart").then(
-      (mod) => mod.MonthlyApplicationChart,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="mt-4 h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />
-    ),
-  },
-);
-
-const ShopAnalyticsSection = dynamic(
-  () =>
-    import("@/components/ShopAnalyticsSection").then(
-      (mod) => mod.ShopAnalyticsSection,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="mb-8 h-64 animate-pulse rounded-2xl border border-gold/20 bg-white" />
-    ),
-  },
-);
-
 const ShopImprovementReport = dynamic(
   () =>
     import("@/components/ShopImprovementReport").then(
@@ -1287,40 +1261,22 @@ export default function ShopDashboardPage() {
         </section>
       )}
 
+      {/* プランはサーバー側（API）でも判定する。ここは表示制御のみ。 */}
       {analyticsEnabled ? (
-        <ShopAnalyticsSection />
+        <ShopImprovementReport
+          monthlyApplications={monthlyApplicationStats}
+          monthlyApplicationsLoading={deferredLoading}
+        />
       ) : (
         <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
           <h2 className="font-serif text-lg font-semibold text-charcoal">
-            アクセス・応募分析
+            アクセス・応募分析・レポート
           </h2>
           <p className="mt-2 text-sm text-muted">
-            応募分析はスタンダード以上のプランでご利用いただけます。現在のプランは
+            アクセス・応募分析とレポートはスタンダード以上のプランでご利用いただけます。現在のプランは
             {planDefinition.label}です。プラン変更は運営までご連絡ください。
           </p>
         </section>
-      )}
-
-      <section className="space-y-6">
-        <h2 className="text-lg font-semibold text-charcoal">応募推移</h2>
-        <p className="text-xs text-muted">
-          {analyticsEnabled
-            ? "月次の応募推移です。期間別の詳細は上の「アクセス・応募分析」をご覧ください。"
-            : "月次の応募推移です。"}
-        </p>
-
-        {deferredLoading ? (
-          <div className="mt-4 h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />
-        ) : (
-          <MonthlyApplicationChart data={monthlyApplicationStats} />
-        )}
-      </section>
-
-      {/* プランはサーバー側（API）でも判定する。ここは表示制御のみ。 */}
-      {analyticsEnabled && (
-        <div className="mt-8">
-          <ShopImprovementReport />
-        </div>
       )}
 
       <p className="mt-6 text-center text-xs text-muted">

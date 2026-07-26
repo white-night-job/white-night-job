@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
+import { ShopMonthlyImpressionBarChart } from "@/components/ShopMonthlyImpressionBarChart";
+import type { MonthlyApplicationBucket } from "@/lib/job-applications";
 import type { ShopImprovementReport as ReportPayload } from "@/lib/shop-improvement-report";
 
 type ApiResponse = {
   report?: ReportPayload;
   message?: string;
+};
+
+type ShopImprovementReportProps = {
+  /** 月間応募数グラフ用。ダッシュボードが deferred API で取得済みのデータを受け取り、二重取得しない。 */
+  monthlyApplications: MonthlyApplicationBucket[];
+  monthlyApplicationsLoading: boolean;
 };
 
 const REPORT_LOAD_ERROR_MESSAGE =
@@ -123,7 +132,10 @@ function AdviceBlock({
   );
 }
 
-export function ShopImprovementReport() {
+export function ShopImprovementReport({
+  monthlyApplications,
+  monthlyApplicationsLoading,
+}: ShopImprovementReportProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [report, setReport] = useState<ReportPayload | null>(null);
@@ -170,12 +182,27 @@ export function ShopImprovementReport() {
 
   const premium = report?.premium ?? null;
 
+  // 月間応募数はダッシュボード側で取得済みのデータを使うため、レポート取得失敗時も表示できる。
+  const monthlyApplicationsBlock = (
+    <div>
+      <h3 className="text-sm font-semibold text-charcoal">月間応募数</h3>
+      <p className="mt-1 text-xs text-muted">月次の応募推移です。</p>
+      <div className="mt-2">
+        {monthlyApplicationsLoading ? (
+          <div className="h-48 animate-pulse rounded-2xl border border-gold/15 bg-ivory/60" />
+        ) : (
+          <MonthlyApplicationChart data={monthlyApplications} />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <section className="mb-8 rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-serif text-lg font-semibold text-charcoal">
-            応募改善レポート
+            アクセス・応募分析・レポート
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted">
             {report
@@ -194,8 +221,11 @@ export function ShopImprovementReport() {
         {loading && <ReportSkeleton />}
 
         {!loading && error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="space-y-5">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+            {monthlyApplicationsBlock}
           </div>
         )}
 
@@ -242,6 +272,10 @@ export function ShopImprovementReport() {
               </div>
             </div>
 
+            <ShopMonthlyImpressionBarChart data={report.monthly ?? []} />
+
+            {monthlyApplicationsBlock}
+
             <div>
               <h3 className="text-sm font-semibold text-charcoal">
                 {report.previousMonthLabel}との比較
@@ -272,17 +306,6 @@ export function ShopImprovementReport() {
               </ul>
             </div>
 
-            {premium?.topPriorityAction && (
-              <div className="rounded-xl border border-charcoal/20 bg-charcoal px-4 py-3">
-                <p className="text-[11px] font-medium text-gold">
-                  最優先で対応したい項目
-                </p>
-                <p className="mt-1 text-sm font-semibold leading-relaxed text-white">
-                  最優先：{premium.topPriorityAction}
-                </p>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
               <AdviceBlock
                 title="良い点"
@@ -309,6 +332,17 @@ export function ShopImprovementReport() {
                 <h3 className="text-sm font-semibold text-charcoal">
                   プレミアム限定の詳細分析
                 </h3>
+
+                {premium.topPriorityAction && (
+                  <div className="rounded-xl border border-charcoal/20 bg-charcoal px-4 py-3">
+                    <p className="text-[11px] font-medium text-gold">
+                      最優先で対応したい項目
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-relaxed text-white">
+                      最優先：{premium.topPriorityAction}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-xs font-medium text-muted">

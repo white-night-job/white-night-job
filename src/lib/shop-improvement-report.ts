@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  fetchJobMonthlyAnalytics,
+  type MonthlyAnalyticsBucket,
+} from "@/lib/job-analytics";
 import { formatMonthLabel, getCurrentJstMonthKey } from "@/lib/job-applications";
 import { parseCastVoices, parseStoreImages } from "@/lib/job-db";
 import type { JobPlan } from "@/lib/job-plan";
@@ -51,6 +55,8 @@ export type ShopImprovementReport = {
   rates: ImprovementRates;
   previousRates: ImprovementRates;
   comparison: ImprovementDiff[];
+  /** 表示回数の月別推移（直近12か月）。旧「アクセス・応募分析」から統合。 */
+  monthly: MonthlyAnalyticsBucket[];
   goodPoints: string[];
   issues: string[];
   actions: string[];
@@ -586,7 +592,8 @@ export async function buildShopImprovementReport(
 ): Promise<ShopImprovementReport> {
   const ranges = getReportMonthRanges(referenceDate);
 
-  const [eventsResult, jobResult] = await Promise.all([
+  // monthly は旧「アクセス・応募分析」と同じ集計関数を使う（集計方法は変更しない）
+  const [eventsResult, jobResult, monthly] = await Promise.all([
     supabase
       .from("job_analytics_events")
       .select("event_type, session_id, created_at")
@@ -599,6 +606,7 @@ export async function buildShopImprovementReport(
       .select(IMPROVEMENT_JOB_COLUMNS)
       .eq("id", jobId)
       .maybeSingle(),
+    fetchJobMonthlyAnalytics(supabase, jobId),
   ]);
 
   if (eventsResult.error) throw eventsResult.error;
@@ -637,6 +645,7 @@ export async function buildShopImprovementReport(
     rates,
     previousRates,
     comparison: buildComparison(current, previous, rates, previousRates),
+    monthly,
     goodPoints: buildGoodPoints(
       current,
       previous,
