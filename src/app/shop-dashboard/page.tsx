@@ -73,6 +73,19 @@ const ShopAnalyticsSection = dynamic(
   },
 );
 
+const ShopImprovementReport = dynamic(
+  () =>
+    import("@/components/ShopImprovementReport").then(
+      (mod) => mod.ShopImprovementReport,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mb-8 h-64 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+    ),
+  },
+);
+
 const JobListingPreview = dynamic(
   () =>
     import("@/components/JobListingPreview").then((mod) => mod.JobListingPreview),
@@ -1302,6 +1315,13 @@ export default function ShopDashboardPage() {
           <MonthlyApplicationChart data={monthlyApplicationStats} />
         )}
       </section>
+
+      {/* プランはサーバー側（API）でも判定する。ここは表示制御のみ。 */}
+      {analyticsEnabled && (
+        <div className="mt-8">
+          <ShopImprovementReport />
+        </div>
+      )}
 
       <p className="mt-6 text-center text-xs text-muted">
         <Link href="/" className="text-gold-dark hover:underline">トップページへ</Link>
