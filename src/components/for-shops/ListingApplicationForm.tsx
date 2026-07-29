@@ -153,11 +153,12 @@ function validateStep(step: number, form: FormState): FieldError {
     }
   }
   if (step === 3) {
-    if (!form.websiteUrl.trim()) errors.websiteUrl = "公式Webサイトを入力してください。";
-    if (!form.instagramUrl.trim()) errors.instagramUrl = "Instagramを入力してください。";
-    if (!form.xUrl.trim()) errors.xUrl = "Xを入力してください。";
-    if (!form.tiktokUrl.trim()) errors.tiktokUrl = "TikTokを入力してください。";
-    if (!form.lineOfficialUrl.trim()) errors.lineOfficialUrl = "LINE公式アカウントを入力してください。";
+    const url = form.websiteUrl.trim();
+    if (!url) {
+      errors.websiteUrl = "公式WebサイトまたはSNSのURLを入力してください。";
+    } else if (!/^https?:\/\/.+/i.test(url)) {
+      errors.websiteUrl = "正しいURLを入力してください。";
+    }
   }
   if (step === 4) {
     if (!form.businessLicenseInfo.trim())
@@ -577,41 +578,45 @@ export function ListingApplicationForm() {
               URLは https:// から入力してください。
             </p>
             <Field error={fe.websiteUrl}>
-              <label className={labelClass}>公式Webサイト *</label>
+              <label className={labelClass}>公式Webサイト（Instagram等可） *</label>
               <input
                 className={fe.websiteUrl ? inputErr : inputOk}
                 value={form.websiteUrl}
                 onChange={(e) => update("websiteUrl", e.target.value)}
+                placeholder="例：https://example.com"
               />
+              <p className="mt-1 text-xs text-muted">
+                店舗の公式サイト、Instagram、X、TikTok等、店舗を確認できるURLを入力してください。
+              </p>
             </Field>
-            <Field error={fe.instagramUrl}>
-              <label className={labelClass}>Instagram *</label>
+            <Field>
+              <label className={labelClass}>Instagram</label>
               <input
-                className={fe.instagramUrl ? inputErr : inputOk}
+                className={inputOk}
                 value={form.instagramUrl}
                 onChange={(e) => update("instagramUrl", e.target.value)}
               />
             </Field>
-            <Field error={fe.xUrl}>
-              <label className={labelClass}>X *</label>
+            <Field>
+              <label className={labelClass}>X</label>
               <input
-                className={fe.xUrl ? inputErr : inputOk}
+                className={inputOk}
                 value={form.xUrl}
                 onChange={(e) => update("xUrl", e.target.value)}
               />
             </Field>
-            <Field error={fe.tiktokUrl}>
-              <label className={labelClass}>TikTok *</label>
+            <Field>
+              <label className={labelClass}>TikTok</label>
               <input
-                className={fe.tiktokUrl ? inputErr : inputOk}
+                className={inputOk}
                 value={form.tiktokUrl}
                 onChange={(e) => update("tiktokUrl", e.target.value)}
               />
             </Field>
-            <Field error={fe.lineOfficialUrl}>
-              <label className={labelClass}>LINE公式アカウント *</label>
+            <Field>
+              <label className={labelClass}>LINE公式アカウント</label>
               <input
-                className={fe.lineOfficialUrl ? inputErr : inputOk}
+                className={inputOk}
                 value={form.lineOfficialUrl}
                 onChange={(e) => update("lineOfficialUrl", e.target.value)}
               />

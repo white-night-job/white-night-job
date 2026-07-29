@@ -153,11 +153,7 @@ export function validateListingApplicationInput(
     requiredText(input.contactName, "担当者名"),
     requiredText(input.contactPhone, "担当者電話番号"),
     requiredText(input.contactEmail, "担当者メールアドレス"),
-    requiredText(input.websiteUrl, "公式Webサイト"),
-    requiredText(input.instagramUrl, "Instagram"),
-    requiredText(input.xUrl, "X"),
-    requiredText(input.tiktokUrl, "TikTok"),
-    requiredText(input.lineOfficialUrl, "LINE公式アカウント"),
+    requiredText(input.websiteUrl, "公式WebサイトまたはSNSのURL"),
     requiredText(input.businessLicenseInfo, "営業許可に関する情報"),
     requiredText(input.openDate, "オープン日"),
     requiredText(input.listingReason, "掲載を希望する理由"),
@@ -189,21 +185,21 @@ export function validateListingApplicationInput(
     return "担当者電話番号の形式が正しくありません。";
   }
 
-  const urlFields: Array<[string | undefined, string]> = [
-    [input.websiteUrl, "公式Webサイト"],
+  if (!URL_RE.test(String(input.websiteUrl).trim())) {
+    return "公式WebサイトまたはSNSは https:// から始まるURLで入力してください。";
+  }
+
+  const optionalUrlFields: Array<[string | undefined, string]> = [
     [input.instagramUrl, "Instagram"],
     [input.xUrl, "X"],
     [input.tiktokUrl, "TikTok"],
     [input.lineOfficialUrl, "LINE公式アカウント"],
+    [input.youtubeUrl, "YouTube"],
   ];
-  for (const [value, label] of urlFields) {
-    if (!URL_RE.test(String(value).trim())) {
+  for (const [value, label] of optionalUrlFields) {
+    if (value?.trim() && !URL_RE.test(value.trim())) {
       return `${label}は https:// から始まるURLで入力してください。`;
     }
-  }
-
-  if (input.youtubeUrl?.trim() && !URL_RE.test(input.youtubeUrl.trim())) {
-    return "YouTubeは https:// から始まるURLで入力してください。";
   }
 
   const openDate = String(input.openDate).trim();
