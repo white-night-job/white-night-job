@@ -17,7 +17,12 @@ import {
   notifyApplicantRejected,
 } from "@/lib/listing-application-email";
 import { isJobPlan } from "@/lib/job-plan";
-import { createSupabaseAdmin, LISTING_APPLICATION_DOCUMENT_BUCKET } from "@/lib/supabase";
+import {
+  createSupabaseAdmin,
+  LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IMAGE_BUCKET,
+} from "@/lib/supabase";
+import type { ListingShopImage } from "@/lib/listing-application";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -85,7 +90,7 @@ async function appendEvent(options: {
 
 async function attachSignedDocumentUrls(row: ListingApplicationRow) {
   const supabase = createSupabaseAdmin();
-  const sign = async (doc: unknown) => {
+  const signDoc = async (doc: unknown) => {
     if (!doc || typeof doc !== "object") return doc ?? null;
     const storagePath = (doc as { storagePath?: string }).storagePath;
     if (!storagePath) return doc;
@@ -95,13 +100,37 @@ async function attachSignedDocumentUrls(row: ListingApplicationRow) {
     if (error) return doc;
     return { ...(doc as Record<string, unknown>), signedUrl: data.signedUrl };
   };
+  const signImages = async (images: unknown) => {
+    if (!Array.isArray(images)) return [];
+    const out: ListingShopImage[] = [];
+    for (const img of images) {
+      if (!img || typeof img !== "object") continue;
+      const storagePath = (img as ListingShopImage).storagePath;
+      if (!storagePath) {
+        out.push(img as ListingShopImage);
+        continue;
+      }
+      const { data, error } = await supabase.storage
+        .from(LISTING_APPLICATION_IMAGE_BUCKET)
+        .createSignedUrl(storagePath, 60 * 10);
+      out.push({
+        ...(img as ListingShopImage),
+        signedUrl: error ? undefined : data?.signedUrl,
+      });
+    }
+    return out;
+  };
   return {
     ...row,
-    business_license_document: await sign(row.business_license_document),
-    entertainment_license_document: await sign(row.entertainment_license_document),
-    late_night_alcohol_notification_document: await sign(
+    business_license_document: await signDoc(row.business_license_document),
+    entertainment_license_document: await signDoc(
+      row.entertainment_license_document,
+    ),
+    late_night_alcohol_notification_document: await signDoc(
       row.late_night_alcohol_notification_document,
     ),
+    shop_exterior_images: await signImages(row.shop_exterior_images),
+    shop_interior_images: await signImages(row.shop_interior_images),
   };
 }
 

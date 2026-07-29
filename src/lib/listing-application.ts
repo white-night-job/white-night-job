@@ -50,6 +50,20 @@ export type ListingDocumentMeta = {
   signedUrl?: string;
 };
 
+
+export type ListingShopImageKind = "exterior" | "interior";
+
+export type ListingShopImage = {
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  kind: ListingShopImageKind;
+  sortOrder: number;
+  uploadedAt: string;
+  signedUrl?: string;
+};
+
 export type ListingApplicationInput = {
   shopName: string;
   shopAddress: string;
@@ -69,12 +83,14 @@ export type ListingApplicationInput = {
   otherSns?: string;
   openDate: string;
   requestedPlan: JobPlan;
-  listingReason: string;
-  shopFeatures: string;
+  listingReason?: string;
+  shopFeatures?: string;
   notes?: string;
   consentAccuracy: boolean;
   consentTerms: boolean;
   attachments?: ListingAttachment[];
+  shopExteriorImages?: ListingShopImage[];
+  shopInteriorImages?: ListingShopImage[];
   businessLicenseDocument?: ListingDocumentMeta | null;
   entertainmentLicenseDocument?: ListingDocumentMeta | null;
   lateNightAlcoholNotificationDocument?: ListingDocumentMeta | null;
@@ -162,6 +178,24 @@ function isDocMeta(value: unknown): value is ListingDocumentMeta {
   );
 }
 
+function isShopImage(value: unknown): value is ListingShopImage {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.storagePath === "string" &&
+    typeof v.fileName === "string" &&
+    typeof v.mimeType === "string" &&
+    typeof v.size === "number" &&
+    (v.kind === "exterior" || v.kind === "interior") &&
+    typeof v.sortOrder === "number" &&
+    typeof v.uploadedAt === "string"
+  );
+}
+
+export function isListingShopImage(value: unknown): value is ListingShopImage {
+  return isShopImage(value);
+}
+
 export function validateListingApplicationInput(
   input: Partial<ListingApplicationInput>,
 ): string | null {
@@ -187,8 +221,6 @@ export function validateListingApplicationInput(
     requiredText(input.contactEmail, "担当者メールアドレス"),
     requiredText(input.websiteUrl, "公式WebサイトまたはSNSのURL"),
     requiredText(input.openDate, "オープン日"),
-    requiredText(input.listingReason, "掲載を希望する理由"),
-    requiredText(input.shopFeatures, "店舗の特徴"),
   ];
 
   for (const error of checks) {
@@ -242,8 +274,32 @@ export function validateListingApplicationInput(
     return "オープン日はYYYY-MM-DD形式で入力してください。";
   }
 
-  if (Array.isArray(input.attachments) && input.attachments.length > 8) {
-    return "添付資料は最大8件までです。";
+
+  const exterior = Array.isArray(input.shopExteriorImages)
+    ? input.shopExteriorImages
+    : [];
+  const interior = Array.isArray(input.shopInteriorImages)
+    ? input.shopInteriorImages
+    : [];
+  if (exterior.length === 0 && interior.length === 0) {
+    return "店舗外観と店舗内観の画像をアップロードしてください";
+  }
+  if (exterior.length === 0) {
+    return "店舗外観の画像をアップロードしてください";
+  }
+  if (interior.length === 0) {
+    return "店舗内観の画像をアップロードしてください";
+  }
+  if (exterior.length > 5) {
+    return "店舗外観は最大5枚までです。";
+  }
+  if (interior.length > 10) {
+    return "店舗内観は最大10枚までです。";
+  }
+  for (const img of [...exterior, ...interior]) {
+    if (!isShopImage(img)) {
+      return "店舗画像の形式が正しくありません。";
+    }
   }
 
   return null;
@@ -265,6 +321,24 @@ export function normalizeListingApplicationInput(
         }
       : null;
 
+  const normalizeImages = (
+    images: ListingShopImage[] | undefined,
+    kind: ListingShopImageKind,
+  ): ListingShopImage[] =>
+    (Array.isArray(images) ? images : [])
+      .filter(isShopImage)
+      .map((img, index) => ({
+        storagePath: img.storagePath.trim(),
+        fileName: img.fileName.trim(),
+        mimeType: img.mimeType.trim(),
+        size: Number(img.size || 0),
+        kind,
+        sortOrder: Number.isFinite(img.sortOrder) ? img.sortOrder : index,
+        uploadedAt: img.uploadedAt,
+        signedUrl: img.signedUrl,
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
   return {
     shopName: trim(input.shopName),
     shopAddress: trim(input.shopAddress),
@@ -285,12 +359,14 @@ export function normalizeListingApplicationInput(
     businessLicenseInfo: trim(input.businessLicenseInfo),
     openDate: trim(input.openDate),
     requestedPlan: parseJobPlan(input.requestedPlan),
-    listingReason: trim(input.listingReason),
-    shopFeatures: trim(input.shopFeatures),
-    notes: trim(input.notes) || undefined,
+    listingReason: "",
+    shopFeatures: "",
+    notes: undefined,
     consentAccuracy: Boolean(input.consentAccuracy),
     consentTerms: Boolean(input.consentTerms),
-    attachments: Array.isArray(input.attachments) ? input.attachments : [],
+    attachments: [],
+    shopExteriorImages: normalizeImages(input.shopExteriorImages, "exterior"),
+    shopInteriorImages: normalizeImages(input.shopInteriorImages, "interior"),
     businessLicenseDocument: normalizeDoc(input.businessLicenseDocument),
     entertainmentLicenseDocument: normalizeDoc(input.entertainmentLicenseDocument),
     lateNightAlcoholNotificationDocument: normalizeDoc(
@@ -331,12 +407,14 @@ export function inputToDbRow(
     business_license_info: input.businessLicenseInfo ?? "",
     open_date: input.openDate,
     requested_plan: input.requestedPlan,
-    listing_reason: input.listingReason,
-    shop_features: input.shopFeatures,
-    notes: input.notes ?? null,
+    listing_reason: input.listingReason ?? "",
+    shop_features: input.shopFeatures ?? "",
+    notes: null,
     consent_accuracy: input.consentAccuracy,
     consent_terms: input.consentTerms,
-    attachments: input.attachments ?? [],
+    attachments: [],
+    shop_exterior_images: input.shopExteriorImages ?? [],
+    shop_interior_images: input.shopInteriorImages ?? [],
     business_license_document: input.businessLicenseDocument ?? null,
     entertainment_license_document: input.entertainmentLicenseDocument ?? null,
     late_night_alcohol_notification_document:
@@ -379,6 +457,8 @@ export type ListingApplicationRow = {
   consent_accuracy: boolean;
   consent_terms: boolean;
   attachments: ListingAttachment[] | null;
+  shop_exterior_images: ListingShopImage[] | null;
+  shop_interior_images: ListingShopImage[] | null;
   admin_memo: string | null;
   assigned_admin: string | null;
   rejection_reason: string | null;

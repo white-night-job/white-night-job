@@ -4,9 +4,10 @@ import { getErrorMessage } from "@/lib/api-error";
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IMAGE_BUCKET,
 } from "@/lib/supabase";
 
-const ALLOWED_TYPES = new Set([
+const DOC_ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
@@ -15,15 +16,37 @@ const ALLOWED_TYPES = new Set([
   "application/pdf",
 ]);
 
-const ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "pdf", "heic", "heif"]);
+const DOC_ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "pdf", "heic", "heif"]);
+
+const IMAGE_ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
+
+const IMAGE_ALLOWED_EXT = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "heic",
+  "heif",
+]);
+
 const MAX_BYTES = 10 * 1024 * 1024;
-const MAX_FILES_HINT = 8;
 
 const DOC_TYPE_TO_FOLDER: Record<string, string> = {
   "business-license": "business-license",
   "entertainment-license": "entertainment-license",
   "late-night-alcohol-notification": "late-night-alcohol-notification",
-  "general-attachment": "general-attachment",
+};
+
+const IMAGE_TYPE_TO_KIND: Record<string, "exterior" | "interior"> = {
+  "shop-exterior": "exterior",
+  "shop-interior": "interior",
 };
 
 function sanitizeFileName(fileName: string): string {
@@ -31,9 +54,9 @@ function sanitizeFileName(fileName: string): string {
   return base.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-function detectExt(file: File): string {
+function detectDocExt(file: File): string {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (ALLOWED_EXT.has(ext)) return ext;
+  if (DOC_ALLOWED_EXT.has(ext)) return ext === "jpeg" ? "jpg" : ext;
   const mime = file.type.toLowerCase();
   if (mime.includes("pdf")) return "pdf";
   if (mime.includes("heic") || mime.includes("heif")) return "heic";
@@ -41,20 +64,33 @@ function detectExt(file: File): string {
   return "jpg";
 }
 
+function detectImageExt(file: File): string {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (IMAGE_ALLOWED_EXT.has(ext)) {
+    if (ext === "jpeg") return "jpg";
+    if (ext === "heif") return "heic";
+    return ext;
+  }
+  const mime = file.type.toLowerCase();
+  if (mime.includes("webp")) return "webp";
+  if (mime.includes("png")) return "png";
+  if (mime.includes("heic") || mime.includes("heif")) return "heic";
+  return "jpg";
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
-    const draftId = String(formData.get("draftId") ?? "").trim() || randomUUID();
-    const docType = String(formData.get("docType") ?? "general-attachment").trim();
+    const draftId =
+      String(formData.get("draftId") ?? "").trim() || randomUUID();
+    const docType = String(formData.get("docType") ?? "").trim();
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ message: "ファイルを選択してください。" }, { status: 400 });
-    }
-
-    const folder = DOC_TYPE_TO_FOLDER[docType];
-    if (!folder) {
-      return NextResponse.json({ message: "不正な書類種別です。" }, { status: 400 });
+      return NextResponse.json(
+        { message: "ファイルを選択してください。" },
+        { status: 400 },
+      );
     }
 
     if (file.size <= 0 || file.size > MAX_BYTES) {
@@ -64,29 +100,65 @@ export async function POST(request: Request) {
       );
     }
 
+    const imageKind = IMAGE_TYPE_TO_KIND[docType];
+    const docFolder = DOC_TYPE_TO_FOLDER[docType];
+
+    if (!imageKind && !docFolder) {
+      return NextResponse.json(
+        { message: "不正なアップロード種別です。" },
+        { status: 400 },
+      );
+    }
+
+    const isImage = Boolean(imageKind);
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-    const mime = file.type.toLowerCase();
-    if (!ALLOWED_EXT.has(extension) && !ALLOWED_TYPES.has(mime)) {
+    const mime = (file.type || "").toLowerCase();
+
+    if (isImage) {
+      if (!IMAGE_ALLOWED_EXT.has(extension) && !IMAGE_ALLOWED_TYPES.has(mime)) {
+        return NextResponse.json(
+          {
+            message:
+              "店舗画像は JPEG / JPG / PNG / WEBP / HEIC のみアップロードできます。",
+          },
+          { status: 400 },
+        );
+      }
+      if (extension === "pdf" || mime === "application/pdf") {
+        return NextResponse.json(
+          { message: "店舗画像にPDFは使用できません。" },
+          { status: 400 },
+        );
+      }
+    } else if (
+      !DOC_ALLOWED_EXT.has(extension) &&
+      !DOC_ALLOWED_TYPES.has(mime)
+    ) {
       return NextResponse.json(
         { message: "対応形式は PDF / JPEG / JPG / PNG / HEIC です。" },
         { status: 400 },
       );
     }
 
-    const safeExt = detectExt(file);
+    const safeExt = isImage ? detectImageExt(file) : detectDocExt(file);
     const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
     const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}.${safeExt}`;
+    const folder = isImage ? imageKind! : docFolder!;
     const path = `draft/${draftId}/${folder}/${fileName}`;
+    const bucket = isImage
+      ? LISTING_APPLICATION_IMAGE_BUCKET
+      : LISTING_APPLICATION_DOCUMENT_BUCKET;
 
     const supabase = createSupabaseAdmin();
     const buffer = Buffer.from(await file.arrayBuffer());
+    const contentType =
+      file.type ||
+      (safeExt === "pdf" ? "application/pdf" : `image/${safeExt === "jpg" ? "jpeg" : safeExt}`);
 
-    const { error } = await supabase.storage
-      .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
-      .upload(path, buffer, {
-        contentType: file.type || `application/${safeExt}`,
-        upsert: false,
-      });
+    const { error } = await supabase.storage.from(bucket).upload(path, buffer, {
+      contentType,
+      upsert: false,
+    });
 
     if (error) {
       console.error("[listing-applications/upload] failed:", error);
@@ -94,11 +166,14 @@ export async function POST(request: Request) {
     }
 
     const { data: signed, error: signedError } = await supabase.storage
-      .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
+      .from(bucket)
       .createSignedUrl(path, 60 * 60);
 
     if (signedError) {
-      console.error("[listing-applications/upload] signed url failed:", signedError);
+      console.error(
+        "[listing-applications/upload] signed url failed:",
+        signedError,
+      );
       throw signedError;
     }
 
@@ -106,29 +181,40 @@ export async function POST(request: Request) {
     const document = {
       storagePath: path,
       fileName: file.name,
-      mimeType: file.type || `application/${safeExt}`,
+      mimeType: contentType,
       size: file.size,
       uploadedAt,
       signedUrl: signed.signedUrl,
     };
 
+    if (isImage) {
+      const sortOrderRaw = Number(formData.get("sortOrder") ?? 0);
+      const image = {
+        ...document,
+        kind: imageKind,
+        sortOrder: Number.isFinite(sortOrderRaw) ? sortOrderRaw : 0,
+      };
+      return NextResponse.json({
+        ok: true,
+        draftId,
+        image,
+        document,
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       draftId,
-      maxFiles: MAX_FILES_HINT,
       document,
-      // backward-compatible field for existing optional 添付資料UI
-      attachment: {
-        url: signed.signedUrl,
-        name: file.name,
-        size: file.size,
-        type: file.type || safeExt,
-        storagePath: path,
-      },
     });
   } catch (error) {
     return NextResponse.json(
-      { message: getErrorMessage(error, "ファイルのアップロードに失敗しました。") },
+      {
+        message: getErrorMessage(
+          error,
+          "ファイルのアップロードに失敗しました。",
+        ),
+      },
       { status: 500 },
     );
   }

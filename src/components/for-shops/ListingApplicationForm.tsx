@@ -20,9 +20,12 @@ import {
 import type {
   ListingAttachment,
   ListingDocumentMeta,
+  ListingShopImage,
 } from "@/lib/listing-application";
 
-const DRAFT_KEY = "wnj-listing-application-draft-v1";
+void (null as ListingAttachment | null);
+
+const DRAFT_KEY = "wnj-listing-application-draft-v2";
 const HEADER_OFFSET = 90;
 
 const inputBase =
@@ -41,9 +44,26 @@ const STEPS = [
   { id: 4, title: "営業・許可情報" },
   { id: 5, title: "希望プラン" },
   { id: 6, title: "確認事項" },
-  { id: 7, title: "添付資料" },
+  { id: 7, title: "店舗画像" },
   { id: 8, title: "内容確認" },
 ] as const;
+
+const DOC_ACCEPT =
+  ".pdf,.jpeg,.jpg,.png,.heic,image/jpeg,image/png,image/heic,application/pdf";
+const SHOP_IMAGE_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif";
+
+type LocalFileInfo = {
+  name: string;
+  size: number;
+  type: string;
+  previewUrl: string | null;
+};
+
+type DocKey =
+  | "businessLicenseDocument"
+  | "entertainmentLicenseDocument"
+  | "lateNightAlcoholNotificationDocument";
 
 type FormState = {
   shopName: string;
@@ -67,17 +87,17 @@ type FormState = {
   lateNightAlcoholNotificationDocument: ListingDocumentMeta | null;
   openDate: string;
   requestedPlan: JobPlan | "";
-  listingReason: string;
-  shopFeatures: string;
-  notes: string;
   consentAccuracy: boolean;
   consentTerms: boolean;
-  attachments: ListingAttachment[];
+  shopExteriorImages: ListingShopImage[];
+  shopInteriorImages: ListingShopImage[];
   website: string;
 };
 
 type FieldKey = keyof FormState;
 type FieldError = Partial<Record<FieldKey, string>>;
+
+type LocalFilesState = Record<DocKey, LocalFileInfo | null>;
 
 const EMPTY: FormState = {
   shopName: "",
@@ -101,13 +121,17 @@ const EMPTY: FormState = {
   lateNightAlcoholNotificationDocument: null,
   openDate: "",
   requestedPlan: "",
-  listingReason: "",
-  shopFeatures: "",
-  notes: "",
   consentAccuracy: false,
   consentTerms: false,
-  attachments: [],
+  shopExteriorImages: [],
+  shopInteriorImages: [],
   website: "",
+};
+
+const EMPTY_LOCAL: LocalFilesState = {
+  businessLicenseDocument: null,
+  entertainmentLicenseDocument: null,
+  lateNightAlcoholNotificationDocument: null,
 };
 
 export function planNameJa(plan: JobPlan): string {
@@ -118,6 +142,23 @@ export function planPriceJa(plan: JobPlan): string {
   return `月額 ${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}（税込）`;
 }
 
+export function formatBytes(size: number): string {
+  if (!Number.isFinite(size) || size < 0) return "—";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function revokeUrl(url: string | null | undefined) {
+  if (url && url.startsWith("blob:")) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 function loadDraft(): FormState | null {
   try {
     const raw = window.localStorage.getItem(DRAFT_KEY);
@@ -126,8 +167,17 @@ function loadDraft(): FormState | null {
     return {
       ...EMPTY,
       ...parsed,
-      attachments: parsed.attachments ?? [],
+      shopExteriorImages: Array.isArray(parsed.shopExteriorImages)
+        ? parsed.shopExteriorImages
+        : [],
+      shopInteriorImages: Array.isArray(parsed.shopInteriorImages)
+        ? parsed.shopInteriorImages
+        : [],
       requestedPlan: isJobPlan(parsed.requestedPlan) ? parsed.requestedPlan : "",
+      businessLicenseDocument: parsed.businessLicenseDocument ?? null,
+      entertainmentLicenseDocument: parsed.entertainmentLicenseDocument ?? null,
+      lateNightAlcoholNotificationDocument:
+        parsed.lateNightAlcoholNotificationDocument ?? null,
     };
   } catch {
     return null;
@@ -167,18 +217,35 @@ function focusFirstError(container: HTMLElement | null) {
   }, 80);
 }
 
-function validateStep(step: number, form: FormState): FieldError {
+function fileFormatLabel(info: { name: string; type: string }): string {
+  const ext = info.name.split(".").pop()?.toUpperCase();
+  if (ext) return ext;
+  if (info.type) return info.type;
+  return "FILE";
+}
+
+function validateStep(
+  step: number,
+  form: FormState,
+  localFiles?: LocalFilesState,
+): FieldError {
   const errors: FieldError = {};
   if (step === 1) {
     if (!form.shopName.trim()) errors.shopName = "店舗名を入力してください。";
-    if (!form.shopAddress.trim()) errors.shopAddress = "店舗住所を入力してください。";
-    if (!form.businessType.trim()) errors.businessType = "業種を入力してください。";
-    if (!form.businessHours.trim()) errors.businessHours = "営業時間を入力してください。";
-    if (!form.shopPhone.trim()) errors.shopPhone = "店舗電話番号を入力してください。";
+    if (!form.shopAddress.trim())
+      errors.shopAddress = "店舗住所を入力してください。";
+    if (!form.businessType.trim())
+      errors.businessType = "業種を入力してください。";
+    if (!form.businessHours.trim())
+      errors.businessHours = "営業時間を入力してください。";
+    if (!form.shopPhone.trim())
+      errors.shopPhone = "店舗電話番号を入力してください。";
   }
   if (step === 2) {
-    if (!form.contactName.trim()) errors.contactName = "担当者名を入力してください。";
-    if (!form.contactPhone.trim()) errors.contactPhone = "担当者電話番号を入力してください。";
+    if (!form.contactName.trim())
+      errors.contactName = "担当者名を入力してください。";
+    if (!form.contactPhone.trim())
+      errors.contactPhone = "担当者電話番号を入力してください。";
     if (!form.contactEmail.trim()) {
       errors.contactEmail = "担当者メールアドレスを入力してください。";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())) {
@@ -188,14 +255,18 @@ function validateStep(step: number, form: FormState): FieldError {
   if (step === 3) {
     const url = form.websiteUrl.trim();
     if (!url) {
-      errors.websiteUrl = "公式WebサイトまたはSNSのURLを入力してください。";
+      errors.websiteUrl =
+        "公式WebサイトまたはSNSのURLを入力してください。";
     } else if (!/^https?:\/\/.+/i.test(url)) {
       errors.websiteUrl = "正しいURLを入力してください。";
     }
   }
   if (step === 4) {
-    if (!form.businessLicenseDocument?.storagePath) {
-      errors.businessLicenseDocument = "営業許可証をアップロードしてください。";
+    const hasLocal = Boolean(localFiles?.businessLicenseDocument);
+    const hasUploaded = Boolean(form.businessLicenseDocument?.storagePath);
+    if (!hasLocal && !hasUploaded) {
+      errors.businessLicenseDocument =
+        "営業許可証をアップロードしてください。";
     }
     if (!form.openDate.trim()) errors.openDate = "オープン日を入力してください。";
   }
@@ -205,19 +276,27 @@ function validateStep(step: number, form: FormState): FieldError {
     }
   }
   if (step === 6) {
-    if (!form.listingReason.trim()) {
-      errors.listingReason = "掲載を希望する理由を入力してください。";
-    }
-    if (!form.shopFeatures.trim()) {
-      errors.shopFeatures = "店舗の特徴を入力してください。";
-    }
     if (!form.consentAccuracy) {
       errors.consentAccuracy =
-        "求人内容と勤務条件に相違がないことへの同意が必要です。";
+        "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
     }
     if (!form.consentTerms) {
       errors.consentTerms =
         "利用規約・掲載基準・プライバシーポリシーへの同意が必要です。";
+    }
+  }
+  if (step === 7) {
+    const exteriorEmpty = form.shopExteriorImages.length === 0;
+    const interiorEmpty = form.shopInteriorImages.length === 0;
+    if (exteriorEmpty && interiorEmpty) {
+      errors.shopExteriorImages =
+        "店舗外観と店舗内観の画像をアップロードしてください";
+    } else if (exteriorEmpty) {
+      errors.shopExteriorImages =
+        "店舗外観の画像をアップロードしてください";
+    } else if (interiorEmpty) {
+      errors.shopInteriorImages =
+        "店舗内観の画像をアップロードしてください";
     }
   }
   return errors;
@@ -243,6 +322,7 @@ export function ListingApplicationForm() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [localFiles, setLocalFiles] = useState<LocalFilesState>(EMPTY_LOCAL);
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [navigating, setNavigating] = useState(false);
@@ -255,6 +335,13 @@ export function ListingApplicationForm() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const shouldScrollRef = useRef(false);
   const submittingRef = useRef(false);
+  const docInputRefs = useRef<Record<DocKey, HTMLInputElement | null>>({
+    businessLicenseDocument: null,
+    entertainmentLicenseDocument: null,
+    lateNightAlcoholNotificationDocument: null,
+  });
+  const exteriorInputRef = useRef<HTMLInputElement | null>(null);
+  const interiorInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const draft = loadDraft();
@@ -282,6 +369,15 @@ export function ListingApplicationForm() {
     scrollToStepHeader();
   }, [step]);
 
+  useEffect(() => {
+    return () => {
+      revokeUrl(localFiles.businessLicenseDocument?.previewUrl);
+      revokeUrl(localFiles.entertainmentLicenseDocument?.previewUrl);
+      revokeUrl(localFiles.lateNightAlcoholNotificationDocument?.previewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const progress = useMemo(
     () => Math.round((step / STEPS.length) * 100),
     [step],
@@ -301,7 +397,7 @@ export function ListingApplicationForm() {
   function goNext() {
     if (navigating || uploading || loading) return;
     setNavigating(true);
-    const errors = validateStep(step, form);
+    const errors = validateStep(step, form, localFiles);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setSubmitMessage(
@@ -329,18 +425,36 @@ export function ListingApplicationForm() {
     setNavigating(false);
   }
 
-  async function uploadDoc(
-    file: File,
-    docType:
-      | "business-license"
-      | "entertainment-license"
-      | "late-night-alcohol-notification"
-      | "general-attachment",
-    key?:
-      | "businessLicenseDocument"
-      | "entertainmentLicenseDocument"
-      | "lateNightAlcoholNotificationDocument",
-  ) {
+  async function uploadDocument(file: File, key: DocKey) {
+    const docType =
+      key === "businessLicenseDocument"
+        ? "business-license"
+        : key === "entertainmentLicenseDocument"
+          ? "entertainment-license"
+          : "late-night-alcohol-notification";
+
+    const previewUrl = file.type.startsWith("image/")
+      ? URL.createObjectURL(file)
+      : null;
+    const localInfo: LocalFileInfo = {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      previewUrl,
+    };
+
+    setLocalFiles((prev) => {
+      revokeUrl(prev[key]?.previewUrl);
+      return { ...prev, [key]: localInfo };
+    });
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+
     setUploading(true);
     setSubmitMessage("");
     try {
@@ -356,16 +470,13 @@ export function ListingApplicationForm() {
         message?: string;
         draftId?: string;
         document?: ListingDocumentMeta;
-        attachment?: ListingAttachment;
       };
       if (!res.ok) {
         throw new Error(data.message ?? "アップロードに失敗しました。");
       }
       if (data.draftId) setDraftId(data.draftId);
-      if (key && data.document) {
+      if (data.document) {
         update(key, data.document);
-      } else if (data.attachment) {
-        update("attachments", [...form.attachments, data.attachment]);
       }
     } catch (e) {
       setSubmitMessage(
@@ -377,23 +488,108 @@ export function ListingApplicationForm() {
     }
   }
 
-  async function handleAttachments(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return;
-    if (form.attachments.length + fileList.length > 8) {
-      setSubmitMessage("添付資料は最大8件までです。");
+  function clearDocument(key: DocKey) {
+    setLocalFiles((prev) => {
+      revokeUrl(prev[key]?.previewUrl);
+      return { ...prev, [key]: null };
+    });
+    update(key, null);
+  }
+
+  async function uploadShopImage(
+    file: File,
+    kind: "exterior" | "interior",
+  ) {
+    const max = kind === "exterior" ? 5 : 10;
+    const current =
+      kind === "exterior" ? form.shopExteriorImages : form.shopInteriorImages;
+    if (current.length >= max) {
+      setSubmitMessage(
+        kind === "exterior"
+          ? "店舗外観は最大5枚までです。"
+          : "店舗内観は最大10枚までです。",
+      );
       scrollToStepHeader();
       return;
     }
-    for (const file of Array.from(fileList)) {
-      await uploadDoc(file, "general-attachment");
+
+    setUploading(true);
+    setSubmitMessage("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("draftId", draftId);
+      body.append(
+        "docType",
+        kind === "exterior" ? "shop-exterior" : "shop-interior",
+      );
+      body.append("sortOrder", String(current.length));
+      const res = await fetch("/api/listing-applications/upload", {
+        method: "POST",
+        body,
+      });
+      const data = (await res.json()) as {
+        message?: string;
+        draftId?: string;
+        image?: ListingShopImage;
+      };
+      if (!res.ok) {
+        throw new Error(data.message ?? "アップロードに失敗しました。");
+      }
+      if (data.draftId) setDraftId(data.draftId);
+      if (data.image) {
+        if (kind === "exterior") {
+          update("shopExteriorImages", [...form.shopExteriorImages, data.image]);
+          if (fieldErrors.shopExteriorImages) {
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.shopExteriorImages;
+              delete next.shopInteriorImages;
+              return next;
+            });
+          }
+        } else {
+          update("shopInteriorImages", [...form.shopInteriorImages, data.image]);
+          if (fieldErrors.shopInteriorImages || fieldErrors.shopExteriorImages) {
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.shopExteriorImages;
+              delete next.shopInteriorImages;
+              return next;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      setSubmitMessage(
+        e instanceof Error ? e.message : "アップロードに失敗しました。",
+      );
+      scrollToStepHeader();
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeShopImage(kind: "exterior" | "interior", storagePath: string) {
+    if (kind === "exterior") {
+      update(
+        "shopExteriorImages",
+        form.shopExteriorImages.filter((img) => img.storagePath !== storagePath),
+      );
+    } else {
+      update(
+        "shopInteriorImages",
+        form.shopInteriorImages.filter((img) => img.storagePath !== storagePath),
+      );
     }
   }
 
   async function submit(confirmDuplicate = false) {
     if (submittingRef.current) return;
-    const errors = validateStep(6, form);
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+
+    const consentErrors = validateStep(6, form, localFiles);
+    if (Object.keys(consentErrors).length > 0) {
+      setFieldErrors(consentErrors);
       setSubmitMessage(
         "入力内容にエラーがあります。赤字の項目をご確認ください。",
       );
@@ -406,6 +602,16 @@ export function ListingApplicationForm() {
       setSubmitMessage("料金プランを選択してください");
       shouldScrollRef.current = true;
       setStep(5);
+      return;
+    }
+    const imageErrors = validateStep(7, form, localFiles);
+    if (Object.keys(imageErrors).length > 0) {
+      setFieldErrors(imageErrors);
+      setSubmitMessage(
+        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+      );
+      shouldScrollRef.current = true;
+      setStep(7);
       return;
     }
 
@@ -447,6 +653,225 @@ export function ListingApplicationForm() {
       setLoading(false);
       submittingRef.current = false;
     }
+  }
+
+  function renderDocUploader(
+    key: DocKey,
+    label: string,
+    required: boolean,
+    hint?: string,
+  ) {
+    const local = localFiles[key];
+    const uploaded = form[key];
+    const hasFile = Boolean(local || uploaded);
+    const displayName = local?.name ?? uploaded?.fileName ?? "";
+    const displayType = local
+      ? fileFormatLabel(local)
+      : uploaded
+        ? fileFormatLabel({ name: uploaded.fileName, type: uploaded.mimeType })
+        : "";
+    const displaySize = local?.size ?? uploaded?.size ?? 0;
+    const preview =
+      local?.previewUrl ??
+      (uploaded?.mimeType?.startsWith("image/") ? uploaded.signedUrl : null) ??
+      null;
+    const error = fieldErrors[key];
+
+    return (
+      <Field error={error}>
+        <label className={labelClass}>
+          {label}
+          {required ? " *" : "（任意）"}
+        </label>
+        {hint ? <p className="mb-1 text-xs text-muted">{hint}</p> : null}
+        <input
+          ref={(el) => {
+            docInputRefs.current[key] = el;
+          }}
+          type="file"
+          accept={DOC_ACCEPT}
+          className="sr-only absolute h-0 w-0 opacity-0"
+          tabIndex={-1}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void uploadDocument(file, key);
+            e.target.value = "";
+          }}
+        />
+        {!hasFile ? (
+          <button
+            type="button"
+            disabled={uploading || loading}
+            onClick={() => docInputRefs.current[key]?.click()}
+            className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
+              error
+                ? "border-red-500 text-red-700"
+                : "border-gold/40 text-gold-dark hover:bg-ivory"
+            } disabled:opacity-60`}
+          >
+            ファイルを選択
+          </button>
+        ) : (
+          <div className="rounded-xl border border-gold/25 bg-ivory/60 p-3">
+            <div className="flex flex-wrap items-start gap-3">
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview}
+                  alt={displayName}
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-white text-xs text-muted">
+                  {displayType}
+                </div>
+              )}
+              <div className="min-w-0 flex-1 space-y-1 text-sm">
+                <p className="truncate font-medium text-charcoal">{displayName}</p>
+                <p className="text-xs text-muted">
+                  形式: {displayType} / サイズ: {formatBytes(displaySize)}
+                </p>
+                {uploaded?.storagePath ? (
+                  <p className="text-xs text-muted">アップロード済み</p>
+                ) : uploading ? (
+                  <p className="text-xs text-muted">アップロード中...</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={uploading || loading}
+                onClick={() => docInputRefs.current[key]?.click()}
+                className="rounded-full border border-gold/40 px-3 py-1.5 text-xs font-medium text-gold-dark disabled:opacity-60"
+              >
+                変更する
+              </button>
+              <button
+                type="button"
+                disabled={uploading || loading}
+                onClick={() => clearDocument(key)}
+                className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 disabled:opacity-60"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        )}
+      </Field>
+    );
+  }
+
+  function renderShopImageSection(
+    kind: "exterior" | "interior",
+    title: string,
+    description: string,
+    max: number,
+  ) {
+    const images =
+      kind === "exterior" ? form.shopExteriorImages : form.shopInteriorImages;
+    const inputRef = kind === "exterior" ? exteriorInputRef : interiorInputRef;
+    const errorKey =
+      kind === "exterior" ? "shopExteriorImages" : "shopInteriorImages";
+    const error = fieldErrors[errorKey] ?? fieldErrors.shopExteriorImages;
+
+    return (
+      <div
+        className="space-y-3"
+        data-error-field={
+          kind === "exterior"
+            ? fieldErrors.shopExteriorImages
+              ? "1"
+              : undefined
+            : fieldErrors.shopInteriorImages ||
+                (fieldErrors.shopExteriorImages &&
+                  form.shopExteriorImages.length > 0 &&
+                  form.shopInteriorImages.length === 0)
+              ? "1"
+              : undefined
+        }
+      >
+        <div>
+          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
+          <p className="mt-1 text-xs text-muted">{description}</p>
+        </div>
+        {kind === "exterior" && error ? (
+          <p className={errTextClass}>{error}</p>
+        ) : null}
+        {kind === "interior" && fieldErrors.shopInteriorImages ? (
+          <p className={errTextClass}>{fieldErrors.shopInteriorImages}</p>
+        ) : null}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={SHOP_IMAGE_ACCEPT}
+          className="sr-only absolute h-0 w-0 opacity-0"
+          tabIndex={-1}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void uploadShopImage(file, kind);
+            e.target.value = "";
+          }}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          {images.map((img) => (
+            <div
+              key={img.storagePath}
+              className="overflow-hidden rounded-xl border border-gold/25 bg-white"
+            >
+              <button
+                type="button"
+                className="block w-full"
+                onClick={() => {
+                  if (img.signedUrl) window.open(img.signedUrl, "_blank");
+                }}
+              >
+                {img.signedUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={img.signedUrl}
+                    alt={img.fileName}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
+                    プレビューなし
+                  </div>
+                )}
+              </button>
+              <div className="space-y-1 p-2">
+                <p className="truncate text-xs font-medium text-charcoal">
+                  {img.fileName}
+                </p>
+                <p className="text-[11px] text-muted">{formatBytes(img.size)}</p>
+                <button
+                  type="button"
+                  disabled={uploading || loading}
+                  onClick={() => removeShopImage(kind, img.storagePath)}
+                  className="text-xs text-red-600 disabled:opacity-60"
+                >
+                  削除
+                </button>
+              </div>
+            </div>
+          ))}
+          {images.length < max ? (
+            <button
+              type="button"
+              disabled={uploading || loading}
+              onClick={() => inputRef.current?.click()}
+              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gold/40 bg-ivory/50 text-sm text-gold-dark disabled:opacity-60"
+            >
+              <span className="text-lg leading-none">＋</span>
+              <span>追加</span>
+              <span className="text-[11px] text-muted">
+                {images.length}/{max}
+              </span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   if (!hydrated) {
@@ -694,86 +1119,22 @@ export function ListingApplicationForm() {
         {step === 4 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">4. 営業・許可情報</h2>
-            <Field error={fe.businessLicenseDocument}>
-              <label className={labelClass}>営業許可証 *</label>
-              <p className="mb-1 text-xs text-muted">
-                店舗の営業許可証をアップロードしてください。
-              </p>
-              <input
-                className={fe.businessLicenseDocument ? inputErr : inputOk}
-                type="file"
-                accept=".pdf,.jpeg,.jpg,.png,.heic,image/jpeg,image/png,image/heic,application/pdf"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    void uploadDoc(
-                      file,
-                      "business-license",
-                      "businessLicenseDocument",
-                    );
-                  }
-                  e.target.value = "";
-                }}
-              />
-              {form.businessLicenseDocument ? (
-                <p className="mt-2 text-xs text-muted">
-                  提出済み：{form.businessLicenseDocument.fileName}
-                </p>
-              ) : null}
-            </Field>
-            <Field>
-              <label className={labelClass}>
-                風俗営業許可証（社交飲食店営業許可証）（任意）
-              </label>
-              <input
-                className={inputOk}
-                type="file"
-                accept=".pdf,.jpeg,.jpg,.png,.heic,image/jpeg,image/png,image/heic,application/pdf"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    void uploadDoc(
-                      file,
-                      "entertainment-license",
-                      "entertainmentLicenseDocument",
-                    );
-                  }
-                  e.target.value = "";
-                }}
-              />
-              {form.entertainmentLicenseDocument ? (
-                <p className="mt-2 text-xs text-muted">
-                  提出済み：{form.entertainmentLicenseDocument.fileName}
-                </p>
-              ) : null}
-            </Field>
-            <Field>
-              <label className={labelClass}>
-                深夜酒類提供飲食店営業・開始届出（受領書）（任意）
-              </label>
-              <input
-                className={inputOk}
-                type="file"
-                accept=".pdf,.jpeg,.jpg,.png,.heic,image/jpeg,image/png,image/heic,application/pdf"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    void uploadDoc(
-                      file,
-                      "late-night-alcohol-notification",
-                      "lateNightAlcoholNotificationDocument",
-                    );
-                  }
-                  e.target.value = "";
-                }}
-              />
-              {form.lateNightAlcoholNotificationDocument ? (
-                <p className="mt-2 text-xs text-muted">
-                  提出済み：
-                  {form.lateNightAlcoholNotificationDocument.fileName}
-                </p>
-              ) : null}
-            </Field>
+            {renderDocUploader(
+              "businessLicenseDocument",
+              "営業許可証",
+              true,
+              "店舗の営業許可証をアップロードしてください。",
+            )}
+            {renderDocUploader(
+              "entertainmentLicenseDocument",
+              "風俗営業許可証（社交飲食店営業許可証）",
+              false,
+            )}
+            {renderDocUploader(
+              "lateNightAlcoholNotificationDocument",
+              "深夜酒類提供飲食店営業・開始届出（受領書）",
+              false,
+            )}
             <Field error={fe.openDate}>
               <label className={labelClass}>オープン日 *</label>
               <input
@@ -844,33 +1205,6 @@ export function ListingApplicationForm() {
         {step === 6 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">6. 確認事項</h2>
-            <Field error={fe.listingReason}>
-              <label className={labelClass}>掲載を希望する理由 *</label>
-              <textarea
-                className={fe.listingReason ? inputErr : inputOk}
-                rows={4}
-                value={form.listingReason}
-                onChange={(e) => update("listingReason", e.target.value)}
-              />
-            </Field>
-            <Field error={fe.shopFeatures}>
-              <label className={labelClass}>店舗の特徴 *</label>
-              <textarea
-                className={fe.shopFeatures ? inputErr : inputOk}
-                rows={4}
-                value={form.shopFeatures}
-                onChange={(e) => update("shopFeatures", e.target.value)}
-              />
-            </Field>
-            <Field>
-              <label className={labelClass}>補足事項（任意）</label>
-              <textarea
-                className={inputOk}
-                rows={3}
-                value={form.notes}
-                onChange={(e) => update("notes", e.target.value)}
-              />
-            </Field>
             <div data-error-field={fe.consentAccuracy ? "1" : undefined}>
               <label
                 className={`flex items-start gap-3 text-sm ${
@@ -930,61 +1264,31 @@ export function ListingApplicationForm() {
 
         {step === 7 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">
-              7. 添付資料（任意）
-            </h2>
+            <h2 className="font-serif text-lg text-charcoal">7. 店舗画像</h2>
             <p className="text-xs text-muted">
-              店舗外観・店内資料など（JPG / PNG / WebP /
-              PDF、各5MBまで、最大8件）
+              店舗の外観と内観が分かる画像をアップロードしてください。
             </p>
-            <input
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf"
-              multiple
-              disabled={uploading}
-              onChange={(e) => {
-                void handleAttachments(e.target.files);
-                e.target.value = "";
-              }}
-            />
+            {renderShopImageSection(
+              "exterior",
+              "店舗外観",
+              "店舗の入口や建物外観が分かる画像をアップロードしてください。",
+              5,
+            )}
+            {renderShopImageSection(
+              "interior",
+              "店舗内観",
+              "店内の雰囲気や設備が分かる画像をアップロードしてください。",
+              10,
+            )}
             {uploading ? (
               <p className="text-sm text-muted">アップロード中...</p>
             ) : null}
-            <ul className="space-y-2 text-sm">
-              {form.attachments.map((file) => (
-                <li
-                  key={file.url}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-gold/20 px-3 py-2"
-                >
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-gold-dark underline"
-                  >
-                    {file.name}
-                  </a>
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs text-muted"
-                    onClick={() =>
-                      update(
-                        "attachments",
-                        form.attachments.filter((item) => item.url !== file.url),
-                      )
-                    }
-                  >
-                    削除
-                  </button>
-                </li>
-              ))}
-            </ul>
           </section>
         ) : null}
 
         {step === 8 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">送信前の確認</h2>
+            <h2 className="font-serif text-lg text-charcoal">8. 内容確認</h2>
             <dl className="space-y-2 text-sm text-charcoal">
               <div>
                 <dt className="text-muted">店舗名</dt>
@@ -997,6 +1301,10 @@ export function ListingApplicationForm() {
               <div>
                 <dt className="text-muted">業種</dt>
                 <dd>{form.businessType}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">営業時間</dt>
+                <dd>{form.businessHours}</dd>
               </div>
               <div>
                 <dt className="text-muted">担当者</dt>
@@ -1036,12 +1344,72 @@ export function ListingApplicationForm() {
                     : "未提出"}
                 </dd>
               </div>
-              <div>
-                <dt className="text-muted">添付資料（任意）</dt>
-                <dd>{form.attachments.length}件</dd>
-              </div>
             </dl>
-            <p className="text-xs text-muted">
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium text-charcoal">
+                  店舗外観（{form.shopExteriorImages.length}枚）
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {form.shopExteriorImages.map((img) => (
+                    <button
+                      key={img.storagePath}
+                      type="button"
+                      onClick={() => {
+                        if (img.signedUrl) window.open(img.signedUrl, "_blank");
+                      }}
+                      className="overflow-hidden rounded-lg border border-gold/20"
+                    >
+                      {img.signedUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={img.signedUrl}
+                          alt={img.fileName}
+                          className="aspect-square w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
+                          {img.fileName}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-charcoal">
+                  店舗内観（{form.shopInteriorImages.length}枚）
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {form.shopInteriorImages.map((img) => (
+                    <button
+                      key={img.storagePath}
+                      type="button"
+                      onClick={() => {
+                        if (img.signedUrl) window.open(img.signedUrl, "_blank");
+                      }}
+                      className="overflow-hidden rounded-lg border border-gold/20"
+                    >
+                      {img.signedUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={img.signedUrl}
+                          alt={img.fileName}
+                          className="aspect-square w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
+                          {img.fileName}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-muted">
               審査申請のみでは求人は公開されません。承認後に登録手続きへ進みます。
             </p>
           </section>

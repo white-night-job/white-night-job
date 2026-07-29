@@ -13,7 +13,12 @@ import {
   notifyAdminNewApplication,
   notifyApplicantReceived,
 } from "@/lib/listing-application-email";
-import { createSupabaseAdmin, LISTING_APPLICATION_DOCUMENT_BUCKET } from "@/lib/supabase";
+import {
+  createSupabaseAdmin,
+  LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IMAGE_BUCKET,
+} from "@/lib/supabase";
+import type { ListingShopImage } from "@/lib/listing-application";
 
 export async function POST(request: Request) {
   try {
@@ -138,6 +143,46 @@ export async function POST(request: Request) {
         ...doc,
         storagePath: targetPath,
       };
+    }
+
+
+    async function moveShopImages(
+      images: ListingShopImage[] | undefined,
+      kind: "exterior" | "interior",
+    ): Promise<ListingShopImage[]> {
+      const list = Array.isArray(images) ? images : [];
+      const moved: ListingShopImage[] = [];
+      for (let i = 0; i < list.length; i++) {
+        const img = list[i];
+        if (!img?.storagePath) continue;
+        const fileName = img.storagePath.split("/").pop();
+        if (!fileName) continue;
+        const targetPath = `${saved.id}/${kind}/${fileName}`;
+        if (img.storagePath !== targetPath) {
+          const { error: moveError } = await supabase.storage
+            .from(LISTING_APPLICATION_IMAGE_BUCKET)
+            .move(img.storagePath, targetPath);
+          if (moveError) {
+            console.error("[listing-applications] image move failed:", moveError);
+            moved.push({ ...img, kind, sortOrder: i });
+            continue;
+          }
+        }
+        moved.push({
+          ...img,
+          storagePath: targetPath,
+          kind,
+          sortOrder: i,
+        });
+      }
+      return moved;
+    }
+
+    const exteriorMoved = await moveShopImages(input.shopExteriorImages, "exterior");
+    const interiorMoved = await moveShopImages(input.shopInteriorImages, "interior");
+    if (exteriorMoved.length > 0 || interiorMoved.length > 0) {
+      updatePayload.shop_exterior_images = exteriorMoved;
+      updatePayload.shop_interior_images = interiorMoved;
     }
 
     if (Object.keys(updatePayload).length > 0) {

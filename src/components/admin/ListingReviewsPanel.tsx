@@ -39,7 +39,18 @@ type DetailApplication = Record<string, unknown> & {
   requestedPlanLabel?: string;
   confirmedPlanLabel?: string;
   onboardingUrl?: string | null;
-  attachments?: Array<{ url: string; name: string }> | null;
+  shop_exterior_images?: Array<{
+    storagePath: string;
+    fileName: string;
+    kind: "exterior" | "interior";
+    signedUrl?: string;
+  }> | null;
+  shop_interior_images?: Array<{
+    storagePath: string;
+    fileName: string;
+    kind: "exterior" | "interior";
+    signedUrl?: string;
+  }> | null;
   business_license_document?: { fileName?: string; signedUrl?: string } | null;
   entertainment_license_document?: { fileName?: string; signedUrl?: string } | null;
   late_night_alcohol_notification_document?: {
@@ -340,9 +351,6 @@ export function ListingReviewsPanel() {
                   "確定プラン",
                   detail.confirmedPlanLabel ?? detail.confirmed_plan,
                 ],
-                ["掲載希望理由", detail.listing_reason],
-                ["店舗の特徴", detail.shop_features],
-                ["補足", detail.notes],
               ] as Array<[string, unknown]>
             ).map(([label, value]) => (
               <div key={label} className="rounded-lg bg-ivory/70 px-3 py-2">
@@ -384,25 +392,61 @@ export function ListingReviewsPanel() {
             })}
           </div>
 
-          {Array.isArray(detail.attachments) && detail.attachments.length > 0 && (
-            <div>
-              <p className="mb-2 text-sm font-medium">添付資料</p>
-              <ul className="space-y-1 text-sm">
-                {detail.attachments.map((file) => (
-                  <li key={file.url}>
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gold-dark underline"
-                    >
-                      {file.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["店舗外観画像", detail.shop_exterior_images],
+                ["店舗内観画像", detail.shop_interior_images],
+              ] as const
+            ).map(([label, images]) => (
+              <div key={label}>
+                <p className="mb-2 text-sm font-medium">{label}</p>
+                {Array.isArray(images) && images.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {images.map((img) => (
+                      <div
+                        key={img.storagePath}
+                        className="rounded-lg border border-gold/20 p-2"
+                      >
+                        <p className="truncate text-xs text-muted">
+                          {img.kind === "exterior" ? "外観" : "内観"}
+                        </p>
+                        {img.signedUrl ? (
+                          <a
+                            href={img.signedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 block"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={img.signedUrl}
+                              alt={img.fileName}
+                              className="aspect-square w-full rounded-md object-cover"
+                            />
+                          </a>
+                        ) : null}
+                        <p className="mt-1 truncate text-xs">{img.fileName}</p>
+                        {img.signedUrl ? (
+                          <a
+                            href={img.signedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-gold-dark underline"
+                            download
+                          >
+                            ダウンロード
+                          </a>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted">未提出</p>
+                )}
+              </div>
+            ))}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
