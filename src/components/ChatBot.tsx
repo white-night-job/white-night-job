@@ -205,11 +205,6 @@ export function ChatBot() {
     right: string;
     width: string;
   } | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobilePanelStyle, setMobilePanelStyle] = useState<{
-    top: number;
-    height: number;
-  } | null>(null);
 
   const closeChat = useCallback(() => {
     setOpen(false);
@@ -284,14 +279,6 @@ export function ChatBot() {
   }, [step, selectedAreas, messages, hydrated]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 639px)");
-    const updateIsMobile = () => setIsMobile(mediaQuery.matches);
-    updateIsMobile();
-    mediaQuery.addEventListener("change", updateIsMobile);
-    return () => mediaQuery.removeEventListener("change", updateIsMobile);
-  }, []);
-
-  useEffect(() => {
     if (!open) {
       return;
     }
@@ -356,42 +343,12 @@ export function ChatBot() {
   }, []);
 
   useEffect(() => {
-    if (!open || !isMobile) {
-      setMobilePanelStyle(null);
-      return;
+    if (!open || step !== "chat") return;
+    if (window.matchMedia("(pointer: fine)").matches) {
+      const timer = window.setTimeout(() => inputRef.current?.focus(), 200);
+      return () => window.clearTimeout(timer);
     }
-
-    const updateMobilePanelStyle = () => {
-      const visualViewport = window.visualViewport;
-      if (!visualViewport) {
-        setMobilePanelStyle(null);
-        return;
-      }
-
-      const safeTop = 8;
-      const top = Math.max(visualViewport.offsetTop + safeTop, safeTop);
-      const available = visualViewport.height - safeTop * 2;
-      const height = Math.min(
-        available,
-        Math.min(window.innerHeight * 0.8, available),
-      );
-
-      setMobilePanelStyle({
-        top,
-        height: Math.max(height, 280),
-      });
-    };
-
-    updateMobilePanelStyle();
-    const visualViewport = window.visualViewport;
-    visualViewport?.addEventListener("resize", updateMobilePanelStyle);
-    window.addEventListener("orientationchange", updateMobilePanelStyle);
-
-    return () => {
-      visualViewport?.removeEventListener("resize", updateMobilePanelStyle);
-      window.removeEventListener("orientationchange", updateMobilePanelStyle);
-    };
-  }, [open, isMobile]);
+  }, [open, step]);
 
   useEffect(() => {
     if (!scrollAnchor) return;
@@ -406,14 +363,6 @@ export function ChatBot() {
 
     return () => window.cancelAnimationFrame(frameId);
   }, [scrollAnchor, loading, messages, scrollToAnchor]);
-
-  useEffect(() => {
-    if (!open || step !== "chat") return;
-    if (window.matchMedia("(pointer: fine)").matches) {
-      const timer = window.setTimeout(() => inputRef.current?.focus(), 200);
-      return () => window.clearTimeout(timer);
-    }
-  }, [open, step]);
 
   const toggleDraftArea = useCallback((area: string) => {
     setDraftAreas((current) =>
@@ -616,22 +565,27 @@ export function ChatBot() {
 
   const showFaqQuickReplies = !hasAiConversationReply(messages);
 
-  const chatPanel = open ? (
-    <div
-      className={`flex w-full flex-col overflow-hidden rounded-2xl border border-gold/30 bg-ivory shadow-2xl sm:h-[min(75dvh,560px)] sm:w-[min(100vw-2rem,380px)] ${
-        isMobile ? "h-full min-h-0" : "h-[min(75dvh,560px)]"
-      }`}
-      style={
-        isMobile
-          ? { maxHeight: "calc(100dvh - 24px)" }
-          : undefined
-      }
-      role="dialog"
-      aria-label="White Night相談Bot"
-      onClick={(event) => event.stopPropagation()}
-    >
-            <div className="flex items-center justify-between border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-white pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
-              <div className="min-w-0">
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  return (
+    <>
+      {open ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-[90] flex flex-col bg-ivory"
+          style={{
+            top: "3.5rem",
+            height: "calc(100dvh - 3.5rem)",
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="White Night相談Bot"
+        >
+          {/* 共通ヘッダー（z-100）の下を不透明に覆い、元ページコンテンツを隠す */}
+          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-ivory pb-[env(safe-area-inset-bottom)]">
+            <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-3 py-2.5 text-white sm:px-4 sm:py-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">White Night相談Bot</p>
                 <p className="truncate text-xs text-white/80">
                   {step === "chat" && selectedAreas.length > 0
@@ -651,11 +605,22 @@ export function ChatBot() {
                 <button
                   type="button"
                   onClick={closeChat}
-                  className="rounded-full p-1.5 hover:bg-white/15"
-                  aria-label="チャットを閉じる"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15"
+                  aria-label="AI相談を閉じる"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -730,25 +695,29 @@ export function ChatBot() {
                             条件に合う店舗を見る →
                           </button>
                         )}
-                        {message.recommendations && message.recommendations.length > 0 && (
-                          <div className="mt-3 flex flex-col gap-3">
-                            <p
-                              ref={(element) => {
-                                if (element) {
-                                  recommendTitleRefs.current.set(message.id, element);
-                                } else {
-                                  recommendTitleRefs.current.delete(message.id);
-                                }
-                              }}
-                              className="scroll-mt-2 text-sm font-semibold text-charcoal"
-                            >
-                              おすすめ店舗
-                            </p>
-                            {message.recommendations.map((item) => (
-                              <RecommendationCard key={item.id} item={item} />
-                            ))}
-                          </div>
-                        )}
+                        {message.recommendations &&
+                          message.recommendations.length > 0 && (
+                            <div className="mt-3 flex flex-col gap-3">
+                              <p
+                                ref={(element) => {
+                                  if (element) {
+                                    recommendTitleRefs.current.set(
+                                      message.id,
+                                      element,
+                                    );
+                                  } else {
+                                    recommendTitleRefs.current.delete(message.id);
+                                  }
+                                }}
+                                className="scroll-mt-2 text-sm font-semibold text-charcoal"
+                              >
+                                おすすめ店舗
+                              </p>
+                              {message.recommendations.map((item) => (
+                                <RecommendationCard key={item.id} item={item} />
+                              ))}
+                            </div>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -762,7 +731,7 @@ export function ChatBot() {
                 </div>
 
                 {!loading && (
-                  <div className="space-y-2 border-t border-gold/15 px-3 py-2">
+                  <div className="shrink-0 space-y-2 border-t border-gold/15 px-3 py-2">
                     <button
                       type="button"
                       onClick={goToAreaSelection}
@@ -801,7 +770,10 @@ export function ChatBot() {
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                      if (
+                        event.key === "Enter" &&
+                        !event.nativeEvent.isComposing
+                      ) {
                         event.preventDefault();
                         void sendMessage(input);
                       }
@@ -822,85 +794,30 @@ export function ChatBot() {
                 </form>
               </>
             )}
-    </div>
-  ) : null;
-
-  if (pathname.startsWith("/admin")) {
-    return null;
-  }
-
-  return (
-    <>
-      {open ? (
-        <div
-          className="fixed inset-0 z-[60] bg-black/20 sm:bg-transparent"
-          onClick={closeChat}
-          aria-hidden
-        />
-      ) : null}
-
-      {open && isMobile ? (
-        <div
-          className="fixed z-[70] pointer-events-auto sm:hidden"
-          style={
-            mobilePanelStyle
-              ? {
-                  top: mobilePanelStyle.top,
-                  left: 12,
-                  right: 12,
-                  height: mobilePanelStyle.height,
-                }
-              : {
-                  left: 12,
-                  right: 12,
-                  bottom: "max(12px, env(safe-area-inset-bottom))",
-                  height: "min(80dvh, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
-                  maxHeight:
-                    "calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
-                }
-          }
-        >
-          {chatPanel}
+          </div>
         </div>
       ) : null}
 
-      {/* ラッパーは当たり判定を広げない。操作可能な子だけ pointer-events を有効化 */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-auto sm:bottom-6 sm:right-6">
-        {open && !isMobile ? (
-          <div className="pointer-events-auto">{chatPanel}</div>
-        ) : null}
-
-        {!open || !isMobile ? (
+      {!open ? (
+        <div className="pointer-events-none fixed bottom-4 right-4 z-[70] max-sm:left-auto sm:bottom-6 sm:right-6">
           <button
             type="button"
-            onClick={() => {
-              if (open) {
-                closeChat();
-                return;
-              }
-              attemptOpenChat();
-            }}
-            className="pointer-events-auto ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
-            aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
-            aria-expanded={open}
+            onClick={attemptOpenChat}
+            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
+            aria-label="White Night相談Botを開く"
+            aria-expanded={false}
           >
-            {open ? (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            ) : (
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-            )}
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <MemberGateModal
         open={memberGateOpen}
