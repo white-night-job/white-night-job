@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  formatPlanPriceLabel,
   JOB_PLANS,
   type JobPlan,
 } from "@/lib/job-plan";
 import {
   LISTING_APPLICATION_STATUSES,
   LISTING_APPLICATION_STATUS_LABELS,
+  planLabel,
   type ListingApplicationStatus,
 } from "@/lib/listing-application";
 
@@ -36,6 +36,8 @@ type DetailApplication = Record<string, unknown> & {
   status: ListingApplicationStatus;
   statusLabel: string;
   shop_name: string;
+  requestedPlanLabel?: string;
+  confirmedPlanLabel?: string;
   onboardingUrl?: string | null;
   attachments?: Array<{ url: string; name: string }> | null;
   business_license_document?: { fileName?: string; signedUrl?: string } | null;
@@ -330,8 +332,14 @@ export function ListingReviewsPanel() {
                 ["YouTube", detail.youtube_url],
                 ["その他SNS", detail.other_sns],
                 ["オープン日", detail.open_date],
-                ["希望プラン", detail.requested_plan],
-                ["確定プラン", detail.confirmed_plan],
+                [
+                  "希望プラン",
+                  detail.requestedPlanLabel ?? detail.requested_plan,
+                ],
+                [
+                  "確定プラン",
+                  detail.confirmedPlanLabel ?? detail.confirmed_plan,
+                ],
                 ["掲載希望理由", detail.listing_reason],
                 ["店舗の特徴", detail.shop_features],
                 ["補足", detail.notes],
@@ -418,7 +426,7 @@ export function ListingReviewsPanel() {
               >
                 {JOB_PLANS.map((plan) => (
                   <option key={plan} value={plan}>
-                    {formatPlanPriceLabel(plan)}
+                    {planLabel(plan)}
                   </option>
                 ))}
               </select>

@@ -1,6 +1,13 @@
 ﻿import { randomBytes } from "crypto";
-import type { JobPlan } from "@/lib/job-plan";
-import { JOB_PLANS, isJobPlan, parseJobPlan } from "@/lib/job-plan";
+import {
+  formatJpyPrice,
+  JOB_PLAN_DEFINITIONS,
+  JOB_PLAN_MONTHLY_PRICES,
+  JOB_PLANS,
+  isJobPlan,
+  parseJobPlan,
+  type JobPlan,
+} from "@/lib/job-plan";
 
 export const LISTING_APPLICATION_STATUSES = [
   "pending",
@@ -193,7 +200,7 @@ export function validateListingApplicationInput(
   }
 
   if (!isJobPlan(input.requestedPlan)) {
-    return "希望プランを選択してください。";
+    return "料金プランを選択してください";
   }
 
   if (!input.consentAccuracy) {
@@ -411,11 +418,10 @@ export function rowToPublicStatus(
 }
 
 export function planLabel(plan: JobPlan | null | undefined): string {
-  if (!plan) return "—";
-  if (plan === "light") return "ライト";
-  if (plan === "standard") return "スタンダード";
-  if (plan === "premium") return "プレミアム";
-  return plan;
+  if (!plan || !isJobPlan(plan)) return "—";
+  const name = JOB_PLAN_DEFINITIONS[plan].label;
+  const price = formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan]);
+  return `${name}プラン（月額${price}）`;
 }
 
 export { JOB_PLANS };
