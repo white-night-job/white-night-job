@@ -9,7 +9,11 @@ function openChatBot() {
 
 export function ConsultationPageClient() {
   useEffect(() => {
-    openChatBot();
+    // ChatBot が pathname 変更で一度閉じた後に開く（ルート変更cleanupとの競合回避）
+    const timer = window.setTimeout(() => {
+      openChatBot();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (

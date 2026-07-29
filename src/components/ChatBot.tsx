@@ -197,11 +197,23 @@ export function ChatBot() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyScrollLockRef = useRef(0);
+  const bodyScrollPreviousRef = useRef<{
+    overflow: string;
+    position: string;
+    top: string;
+    left: string;
+    right: string;
+    width: string;
+  } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobilePanelStyle, setMobilePanelStyle] = useState<{
     top: number;
     height: number;
   } | null>(null);
+
+  const closeChat = useCallback(() => {
+    setOpen(false);
+  }, []);
 
   const attemptOpenChat = useCallback(() => {
     if (!ready) return;
@@ -211,6 +223,12 @@ export function ChatBot() {
     }
     setOpen(true);
   }, [isLoggedIn, ready]);
+
+  // レイアウト常駐のため、ルート変更時に必ず閉じる（オーバーレイ／bodyロック残留防止）
+  useEffect(() => {
+    setOpen(false);
+    setMemberGateOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     function handleOpenChat() {
@@ -278,7 +296,8 @@ export function ChatBot() {
       return;
     }
 
-    bodyScrollLockRef.current = window.scrollY;
+    const scrollY = window.scrollY;
+    bodyScrollLockRef.current = scrollY;
     const { style } = document.body;
     const previous = {
       overflow: style.overflow,
@@ -288,24 +307,53 @@ export function ChatBot() {
       right: style.right,
       width: style.width,
     };
+    bodyScrollPreviousRef.current = previous;
 
     style.overflow = "hidden";
     style.position = "fixed";
-    style.top = `-${bodyScrollLockRef.current}px`;
+    style.top = `-${scrollY}px`;
     style.left = "0";
     style.right = "0";
     style.width = "100%";
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
-      style.overflow = previous.overflow;
-      style.position = previous.position;
-      style.top = previous.top;
-      style.left = previous.left;
-      style.right = previous.right;
-      style.width = previous.width;
+      document.removeEventListener("keydown", handleKeyDown);
+      const snapshot = bodyScrollPreviousRef.current;
+      style.overflow = snapshot?.overflow ?? "";
+      style.position = snapshot?.position ?? "";
+      style.top = snapshot?.top ?? "";
+      style.left = snapshot?.left ?? "";
+      style.right = snapshot?.right ?? "";
+      style.width = snapshot?.width ?? "";
+      bodyScrollPreviousRef.current = null;
       window.scrollTo(0, bodyScrollLockRef.current);
     };
   }, [open]);
+
+  // アンマウント時の保険（通常は layout 常駐だが、cleanup漏れを防ぐ）
+  useEffect(() => {
+    return () => {
+      const snapshot = bodyScrollPreviousRef.current;
+      if (!snapshot) return;
+      const { style } = document.body;
+      style.overflow = snapshot.overflow || "";
+      style.position = snapshot.position || "";
+      style.top = snapshot.top || "";
+      style.left = snapshot.left || "";
+      style.right = snapshot.right || "";
+      style.width = snapshot.width || "";
+      bodyScrollPreviousRef.current = null;
+      window.scrollTo(0, bodyScrollLockRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open || !isMobile) {
@@ -320,10 +368,12 @@ export function ChatBot() {
         return;
       }
 
-      const top = Math.max(visualViewport.offsetTop + 8, 8);
+      const safeTop = 8;
+      const top = Math.max(visualViewport.offsetTop + safeTop, safeTop);
+      const available = visualViewport.height - safeTop * 2;
       const height = Math.min(
-        visualViewport.height - 16,
-        Math.min(window.innerHeight * 0.8, visualViewport.height - 16),
+        available,
+        Math.min(window.innerHeight * 0.8, available),
       );
 
       setMobilePanelStyle({
@@ -580,7 +630,7 @@ export function ChatBot() {
       aria-label="White Night相談Bot"
       onClick={(event) => event.stopPropagation()}
     >
-            <div className="flex items-center justify-between border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-white">
+            <div className="flex items-center justify-between border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-white pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold">White Night相談Bot</p>
                 <p className="truncate text-xs text-white/80">
@@ -600,7 +650,7 @@ export function ChatBot() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closeChat}
                   className="rounded-full p-1.5 hover:bg-white/15"
                   aria-label="チャットを閉じる"
                 >
@@ -781,17 +831,17 @@ export function ChatBot() {
 
   return (
     <>
-      {open && (
+      {open ? (
         <div
           className="fixed inset-0 z-[60] bg-black/20 sm:bg-transparent"
-          onClick={() => setOpen(false)}
+          onClick={closeChat}
           aria-hidden
         />
-      )}
+      ) : null}
 
-      {open && isMobile && (
+      {open && isMobile ? (
         <div
-          className="fixed z-[70] sm:hidden"
+          className="fixed z-[70] pointer-events-auto sm:hidden"
           style={
             mobilePanelStyle
               ? {
@@ -803,30 +853,34 @@ export function ChatBot() {
               : {
                   left: 12,
                   right: 12,
-                  bottom: 12,
-                  height: "min(80dvh, calc(100dvh - 24px))",
-                  maxHeight: "calc(100dvh - 24px)",
+                  bottom: "max(12px, env(safe-area-inset-bottom))",
+                  height: "min(80dvh, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))",
+                  maxHeight:
+                    "calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
                 }
           }
         >
           {chatPanel}
         </div>
-      )}
+      ) : null}
 
-      <div className="fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-auto sm:bottom-6 sm:right-6">
-        {open && !isMobile && chatPanel}
+      {/* ラッパーは当たり判定を広げない。操作可能な子だけ pointer-events を有効化 */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-3 max-sm:left-auto sm:bottom-6 sm:right-6">
+        {open && !isMobile ? (
+          <div className="pointer-events-auto">{chatPanel}</div>
+        ) : null}
 
-        {(!open || !isMobile) && (
+        {!open || !isMobile ? (
           <button
             type="button"
             onClick={() => {
               if (open) {
-                setOpen(false);
+                closeChat();
                 return;
               }
               attemptOpenChat();
             }}
-            className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
+            className="pointer-events-auto ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
             aria-label={open ? "チャットを閉じる" : "White Night相談Botを開く"}
             aria-expanded={open}
           >
@@ -845,7 +899,7 @@ export function ChatBot() {
               </svg>
             )}
           </button>
-        )}
+        ) : null}
       </div>
 
       <MemberGateModal
