@@ -590,7 +590,7 @@ export function ListingApplicationForm() {
               </p>
             </Field>
             <Field>
-              <label className={labelClass}>Instagram</label>
+              <label className={labelClass}>Instagram（任意）</label>
               <input
                 className={inputOk}
                 value={form.instagramUrl}
@@ -598,7 +598,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>X</label>
+              <label className={labelClass}>X（任意）</label>
               <input
                 className={inputOk}
                 value={form.xUrl}
@@ -606,7 +606,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>TikTok</label>
+              <label className={labelClass}>TikTok（任意）</label>
               <input
                 className={inputOk}
                 value={form.tiktokUrl}
@@ -614,7 +614,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>LINE公式アカウント</label>
+              <label className={labelClass}>LINE公式アカウント（任意）</label>
               <input
                 className={inputOk}
                 value={form.lineOfficialUrl}
