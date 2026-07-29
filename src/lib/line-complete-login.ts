@@ -7,24 +7,11 @@ import {
   PENDING_MAX_AGE_SEC,
   type LinePendingLoginPayload,
 } from "@/lib/line-friendship";
+import { ensureUserNotificationSettings } from "@/lib/user-notification-settings";
 import {
   attachUserSessionCookie,
   buildUserCookieOptions,
 } from "@/lib/user-auth";
-
-async function ensureUserNotificationSettings(userId: string) {
-  const supabase = createSupabaseAdmin();
-  const { error } = await supabase.from("user_notification_settings").upsert(
-    {
-      user_id: userId,
-      notify_daily_pickup: false,
-    },
-    { onConflict: "user_id", ignoreDuplicates: true },
-  );
-  if (error) {
-    console.error("[line-complete-login] notification settings upsert failed:", error);
-  }
-}
 
 function withoutMaxAge(options: ReturnType<typeof buildUserCookieOptions>) {
   const { maxAge: _ignored, ...rest } = options;
@@ -81,7 +68,15 @@ export async function upsertLineUser(input: {
     throw error ?? new Error("ユーザー情報保存に失敗しました。");
   }
 
-  await ensureUserNotificationSettings(data.id);
+  try {
+    const ensured = await ensureUserNotificationSettings(data.id);
+    console.info("[line-complete-login] notification settings", {
+      userId: data.id,
+      created: ensured.created,
+    });
+  } catch (error) {
+    console.error("[line-complete-login] notification settings failed:", error);
+  }
   return data.id;
 }
 

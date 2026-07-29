@@ -55,6 +55,8 @@ export function LineBroadcastPanel({
   const [selectedAreas, setSelectedAreas] = useState<string[]>(["すすきの"]);
   const [targetJobId, setTargetJobId] = useState(selectedJobId ?? "");
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [dailyTestUserId, setDailyTestUserId] = useState("");
+  const [dailyTestLoading, setDailyTestLoading] = useState(false);
 
   async function executeAction(action: PendingAction) {
     setLoading(true);
@@ -121,6 +123,99 @@ export function LineBroadcastPanel({
         ? current.filter((item) => item !== area)
         : [...current, area],
     );
+  }
+
+  async function runDailyPickupTest(dryRun: boolean) {
+    const userId = dailyTestUserId.trim();
+    if (!userId) {
+      onMessage("毎日PickUpテストには users.id（UUID）を入力してください。");
+      return;
+    }
+    setDailyTestLoading(true);
+    onMessage("");
+    try {
+      const response = await fetch("/api/admin/daily-pickup-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userId, dryRun }),
+      });
+      const data = (await response.json()) as {
+        message?: string;
+        hint?: string;
+        diagnosis?: {
+          eligible?: boolean;
+          reasons?: string[];
+          matchingTopShopCount?: number;
+          alreadySentToday?: boolean;
+          notifyDailyPickup?: boolean;
+          areaCount?: number;
+          lineUserIdMasked?: string | null;
+        };
+        result?: {
+          sent?: number;
+          failed?: number;
+          skippedDuplicate?: number;
+          lineHttpStatuses?: number[];
+          deliveredJobIds?: string[];
+          executedAtJst?: string;
+        };
+      };
+      if (!response.ok) {
+        const reasons = data.diagnosis?.reasons?.join(" / ");
+        throw new Error(
+          [data.message, reasons].filter(Boolean).join(" — ") ||
+            "毎日PickUpテストに失敗しました。",
+        );
+      }
+      if (dryRun) {
+        onMessage(
+          [
+            "【診断のみ・未送信】",
+            data.hint,
+            data.diagnosis?.notifyDailyPickup === false
+              ? "毎日通知OFF"
+              : "毎日通知ON",
+            `地域数=${data.diagnosis?.areaCount ?? 0}`,
+            `一致最優先店舗=${data.diagnosis?.matchingTopShopCount ?? 0}`,
+            data.diagnosis?.lineUserIdMasked
+              ? `LINE=${data.diagnosis.lineUserIdMasked}`
+              : null,
+            data.diagnosis?.alreadySentToday ? "本日既送あり" : null,
+          ]
+            .filter(Boolean)
+            .join(" / "),
+        );
+        return;
+      }
+      onMessage(
+        [
+          "【1件テスト送信完了】",
+          `成功=${data.result?.sent ?? 0}`,
+          `失敗=${data.result?.failed ?? 0}`,
+          `重複スキップ=${data.result?.skippedDuplicate ?? 0}`,
+          data.result?.lineHttpStatuses?.length
+            ? `LINE HTTP=${data.result.lineHttpStatuses.join(",")}`
+            : null,
+          data.result?.executedAtJst
+            ? `実行=${data.result.executedAtJst}`
+            : null,
+          data.result?.deliveredJobIds?.[0]
+            ? `店舗ID=${data.result.deliveredJobIds[0]}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" / "),
+      );
+    } catch (error) {
+      onMessage(
+        error instanceof Error
+          ? error.message
+          : "毎日PickUpテストに失敗しました。",
+      );
+    } finally {
+      setDailyTestLoading(false);
+    }
   }
 
   const effectiveJobId = targetJobId || selectedJobId || "";
@@ -232,6 +327,49 @@ export function LineBroadcastPanel({
               className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-semibold text-gold-dark disabled:opacity-60"
             >
               お気に入り登録者へ送信
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-300/50 bg-amber-50/60 p-4">
+          <p className="text-sm font-semibold text-charcoal">
+            毎日PickUp（20時配信）の安全テスト
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            指定した users.id の1人だけに、Cronと同じ配信ロジックで診断／送信します。全員への一斉再送はできません。文面は本番と同じです。
+          </p>
+          <input
+            type="text"
+            value={dailyTestUserId}
+            onChange={(event) => setDailyTestUserId(event.target.value)}
+            placeholder="users.id（UUID）"
+            className="mt-3 w-full rounded-xl border border-gold/25 bg-white px-3 py-2 text-sm text-charcoal"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={dailyTestLoading || !dailyTestUserId.trim()}
+              onClick={() => void runDailyPickupTest(true)}
+              className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-semibold text-gold-dark disabled:opacity-60"
+            >
+              {dailyTestLoading ? "処理中..." : "診断のみ（未送信）"}
+            </button>
+            <button
+              type="button"
+              disabled={dailyTestLoading || !dailyTestUserId.trim()}
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "指定した1ユーザーだけへ毎日PickUpを実送信します。よろしいですか？（本日既送の場合は二重送信防止で止まります）",
+                  )
+                ) {
+                  return;
+                }
+                void runDailyPickupTest(false);
+              }}
+              className="rounded-full border border-charcoal/20 bg-charcoal px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {dailyTestLoading ? "送信中..." : "1件だけ実送信"}
             </button>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   MIN_HOURLY_WAGE_OPTIONS,
   NOTIFICATION_JOB_TYPE_OPTIONS,
 } from "@/lib/notification-preferences";
+import { ensureUserNotificationSettings } from "@/lib/user-notification-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -23,28 +24,18 @@ type SettingsPayload = {
   minHourlyWage?: number;
 };
 
-async function ensureSettingsRow(userId: string) {
+async function getOrCreateSettingsRow(userId: string) {
+  await ensureUserNotificationSettings(userId);
   const supabase = createSupabaseAdmin();
-  const { data: existing } = await supabase
+  const { data, error } = await supabase
     .from("user_notification_settings")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  if (existing) return existing;
-
-  const { data, error } = await supabase
-    .from("user_notification_settings")
-    .insert({
-      user_id: userId,
-      notify_new_jobs: true,
-      notify_pickup_jobs: true,
-      notify_favorite_updates: true,
-      notify_daily_pickup: false,
-      min_hourly_wage: 0,
-    })
-    .select("*")
-    .single();
   if (error) throw error;
+  if (!data) {
+    throw new Error("通知設定の初期化に失敗しました。");
+  }
   return data;
 }
 
@@ -126,7 +117,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "LINEログインが必要です。" }, { status: 401 });
   }
   try {
-    const row = await ensureSettingsRow(userId);
+    const row = await getOrCreateSettingsRow(userId);
     const [notificationAreas, notificationJobTypes] = await Promise.all([
       fetchNotificationAreas(userId),
       fetchNotificationJobTypes(userId),

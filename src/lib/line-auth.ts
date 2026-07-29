@@ -163,17 +163,23 @@ export function isLineBlockedError(status: number, body: string): boolean {
   );
 }
 
+export function maskLineUserId(lineUserId: string): string {
+  const value = lineUserId.trim();
+  if (value.length <= 8) return "***";
+  return `${value.slice(0, 6)}…${value.slice(-2)}`;
+}
+
 export async function sendLinePushMessage(
   lineUserId: string,
   message: string,
-): Promise<void> {
-  await sendLinePushMessages(lineUserId, [{ type: "text", text: message }]);
+): Promise<{ status: number }> {
+  return sendLinePushMessages(lineUserId, [{ type: "text", text: message }]);
 }
 
 export async function sendLinePushMessages(
   lineUserId: string,
   messages: unknown[],
-): Promise<void> {
+): Promise<{ status: number }> {
   const channelToken = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim();
   if (!channelToken) {
     throw new Error("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN is not set.");
@@ -192,11 +198,11 @@ export async function sendLinePushMessages(
   if (!response.ok) {
     const errorBody = await response.text();
     console.error("[line-auth] push message failed", {
-      lineUserId,
+      lineUserIdMasked: maskLineUserId(lineUserId),
       status: response.status,
-      errorBody,
-      messages,
+      errorBody: errorBody.slice(0, 500),
     });
     throw new LinePushError(response.status, errorBody);
   }
+  return { status: response.status };
 }

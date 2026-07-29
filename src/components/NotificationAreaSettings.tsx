@@ -21,7 +21,7 @@ export const EMPTY_NOTIFICATION_SETTINGS: NotificationSettingsState = {
   notifyNewJobs: true,
   notifyPickupJobs: true,
   notifyFavoriteUpdates: true,
-  notifyDailyPickup: false,
+  notifyDailyPickup: true,
   notificationAreas: [],
   notificationJobTypes: [],
   minHourlyWage: 0,
