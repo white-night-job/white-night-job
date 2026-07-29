@@ -625,3 +625,39 @@
 .for-shops-page .for-shops-cta .fsl-section-head__title {
   font-size: 1.3125rem;
 }
+
+.for-shops-page .for-shops-plan-note {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgba(17, 17, 17, 0.62);
+  text-align: center;
+}
+
+.for-shops-page .for-shops-apply-cta {
+  margin-top: 1.75rem;
+  padding: 1.5rem 1.25rem;
+  border-radius: 20px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: linear-gradient(165deg, #fffdf8 0%, #f7f0e4 100%);
+  text-align: center;
+}
+
+.for-shops-page .for-shops-apply-cta-title {
+  margin: 0;
+  font-family: var(--font-serif, serif);
+  font-size: 1.25rem;
+  color: #111;
+}
+
+.for-shops-page .for-shops-apply-cta-text {
+  margin: 0.75rem auto 1.25rem;
+  max-width: 36rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: rgba(17, 17, 17, 0.72);
+}
+
+.for-shops-page .for-shops-apply-cta-sub {
+  margin-top: 0.875rem;
+}

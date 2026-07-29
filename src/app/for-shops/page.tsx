@@ -76,9 +76,9 @@ function PlanFeatureValue({ value }: { value: string }) {
 }
 
 const STEPS = [
-  { step: "01", title: "お問い合わせ", desc: "フォーム・電話・メールからご連絡ください。" },
-  { step: "02", title: "審査", desc: "優良店としての掲載可否を確認します。" },
-  { step: "03", title: "掲載準備", desc: "求人情報・写真・プラン内容を整えます。" },
+  { step: "01", title: "掲載審査申込", desc: "店舗情報を入力し、掲載審査を申し込みます。" },
+  { step: "02", title: "審査", desc: "掲載基準に沿って店舗情報を確認します。" },
+  { step: "03", title: "掲載準備", desc: "承認後に求人情報・写真・プランを整えます。" },
   { step: "04", title: "公開", desc: "サイト上に公開し、採用活動をスタート。" },
 ] as const;
 
@@ -199,12 +199,12 @@ export default function ForShopsPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="#for-shops-contact"
+                <Link
+                  href={`/for-shops/apply?plan=${plan.key}`}
                   className={`for-shops-btn ${plan.recommended ? "for-shops-btn-primary" : "for-shops-btn-secondary"}`}
                 >
-                  このプランで相談する
-                </a>
+                  このプランで審査申込
+                </Link>
               </article>
             ))}
           </div>
@@ -262,8 +262,24 @@ export default function ForShopsPage() {
           </div>
 
           <p className="for-shops-plan-note">
-            ※表示価格は税込の目安です。詳細・キャンペーンはお問い合わせ時にご案内します。
+            ※表示価格は税込の目安です。審査承認後にプランを最終確定します。承認前に料金請求は確定しません。
           </p>
+
+          <div className="for-shops-apply-cta">
+            <h3 className="for-shops-apply-cta-title">掲載審査を申し込む</h3>
+            <p className="for-shops-apply-cta-text">
+              掲載前に店舗情報を確認し、当サイトの掲載基準に沿って審査を行います。
+              審査通過後に、プラン選択・求人情報入力・掲載開始へ進みます。
+            </p>
+            <Link href="/for-shops/apply" className="for-shops-btn for-shops-btn-primary">
+              掲載審査を申し込む
+            </Link>
+            <p className="for-shops-apply-cta-sub">
+              <Link href="/for-shops/review-status" className="for-shops-text-link">
+                申請済みの方は審査状況を確認
+              </Link>
+            </p>
+          </div>
         </div>
       </section>
 
@@ -307,8 +323,16 @@ export default function ForShopsPage() {
             <h2 className="fsl-section-head__title">掲載をご希望の店舗様はこちら</h2>
           </header>
           <p className="for-shops-cta-sub">
-            お問い合わせフォーム、電話、メールからお気軽にご相談ください。
+            まずは掲載審査へお申し込みください。お問い合わせのみのご相談も受け付けています。
           </p>
+          <div className="mb-6 flex flex-col items-center gap-3">
+            <Link href="/for-shops/apply" className="for-shops-btn for-shops-btn-primary">
+              掲載審査を申し込む
+            </Link>
+            <Link href="/for-shops/review-status" className="for-shops-text-link">
+              審査状況を確認する
+            </Link>
+          </div>
           <ForShopsContactForm />
           <div className="for-shops-cta-links">
             <Link href="/terms-shop" className="for-shops-text-link">

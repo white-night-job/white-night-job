@@ -862,6 +862,9 @@ export default function AdminPage() {
         <a href="#admin-jobs" className="admin-sidebar-link">
           掲載店舗検索
         </a>
+        <Link href="/admin/listing-reviews" className="admin-sidebar-link">
+          掲載審査管理
+        </Link>
         <a href="#admin-broadcast" className="admin-sidebar-link">
           LINE配信
         </a>
