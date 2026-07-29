@@ -38,6 +38,12 @@ type DetailApplication = Record<string, unknown> & {
   shop_name: string;
   onboardingUrl?: string | null;
   attachments?: Array<{ url: string; name: string }> | null;
+  business_license_document?: { fileName?: string; signedUrl?: string } | null;
+  entertainment_license_document?: { fileName?: string; signedUrl?: string } | null;
+  late_night_alcohol_notification_document?: {
+    fileName?: string;
+    signedUrl?: string;
+  } | null;
 };
 
 type EventRow = {
@@ -323,7 +329,6 @@ export function ListingReviewsPanel() {
                 ["LINE公式", detail.line_official_url],
                 ["YouTube", detail.youtube_url],
                 ["その他SNS", detail.other_sns],
-                ["営業許可", detail.business_license_info],
                 ["オープン日", detail.open_date],
                 ["希望プラン", detail.requested_plan],
                 ["確定プラン", detail.confirmed_plan],
@@ -339,6 +344,36 @@ export function ListingReviewsPanel() {
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="grid gap-3 text-sm sm:grid-cols-3">
+            {([
+              ["Business License", detail.business_license_document],
+              ["Entertainment License", detail.entertainment_license_document],
+              [
+                "Late-night Alcohol Notification",
+                detail.late_night_alcohol_notification_document,
+              ],
+            ] as Array<[string, unknown]>).map(([label, doc]) => {
+              const value = doc as { fileName?: string; signedUrl?: string } | null;
+              return (
+                <div key={label} className="rounded-lg border border-gold/20 px-3 py-2">
+                  <p className="text-xs text-muted">{label}</p>
+                  {value?.signedUrl ? (
+                    <a
+                      href={value.signedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block text-gold-dark underline"
+                    >
+                      {value.fileName ?? "View document"}
+                    </a>
+                  ) : (
+                    <p className="mt-1 text-muted">Not submitted</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {Array.isArray(detail.attachments) && detail.attachments.length > 0 && (

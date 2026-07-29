@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { createClient } from "@supabase/supabase-js";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -23,6 +23,10 @@ export function createSupabaseAdmin() {
 
 export const SHOP_IMAGE_BUCKET =
   process.env.SUPABASE_SHOP_IMAGE_BUCKET ?? "shop-images";
+
+export const LISTING_APPLICATION_DOCUMENT_BUCKET =
+  process.env.SUPABASE_LISTING_APPLICATION_DOCUMENT_BUCKET ??
+  "listing-application-documents";
 
 export function hasSupabasePublicConfig(): boolean {
   return Boolean(

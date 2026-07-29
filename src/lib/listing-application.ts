@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+﻿import { randomBytes } from "crypto";
 import type { JobPlan } from "@/lib/job-plan";
 import { JOB_PLANS, isJobPlan, parseJobPlan } from "@/lib/job-plan";
 
@@ -31,6 +31,16 @@ export type ListingAttachment = {
   name: string;
   size: number;
   type: string;
+  storagePath?: string;
+};
+
+export type ListingDocumentMeta = {
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+  signedUrl?: string;
 };
 
 export type ListingApplicationInput = {
@@ -50,7 +60,6 @@ export type ListingApplicationInput = {
   lineOfficialUrl: string;
   youtubeUrl?: string;
   otherSns?: string;
-  businessLicenseInfo: string;
   openDate: string;
   requestedPlan: JobPlan;
   listingReason: string;
@@ -59,6 +68,11 @@ export type ListingApplicationInput = {
   consentAccuracy: boolean;
   consentTerms: boolean;
   attachments?: ListingAttachment[];
+  businessLicenseDocument?: ListingDocumentMeta | null;
+  entertainmentLicenseDocument?: ListingDocumentMeta | null;
+  lateNightAlcoholNotificationDocument?: ListingDocumentMeta | null;
+  /** legacy hidden field */
+  businessLicenseInfo?: string;
   /** honeypot — must be empty */
   website?: string;
   /** form open timestamp ms */
@@ -129,10 +143,21 @@ function requiredText(value: unknown, label: string): string | null {
   return null;
 }
 
+function isDocMeta(value: unknown): value is ListingDocumentMeta {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.storagePath === "string" &&
+    typeof v.fileName === "string" &&
+    typeof v.mimeType === "string" &&
+    typeof v.size === "number" &&
+    typeof v.uploadedAt === "string"
+  );
+}
+
 export function validateListingApplicationInput(
   input: Partial<ListingApplicationInput>,
 ): string | null {
-  // honeypot
   if (typeof input.website === "string" && input.website.trim()) {
     return "送信に失敗しました。しばらくしてから再度お試しください。";
   }
@@ -154,7 +179,6 @@ export function validateListingApplicationInput(
     requiredText(input.contactPhone, "担当者電話番号"),
     requiredText(input.contactEmail, "担当者メールアドレス"),
     requiredText(input.websiteUrl, "公式WebサイトまたはSNSのURL"),
-    requiredText(input.businessLicenseInfo, "営業許可に関する情報"),
     requiredText(input.openDate, "オープン日"),
     requiredText(input.listingReason, "掲載を希望する理由"),
     requiredText(input.shopFeatures, "店舗の特徴"),
@@ -162,6 +186,10 @@ export function validateListingApplicationInput(
 
   for (const error of checks) {
     if (error) return error;
+  }
+
+  if (!isDocMeta(input.businessLicenseDocument)) {
+    return "営業許可証をアップロードしてください。";
   }
 
   if (!isJobPlan(input.requestedPlan)) {
@@ -218,6 +246,18 @@ export function normalizeListingApplicationInput(
   input: ListingApplicationInput,
 ): ListingApplicationInput {
   const trim = (value: string | undefined) => (value ?? "").trim();
+  const normalizeDoc = (doc?: ListingDocumentMeta | null) =>
+    isDocMeta(doc)
+      ? {
+          storagePath: doc.storagePath.trim(),
+          fileName: doc.fileName.trim(),
+          mimeType: doc.mimeType.trim(),
+          size: Number(doc.size || 0),
+          uploadedAt: doc.uploadedAt,
+          signedUrl: doc.signedUrl,
+        }
+      : null;
+
   return {
     shopName: trim(input.shopName),
     shopAddress: trim(input.shopAddress),
@@ -237,13 +277,18 @@ export function normalizeListingApplicationInput(
     otherSns: trim(input.otherSns) || undefined,
     businessLicenseInfo: trim(input.businessLicenseInfo),
     openDate: trim(input.openDate),
-    requestedPlan: parseJobPlan(input.requestedPlan) ?? "light",
+    requestedPlan: parseJobPlan(input.requestedPlan),
     listingReason: trim(input.listingReason),
     shopFeatures: trim(input.shopFeatures),
     notes: trim(input.notes) || undefined,
     consentAccuracy: Boolean(input.consentAccuracy),
     consentTerms: Boolean(input.consentTerms),
     attachments: Array.isArray(input.attachments) ? input.attachments : [],
+    businessLicenseDocument: normalizeDoc(input.businessLicenseDocument),
+    entertainmentLicenseDocument: normalizeDoc(input.entertainmentLicenseDocument),
+    lateNightAlcoholNotificationDocument: normalizeDoc(
+      input.lateNightAlcoholNotificationDocument,
+    ),
     website: "",
     formOpenedAt: input.formOpenedAt,
   };
@@ -276,7 +321,7 @@ export function inputToDbRow(
     line_official_url: input.lineOfficialUrl,
     youtube_url: input.youtubeUrl ?? null,
     other_sns: input.otherSns ?? null,
-    business_license_info: input.businessLicenseInfo,
+    business_license_info: input.businessLicenseInfo ?? "",
     open_date: input.openDate,
     requested_plan: input.requestedPlan,
     listing_reason: input.listingReason,
@@ -285,6 +330,10 @@ export function inputToDbRow(
     consent_accuracy: input.consentAccuracy,
     consent_terms: input.consentTerms,
     attachments: input.attachments ?? [],
+    business_license_document: input.businessLicenseDocument ?? null,
+    entertainment_license_document: input.entertainmentLicenseDocument ?? null,
+    late_night_alcohol_notification_document:
+      input.lateNightAlcoholNotificationDocument ?? null,
     client_ip: extras.clientIp ?? null,
     user_agent: extras.userAgent ?? null,
   };
@@ -311,6 +360,9 @@ export type ListingApplicationRow = {
   youtube_url: string | null;
   other_sns: string | null;
   business_license_info: string;
+  business_license_document: ListingDocumentMeta | null;
+  entertainment_license_document: ListingDocumentMeta | null;
+  late_night_alcohol_notification_document: ListingDocumentMeta | null;
   open_date: string;
   requested_plan: JobPlan;
   confirmed_plan: JobPlan | null;
@@ -347,8 +399,7 @@ export function rowToPublicStatus(
     requestedPlan: row.requested_plan,
     confirmedPlan: row.confirmed_plan,
     submittedAt: row.created_at,
-    rejectionReason:
-      row.status === "rejected" ? row.rejection_reason : null,
+    rejectionReason: row.status === "rejected" ? row.rejection_reason : null,
     needsInfoMessage:
       row.status === "needs_info" ? row.needs_info_message : null,
     needsInfoDeadline:

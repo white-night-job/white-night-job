@@ -13,7 +13,7 @@ import {
   notifyAdminNewApplication,
   notifyApplicantReceived,
 } from "@/lib/listing-application-email";
-import { createSupabaseAdmin } from "@/lib/supabase";
+import { createSupabaseAdmin, LISTING_APPLICATION_DOCUMENT_BUCKET } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -102,7 +102,55 @@ export async function POST(request: Request) {
       throw error ?? new Error("insert failed");
     }
 
-    const saved = data as ListingApplicationRow;
+    let saved = data as ListingApplicationRow;
+
+    const documentMappings = [
+      ["businessLicenseDocument", "business_license_document", "business-license"],
+      [
+        "entertainmentLicenseDocument",
+        "entertainment_license_document",
+        "entertainment-license",
+      ],
+      [
+        "lateNightAlcoholNotificationDocument",
+        "late_night_alcohol_notification_document",
+        "late-night-alcohol-notification",
+      ],
+    ] as const;
+
+    const updatePayload: Record<string, unknown> = {};
+    for (const [inputKey, dbKey, folder] of documentMappings) {
+      const doc = input[inputKey];
+      if (!doc?.storagePath) continue;
+      const fileName = doc.storagePath.split("/").pop();
+      if (!fileName) continue;
+      const targetPath = `${saved.id}/${folder}/${fileName}`;
+      if (doc.storagePath !== targetPath) {
+        const { error: moveError } = await supabase.storage
+          .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
+          .move(doc.storagePath, targetPath);
+        if (moveError) {
+          console.error("[listing-applications] document move failed:", moveError);
+          continue;
+        }
+      }
+      updatePayload[dbKey] = {
+        ...doc,
+        storagePath: targetPath,
+      };
+    }
+
+    if (Object.keys(updatePayload).length > 0) {
+      const { data: moved, error: updateError } = await supabase
+        .from("listing_applications")
+        .update(updatePayload)
+        .eq("id", saved.id)
+        .select("*")
+        .single();
+      if (!updateError && moved) {
+        saved = moved as ListingApplicationRow;
+      }
+    }
 
     await supabase.from("listing_application_events").insert({
       application_id: saved.id,

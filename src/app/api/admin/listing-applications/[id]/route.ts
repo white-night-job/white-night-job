@@ -17,7 +17,7 @@ import {
   notifyApplicantRejected,
 } from "@/lib/listing-application-email";
 import { isJobPlan } from "@/lib/job-plan";
-import { createSupabaseAdmin } from "@/lib/supabase";
+import { createSupabaseAdmin, LISTING_APPLICATION_DOCUMENT_BUCKET } from "@/lib/supabase";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -83,6 +83,28 @@ async function appendEvent(options: {
   });
 }
 
+async function attachSignedDocumentUrls(row: ListingApplicationRow) {
+  const supabase = createSupabaseAdmin();
+  const sign = async (doc: unknown) => {
+    if (!doc || typeof doc !== "object") return doc ?? null;
+    const storagePath = (doc as { storagePath?: string }).storagePath;
+    if (!storagePath) return doc;
+    const { data, error } = await supabase.storage
+      .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
+      .createSignedUrl(storagePath, 60 * 10);
+    if (error) return doc;
+    return { ...(doc as Record<string, unknown>), signedUrl: data.signedUrl };
+  };
+  return {
+    ...row,
+    business_license_document: await sign(row.business_license_document),
+    entertainment_license_document: await sign(row.entertainment_license_document),
+    late_night_alcohol_notification_document: await sign(
+      row.late_night_alcohol_notification_document,
+    ),
+  };
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -95,11 +117,12 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ message: "申請が見つかりません。" }, { status: 404 });
     }
     const events = await loadEvents(id);
+    const rowWithSigned = await attachSignedDocumentUrls(row);
 
     return NextResponse.json({
       ok: true,
       application: {
-        ...row,
+        ...rowWithSigned,
         statusLabel: LISTING_APPLICATION_STATUS_LABELS[row.status],
         requestedPlanLabel: planLabel(row.requested_plan),
         confirmedPlanLabel: planLabel(row.confirmed_plan),
@@ -286,10 +309,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const events = await loadEvents(id);
+    const updatedWithSigned = await attachSignedDocumentUrls(updated);
     return NextResponse.json({
       ok: true,
       application: {
-        ...updated,
+        ...updatedWithSigned,
         statusLabel: LISTING_APPLICATION_STATUS_LABELS[updated.status],
         requestedPlanLabel: planLabel(updated.requested_plan),
         confirmedPlanLabel: planLabel(updated.confirmed_plan),
