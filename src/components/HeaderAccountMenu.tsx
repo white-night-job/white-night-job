@@ -70,6 +70,8 @@ export function HeaderAccountMenu() {
     event.preventDefault();
     event.stopPropagation();
 
+    window.dispatchEvent(new CustomEvent("wn:close-chat"));
+
     if (!ready) return;
     if (isLoggedIn) {
       setMenuOpen((current) => !current);
@@ -109,7 +111,10 @@ export function HeaderAccountMenu() {
                   <Link
                     href="/mypage"
                     prefetch
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("wn:close-chat"));
+                      setMenuOpen(false);
+                    }}
                     className="header-account-item"
                   >
                     マイページ

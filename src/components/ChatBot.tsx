@@ -158,6 +158,9 @@ function RecommendationCard({ item }: { item: ChatRecommendation }) {
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Link
             href={`/jobs/${item.id}`}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("wn:close-chat"));
+            }}
             className="rounded-full border border-gold/40 px-3 py-2 text-center text-xs font-medium text-gold-dark hover:bg-ivory"
           >
             求人詳細を見る
@@ -206,9 +209,25 @@ export function ChatBot() {
     width: string;
   } | null>(null);
 
-  const closeChat = useCallback(() => {
-    setOpen(false);
+  const unlockBodyScroll = useCallback(() => {
+    const snapshot = bodyScrollPreviousRef.current;
+    if (!snapshot) return;
+    const { style } = document.body;
+    style.overflow = snapshot.overflow || "";
+    style.position = snapshot.position || "";
+    style.top = snapshot.top || "";
+    style.left = snapshot.left || "";
+    style.right = snapshot.right || "";
+    style.width = snapshot.width || "";
+    bodyScrollPreviousRef.current = null;
+    window.scrollTo(0, bodyScrollLockRef.current);
   }, []);
+
+  const closeChat = useCallback(() => {
+    // メニュー操作より先にロック解除できるよう、state更新前に即時解除する
+    unlockBodyScroll();
+    setOpen(false);
+  }, [unlockBodyScroll]);
 
   const attemptOpenChat = useCallback(() => {
     if (!ready) return;
@@ -221,18 +240,26 @@ export function ChatBot() {
 
   // レイアウト常駐のため、ルート変更時に必ず閉じる（オーバーレイ／bodyロック残留防止）
   useEffect(() => {
+    unlockBodyScroll();
     setOpen(false);
     setMemberGateOpen(false);
-  }, [pathname]);
+  }, [pathname, unlockBodyScroll]);
 
   useEffect(() => {
     function handleOpenChat() {
       attemptOpenChat();
     }
+    function handleCloseChat() {
+      closeChat();
+    }
 
     window.addEventListener("wn:open-chat", handleOpenChat);
-    return () => window.removeEventListener("wn:open-chat", handleOpenChat);
-  }, [attemptOpenChat]);
+    window.addEventListener("wn:close-chat", handleCloseChat);
+    return () => {
+      window.removeEventListener("wn:open-chat", handleOpenChat);
+      window.removeEventListener("wn:close-chat", handleCloseChat);
+    };
+  }, [attemptOpenChat, closeChat]);
 
   const scrollToAnchor = useCallback(
     (anchor: { kind: "user-question" | "recommendations"; messageId: string }) => {
@@ -305,6 +332,7 @@ export function ChatBot() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        unlockBodyScroll();
         setOpen(false);
       }
     }
@@ -313,34 +341,25 @@ export function ChatBot() {
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      const snapshot = bodyScrollPreviousRef.current;
-      style.overflow = snapshot?.overflow ?? "";
-      style.position = snapshot?.position ?? "";
-      style.top = snapshot?.top ?? "";
-      style.left = snapshot?.left ?? "";
-      style.right = snapshot?.right ?? "";
-      style.width = snapshot?.width ?? "";
+      // closeChat で既に解除済みなら何もしない
+      if (!bodyScrollPreviousRef.current) return;
+      style.overflow = previous.overflow;
+      style.position = previous.position;
+      style.top = previous.top;
+      style.left = previous.left;
+      style.right = previous.right;
+      style.width = previous.width;
       bodyScrollPreviousRef.current = null;
       window.scrollTo(0, bodyScrollLockRef.current);
     };
-  }, [open]);
+  }, [open, unlockBodyScroll]);
 
   // アンマウント時の保険（通常は layout 常駐だが、cleanup漏れを防ぐ）
   useEffect(() => {
     return () => {
-      const snapshot = bodyScrollPreviousRef.current;
-      if (!snapshot) return;
-      const { style } = document.body;
-      style.overflow = snapshot.overflow || "";
-      style.position = snapshot.position || "";
-      style.top = snapshot.top || "";
-      style.left = snapshot.left || "";
-      style.right = snapshot.right || "";
-      style.width = snapshot.width || "";
-      bodyScrollPreviousRef.current = null;
-      window.scrollTo(0, bodyScrollLockRef.current);
+      unlockBodyScroll();
     };
-  }, []);
+  }, [unlockBodyScroll]);
 
   useEffect(() => {
     if (!open || step !== "chat") return;
@@ -572,230 +591,255 @@ export function ChatBot() {
   return (
     <>
       {open ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-[90] flex flex-col bg-ivory"
-          style={{
-            top: "3.5rem",
-            height: "calc(100dvh - 3.5rem)",
-          }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="White Night相談Bot"
-        >
-          {/* 共通ヘッダー（z-100）の下を不透明に覆い、元ページコンテンツを隠す */}
-          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-ivory pb-[env(safe-area-inset-bottom)]">
-            <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-3 py-2.5 text-white sm:px-4 sm:py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">White Night相談Bot</p>
-                <p className="truncate text-xs text-white/80">
-                  {step === "chat" && selectedAreas.length > 0
-                    ? `エリア: ${selectedAreas.join("、")}`
-                    : "夜職の相談"}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={resetConversation}
-                  className="rounded-full px-2 py-1 text-xs hover:bg-white/15"
-                  title="会話をリセット"
-                >
-                  リセット
-                </button>
-                <button
-                  type="button"
-                  onClick={closeChat}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15"
-                  aria-label="AI相談を閉じる"
-                >
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden
+        <>
+          {/* ヘッダー下のみ覆う。ハンバーガー／ロゴ／マイページは操作可能 */}
+          <div
+            className="fixed inset-x-0 bottom-0 z-[80] bg-black/30"
+            style={{ top: "3.5rem" }}
+            onClick={closeChat}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none fixed inset-x-0 z-[85] flex justify-center"
+            style={{
+              top: "calc(3.5rem + 8px + env(safe-area-inset-top, 0px))",
+              bottom: "max(12px, env(safe-area-inset-bottom))",
+            }}
+          >
+            <div
+              className="pointer-events-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[20px] border border-gold/30 bg-ivory shadow-2xl"
+              style={{
+                width: "calc(100% - 24px)",
+                height: "min(86dvh, 900px)",
+                maxHeight: "100%",
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="White Night相談Bot"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-gold/20 bg-gradient-to-r from-gold to-gold-dark px-3 py-2.5 text-white sm:px-4 sm:py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">White Night相談Bot</p>
+                  <p className="truncate text-xs text-white/80">
+                    {step === "chat" && selectedAreas.length > 0
+                      ? `エリア: ${selectedAreas.join("、")}`
+                      : "夜職の相談"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={resetConversation}
+                    className="rounded-full px-2 py-1 text-xs hover:bg-white/15"
+                    title="会話をリセット"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {step === "area" ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5">
-                <p className="text-sm font-medium text-charcoal">
-                  まず希望エリアを選んでください。複数選択できます。
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {CHAT_AREA_OPTIONS.map((area) => {
-                    const selected = draftAreas.includes(area);
-                    return (
-                      <button
-                        key={area}
-                        type="button"
-                        onClick={() => toggleDraftArea(area)}
-                        className={`min-h-[48px] rounded-xl border px-3 py-3 text-sm font-medium transition ${
-                          selected
-                            ? "border-gold bg-gold text-white shadow-sm"
-                            : "border-gold/30 bg-white text-charcoal hover:border-gold"
-                        }`}
-                      >
-                        {area}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  disabled={draftAreas.length === 0}
-                  onClick={startChatWithAreas}
-                  className="mt-5 w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
-                >
-                  このエリアで相談を始める
-                </button>
-              </div>
-            ) : (
-              <>
-                <div
-                  ref={messagesContainerRef}
-                  className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4"
-                >
-                  {messages.map((message, messageIndex) => (
-                    <div
-                      key={message.id}
-                      ref={(element) => {
-                        if (element) {
-                          messageRefs.current.set(message.id, element);
-                        } else {
-                          messageRefs.current.delete(message.id);
-                        }
-                      }}
-                      className={`scroll-mt-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    リセット
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeChat}
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-white/15"
+                    aria-label="AI相談を閉じる"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden
                     >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {step === "area" ? (
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-5">
+                  <p className="text-sm font-medium text-charcoal">
+                    まず希望エリアを選んでください。複数選択できます。
+                  </p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {CHAT_AREA_OPTIONS.map((area) => {
+                      const selected = draftAreas.includes(area);
+                      return (
+                        <button
+                          key={area}
+                          type="button"
+                          onClick={() => toggleDraftArea(area)}
+                          className={`min-h-[48px] rounded-xl border px-3 py-3 text-sm font-medium transition ${
+                            selected
+                              ? "border-gold bg-gold text-white shadow-sm"
+                              : "border-gold/30 bg-white text-charcoal hover:border-gold"
+                          }`}
+                        >
+                          {area}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={draftAreas.length === 0}
+                    onClick={startChatWithAreas}
+                    className="mt-5 w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-50"
+                  >
+                    このエリアで相談を始める
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div
+                    ref={messagesContainerRef}
+                    className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4"
+                  >
+                    {messages.map((message, messageIndex) => (
                       <div
-                        className={`max-w-full rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap sm:max-w-[92%] ${
-                          message.role === "user"
-                            ? "bg-gold text-white"
-                            : "border border-gold/20 bg-white text-charcoal"
-                        }`}
+                        key={message.id}
+                        ref={(element) => {
+                          if (element) {
+                            messageRefs.current.set(message.id, element);
+                          } else {
+                            messageRefs.current.delete(message.id);
+                          }
+                        }}
+                        className={`scroll-mt-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
-                        {message.content}
-                        {shouldShowRecommendLink(message, messages, messageIndex) && (
-                          <button
-                            type="button"
-                            onClick={() => void showRecommendations()}
-                            disabled={loading}
-                            className="mt-3 inline-flex min-h-[44px] items-center py-1 text-sm font-medium text-gold-dark no-underline transition hover:underline disabled:opacity-50"
-                          >
-                            条件に合う店舗を見る →
-                          </button>
-                        )}
-                        {message.recommendations &&
-                          message.recommendations.length > 0 && (
-                            <div className="mt-3 flex flex-col gap-3">
-                              <p
-                                ref={(element) => {
-                                  if (element) {
-                                    recommendTitleRefs.current.set(
-                                      message.id,
-                                      element,
-                                    );
-                                  } else {
-                                    recommendTitleRefs.current.delete(message.id);
-                                  }
-                                }}
-                                className="scroll-mt-2 text-sm font-semibold text-charcoal"
-                              >
-                                おすすめ店舗
-                              </p>
-                              {message.recommendations.map((item) => (
-                                <RecommendationCard key={item.id} item={item} />
-                              ))}
-                            </div>
+                        <div
+                          className={`max-w-full rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap sm:max-w-[92%] ${
+                            message.role === "user"
+                              ? "bg-gold text-white"
+                              : "border border-gold/20 bg-white text-charcoal"
+                          }`}
+                        >
+                          {message.content}
+                          {shouldShowRecommendLink(
+                            message,
+                            messages,
+                            messageIndex,
+                          ) && (
+                            <button
+                              type="button"
+                              onClick={() => void showRecommendations()}
+                              disabled={loading}
+                              className="mt-3 inline-flex min-h-[44px] items-center py-1 text-sm font-medium text-gold-dark no-underline transition hover:underline disabled:opacity-50"
+                            >
+                              条件に合う店舗を見る →
+                            </button>
                           )}
+                          {message.recommendations &&
+                            message.recommendations.length > 0 && (
+                              <div className="mt-3 flex flex-col gap-3">
+                                <p
+                                  ref={(element) => {
+                                    if (element) {
+                                      recommendTitleRefs.current.set(
+                                        message.id,
+                                        element,
+                                      );
+                                    } else {
+                                      recommendTitleRefs.current.delete(
+                                        message.id,
+                                      );
+                                    }
+                                  }}
+                                  className="scroll-mt-2 text-sm font-semibold text-charcoal"
+                                >
+                                  おすすめ店舗
+                                </p>
+                                {message.recommendations.map((item) => (
+                                  <RecommendationCard
+                                    key={item.id}
+                                    item={item}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {loading && (
-                    <div className="flex justify-start">
-                      <div className="rounded-2xl border border-gold/20 bg-white px-3 py-2 text-sm text-muted">
-                        入力中...
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {!loading && (
-                  <div className="shrink-0 space-y-2 border-t border-gold/15 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={goToAreaSelection}
-                      className="w-full py-1 text-xs text-muted hover:text-charcoal"
-                    >
-                      エリアを変更する
-                    </button>
-                    {showFaqQuickReplies && (
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {FAQ_QUICK_REPLIES.map((reply) => (
-                          <button
-                            key={reply}
-                            type="button"
-                            disabled={loading}
-                            onClick={() => void sendMessage(reply)}
-                            className="shrink-0 rounded-full border border-gold/30 bg-white px-3 py-1.5 text-xs text-charcoal hover:border-gold disabled:opacity-50"
-                          >
-                            {reply}
-                          </button>
-                        ))}
+                    ))}
+                    {loading && (
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl border border-gold/20 bg-white px-3 py-2 text-sm text-muted">
+                          入力中...
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
 
-                <form
-                  className="chat-bot-field flex shrink-0 gap-2 border-t border-gold/20 bg-white p-3"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                  }}
-                >
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    enterKeyHint="send"
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" &&
-                        !event.nativeEvent.isComposing
-                      ) {
-                        event.preventDefault();
-                        void sendMessage(input);
-                      }
+                  {!loading && (
+                    <div className="shrink-0 space-y-2 border-t border-gold/15 px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={goToAreaSelection}
+                        className="w-full py-1 text-xs text-muted hover:text-charcoal"
+                      >
+                        エリアを変更する
+                      </button>
+                      {showFaqQuickReplies && (
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {FAQ_QUICK_REPLIES.map((reply) => (
+                            <button
+                              key={reply}
+                              type="button"
+                              disabled={loading}
+                              onClick={() => void sendMessage(reply)}
+                              className="shrink-0 rounded-full border border-gold/30 bg-white px-3 py-1.5 text-xs text-charcoal hover:border-gold disabled:opacity-50"
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <form
+                    className="chat-bot-field flex shrink-0 gap-2 border-t border-gold/20 bg-white p-3"
+                    onSubmit={(event) => {
+                      event.preventDefault();
                     }}
-                    placeholder="メッセージを入力..."
-                    disabled={loading}
-                    className="min-w-0 flex-1 rounded-full border border-gold/30 bg-ivory px-4 py-2.5 text-base outline-none focus:border-gold"
-                    style={{ fontSize: 16 }}
-                  />
-                  <button
-                    type="button"
-                    disabled={loading || !input.trim()}
-                    onClick={() => void sendMessage(input)}
-                    className="shrink-0 rounded-full bg-gold px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
                   >
-                    送信
-                  </button>
-                </form>
-              </>
-            )}
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      enterKeyHint="send"
+                      value={input}
+                      onChange={(event) => setInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" &&
+                          !event.nativeEvent.isComposing
+                        ) {
+                          event.preventDefault();
+                          void sendMessage(input);
+                        }
+                      }}
+                      placeholder="メッセージを入力..."
+                      disabled={loading}
+                      className="min-w-0 flex-1 rounded-full border border-gold/30 bg-ivory px-4 py-2.5 text-base outline-none focus:border-gold"
+                      style={{ fontSize: 16 }}
+                    />
+                    <button
+                      type="button"
+                      disabled={loading || !input.trim()}
+                      onClick={() => void sendMessage(input)}
+                      className="shrink-0 rounded-full bg-gold px-4 py-2.5 text-base font-medium text-white disabled:opacity-50"
+                    >
+                      送信
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
 
       {!open ? (

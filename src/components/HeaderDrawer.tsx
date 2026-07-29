@@ -120,6 +120,10 @@ function openChatBot() {
   window.dispatchEvent(new CustomEvent("wn:open-chat"));
 }
 
+function closeChatBot() {
+  window.dispatchEvent(new CustomEvent("wn:close-chat"));
+}
+
 export function HeaderDrawer() {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
@@ -131,6 +135,14 @@ export function HeaderDrawer() {
 
   const closeDrawer = useCallback(() => {
     setOpen(false);
+  }, []);
+
+  const openDrawer = useCallback(() => {
+    // AI相談が開いている場合: 閉じる → オーバーレイ削除 → scroll lock解除 → メニューを開く
+    closeChatBot();
+    window.setTimeout(() => {
+      setOpen(true);
+    }, 40);
   }, []);
 
   useEffect(() => {
@@ -193,6 +205,7 @@ export function HeaderDrawer() {
   const shopLoginLabel = "店舗ログイン";
 
   function handleMemberAction(item: DrawerItem) {
+    closeChatBot();
     closeDrawer();
 
     if (!ready) return;
@@ -271,7 +284,10 @@ export function HeaderDrawer() {
       <li key={key}>
         <Link
           href={href}
-          onClick={closeDrawer}
+          onClick={() => {
+            closeChatBot();
+            closeDrawer();
+          }}
           className={className}
           aria-current={active ? "page" : undefined}
         >
@@ -347,7 +363,7 @@ export function HeaderDrawer() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openDrawer}
         aria-expanded={open}
         aria-controls="header-drawer-panel"
         aria-label="メニュー"

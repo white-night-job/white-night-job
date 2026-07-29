@@ -25,7 +25,14 @@ export function HeaderLogo() {
   const { href, ariaLabel } = resolveLogoHref(pathname);
 
   return (
-    <Link href={href} aria-label={ariaLabel} className="header-logo-link">
+    <Link
+      href={href}
+      aria-label={ariaLabel}
+      className="header-logo-link"
+      onClick={() => {
+        window.dispatchEvent(new CustomEvent("wn:close-chat"));
+      }}
+    >
       <span className="header-logo-wordmark font-serif">
         <span className="header-logo-brand">White Night</span>
         <span className="header-logo-job"> Job</span>

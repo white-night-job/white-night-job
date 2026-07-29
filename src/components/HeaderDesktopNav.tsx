@@ -12,7 +12,9 @@ export function HeaderDesktopNav() {
   return (
     <div className="site-header-desktop-actions">
       {isLoggedIn ? (
-        <Link href="/mypage" prefetch className="site-header-desktop-action">
+        <Link href="/mypage" prefetch className="site-header-desktop-action" onClick={() => {
+          window.dispatchEvent(new CustomEvent("wn:close-chat"));
+        }}>
           マイページ
         </Link>
       ) : (
@@ -25,7 +27,13 @@ export function HeaderDesktopNav() {
           ログイン
         </LineLoginButton>
       )}
-      <Link href="/shop-login" className="site-header-desktop-action is-shop">
+      <Link
+        href="/shop-login"
+        className="site-header-desktop-action is-shop"
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("wn:close-chat"));
+        }}
+      >
         店舗ログイン
       </Link>
     </div>
