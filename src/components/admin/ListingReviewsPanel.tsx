@@ -2,10 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  JOB_PLANS,
-  type JobPlan,
-} from "@/lib/job-plan";
+import { type JobPlan } from "@/lib/job-plan";
 import {
   LISTING_APPLICATION_STATUS_LABELS,
   planLabel,
@@ -60,7 +57,9 @@ type DetailApplication = Record<string, unknown> & {
   confirmed_plan?: JobPlan | null;
   requestedPlanLabel?: string;
   confirmedPlanLabel?: string;
-  onboardingUrl?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  updated_at?: string | null;
   shop_exterior_images?: Array<{
     storagePath: string;
     fileName: string;
@@ -275,12 +274,8 @@ export function ListingReviewsPanel() {
   const [detail, setDetail] = useState<DetailApplication | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [actor, setActor] = useState("admin");
-  const [adminMemo, setAdminMemo] = useState("");
-  const [assignedAdmin, setAssignedAdmin] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
-  const [needsInfoMessage, setNeedsInfoMessage] = useState("");
-  const [needsInfoDeadline, setNeedsInfoDeadline] = useState("");
-  const [confirmedPlan, setConfirmedPlan] = useState<JobPlan>("standard");
+  const [showRejectForm, setShowRejectForm] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const loadList = useCallback(async () => {
@@ -335,6 +330,8 @@ export function ListingReviewsPanel() {
   async function openDetail(id: string) {
     setSelectedId(id);
     setMessage("");
+    setShowRejectForm(false);
+    setRejectionReason("");
     try {
       const response = await fetch(`/api/admin/listing-applications/${id}`, {
         credentials: "include",
@@ -347,23 +344,14 @@ export function ListingReviewsPanel() {
       if (!response.ok) throw new Error(data.message ?? "詳細の取得に失敗しました。");
       setDetail(data.application ?? null);
       setEvents(data.events ?? []);
-      setAdminMemo(String(data.application?.admin_memo ?? ""));
-      setAssignedAdmin(String(data.application?.assigned_admin ?? ""));
       setRejectionReason(String(data.application?.rejection_reason ?? ""));
-      setNeedsInfoMessage(String(data.application?.needs_info_message ?? ""));
-      setNeedsInfoDeadline(String(data.application?.needs_info_deadline ?? ""));
-      const plan =
-        (data.application?.confirmed_plan as JobPlan | null) ||
-        (data.application?.requested_plan as JobPlan) ||
-        "standard";
-      setConfirmedPlan(plan);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "詳細の取得に失敗しました。");
     }
   }
 
   async function runAction(
-    action: string,
+    action: "approve" | "reject",
     extra: Record<string, unknown> = {},
   ) {
     if (!selectedId) return;
@@ -379,12 +367,7 @@ export function ListingReviewsPanel() {
           body: JSON.stringify({
             action,
             actor,
-            confirmedPlan,
-            adminMemo,
-            assignedAdmin,
             rejectionReason,
-            needsInfoMessage,
-            needsInfoDeadline,
             ...extra,
           }),
         },
@@ -397,7 +380,12 @@ export function ListingReviewsPanel() {
       if (!response.ok) throw new Error(data.message ?? "更新に失敗しました。");
       setDetail(data.application ?? null);
       setEvents(data.events ?? []);
-      setMessage("更新しました。");
+      setShowRejectForm(false);
+      setMessage(
+        action === "approve"
+          ? "承認し、申請者へメールを送信しました。"
+          : "却下し、申請者へメールを送信しました。",
+      );
       await loadList();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "更新に失敗しました。");
@@ -606,6 +594,8 @@ export function ListingReviewsPanel() {
                 onClick={() => {
                   setSelectedId(null);
                   setDetail(null);
+                  setShowRejectForm(false);
+                  setRejectionReason("");
                 }}
               >
                 閉じる
@@ -631,13 +621,6 @@ export function ListingReviewsPanel() {
                     detail.requestedPlanLabel ??
                       (detail.requested_plan
                         ? planLabel(detail.requested_plan)
-                        : null),
-                  ],
-                  [
-                    "確定プラン",
-                    detail.confirmedPlanLabel ??
-                      (detail.confirmed_plan
-                        ? planLabel(detail.confirmed_plan)
                         : null),
                   ],
                 ] as Array<[string, unknown]>
@@ -667,7 +650,7 @@ export function ListingReviewsPanel() {
               <div className="rounded-lg bg-ivory/70 px-3 py-2">
                 <p className="text-xs text-muted">キャスト情報</p>
                 <p className="mt-0.5 text-muted">
-                  （掲載申請時点では未登録。承認後の求人登録で入力されます）
+                  （掲載申請時点では未登録。承認後に管理者が求人管理から作成します）
                 </p>
               </div>
             </div>
@@ -740,182 +723,115 @@ export function ListingReviewsPanel() {
               />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs text-muted">操作者名</label>
-                <input
-                  className={inputClass}
-                  value={actor}
-                  onChange={(e) => setActor(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted">担当管理者</label>
-                <input
-                  className={inputClass}
-                  value={assignedAdmin}
-                  onChange={(e) => setAssignedAdmin(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-muted">
-                  管理者メモ（申請者非公開）
-                </label>
-                <textarea
-                  className={inputClass}
-                  rows={3}
-                  value={adminMemo}
-                  onChange={(e) => setAdminMemo(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted">確定プラン</label>
-                <select
-                  className={inputClass}
-                  value={confirmedPlan}
-                  onChange={(e) => setConfirmedPlan(e.target.value as JobPlan)}
-                >
-                  {JOB_PLANS.map((plan) => (
-                    <option key={plan} value={plan}>
-                      {planLabel(plan)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted">
-                  却下理由（申請者へ通知可）
-                </label>
-                <textarea
-                  className={inputClass}
-                  rows={2}
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-muted">
-                  追加確認・不足内容
-                </label>
-                <textarea
-                  className={inputClass}
-                  rows={3}
-                  value={needsInfoMessage}
-                  onChange={(e) => setNeedsInfoMessage(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted">提出期限</label>
-                <input
-                  className={inputClass}
-                  type="date"
-                  value={needsInfoDeadline}
-                  onChange={(e) => setNeedsInfoDeadline(e.target.value)}
-                />
-              </div>
-            </div>
+            <div className="space-y-3 border-t border-gold/15 pt-4">
+              <p className="text-sm font-medium">審査操作</p>
 
-            <div className="flex flex-wrap gap-2 border-t border-gold/15 pt-4">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("approve")}
-                className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                承認
-              </button>
-              <button
-                type="button"
-                disabled={busy || !rejectionReason.trim()}
-                onClick={() => void runAction("reject")}
-                className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 disabled:opacity-60"
-              >
-                却下
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("hold")}
-                className="rounded-full border border-gold/40 px-5 py-2.5 text-sm text-gold-dark disabled:opacity-60"
-              >
-                保留
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("save_memo")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                メモ保存
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("needs_info")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                追加確認を送る
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("confirm_plan")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                プラン確定
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("assign")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                担当設定
-              </button>
-            </div>
-
-            {detail.status === "approved" ? (
-              <div className="rounded-xl bg-ivory px-4 py-3 text-sm">
-                <p className="font-medium">承認後の登録URL</p>
-                {detail.onboardingUrl ? (
-                  <a
-                    href={detail.onboardingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 block break-all text-gold-dark underline"
-                  >
-                    {detail.onboardingUrl}
-                  </a>
-                ) : (
+              {detail.status === "approved" ? (
+                <div className="rounded-xl bg-ivory px-4 py-3 text-sm">
+                  <p className="font-medium text-gold-dark">承認済み</p>
                   <p className="mt-1 text-muted">
-                    招待コードがありません。再発行してください。
+                    承認日時: {formatDate(detail.approved_at)}
                   </p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                </div>
+              ) : null}
+
+              {detail.status === "rejected" ? (
+                <div className="rounded-xl bg-ivory px-4 py-3 text-sm">
+                  <p className="font-medium text-red-700">却下済み</p>
+                  <p className="mt-1 text-muted">
+                    却下日時:{" "}
+                    {formatDate(
+                      events.find((e) => e.event_type === "rejected")
+                        ?.created_at ?? detail.updated_at,
+                    )}
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap break-all">
+                    却下理由:{" "}
+                    {displayText(detail.rejection_reason)}
+                  </p>
+                </div>
+              ) : null}
+
+              {detail.status !== "approved" && detail.status !== "rejected" ? (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs text-muted">
+                      操作者名
+                    </label>
+                    <input
+                      className={inputClass}
+                      value={actor}
+                      onChange={(e) => setActor(e.target.value)}
+                    />
+                  </div>
+
+                  {showRejectForm ? (
+                    <div>
+                      <label className="mb-1 block text-xs text-muted">
+                        却下理由（必須）
+                      </label>
+                      <textarea
+                        className={inputClass}
+                        rows={3}
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="申請者へ送信する却下理由を入力してください"
+                      />
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setShowRejectForm(false);
+                        void runAction("approve");
+                      }}
+                      className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      承認
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        if (!showRejectForm) {
+                          setShowRejectForm(true);
+                          setMessage("却下理由を入力して、もう一度「却下」を押してください。");
+                          return;
+                        }
+                        if (!rejectionReason.trim()) {
+                          setMessage("却下理由を入力してください。");
+                          return;
+                        }
+                        void runAction("reject");
+                      }}
+                      className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 disabled:opacity-60"
+                    >
+                      却下
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      if (selectedId) void openDetail(selectedId);
-                    }}
-                    className="rounded-full border border-gold/40 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-60"
+                    disabled
+                    className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white opacity-40"
                   >
-                    表示を更新
+                    承認
                   </button>
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => void runAction("reissue_invite")}
-                    className="rounded-full border border-gold/40 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-60"
+                    disabled
+                    className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 opacity-40"
                   >
-                    招待URLを再発行
+                    却下
                   </button>
                 </div>
-                <p className="mt-2 text-[11px] text-muted">
-                  再発行すると新しい招待コードになります。旧URLは使えなくなります。
-                </p>
-              </div>
-            ) : null}
+              )}
+            </div>
 
             <div>
               <p className="mb-2 text-sm font-medium">審査履歴</p>

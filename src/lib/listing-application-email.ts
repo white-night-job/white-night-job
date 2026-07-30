@@ -1,6 +1,5 @@
 import {
   buildNeedsInfoUploadUrl,
-  buildOnboardingUrl,
   getSiteOrigin,
   planLabel,
   type ListingApplicationRow,
@@ -408,31 +407,21 @@ export async function notifyApplicantApproved(
   row: ListingApplicationRow,
 ): Promise<NotifyMailResult> {
   const to = row.contact_email;
-  if (!row.invite_code) {
-    return {
-      sent: false,
-      error: "invite_code_missing",
-      to,
-    };
-  }
-  const url = buildOnboardingUrl(row.invite_code);
+  const name = row.contact_name?.trim() || "ご担当者";
   return safeSend({
     to,
-    subject: `【White Night Job】掲載審査に通過しました（${row.application_number}）`,
+    subject: "【White Night Job】掲載審査承認のお知らせ",
     text: [
-      `${row.contact_name} 様`,
+      `${name}様`,
       "",
-      "掲載審査に通過しました。",
-      "以下のURLから店舗情報・求人情報の登録へお進みください。",
+      "White Night Jobへの掲載審査にお申し込みいただき、ありがとうございます。",
       "",
-      url,
+      "審査の結果、掲載を承認いたしました。",
       "",
-      `申請番号: ${row.application_number}`,
-      `確定プラン（仮）: ${planLabel(row.confirmed_plan ?? row.requested_plan)}`,
+      "掲載内容の作成については、運営側で対応いたします。",
+      "必要事項がある場合は、改めてご連絡いたします。",
       "",
-      "※このURLは承認された店舗専用です。第三者へ共有しないでください。",
-      "",
-      "White Night Job",
+      "White Night Job運営事務局",
     ].join("\n"),
   });
 }
@@ -440,23 +429,24 @@ export async function notifyApplicantApproved(
 export async function notifyApplicantRejected(
   row: ListingApplicationRow,
 ): Promise<NotifyMailResult> {
+  const name = row.contact_name?.trim() || "ご担当者";
+  const reason = row.rejection_reason?.trim() || "（理由の記載なし）";
   return safeSend({
     to: row.contact_email,
-    subject: `【White Night Job】掲載審査の結果について（${row.application_number}）`,
+    subject: "【White Night Job】掲載審査結果のお知らせ",
     text: [
-      `${row.contact_name} 様`,
+      `${name}様`,
       "",
-      "このたびは掲載審査へお申し込みいただきありがとうございました。",
-      "審査の結果、今回は掲載をお見送りさせていただくこととなりました。",
+      "White Night Jobへの掲載審査にお申し込みいただき、ありがとうございます。",
       "",
-      `申請番号: ${row.application_number}`,
-      row.rejection_reason
-        ? `\n理由:\n${row.rejection_reason}\n`
-        : "",
+      "審査の結果、今回は掲載を見送らせていただくこととなりました。",
       "",
-      "ご不明点がございましたらお問い合わせください。",
+      "理由：",
+      reason,
       "",
-      "White Night Job",
+      "内容をご確認のうえ、必要に応じて再度お申し込みください。",
+      "",
+      "White Night Job運営事務局",
     ].join("\n"),
   });
 }
@@ -464,6 +454,7 @@ export async function notifyApplicantRejected(
 export async function notifyApplicantNeedsInfo(
   row: ListingApplicationRow,
 ): Promise<NotifyMailResult> {
+  // Kept for compatibility with older admin actions; UI no longer calls this.
   const uploadUrl = row.needs_info_upload_token
     ? buildNeedsInfoUploadUrl(row.needs_info_upload_token)
     : null;

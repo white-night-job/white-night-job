@@ -1,11 +1,7 @@
-import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import {
-  buildOnboardingUrl,
-  generateInviteCode,
-  isListingApplicationStatus,
   LISTING_APPLICATION_STATUS_LABELS,
   planLabel,
   type ListingApplicationRow,
@@ -13,11 +9,8 @@ import {
 } from "@/lib/listing-application";
 import {
   notifyApplicantApproved,
-  notifyApplicantNeedsInfo,
   notifyApplicantRejected,
 } from "@/lib/listing-application-email";
-import { upsertShopFromApprovedApplication } from "@/lib/listing-shop";
-import { isJobPlan } from "@/lib/job-plan";
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
@@ -28,26 +21,9 @@ import type { ListingShopImage } from "@/lib/listing-application";
 type RouteContext = { params: Promise<{ id: string }> };
 
 type PatchBody = {
-  action?:
-    | "set_status"
-    | "approve"
-    | "reject"
-    | "hold"
-    | "needs_info"
-    | "save_memo"
-    | "assign"
-    | "confirm_plan"
-    | "reissue_invite"
-    | "withdraw";
-  status?: string;
-  adminMemo?: string;
-  assignedAdmin?: string;
+  action?: "approve" | "reject";
   rejectionReason?: string;
-  needsInfoMessage?: string;
-  needsInfoDeadline?: string;
-  confirmedPlan?: string;
   actor?: string;
-  notifyApplicant?: boolean;
 };
 
 async function loadApplication(id: string) {
@@ -137,6 +113,17 @@ async function attachSignedDocumentUrls(row: ListingApplicationRow) {
   };
 }
 
+function toApplicationResponse(row: ListingApplicationRow) {
+  return {
+    ...row,
+    statusLabel: LISTING_APPLICATION_STATUS_LABELS[row.status],
+    requestedPlanLabel: planLabel(row.requested_plan),
+    confirmedPlanLabel: planLabel(row.confirmed_plan),
+    // Intentionally omit onboarding / invite URLs from admin UI
+    onboardingUrl: null,
+  };
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -153,15 +140,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       ok: true,
-      application: {
-        ...rowWithSigned,
-        statusLabel: LISTING_APPLICATION_STATUS_LABELS[row.status],
-        requestedPlanLabel: planLabel(row.requested_plan),
-        confirmedPlanLabel: planLabel(row.confirmed_plan),
-        onboardingUrl: row.invite_code
-          ? buildOnboardingUrl(row.invite_code)
-          : null,
-      },
+      application: toApplicationResponse(rowWithSigned as ListingApplicationRow),
       events,
     });
   } catch (error) {
@@ -185,158 +164,56 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ message: "申請が見つかりません。" }, { status: 404 });
     }
 
+    if (current.status === "approved" || current.status === "rejected") {
+      return NextResponse.json(
+        { message: "この申請は既に処理済みです。" },
+        { status: 409 },
+      );
+    }
+
+    if (body.action !== "approve" && body.action !== "reject") {
+      return NextResponse.json(
+        { message: "action は approve または reject のみ指定できます。" },
+        { status: 400 },
+      );
+    }
+
     const supabase = createSupabaseAdmin();
     const actor = body.actor?.trim() || "admin";
-    const notify = body.notifyApplicant !== false;
-    let patch: Record<string, unknown> = {};
-    let eventType = "updated";
-    let toStatus: ListingApplicationStatus | null = null;
-    let eventMessage = "";
+    const nowIso = new Date().toISOString();
 
-    switch (body.action) {
-      case "save_memo": {
-        patch = { admin_memo: body.adminMemo?.trim() || null };
-        eventType = "memo";
-        eventMessage = "管理者メモを更新";
-        break;
-      }
-      case "assign": {
-        patch = { assigned_admin: body.assignedAdmin?.trim() || null };
-        eventType = "assign";
-        eventMessage = `担当: ${body.assignedAdmin?.trim() || "未設定"}`;
-        break;
-      }
-      case "confirm_plan": {
-        if (!isJobPlan(body.confirmedPlan)) {
-          return NextResponse.json(
-            { message: "プランを選択してください。" },
-            { status: 400 },
-          );
-        }
-        const plan = body.confirmedPlan;
-        patch = { confirmed_plan: plan };
-        eventType = "confirm_plan";
-        eventMessage = `確定プラン: ${planLabel(plan)}`;
-        break;
-      }
-      case "set_status": {
-        if (!isListingApplicationStatus(body.status)) {
-          return NextResponse.json(
-            { message: "不正なステータスです。" },
-            { status: 400 },
-          );
-        }
-        toStatus = body.status;
-        patch = { status: body.status };
-        if (body.status === "reviewing" && !current.assigned_admin && body.assignedAdmin) {
-          patch.assigned_admin = body.assignedAdmin.trim();
-        }
-        eventType = "status_change";
-        eventMessage = LISTING_APPLICATION_STATUS_LABELS[body.status];
-        break;
-      }
-      case "approve": {
-        const inviteCode = current.invite_code || generateInviteCode();
-        const confirmed = isJobPlan(body.confirmedPlan)
-          ? body.confirmedPlan
-          : current.confirmed_plan || current.requested_plan;
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30);
-        toStatus = "approved";
-        patch = {
-          status: "approved",
-          approved_at: new Date().toISOString(),
-          approved_by: actor,
-          assigned_admin: current.assigned_admin || actor,
-          invite_code: inviteCode,
-          invite_expires_at: expires.toISOString(),
-          confirmed_plan: confirmed,
-          rejection_reason: null,
-        };
-        eventType = "approved";
-        eventMessage = `承認・招待コード発行 / プラン ${planLabel(confirmed)}`;
-        break;
-      }
-      case "hold": {
-        toStatus = "reviewing";
-        patch = {
-          status: "reviewing",
-          assigned_admin: current.assigned_admin || actor,
-        };
-        eventType = "hold";
-        eventMessage = "保留";
-        break;
-      }
-      case "reissue_invite": {
-        if (current.status !== "approved") {
-          return NextResponse.json(
-            { message: "承認済みの申請のみ招待URLを再発行できます。" },
-            { status: 400 },
-          );
-        }
-        const inviteCode = generateInviteCode();
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30);
-        patch = {
-          invite_code: inviteCode,
-          invite_expires_at: expires.toISOString(),
-        };
-        eventType = "reissue_invite";
-        eventMessage = "承認後登録URL（招待コード）を再発行";
-        break;
-      }
-      case "reject": {
-        const reason = body.rejectionReason?.trim();
-        if (!reason) {
-          return NextResponse.json(
-            { message: "否認理由を入力してください。" },
-            { status: 400 },
-          );
-        }
-        toStatus = "rejected";
-        patch = {
-          status: "rejected",
-          rejection_reason: reason,
-          assigned_admin: current.assigned_admin || actor,
-        };
-        eventType = "rejected";
-        eventMessage = "否認";
-        break;
-      }
-      case "needs_info": {
-        const message = body.needsInfoMessage?.trim();
-        if (!message) {
-          return NextResponse.json(
-            { message: "不足内容を入力してください。" },
-            { status: 400 },
-          );
-        }
-        const uploadToken =
-          current.needs_info_upload_token || randomBytes(16).toString("hex");
-        toStatus = "needs_info";
-        patch = {
-          status: "needs_info",
-          needs_info_message: message,
-          needs_info_deadline: body.needsInfoDeadline?.trim() || null,
-          needs_info_upload_token: uploadToken,
-          assigned_admin: current.assigned_admin || actor,
-        };
-        eventType = "needs_info";
-        eventMessage = message;
-        break;
-      }
-      case "withdraw": {
-        toStatus = "withdrawn";
-        patch = { status: "withdrawn" };
-        eventType = "withdrawn";
-        eventMessage = "取り下げ";
-        break;
-      }
-      default:
+    let patch: Record<string, unknown>;
+    let eventType: string;
+    let toStatus: ListingApplicationStatus;
+    let eventMessage: string;
+
+    if (body.action === "approve") {
+      toStatus = "approved";
+      patch = {
+        status: "approved",
+        approved_at: nowIso,
+        approved_by: actor,
+        rejection_reason: null,
+      };
+      eventType = "approved";
+      eventMessage = `承認（${nowIso}）`;
+    } else {
+      const reason = body.rejectionReason?.trim();
+      if (!reason) {
         return NextResponse.json(
-          { message: "action を指定してください。" },
+          { message: "却下理由を入力してください。" },
           { status: 400 },
         );
+      }
+      toStatus = "rejected";
+      patch = {
+        status: "rejected",
+        rejection_reason: reason,
+        approved_at: null,
+        approved_by: null,
+      };
+      eventType = "rejected";
+      eventMessage = `却下（${nowIso}）: ${reason}`;
     }
 
     const { data, error } = await supabase
@@ -347,91 +224,61 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error || !data) throw error ?? new Error("update failed");
-    let updated = data as ListingApplicationRow;
-
-    if (body.action === "approve") {
-      try {
-        const plan = (updated.confirmed_plan ||
-          updated.requested_plan) as typeof updated.requested_plan;
-        const shop = await upsertShopFromApprovedApplication(updated, plan);
-        const { data: withShop, error: linkError } = await supabase
-          .from("listing_applications")
-          .update({ linked_shop_id: shop.id })
-          .eq("id", id)
-          .select("*")
-          .single();
-        if (linkError) {
-          console.error(
-            "[admin/listing-applications] linked_shop_id update failed:",
-            linkError,
-          );
-        } else if (withShop) {
-          updated = withShop as ListingApplicationRow;
-        }
-        eventMessage = `${eventMessage} / shops=${shop.id} listing_status=${shop.listing_status}`;
-        await appendEvent({
-          applicationId: id,
-          eventType: "shop_registered",
-          fromStatus: current.status,
-          toStatus: "approved",
-          message: `shops 登録・掲載開始 shop=${shop.id}`,
-          actor,
-        });
-      } catch (shopError) {
-        console.error(
-          "[admin/listing-applications] shops register failed:",
-          shopError,
-        );
-        // Application stays approved; surface warning in response via event
-        await appendEvent({
-          applicationId: id,
-          eventType: "shop_register_failed",
-          fromStatus: current.status,
-          toStatus: "approved",
-          message:
-            shopError instanceof Error
-              ? shopError.message
-              : "shops 登録に失敗しました",
-          actor,
-        });
-      }
-    }
+    const updated = data as ListingApplicationRow;
 
     await appendEvent({
       applicationId: id,
       eventType,
       fromStatus: current.status,
-      toStatus: toStatus ?? current.status,
+      toStatus,
       message: eventMessage,
       actor,
     });
 
-    let adminMail: { sent: boolean; error?: string; to?: string } | null = null;
-    if (notify) {
-      if (body.action === "approve") {
-        adminMail = await notifyApplicantApproved(updated);
-      } else if (body.action === "reject") {
-        adminMail = await notifyApplicantRejected(updated);
-      } else if (body.action === "needs_info") {
-        adminMail = await notifyApplicantNeedsInfo(updated);
-      }
+    const mailResult =
+      body.action === "approve"
+        ? await notifyApplicantApproved(updated)
+        : await notifyApplicantRejected(updated);
+
+    if (!mailResult.sent) {
+      // Do not leave the application in a completed review state without notify.
+      await supabase
+        .from("listing_applications")
+        .update({
+          status: current.status,
+          approved_at: current.approved_at,
+          approved_by: current.approved_by,
+          rejection_reason: current.rejection_reason,
+        })
+        .eq("id", id);
+
+      await appendEvent({
+        applicationId: id,
+        eventType: "notify_failed",
+        fromStatus: toStatus,
+        toStatus: current.status,
+        message: `メール送信失敗のため審査結果を取り消しました: ${mailResult.error ?? "unknown"}`,
+        actor,
+      });
+
+      return NextResponse.json(
+        {
+          message: `審査結果メールの送信に失敗したため、ステータスは変更されていません。原因: ${mailResult.error ?? "send_failed"}`,
+          mail: mailResult,
+        },
+        { status: 502 },
+      );
     }
 
     const events = await loadEvents(id);
     const updatedWithSigned = await attachSignedDocumentUrls(updated);
     return NextResponse.json({
       ok: true,
-      application: {
-        ...updatedWithSigned,
-        statusLabel: LISTING_APPLICATION_STATUS_LABELS[updated.status],
-        requestedPlanLabel: planLabel(updated.requested_plan),
-        confirmedPlanLabel: planLabel(updated.confirmed_plan),
-        onboardingUrl: updated.invite_code
-          ? buildOnboardingUrl(updated.invite_code)
-          : null,
-      },
+      application: toApplicationResponse(
+        updatedWithSigned as ListingApplicationRow,
+      ),
       events,
-      mail: adminMail,
+      mail: mailResult,
     });
   } catch (error) {
     return NextResponse.json(
