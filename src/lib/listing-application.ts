@@ -143,12 +143,29 @@ export function generateInviteCode(): string {
   return randomBytes(16).toString("hex");
 }
 
+/** Canonical public site origin for applicant-facing links (onboarding, email). */
+export const DEFAULT_PUBLIC_SITE_ORIGIN = "https://whitenightjob.jp";
+
+/**
+ * Public site origin for listing-application links.
+ * Never uses Vercel preview hostnames (VERCEL_URL / *.vercel.app).
+ */
 export function getSiteOrigin(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (explicit) return explicit.replace(/\/$/, "");
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
-  return "http://localhost:3000";
+  const explicit =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.SITE_URL?.trim() ||
+    "";
+  if (explicit) {
+    const normalized = explicit.replace(/\/$/, "");
+    // Guard: preview deployments sometimes set NEXT_PUBLIC_SITE_URL to the
+    // deployment URL. Applicant-facing links must stay on the production domain.
+    if (!/\.vercel\.app$/i.test(normalized.replace(/^https?:\/\//i, ""))) {
+      return normalized.startsWith("http")
+        ? normalized
+        : `https://${normalized}`;
+    }
+  }
+  return DEFAULT_PUBLIC_SITE_ORIGIN;
 }
 
 export function buildOnboardingUrl(inviteCode: string): string {

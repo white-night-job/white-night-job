@@ -874,19 +874,48 @@ export function ListingReviewsPanel() {
               </button>
             </div>
 
-            {detail.onboardingUrl && (
+            {detail.status === "approved" ? (
               <div className="rounded-xl bg-ivory px-4 py-3 text-sm">
                 <p className="font-medium">承認後の登録URL</p>
-                <a
-                  href={detail.onboardingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 block break-all text-gold-dark underline"
-                >
-                  {detail.onboardingUrl}
-                </a>
+                {detail.onboardingUrl ? (
+                  <a
+                    href={detail.onboardingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block break-all text-gold-dark underline"
+                  >
+                    {detail.onboardingUrl}
+                  </a>
+                ) : (
+                  <p className="mt-1 text-muted">
+                    招待コードがありません。再発行してください。
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (selectedId) void openDetail(selectedId);
+                    }}
+                    className="rounded-full border border-gold/40 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-60"
+                  >
+                    表示を更新
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void runAction("reissue_invite")}
+                    className="rounded-full border border-gold/40 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-60"
+                  >
+                    招待URLを再発行
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-muted">
+                  再発行すると新しい招待コードになります。旧URLは使えなくなります。
+                </p>
               </div>
-            )}
+            ) : null}
 
             <div>
               <p className="mb-2 text-sm font-medium">審査履歴</p>

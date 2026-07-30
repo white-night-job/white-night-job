@@ -37,6 +37,7 @@ type PatchBody = {
     | "save_memo"
     | "assign"
     | "confirm_plan"
+    | "reissue_invite"
     | "withdraw";
   status?: string;
   adminMemo?: string;
@@ -264,6 +265,24 @@ export async function PATCH(request: Request, context: RouteContext) {
         };
         eventType = "hold";
         eventMessage = "保留";
+        break;
+      }
+      case "reissue_invite": {
+        if (current.status !== "approved") {
+          return NextResponse.json(
+            { message: "承認済みの申請のみ招待URLを再発行できます。" },
+            { status: 400 },
+          );
+        }
+        const inviteCode = generateInviteCode();
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 30);
+        patch = {
+          invite_code: inviteCode,
+          invite_expires_at: expires.toISOString(),
+        };
+        eventType = "reissue_invite";
+        eventMessage = "承認後登録URL（招待コード）を再発行";
         break;
       }
       case "reject": {

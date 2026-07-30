@@ -1,6 +1,7 @@
 import {
   buildNeedsInfoUploadUrl,
   buildOnboardingUrl,
+  getSiteOrigin,
   planLabel,
   type ListingApplicationRow,
   type ListingDocumentMeta,
@@ -251,12 +252,7 @@ async function formatImageSection(
 }
 
 function buildAdminSiteUrl(applicationId: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    process.env.SITE_URL?.replace(/\/$/, "") ||
-    "";
-  if (!base) return "管理画面の「掲載審査管理」から確認してください。";
-  return `${base}/admin/listing-reviews?id=${encodeURIComponent(applicationId)}`;
+  return `${getSiteOrigin()}/admin/listing-reviews?id=${encodeURIComponent(applicationId)}`;
 }
 
 export async function notifyAdminNewApplication(
@@ -383,7 +379,7 @@ export async function notifyApplicantReceived(
         "確認には数営業日かかる場合があります。",
         "",
         "審査状況の確認:",
-        `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || ""}/for-shops/review-status`,
+        `${getSiteOrigin()}/for-shops/review-status`,
         "",
         "White Night Job",
       ].join("\n"),
