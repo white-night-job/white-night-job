@@ -215,7 +215,7 @@
 .fsl-hero-cta-card {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
   width: 100%;
   padding: 1rem;
   border-radius: var(--fsl-radius-card);
@@ -318,6 +318,33 @@
     0 6px 20px rgba(17, 17, 17, 0.28),
     inset 0 1px 0 rgba(212, 188, 142, 0.18),
     inset 0 -3px 0 rgba(0, 0, 0, 0.5);
+}
+
+.fsl-btn--primary {
+  border: 1px solid rgba(168, 137, 74, 0.9);
+  background: linear-gradient(
+    180deg,
+    #f7edd8 0%,
+    #e8d4a8 18%,
+    #d4b872 48%,
+    #c4a574 78%,
+    #a8894a 100%
+  );
+  color: #111111;
+  font-weight: 700;
+  box-shadow:
+    0 8px 24px rgba(17, 17, 17, 0.22),
+    0 3px 8px rgba(168, 137, 74, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -3px 0 rgba(100, 78, 40, 0.18);
+}
+
+.fsl-btn--primary:hover {
+  box-shadow:
+    0 10px 28px rgba(17, 17, 17, 0.26),
+    0 4px 10px rgba(168, 137, 74, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -3px 0 rgba(100, 78, 40, 0.2);
 }
 
 /* ── Features ── */

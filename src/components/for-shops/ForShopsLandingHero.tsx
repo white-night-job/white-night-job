@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { IMAGE_ALT_BRAND, SITE_FORMAL_NAME } from "@/lib/site";
 
 export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.png";
+export const FOR_SHOPS_APPLY_HREF = "/for-shops/apply";
 
 function MailIcon() {
   return (
@@ -16,6 +18,20 @@ function DocIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M8 4h8l4 4v12H8V4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       <path d="M16 4v4h4M10 12h8M10 16h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ApplyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 3v18M5 10l7-7 7 7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -70,6 +86,15 @@ export function ForShopsLandingHero() {
             ›
           </span>
         </a>
+        <Link href={FOR_SHOPS_APPLY_HREF} className="fsl-btn fsl-btn--primary">
+          <span className="fsl-btn__icon">
+            <ApplyIcon />
+          </span>
+          <span className="fsl-btn__label">掲載審査を申し込む</span>
+          <span className="fsl-btn__chev" aria-hidden="true">
+            ›
+          </span>
+        </Link>
       </article>
     </section>
   );

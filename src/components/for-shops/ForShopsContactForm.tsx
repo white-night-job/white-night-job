@@ -4,7 +4,7 @@ import { useState } from "react";
 
 const CONTACT_EMAIL = "whitenightjob.info@gmail.com";
 const CONTACT_PHONE = "090-8371-7443";
-const CONTACT_LINE_URL = "https://line.me/ti/p/gI8BFeh2LH";
+const CONTACT_LINE_URL = "https://lin.ee/V68PwOj";
 
 export function ForShopsContactForm() {
   const [shopName, setShopName] = useState("");
