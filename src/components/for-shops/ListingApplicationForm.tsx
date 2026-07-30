@@ -228,6 +228,52 @@ function fileFormatLabel(info: { name: string; type: string }): string {
   return "FILE";
 }
 
+function toHalfWidthDigits(value: string): string {
+  return value.replace(/[０-９]/g, (d) =>
+    String.fromCharCode(d.charCodeAt(0) - 0xfee0),
+  );
+}
+
+function normalizePhoneNumber(value: string): string {
+  return toHalfWidthDigits(value)
+    .replace(/[\s\-－ー―‐]/g, "")
+    .trim();
+}
+
+function isAsciiEmail(value: string): boolean {
+  return /^[\x00-\x7F]+$/.test(value);
+}
+
+function isValidEmail(value: string): boolean {
+  const v = value.trim();
+  if (!v || !isAsciiEmail(v) || /\s/.test(v)) return false;
+  const at = v.indexOf("@");
+  if (at <= 0 || at !== v.lastIndexOf("@")) return false;
+  const local = v.slice(0, at);
+  const domain = v.slice(at + 1);
+  if (!local || !domain || !domain.includes(".")) return false;
+  if (domain.startsWith(".") || domain.endsWith(".")) return false;
+  return true;
+}
+
+function isValidJapanesePhoneNumber(value: string): boolean {
+  const normalized = normalizePhoneNumber(value);
+  return /^0\d{9,10}$/.test(normalized);
+}
+
+function isValidInternationalPhoneNumber(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("+")) return false;
+  const normalized = toHalfWidthDigits(trimmed).replace(/[\s\-－ー―‐()（）]/g, "");
+  return /^\+\d{8,15}$/.test(normalized);
+}
+
+function isValidPhoneNumber(value: string): boolean {
+  return (
+    isValidJapanesePhoneNumber(value) || isValidInternationalPhoneNumber(value)
+  );
+}
+
 function validateStep(
   step: number,
   form: FormState,
@@ -235,34 +281,40 @@ function validateStep(
 ): FieldError {
   const errors: FieldError = {};
   if (step === 1) {
-    if (!form.shopName.trim()) errors.shopName = "?????????????";
+    if (!form.shopName.trim()) errors.shopName = "店舗名を入力してください。";
     if (!form.shopAddress.trim())
-      errors.shopAddress = "??????????????";
+      errors.shopAddress = "店舗住所を入力してください。";
     if (!form.businessType.trim())
-      errors.businessType = "????????????";
+      errors.businessType = "業種を入力してください。";
     if (!form.businessHours.trim())
-      errors.businessHours = "??????????????";
-    if (!form.shopPhone.trim())
-      errors.shopPhone = "????????????????";
+      errors.businessHours = "営業時間を入力してください。";
+    if (!form.shopPhone.trim()) {
+      errors.shopPhone = "店舗電話番号を入力してください。";
+    } else if (!isValidPhoneNumber(form.shopPhone)) {
+      errors.shopPhone = "店舗電話番号の形式が正しくありません";
+    }
   }
   if (step === 2) {
     if (!form.contactName.trim())
-      errors.contactName = "??????????????";
-    if (!form.contactPhone.trim())
-      errors.contactPhone = "?????????????????";
+      errors.contactName = "担当者名を入力してください。";
+    if (!form.contactPhone.trim()) {
+      errors.contactPhone = "担当者電話番号を入力してください。";
+    } else if (!isValidPhoneNumber(form.contactPhone)) {
+      errors.contactPhone = "担当者電話番号の形式が正しくありません";
+    }
     if (!form.contactEmail.trim()) {
-      errors.contactEmail = "????????????????????";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())) {
-      errors.contactEmail = "????????????????????";
+      errors.contactEmail = "担当者メールアドレスを入力してください。";
+    } else if (!isValidEmail(form.contactEmail)) {
+      errors.contactEmail = "メールアドレスの形式が正しくありません";
     }
   }
   if (step === 3) {
     const url = form.websiteUrl.trim();
     if (!url) {
       errors.websiteUrl =
-        "??Web??????SNS?URL??????????";
+        "公式WebサイトまたはSNSのURLを入力してください。";
     } else if (!/^https?:\/\/.+/i.test(url)) {
-      errors.websiteUrl = "???URL??????????";
+      errors.websiteUrl = "正しいURLを入力してください。";
     }
   }
   if (step === 4) {
@@ -270,23 +322,23 @@ function validateStep(
     const hasUploaded = Boolean(form.businessLicenseDocument?.storagePath);
     if (!hasLocal && !hasUploaded) {
       errors.businessLicenseDocument =
-        "???????????????????";
+        "営業許可証をアップロードしてください。";
     }
-    if (!form.openDate.trim()) errors.openDate = "???????????????";
+    if (!form.openDate.trim()) errors.openDate = "オープン日を入力してください。";
   }
   if (step === 5) {
     if (!isJobPlan(form.requestedPlan)) {
-      errors.requestedPlan = "??????????????";
+      errors.requestedPlan = "料金プランを選択してください";
     }
   }
   if (step === 6) {
     if (!form.consentAccuracy) {
       errors.consentAccuracy =
-        "??????????????????????????????";
+        "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
     }
     if (!form.consentTerms) {
       errors.consentTerms =
-        "?????????????????????????";
+        "利用規約・プライバシーポリシーへの同意が必要です。";
     }
   }
   if (step === 7) {
@@ -294,13 +346,13 @@ function validateStep(
     const interiorEmpty = form.shopInteriorImages.length === 0;
     if (exteriorEmpty && interiorEmpty) {
       errors.shopExteriorImages =
-        "?????????????????????????";
+        "店舗外観と店舗内観の画像をアップロードしてください";
     } else if (exteriorEmpty) {
       errors.shopExteriorImages =
-        "????????????????????";
+        "店舗外観の画像をアップロードしてください";
     } else if (interiorEmpty) {
       errors.shopInteriorImages =
-        "????????????????????";
+        "店舗内観の画像をアップロードしてください";
     }
   }
   return errors;
@@ -678,19 +730,41 @@ export function ListingApplicationForm() {
   async function submit(confirmDuplicate = false) {
     if (submittingRef.current) return;
 
+    const step1Errors = validateStep(1, form, localFiles);
+    if (Object.keys(step1Errors).length > 0) {
+      setFieldErrors(step1Errors);
+      setSubmitMessage(
+        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+      );
+      shouldScrollRef.current = true;
+      setStep(1);
+      return;
+    }
+
+    const step2Errors = validateStep(2, form, localFiles);
+    if (Object.keys(step2Errors).length > 0) {
+      setFieldErrors(step2Errors);
+      setSubmitMessage(
+        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+      );
+      shouldScrollRef.current = true;
+      setStep(2);
+      return;
+    }
+
     const consentErrors = validateStep(6, form, localFiles);
     if (Object.keys(consentErrors).length > 0) {
       setFieldErrors(consentErrors);
       setSubmitMessage(
-        "????????????????????????????",
+        "入力内容にエラーがあります。赤字の項目をご確認ください。",
       );
       shouldScrollRef.current = true;
       setStep(6);
       return;
     }
     if (!isJobPlan(form.requestedPlan)) {
-      setFieldErrors({ requestedPlan: "??????????????" });
-      setSubmitMessage("??????????????");
+      setFieldErrors({ requestedPlan: "料金プランを選択してください" });
+      setSubmitMessage("料金プランを選択してください");
       shouldScrollRef.current = true;
       setStep(5);
       return;
@@ -699,7 +773,7 @@ export function ListingApplicationForm() {
     if (Object.keys(imageErrors).length > 0) {
       setFieldErrors(imageErrors);
       setSubmitMessage(
-        "????????????????????????????",
+        "入力内容にエラーがあります。赤字の項目をご確認ください。",
       );
       shouldScrollRef.current = true;
       setStep(7);
