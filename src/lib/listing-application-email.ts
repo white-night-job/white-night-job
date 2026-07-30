@@ -6,7 +6,7 @@ import {
   type ListingDocumentMeta,
   type ListingShopImage,
 } from "@/lib/listing-application";
-import { getAdminNotifyEmail, hasMailConfig, sendMail } from "@/lib/mail";
+import { getAdminNotifyEmail, getMailConfigSnapshot, hasMailConfig, sendMail } from "@/lib/mail";
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
@@ -117,24 +117,68 @@ async function resolveEmailStorageUrl(
   }
 }
 
+export type NotifyMailResult = {
+  sent: boolean;
+  error?: string;
+  to: string;
+  provider?: "resend" | "smtp";
+  messageId?: string;
+};
+
 async function safeSend(options: {
   to: string;
   subject: string;
   text: string;
   replyTo?: string;
-}): Promise<{ sent: boolean; error?: string }> {
+}): Promise<NotifyMailResult> {
   if (!hasMailConfig()) {
-    console.warn("[listing-application-email] mail config missing, skip");
-    return { sent: false, error: "mail_config_missing" };
-  }
-  try {
-    await sendMail(options);
-    return { sent: true };
-  } catch (error) {
-    console.error("[listing-application-email] send failed:", error);
+    const snapshot = getMailConfigSnapshot();
+    console.error(
+      "[listing-application-email] mail config missing, skip send",
+      snapshot,
+    );
     return {
       sent: false,
-      error: error instanceof Error ? error.message : "send_failed",
+      error:
+        "mail_config_missing: RESEND_API_KEY または SMTP_HOST/SMTP_USER/SMTP_PASS を本番環境に設定してください",
+      to: options.to,
+    };
+  }
+  try {
+    console.info("[listing-application-email] send start", {
+      to: options.to,
+      subject: options.subject,
+      textLength: options.text.length,
+      config: getMailConfigSnapshot(),
+    });
+    const result = await sendMail(options);
+    console.info("[listing-application-email] send ok", {
+      to: result.to,
+      provider: result.provider,
+      messageId: result.id ?? null,
+      subject: result.subject,
+      from: result.from,
+    });
+    return {
+      sent: true,
+      to: options.to,
+      provider: result.provider,
+      messageId: result.id,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "send_failed";
+    console.error("[listing-application-email] send failed:", {
+      to: options.to,
+      subject: options.subject,
+      error: message,
+      detail: error,
+      config: getMailConfigSnapshot(),
+    });
+    return {
+      sent: false,
+      error: message,
+      to: options.to,
     };
   }
 }
@@ -217,98 +261,151 @@ function buildAdminSiteUrl(applicationId: string): string {
 
 export async function notifyAdminNewApplication(
   row: ListingApplicationRow,
-): Promise<void> {
-  const intro =
-    dash(row.listing_reason) !== "—"
-      ? dash(row.listing_reason)
-      : dash(row.shop_features) !== "—"
-        ? dash(row.shop_features)
-        : "—";
+): Promise<NotifyMailResult> {
+  const to = getAdminNotifyEmail();
+  try {
+    console.info("[listing-application-email] admin notify begin", {
+      applicationNumber: row.application_number,
+      applicationId: row.id,
+      to,
+      hasMailConfig: hasMailConfig(),
+      config: getMailConfigSnapshot(),
+    });
 
-  const [
-    businessLicenseLine,
-    entertainmentLicenseLine,
-    lateNightLine,
-    exteriorSection,
-    interiorSection,
-  ] = await Promise.all([
-    formatDocumentLine("営業許可証", row.business_license_document),
-    formatDocumentLine("風営許可証", row.entertainment_license_document),
-    formatDocumentLine(
-      "深夜酒類提供届出",
-      row.late_night_alcohol_notification_document,
-    ),
-    formatImageSection("店舗外観画像", row.shop_exterior_images),
-    formatImageSection("店内画像", row.shop_interior_images),
-  ]);
+    const intro =
+      dash(row.listing_reason) !== "—"
+        ? dash(row.listing_reason)
+        : dash(row.shop_features) !== "—"
+          ? dash(row.shop_features)
+          : "—";
 
-  const result = await safeSend({
-    to: getAdminNotifyEmail(),
-    subject: "【White Night Job】新しい店舗掲載申請が届きました",
-    text: [
-      "新しい店舗掲載申請が届きました。",
-      "",
-      `申請番号: ${row.application_number}`,
-      `申請日時: ${formatSubmittedAt(row.created_at)}`,
-      `店舗名: ${dash(row.shop_name)}`,
-      `担当者名: ${dash(row.contact_name)}`,
-      `メールアドレス: ${dash(row.contact_email)}`,
-      `電話番号: ${dash(row.contact_phone)}`,
-      `住所: ${dash(row.shop_address)}`,
-      `エリア: ${dash(row.area)}`,
-      `業種: ${dash(row.business_type)}`,
-      `営業時間: ${dash(row.business_hours)}`,
-      `紹介文: ${intro}`,
-      `選択プラン: ${planLabel(row.requested_plan)}`,
-      "",
+    const [
       businessLicenseLine,
       entertainmentLicenseLine,
       lateNightLine,
-      "",
       exteriorSection,
-      "",
       interiorSection,
-      "",
-      "管理画面:",
-      buildAdminSiteUrl(row.id),
-      "",
-      "※画像・書類のURLは一定期間で期限切れになります。期限後は管理画面から確認してください。",
-    ].join("\n"),
-    replyTo: row.contact_email,
-  });
+    ] = await Promise.all([
+      formatDocumentLine("営業許可証", row.business_license_document),
+      formatDocumentLine("風営許可証", row.entertainment_license_document),
+      formatDocumentLine(
+        "深夜酒類提供届出",
+        row.late_night_alcohol_notification_document,
+      ),
+      formatImageSection("店舗外観画像", row.shop_exterior_images),
+      formatImageSection("店内画像", row.shop_interior_images),
+    ]);
 
-  if (!result.sent) {
-    console.warn(
-      "[listing-application-email] admin notify skipped/failed:",
-      result.error,
-      row.application_number,
-    );
+    const result = await safeSend({
+      to,
+      subject: "【White Night Job】新しい店舗掲載申請が届きました",
+      text: [
+        "新しい店舗掲載申請が届きました。",
+        "",
+        `申請番号: ${row.application_number}`,
+        `申請日時: ${formatSubmittedAt(row.created_at)}`,
+        `店舗名: ${dash(row.shop_name)}`,
+        `担当者名: ${dash(row.contact_name)}`,
+        `メールアドレス: ${dash(row.contact_email)}`,
+        `電話番号: ${dash(row.contact_phone)}`,
+        `住所: ${dash(row.shop_address)}`,
+        `エリア: ${dash(row.area)}`,
+        `業種: ${dash(row.business_type)}`,
+        `営業時間: ${dash(row.business_hours)}`,
+        `紹介文: ${intro}`,
+        `選択プラン: ${planLabel(row.requested_plan)}`,
+        "",
+        businessLicenseLine,
+        entertainmentLicenseLine,
+        lateNightLine,
+        "",
+        exteriorSection,
+        "",
+        interiorSection,
+        "",
+        "管理画面:",
+        buildAdminSiteUrl(row.id),
+        "",
+        "※画像・書類のURLは一定期間で期限切れになります。期限後は管理画面から確認してください。",
+      ].join("\n"),
+      replyTo: row.contact_email,
+    });
+
+    if (!result.sent) {
+      console.error(
+        "[listing-application-email] admin notify failed:",
+        result.error,
+        row.application_number,
+        { to: result.to },
+      );
+    } else {
+      console.info(
+        "[listing-application-email] admin notify succeeded:",
+        row.application_number,
+        {
+          to: result.to,
+          provider: result.provider,
+          messageId: result.messageId,
+        },
+      );
+    }
+    return result;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "admin_notify_failed";
+    console.error("[listing-application-email] admin notify exception:", {
+      applicationNumber: row.application_number,
+      to,
+      error: message,
+      detail: error,
+    });
+    return { sent: false, error: message, to };
   }
 }
 
 export async function notifyApplicantReceived(
   row: ListingApplicationRow,
-): Promise<void> {
-  await safeSend({
-    to: row.contact_email,
-    subject: `【White Night Job】掲載審査のお申し込みを受け付けました（${row.application_number}）`,
-    text: [
-      `${row.contact_name} 様`,
-      "",
-      "掲載審査のお申し込みを受け付けました。",
-      "",
-      `申請番号: ${row.application_number}`,
-      `店舗名: ${row.shop_name}`,
-      "",
-      "審査結果は、ご登録いただいたメールアドレスまたは電話番号へご連絡します。",
-      "確認には数営業日かかる場合があります。",
-      "",
-      "審査状況の確認:",
-      `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || ""}/for-shops/review-status`,
-      "",
-      "White Night Job",
-    ].join("\n"),
-  });
+): Promise<NotifyMailResult> {
+  const to = row.contact_email;
+  try {
+    const result = await safeSend({
+      to,
+      subject: `【White Night Job】掲載審査のお申し込みを受け付けました（${row.application_number}）`,
+      text: [
+        `${row.contact_name} 様`,
+        "",
+        "掲載審査のお申し込みを受け付けました。",
+        "",
+        `申請番号: ${row.application_number}`,
+        `店舗名: ${row.shop_name}`,
+        "",
+        "審査結果は、ご登録いただいたメールアドレスまたは電話番号へご連絡します。",
+        "確認には数営業日かかる場合があります。",
+        "",
+        "審査状況の確認:",
+        `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || ""}/for-shops/review-status`,
+        "",
+        "White Night Job",
+      ].join("\n"),
+    });
+    if (!result.sent) {
+      console.error(
+        "[listing-application-email] applicant received notify failed:",
+        result.error,
+        row.application_number,
+      );
+    }
+    return result;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "applicant_notify_failed";
+    console.error(
+      "[listing-application-email] applicant received notify exception:",
+      message,
+      error,
+    );
+    return { sent: false, error: message, to };
+  }
 }
 
 export async function notifyApplicantApproved(

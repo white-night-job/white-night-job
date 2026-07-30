@@ -220,14 +220,32 @@ export async function POST(request: Request) {
       actor: "applicant",
     });
 
-    void notifyAdminNewApplication(saved);
-    void notifyApplicantReceived(saved);
+    // Await mail so Vercel serverless does not freeze/kill fire-and-forget work.
+    // Application row is already saved; mail failure must not roll back or 500.
+    console.info("[listing-applications] notify start", {
+      id: saved.id,
+      applicationNumber: saved.application_number,
+    });
+    const [adminMail, applicantMail] = await Promise.all([
+      notifyAdminNewApplication(saved),
+      notifyApplicantReceived(saved),
+    ]);
+    console.info("[listing-applications] notify finished", {
+      id: saved.id,
+      applicationNumber: saved.application_number,
+      adminMail,
+      applicantMail,
+    });
 
     return NextResponse.json(
       {
         ok: true,
         applicationNumber: saved.application_number,
         id: saved.id,
+        mail: {
+          admin: adminMail,
+          applicant: applicantMail,
+        },
       },
       { status: 201 },
     );
