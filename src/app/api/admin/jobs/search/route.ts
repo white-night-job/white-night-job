@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const cacheKey = `admin:jobs-search:${region}:${statusFilter}:${q}:${page}:${limit}`;
+    const cacheKey = `admin:jobs-search:listed:${region}:${statusFilter}:${q}:${page}:${limit}`;
     const cached = getAdminCache<Record<string, unknown>>(cacheKey);
     if (cached) {
       console.info("[admin/jobs/search] cache-hit", {
@@ -61,18 +61,19 @@ export async function GET(request: Request) {
 
     const supabase = createSupabaseAdmin();
 
-    // Admin search includes draft / paused / published (public APIs stay published-only).
+    // Listed search: published / paused only (drafts use /api/admin/jobs/drafts).
     let slimQuery = supabase
       .from("jobs")
       .select("id, shop_name, district, area, created_at, published, listing_status")
       .order("created_at", { ascending: false });
 
     if (statusFilter === "published") {
-      slimQuery = slimQuery.eq("published", true);
-    } else if (statusFilter === "draft") {
-      slimQuery = slimQuery.eq("listing_status", "draft");
+      slimQuery = slimQuery.eq("listing_status", "published");
     } else if (statusFilter === "paused") {
       slimQuery = slimQuery.eq("listing_status", "paused");
+    } else {
+      // all (and any unknown value): exclude drafts
+      slimQuery = slimQuery.in("listing_status", ["published", "paused"]);
     }
 
     if (region !== "all" && region !== FIXED_AREA) {

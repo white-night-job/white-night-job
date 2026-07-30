@@ -76,7 +76,10 @@ function resolveUpdateIntent(
 } {
   const intentRaw = String(body.saveIntent ?? body.intent ?? "").trim();
   if (intentRaw === "draft" || intentRaw === "save_draft") {
-    // Content save without unpublishing a live job
+    // Draft jobs stay draft. Published/paused keep status (content-only save).
+    if (currentStatus === "draft") {
+      return { intent: "draft", targetStatus: "draft" };
+    }
     return { intent: "keep", targetStatus: currentStatus };
   }
   if (intentRaw === "publish" || intentRaw === "republish") {
@@ -254,6 +257,25 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
     const supabase = createSupabaseAdmin();
+    const { data: existing, error: loadError } = await supabase
+      .from("jobs")
+      .select("id, listing_status, published")
+      .eq("id", id)
+      .maybeSingle();
+    if (loadError) throw loadError;
+    if (!existing) {
+      return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+    if (resolveJobListingStatus(existing) !== "draft") {
+      return NextResponse.json(
+        {
+          message:
+            "公開中・掲載停止の求人はこの画面から削除できません。下書きのみ削除できます。",
+        },
+        { status: 403 },
+      );
+    }
+
     const { error } = await supabase.from("jobs").delete().eq("id", id);
     if (error) throw error;
 

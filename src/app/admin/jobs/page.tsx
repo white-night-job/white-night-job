@@ -1,7 +1,8 @@
 "use client";
 
 import { JobListingPreview } from "@/components/JobListingPreview";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import {
   BENEFIT_CATEGORIES,
@@ -24,6 +25,7 @@ import {
   sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
+import { computeJobDraftProgress } from "@/lib/job-draft-progress";
 import { buildPreviewJobFromAdminForm } from "@/lib/job-preview";
 import {
   promoteTempImagesInPayload,
@@ -275,12 +277,50 @@ function toForm(job: Job): JobForm {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T & { message?: string };
-  if (!response.ok) throw new Error(data.message ?? "通信に失敗しました。");
+  const data = (await response.json()) as T & { message?: string; field?: string };
+  if (!response.ok) {
+    const err = new Error(data.message ?? "通信に失敗しました。") as Error & {
+      field?: string;
+    };
+    if (data.field) err.field = data.field;
+    throw err;
+  }
   return data;
 }
 
+function formatAdminDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  try {
+    return new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
 export default function AdminJobsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
+          読み込み中...
+        </div>
+      }
+    >
+      <AdminJobsPageInner />
+    </Suspense>
+  );
+}
+
+function AdminJobsPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [form, setForm] = useState<JobForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -309,6 +349,7 @@ export default function AdminJobsPage() {
     Set<string>
   >(new Set());
   const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
+  const [isDraftSearchOpen, setIsDraftSearchOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
@@ -318,6 +359,21 @@ export default function AdminJobsPage() {
   const [searchTotal, setSearchTotal] = useState(0);
   const [searchHasMore, setSearchHasMore] = useState(false);
   const SEARCH_LIMIT = 20;
+
+  const [draftJobs, setDraftJobs] = useState<Job[]>([]);
+  const [draftTotal, setDraftTotal] = useState(0);
+  const [draftSearchTotal, setDraftSearchTotal] = useState(0);
+  const [draftSearchPerformed, setDraftSearchPerformed] = useState(false);
+  const [draftSearchLoading, setDraftSearchLoading] = useState(false);
+  const [draftShopName, setDraftShopName] = useState("");
+  const [draftArea, setDraftArea] = useState("all");
+  const [draftJobType, setDraftJobType] = useState("all");
+  const [draftContactName, setDraftContactName] = useState("");
+  const [draftCreatedFrom, setDraftCreatedFrom] = useState("");
+  const [draftCreatedTo, setDraftCreatedTo] = useState("");
+  const [draftUpdatedFrom, setDraftUpdatedFrom] = useState("");
+  const [draftUpdatedTo, setDraftUpdatedTo] = useState("");
+
   const [monthlySummary, setMonthlySummary] = useState<{
     periodLabel: string;
     previousPeriodLabel: string;
@@ -422,10 +478,70 @@ export default function AdminJobsPage() {
     }
   }
 
+  async function runDraftSearch() {
+    setDraftSearchLoading(true);
+    setMessage("");
+    try {
+      const params = new URLSearchParams();
+      if (draftShopName.trim()) params.set("shopName", draftShopName.trim());
+      if (draftArea !== "all") params.set("area", draftArea);
+      if (draftJobType !== "all") params.set("jobType", draftJobType);
+      if (draftContactName.trim()) {
+        params.set("contactName", draftContactName.trim());
+      }
+      if (draftCreatedFrom) params.set("createdFrom", draftCreatedFrom);
+      if (draftCreatedTo) params.set("createdTo", draftCreatedTo);
+      if (draftUpdatedFrom) params.set("updatedFrom", draftUpdatedFrom);
+      if (draftUpdatedTo) params.set("updatedTo", draftUpdatedTo);
+      params.set("limit", "100");
+
+      const data = await readJson<{
+        jobs: Job[];
+        total: number;
+        draftTotal: number;
+        message?: string;
+      }>(
+        await fetch(`/api/admin/jobs/drafts?${params.toString()}`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+
+      setDraftJobs(data.jobs ?? []);
+      setDraftSearchTotal(data.total ?? 0);
+      setDraftTotal(data.draftTotal ?? data.total ?? 0);
+      setDraftSearchPerformed(true);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "下書き検索に失敗しました。",
+      );
+    } finally {
+      setDraftSearchLoading(false);
+    }
+  }
+
+  async function loadDraftTotal() {
+    try {
+      const data = await readJson<{ draftTotal: number }>(
+        await fetch("/api/admin/jobs/drafts?limit=1", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+      setDraftTotal(data.draftTotal ?? 0);
+    } catch {
+      /* non-blocking */
+    }
+  }
+
   async function refreshAfterMutation() {
     await loadMonthlySummary();
+    await loadDraftTotal();
     if (shopSearchQuery.trim() || regionFilter !== "all" || statusFilter !== "all") {
       await runShopSearch(1, false);
+    }
+    if (draftSearchPerformed || isDraftSearchOpen) {
+      await runDraftSearch();
     }
   }
 
@@ -440,7 +556,45 @@ export default function AdminJobsPage() {
 
   useEffect(() => {
     void loadMonthlySummary();
+    void loadDraftTotal();
   }, []);
+
+  useEffect(() => {
+    const editId = searchParams.get("edit")?.trim();
+    if (!editId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await readJson<{ job: Job }>(
+          await fetch(`/api/admin/jobs/${editId}`, {
+            cache: "no-store",
+            credentials: "include",
+          }),
+        );
+        if (cancelled) return;
+        handleEdit(data.job, { skipUrlUpdate: true });
+      } catch (error) {
+        if (!cancelled) {
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "下書きの読み込みに失敗しました。",
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (isDraftSearchOpen && !draftSearchPerformed) {
+      void runDraftSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDraftSearchOpen]);
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -512,6 +666,7 @@ export default function AdminJobsPage() {
     setFormDirty(false);
     setFieldErrors({});
     setDraftJobId(crypto.randomUUID());
+    router.replace("/admin/jobs", { scroll: false });
   }
 
   async function saveJob(saveIntent: "draft" | "publish" | "pause" | "republish", options?: { silent?: boolean }) {
@@ -553,6 +708,9 @@ export default function AdminJobsPage() {
         window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
         requestScrollToTop();
         setShowPreview(false);
+        if (saveIntent === "publish" || saveIntent === "republish") {
+          router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
+        }
       }
       setEditingId(savedJob.id);
       setForm(toForm(savedJob));
@@ -560,15 +718,32 @@ export default function AdminJobsPage() {
       setIsAddFormOpen(false);
       setFormDirty(false);
       setDraftJobId(savedJob.id);
+      if (!editingId) {
+        router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
+      }
       return savedJob;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "保存に失敗しました。";
+      const field =
+        error && typeof error === "object" && "field" in error
+          ? String((error as { field?: string }).field ?? "")
+          : "";
       if (!options?.silent) {
         setMessage(message);
-        if (message.includes("店名")) setFieldErrors({ shopName: message });
-        if (message.includes("時給")) setFieldErrors((p) => ({ ...p, salary: message }));
-        if (message.includes("LINE")) setFieldErrors((p) => ({ ...p, lineUrl: message }));
+        if (field) {
+          setFieldErrors({ [field]: message });
+        } else {
+          if (message.includes("店名")) setFieldErrors({ shopName: message });
+          if (message.includes("時給"))
+            setFieldErrors((p) => ({ ...p, salary: message }));
+          if (message.includes("LINE"))
+            setFieldErrors((p) => ({ ...p, lineUrl: message }));
+          if (message.includes("地区"))
+            setFieldErrors((p) => ({ ...p, district: message }));
+          if (message.includes("職種"))
+            setFieldErrors((p) => ({ ...p, jobType: message }));
+        }
         requestScrollToTop();
         setShowPreview(false);
       }
@@ -599,15 +774,28 @@ export default function AdminJobsPage() {
   }
 
   async function handleDelete(job: Job) {
-    if (!window.confirm(`「${job.shopName}」を削除しますか？`)) return;
+    if (resolveJobListingStatus(job) !== "draft") {
+      setMessage("公開中・掲載停止の求人はこの画面から削除できません。");
+      return;
+    }
+    if (
+      !window.confirm(
+        `下書き「${job.shopName || "（未入力）"}」を削除しますか？\nこの操作は取り消せません。`,
+      )
+    ) {
+      return;
+    }
     setLoading(true);
     setMessage("");
     try {
       await readJson<{ ok: boolean }>(
-        await fetch(`/api/jobs/${job.id}`, { method: "DELETE" }),
+        await fetch(`/api/jobs/${job.id}`, {
+          method: "DELETE",
+          credentials: "include",
+        }),
       );
       if (editingId === job.id) resetForm();
-      setMessage("求人を削除しました。");
+      setMessage("下書きを削除しました。");
       await refreshAfterMutation();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
     } catch (error) {
@@ -739,14 +927,22 @@ export default function AdminJobsPage() {
     }
   }
 
-  function handleEdit(job: Job) {
+  function handleEdit(
+    job: Job,
+    options?: { skipUrlUpdate?: boolean },
+  ) {
     setEditingId(job.id);
     setForm(toForm(job));
     setEditingListingStatus(resolveJobListingStatus(job));
     setIsAddFormOpen(false);
     setShowPreview(false);
     setFormDirty(false);
+    setFieldErrors({});
     setMessage("");
+    setDraftJobId(job.id);
+    if (!options?.skipUrlUpdate) {
+      router.replace(`/admin/jobs?edit=${job.id}`, { scroll: false });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -935,8 +1131,7 @@ export default function AdminJobsPage() {
                       onChange={(event) => setStatusFilter(event.target.value)}
                       className={inputClass}
                     >
-                      <option value="all">すべて</option>
-                      <option value="draft">下書き</option>
+                      <option value="all">公開中 + 掲載停止</option>
                       <option value="published">公開中</option>
                       <option value="paused">掲載停止</option>
                     </select>
@@ -1084,30 +1279,12 @@ export default function AdminJobsPage() {
                           </div>
 
                           <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
-                            {resolveJobListingStatus(job) === "draft" ? (
-                              <button
-                                type="button"
-                                onClick={() => handleEdit(job)}
-                                className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                              >
-                                編集を続ける
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleEdit(job)}
-                                className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                              >
-                                編集
-                              </button>
-                            )}
                             <button
                               type="button"
-                              onClick={() => handleDelete(job)}
-                              disabled={loading}
-                              className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                              onClick={() => handleEdit(job)}
+                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
                             >
-                              削除
+                              編集
                             </button>
                           </div>
                         </div>
@@ -1125,6 +1302,250 @@ export default function AdminJobsPage() {
                     {searchLoading ? "読み込み中..." : "さらに表示（最大20件ずつ）"}
                   </button>
                 )}
+              </>
+            )}
+          </div>
+        )}
+      </section>
+
+      <section id="admin-draft-jobs" className="mt-3">
+        <button
+          type="button"
+          onClick={() => setIsDraftSearchOpen((open) => !open)}
+          aria-expanded={isDraftSearchOpen}
+          aria-controls="admin-draft-search-panel"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-gold/30 bg-white px-4 py-3.5 text-left shadow-gold transition hover:bg-ivory/60 sm:px-5"
+        >
+          <span className="text-base font-semibold text-charcoal sm:text-lg">
+            {isDraftSearchOpen ? "▼" : "▶"} 下書き店舗検索
+            <span className="ml-2 text-sm font-normal text-muted">
+              （{draftTotal.toLocaleString("ja-JP")}件）
+            </span>
+          </span>
+        </button>
+
+        {isDraftSearchOpen && (
+          <div id="admin-draft-search-panel" className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
+              <h3 className="text-base font-semibold text-charcoal">
+                下書きを検索
+              </h3>
+              <p className="mt-1 text-xs text-muted">
+                下書き（draft）のみが対象です。修正して再保存、または公開できます。
+              </p>
+              <form
+                className="mt-4 space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void runDraftSearch();
+                }}
+              >
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <label htmlFor="draft-shop-name" className={labelClass}>
+                      店舗名
+                    </label>
+                    <input
+                      id="draft-shop-name"
+                      type="search"
+                      value={draftShopName}
+                      onChange={(e) => setDraftShopName(e.target.value)}
+                      className={inputClass}
+                      placeholder="店舗名"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="draft-area" className={labelClass}>
+                      エリア
+                    </label>
+                    <select
+                      id="draft-area"
+                      value={draftArea}
+                      onChange={(e) => setDraftArea(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="all">すべて</option>
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="draft-job-type" className={labelClass}>
+                      業種
+                    </label>
+                    <select
+                      id="draft-job-type"
+                      value={draftJobType}
+                      onChange={(e) => setDraftJobType(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="all">すべて</option>
+                      {JOB_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="draft-contact" className={labelClass}>
+                      担当者名
+                    </label>
+                    <input
+                      id="draft-contact"
+                      type="search"
+                      value={draftContactName}
+                      onChange={(e) => setDraftContactName(e.target.value)}
+                      className={inputClass}
+                      placeholder="採用担当者名"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="draft-created-from" className={labelClass}>
+                      作成日（開始）
+                    </label>
+                    <input
+                      id="draft-created-from"
+                      type="date"
+                      value={draftCreatedFrom}
+                      onChange={(e) => setDraftCreatedFrom(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="draft-created-to" className={labelClass}>
+                      作成日（終了）
+                    </label>
+                    <input
+                      id="draft-created-to"
+                      type="date"
+                      value={draftCreatedTo}
+                      onChange={(e) => setDraftCreatedTo(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="draft-updated-from" className={labelClass}>
+                      最終更新日（開始）
+                    </label>
+                    <input
+                      id="draft-updated-from"
+                      type="date"
+                      value={draftUpdatedFrom}
+                      onChange={(e) => setDraftUpdatedFrom(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="draft-updated-to" className={labelClass}>
+                      最終更新日（終了）
+                    </label>
+                    <input
+                      id="draft-updated-to"
+                      type="date"
+                      value={draftUpdatedTo}
+                      onChange={(e) => setDraftUpdatedTo(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={draftSearchLoading}
+                  className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto"
+                >
+                  {draftSearchLoading ? "検索中..." : "検索する"}
+                </button>
+              </form>
+            </div>
+
+            {!draftSearchPerformed || (draftSearchLoading && draftJobs.length === 0) ? (
+              <div className="h-32 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+            ) : draftJobs.length === 0 ? (
+              <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
+                保存中の下書きはありません
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold text-charcoal">
+                    下書き一覧
+                    <span className="ml-1 text-sm font-normal text-muted">
+                      （{draftSearchTotal.toLocaleString("ja-JP")}件）
+                    </span>
+                  </h3>
+                </div>
+                <ul className="space-y-3">
+                  {draftJobs.map((job) => {
+                    const progress = computeJobDraftProgress(job);
+                    return (
+                      <li
+                        key={job.id}
+                        className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg font-semibold text-charcoal">
+                              {job.shopName?.trim() || "（店舗名未入力）"}
+                            </p>
+                            <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="text-muted">エリア:</dt>
+                                <dd>{job.district || "—"}</dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="text-muted">業種:</dt>
+                                <dd>{job.jobType || "—"}</dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="text-muted">作成日:</dt>
+                                <dd>{formatAdminDateTime(job.createdAt)}</dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="text-muted">最終更新日:</dt>
+                                <dd>{formatAdminDateTime(job.updatedAt)}</dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2 sm:col-span-2">
+                                <dt className="text-muted">入力進捗:</dt>
+                                <dd className="font-medium text-charcoal">
+                                  {progress.label}
+                                </dd>
+                              </div>
+                              <div className="flex flex-wrap gap-x-2">
+                                <dt className="text-muted">ステータス:</dt>
+                                <dd>
+                                  <span className="inline-flex rounded-full border border-black/10 bg-ivory px-2.5 py-0.5 text-xs font-semibold text-charcoal">
+                                    下書き
+                                  </span>
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
+                          <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(job)}
+                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                            >
+                              修正する
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleDelete(job)}
+                              disabled={loading}
+                              className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              削除する
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </>
             )}
           </div>
@@ -1149,7 +1570,14 @@ export default function AdminJobsPage() {
             className="space-y-4"
           >
             {editingId && (
-              <h2 className="text-lg font-semibold text-charcoal">求人を編集</h2>
+              <h2 className="text-lg font-semibold text-charcoal">
+                求人を編集
+                {editingListingStatus === "draft" ? (
+                  <span className="ml-2 text-sm font-normal text-muted">
+                    （下書き）
+                  </span>
+                ) : null}
+              </h2>
             )}
 
         <div className="rounded-2xl border border-gold/30 bg-ivory/60 p-4 sm:p-5">

@@ -277,6 +277,15 @@ export function ListingReviewsPanel() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const hasActiveFilters =
+    statusFilter !== "all" ||
+    Boolean(shopNameQuery.trim()) ||
+    Boolean(contactNameQuery.trim()) ||
+    Boolean(applicationNumberQuery.trim()) ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -396,89 +405,113 @@ export function ListingReviewsPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-xs text-muted">店舗名</label>
-          <input
-            className={inputClass}
-            value={shopNameQuery}
-            onChange={(e) => setShopNameQuery(e.target.value)}
-            placeholder="店舗名"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted">担当者</label>
-          <input
-            className={inputClass}
-            value={contactNameQuery}
-            onChange={(e) => setContactNameQuery(e.target.value)}
-            placeholder="担当者名"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted">申請番号</label>
-          <input
-            className={inputClass}
-            value={applicationNumberQuery}
-            onChange={(e) => setApplicationNumberQuery(e.target.value)}
-            placeholder="申請番号"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted">ステータス</label>
-          <select
-            className={inputClass}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            {ADMIN_STATUS_FILTER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted">申請日（開始）</label>
-          <input
-            className={inputClass}
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted">申請日（終了）</label>
-          <input
-            className={inputClass}
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
+      <div className="rounded-2xl border border-gold/20 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => void loadList()}
-            className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-2 text-sm font-semibold text-white"
+            onClick={() => setIsSearchOpen((open) => !open)}
+            aria-expanded={isSearchOpen}
+            aria-controls="listing-reviews-search-panel"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-gold/40 bg-ivory px-5 py-3 text-sm font-semibold text-gold-dark transition hover:bg-ivory/80 sm:w-auto sm:min-w-[12rem]"
           >
-            検索
+            {isSearchOpen ? "検索条件を閉じる" : "検索条件を開く"}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShopNameQuery("");
-              setContactNameQuery("");
-              setApplicationNumberQuery("");
-              setStatusFilter("all");
-              setDateFrom("");
-              setDateTo("");
-            }}
-            className="rounded-full border border-gold/40 px-4 py-2 text-sm text-gold-dark"
-          >
-            条件クリア
-          </button>
+          {hasActiveFilters ? (
+            <span className="inline-flex items-center rounded-full border border-gold/30 bg-ivory px-3 py-1.5 text-xs font-medium text-charcoal">
+              条件設定中
+            </span>
+          ) : null}
         </div>
+
+        {isSearchOpen ? (
+          <div
+            id="listing-reviews-search-panel"
+            className="mt-4 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <div>
+              <label className="mb-1 block text-xs text-muted">店舗名</label>
+              <input
+                className={inputClass}
+                value={shopNameQuery}
+                onChange={(e) => setShopNameQuery(e.target.value)}
+                placeholder="店舗名"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">担当者</label>
+              <input
+                className={inputClass}
+                value={contactNameQuery}
+                onChange={(e) => setContactNameQuery(e.target.value)}
+                placeholder="担当者名"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">申請番号</label>
+              <input
+                className={inputClass}
+                value={applicationNumberQuery}
+                onChange={(e) => setApplicationNumberQuery(e.target.value)}
+                placeholder="申請番号"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">ステータス</label>
+              <select
+                className={inputClass}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                {ADMIN_STATUS_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">申請日（開始）</label>
+              <input
+                className={inputClass}
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted">申請日（終了）</label>
+              <input
+                className={inputClass}
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
+              <button
+                type="button"
+                onClick={() => void loadList()}
+                className="min-h-11 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                検索
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShopNameQuery("");
+                  setContactNameQuery("");
+                  setApplicationNumberQuery("");
+                  setStatusFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                className="min-h-11 rounded-full border border-gold/40 px-5 py-2.5 text-sm text-gold-dark"
+              >
+                条件クリア
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {message && (
