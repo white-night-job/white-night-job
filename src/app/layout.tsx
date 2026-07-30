@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { ChatBot } from "@/components/ChatBot";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
 import { JsonLd } from "@/components/JsonLd";
+import { SiteShell } from "@/components/SiteShell";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
 import { buildOrganizationJsonLd, buildRootMetadata, buildWebSiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import "./desktop.css";
+import "./admin.css";
 
 export const metadata: Metadata = buildRootMetadata();
 
@@ -29,10 +28,7 @@ export default async function RootLayout({
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <ChatBot />
+          <SiteShell>{children}</SiteShell>
         </UserSessionProvider>
       </body>
     </html>
