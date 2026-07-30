@@ -16,6 +16,7 @@ import {
   notifyApplicantNeedsInfo,
   notifyApplicantRejected,
 } from "@/lib/listing-application-email";
+import { upsertShopFromApprovedApplication } from "@/lib/listing-shop";
 import { isJobPlan } from "@/lib/job-plan";
 import {
   createSupabaseAdmin,
@@ -31,6 +32,7 @@ type PatchBody = {
     | "set_status"
     | "approve"
     | "reject"
+    | "hold"
     | "needs_info"
     | "save_memo"
     | "assign"
@@ -254,6 +256,16 @@ export async function PATCH(request: Request, context: RouteContext) {
         eventMessage = `承認・招待コード発行 / プラン ${planLabel(confirmed)}`;
         break;
       }
+      case "hold": {
+        toStatus = "reviewing";
+        patch = {
+          status: "reviewing",
+          assigned_admin: current.assigned_admin || actor,
+        };
+        eventType = "hold";
+        eventMessage = "保留";
+        break;
+      }
       case "reject": {
         const reason = body.rejectionReason?.trim();
         if (!reason) {
@@ -316,7 +328,55 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error || !data) throw error ?? new Error("update failed");
-    const updated = data as ListingApplicationRow;
+    let updated = data as ListingApplicationRow;
+
+    if (body.action === "approve") {
+      try {
+        const plan = (updated.confirmed_plan ||
+          updated.requested_plan) as typeof updated.requested_plan;
+        const shop = await upsertShopFromApprovedApplication(updated, plan);
+        const { data: withShop, error: linkError } = await supabase
+          .from("listing_applications")
+          .update({ linked_shop_id: shop.id })
+          .eq("id", id)
+          .select("*")
+          .single();
+        if (linkError) {
+          console.error(
+            "[admin/listing-applications] linked_shop_id update failed:",
+            linkError,
+          );
+        } else if (withShop) {
+          updated = withShop as ListingApplicationRow;
+        }
+        eventMessage = `${eventMessage} / shops=${shop.id} listing_status=${shop.listing_status}`;
+        await appendEvent({
+          applicationId: id,
+          eventType: "shop_registered",
+          fromStatus: current.status,
+          toStatus: "approved",
+          message: `shops 登録・掲載開始 shop=${shop.id}`,
+          actor,
+        });
+      } catch (shopError) {
+        console.error(
+          "[admin/listing-applications] shops register failed:",
+          shopError,
+        );
+        // Application stays approved; surface warning in response via event
+        await appendEvent({
+          applicationId: id,
+          eventType: "shop_register_failed",
+          fromStatus: current.status,
+          toStatus: "approved",
+          message:
+            shopError instanceof Error
+              ? shopError.message
+              : "shops 登録に失敗しました",
+          actor,
+        });
+      }
+    }
 
     await appendEvent({
       applicationId: id,
@@ -327,13 +387,14 @@ export async function PATCH(request: Request, context: RouteContext) {
       actor,
     });
 
+    let adminMail: { sent: boolean; error?: string; to?: string } | null = null;
     if (notify) {
       if (body.action === "approve") {
-        void notifyApplicantApproved(updated);
+        adminMail = await notifyApplicantApproved(updated);
       } else if (body.action === "reject") {
-        void notifyApplicantRejected(updated);
+        adminMail = await notifyApplicantRejected(updated);
       } else if (body.action === "needs_info") {
-        void notifyApplicantNeedsInfo(updated);
+        adminMail = await notifyApplicantNeedsInfo(updated);
       }
     }
 
@@ -351,6 +412,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           : null,
       },
       events,
+      mail: adminMail,
     });
   } catch (error) {
     return NextResponse.json(

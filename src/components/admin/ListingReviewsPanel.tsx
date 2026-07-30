@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   JOB_PLANS,
   type JobPlan,
 } from "@/lib/job-plan";
 import {
-  LISTING_APPLICATION_STATUSES,
   LISTING_APPLICATION_STATUS_LABELS,
   planLabel,
   type ListingApplicationStatus,
@@ -127,10 +127,24 @@ function displayText(value: unknown): string {
 
 function statusBadgeLabel(status: ListingApplicationStatus): string {
   if (status === "pending") return "未審査";
+  if (status === "reviewing") return "保留";
   if (status === "approved") return "承認";
   if (status === "rejected") return "却下";
   return LISTING_APPLICATION_STATUS_LABELS[status];
 }
+
+const ADMIN_STATUS_FILTER_OPTIONS: Array<{
+  value: string;
+  label: string;
+}> = [
+  { value: "all", label: "すべて" },
+  { value: "pending", label: "未審査" },
+  { value: "reviewing", label: "保留" },
+  { value: "needs_info", label: "追加確認" },
+  { value: "approved", label: "承認" },
+  { value: "rejected", label: "却下" },
+  { value: "withdrawn", label: "取り下げ" },
+];
 
 function DocumentCard({
   label,
@@ -247,9 +261,14 @@ function ImageGallery({
 }
 
 export function ListingReviewsPanel() {
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<ListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [query, setQuery] = useState("");
+  const [shopNameQuery, setShopNameQuery] = useState("");
+  const [contactNameQuery, setContactNameQuery] = useState("");
+  const [applicationNumberQuery, setApplicationNumberQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -269,7 +288,15 @@ export function ListingReviewsPanel() {
     try {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
-      if (query.trim()) params.set("q", query.trim());
+      if (shopNameQuery.trim()) params.set("shopName", shopNameQuery.trim());
+      if (contactNameQuery.trim()) {
+        params.set("contactName", contactNameQuery.trim());
+      }
+      if (applicationNumberQuery.trim()) {
+        params.set("applicationNumber", applicationNumberQuery.trim());
+      }
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
       const response = await fetch(
         `/api/admin/listing-applications?${params.toString()}`,
         { credentials: "include" },
@@ -285,11 +312,25 @@ export function ListingReviewsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [query, statusFilter]);
+  }, [
+    applicationNumberQuery,
+    contactNameQuery,
+    dateFrom,
+    dateTo,
+    shopNameQuery,
+    statusFilter,
+  ]);
 
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    const id = searchParams.get("id")?.trim();
+    if (id) void openDetail(id);
+    // open once from deep link
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function openDetail(id: string) {
     setSelectedId(id);
@@ -367,7 +408,34 @@ export function ListingReviewsPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <label className="mb-1 block text-xs text-muted">店舗名</label>
+          <input
+            className={inputClass}
+            value={shopNameQuery}
+            onChange={(e) => setShopNameQuery(e.target.value)}
+            placeholder="店舗名"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-muted">担当者</label>
+          <input
+            className={inputClass}
+            value={contactNameQuery}
+            onChange={(e) => setContactNameQuery(e.target.value)}
+            placeholder="担当者名"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-muted">申請番号</label>
+          <input
+            className={inputClass}
+            value={applicationNumberQuery}
+            onChange={(e) => setApplicationNumberQuery(e.target.value)}
+            placeholder="申請番号"
+          />
+        </div>
         <div>
           <label className="mb-1 block text-xs text-muted">ステータス</label>
           <select
@@ -375,30 +443,54 @@ export function ListingReviewsPanel() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">すべて</option>
-            {LISTING_APPLICATION_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {LISTING_APPLICATION_STATUS_LABELS[status]}
+            {ADMIN_STATUS_FILTER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
         </div>
-        <div className="min-w-[12rem] flex-1">
-          <label className="mb-1 block text-xs text-muted">検索</label>
+        <div>
+          <label className="mb-1 block text-xs text-muted">申請日（開始）</label>
           <input
             className={inputClass}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="店舗名・申請番号・担当者など"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => void loadList()}
-          className="rounded-full border border-gold/40 px-4 py-2 text-sm text-gold-dark"
-        >
-          再読み込み
-        </button>
+        <div>
+          <label className="mb-1 block text-xs text-muted">申請日（終了）</label>
+          <input
+            className={inputClass}
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
+          <button
+            type="button"
+            onClick={() => void loadList()}
+            className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-2 text-sm font-semibold text-white"
+          >
+            検索
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShopNameQuery("");
+              setContactNameQuery("");
+              setApplicationNumberQuery("");
+              setStatusFilter("all");
+              setDateFrom("");
+              setDateTo("");
+            }}
+            className="rounded-full border border-gold/40 px-4 py-2 text-sm text-gold-dark"
+          >
+            条件クリア
+          </button>
+        </div>
       </div>
 
       {message && (
@@ -411,26 +503,27 @@ export function ListingReviewsPanel() {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-ivory text-xs text-muted">
             <tr>
-              <th className="px-3 py-2">申請日時</th>
+              <th className="px-3 py-2">申請番号</th>
+              <th className="px-3 py-2">申請日</th>
               <th className="px-3 py-2">店舗名</th>
-              <th className="px-3 py-2">業種</th>
-              <th className="px-3 py-2">エリア</th>
               <th className="px-3 py-2">担当者</th>
-              <th className="px-3 py-2">希望プラン</th>
-              <th className="px-3 py-2">ステータス</th>
-              <th className="px-3 py-2">担当管理者</th>
+              <th className="px-3 py-2">エリア</th>
+              <th className="px-3 py-2">業種</th>
+              <th className="px-3 py-2">選択プラン</th>
+              <th className="px-3 py-2">審査ステータス</th>
+              <th className="px-3 py-2">詳細</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-4 text-muted" colSpan={8}>
+                <td className="px-3 py-4 text-muted" colSpan={9}>
                   読み込み中...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-muted" colSpan={8}>
+                <td className="px-3 py-4 text-muted" colSpan={9}>
                   申請はまだありません。
                 </td>
               </tr>
@@ -438,21 +531,35 @@ export function ListingReviewsPanel() {
               items.map((item) => (
                 <tr
                   key={item.id}
-                  className={`cursor-pointer border-t border-gold/10 hover:bg-ivory/60 ${
+                  className={`border-t border-gold/10 hover:bg-ivory/60 ${
                     selectedId === item.id ? "bg-ivory" : ""
                   }`}
-                  onClick={() => void openDetail(item.id)}
                 >
+                  <td className="px-3 py-2 whitespace-nowrap font-mono text-xs">
+                    {item.applicationNumber}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {formatDate(item.createdAt)}
                   </td>
                   <td className="px-3 py-2 font-medium">{item.shopName}</td>
-                  <td className="px-3 py-2">{item.businessType}</td>
-                  <td className="px-3 py-2">{item.area || "—"}</td>
                   <td className="px-3 py-2">{item.contactName}</td>
+                  <td className="px-3 py-2">{item.area || "—"}</td>
+                  <td className="px-3 py-2">{item.businessType}</td>
                   <td className="px-3 py-2">{item.requestedPlanLabel}</td>
-                  <td className="px-3 py-2">{item.statusLabel}</td>
-                  <td className="px-3 py-2">{item.assignedAdmin || "—"}</td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex rounded-full border border-gold/30 bg-ivory px-2 py-0.5 text-xs">
+                      {statusBadgeLabel(item.status)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => void openDetail(item.id)}
+                      className="rounded-full border border-gold/40 px-3 py-1 text-xs font-medium text-gold-dark hover:bg-ivory"
+                    >
+                      詳細
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -715,23 +822,31 @@ export function ListingReviewsPanel() {
                 onClick={() => void runAction("approve")}
                 className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
               >
-                承認する
+                承認
               </button>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || !rejectionReason.trim()}
                 onClick={() => void runAction("reject")}
                 className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 disabled:opacity-60"
               >
-                却下する
+                却下
               </button>
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void runAction("set_status", { status: "reviewing" })}
+                onClick={() => void runAction("hold")}
+                className="rounded-full border border-gold/40 px-5 py-2.5 text-sm text-gold-dark disabled:opacity-60"
+              >
+                保留
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void runAction("save_memo")}
                 className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
               >
-                審査中へ
+                メモ保存
               </button>
               <button
                 type="button"
@@ -752,26 +867,10 @@ export function ListingReviewsPanel() {
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void runAction("save_memo")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                メモ保存
-              </button>
-              <button
-                type="button"
-                disabled={busy}
                 onClick={() => void runAction("assign")}
                 className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
               >
                 担当設定
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runAction("withdraw")}
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs disabled:opacity-60"
-              >
-                取り下げ
               </button>
             </div>
 

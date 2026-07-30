@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ListingReviewsPanel } from "@/components/admin/ListingReviewsPanel";
 
 export default function AdminListingReviewsPage() {
@@ -96,10 +96,18 @@ export default function AdminListingReviewsPage() {
             掲載審査管理
           </h1>
           <p className="mt-1 text-sm text-muted">
-            申請内容の確認、追加確認、承認・否認を行います。承認前に求人は公開されません。
+            申請内容の確認、保留、承認・却下を行います。承認時に店舗を登録し掲載開始状態にします。
           </p>
         </div>
-        <ListingReviewsPanel />
+        <Suspense
+          fallback={
+            <p className="rounded-xl border border-gold/20 bg-white px-4 py-6 text-sm text-muted">
+              読み込み中...
+            </p>
+          }
+        >
+          <ListingReviewsPanel />
+        </Suspense>
       </div>
     </div>
   );

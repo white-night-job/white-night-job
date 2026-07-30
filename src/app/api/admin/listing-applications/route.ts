@@ -17,6 +17,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const q = searchParams.get("q")?.trim();
+    const shopName = searchParams.get("shopName")?.trim();
+    const contactName = searchParams.get("contactName")?.trim();
+    const applicationNumber = searchParams.get("applicationNumber")?.trim();
+    const dateFrom = searchParams.get("dateFrom")?.trim();
+    const dateTo = searchParams.get("dateTo")?.trim();
 
     const supabase = createSupabaseAdmin();
     let query = supabase
@@ -25,10 +30,25 @@ export async function GET(request: Request) {
         "id, application_number, status, shop_name, area, business_type, contact_name, contact_email, requested_plan, confirmed_plan, assigned_admin, created_at, updated_at, approved_at",
       )
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(300);
 
     if (status && status !== "all") {
       query = query.eq("status", status);
+    }
+    if (shopName) {
+      query = query.ilike("shop_name", `%${shopName}%`);
+    }
+    if (contactName) {
+      query = query.ilike("contact_name", `%${contactName}%`);
+    }
+    if (applicationNumber) {
+      query = query.ilike("application_number", `%${applicationNumber}%`);
+    }
+    if (dateFrom) {
+      query = query.gte("created_at", `${dateFrom}T00:00:00.000+09:00`);
+    }
+    if (dateTo) {
+      query = query.lte("created_at", `${dateTo}T23:59:59.999+09:00`);
     }
 
     const { data, error } = await query;

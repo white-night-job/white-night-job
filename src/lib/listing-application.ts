@@ -469,6 +469,7 @@ export type ListingApplicationRow = {
   invite_code: string | null;
   invite_expires_at: string | null;
   linked_job_id: string | null;
+  linked_shop_id?: string | null;
   onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;

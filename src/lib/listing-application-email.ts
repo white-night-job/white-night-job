@@ -256,7 +256,7 @@ function buildAdminSiteUrl(applicationId: string): string {
     process.env.SITE_URL?.replace(/\/$/, "") ||
     "";
   if (!base) return "管理画面の「掲載審査管理」から確認してください。";
-  return `${base}/admin?tab=listing-reviews&id=${encodeURIComponent(applicationId)}`;
+  return `${base}/admin/listing-reviews?id=${encodeURIComponent(applicationId)}`;
 }
 
 export async function notifyAdminNewApplication(
@@ -410,11 +410,18 @@ export async function notifyApplicantReceived(
 
 export async function notifyApplicantApproved(
   row: ListingApplicationRow,
-): Promise<void> {
-  if (!row.invite_code) return;
+): Promise<NotifyMailResult> {
+  const to = row.contact_email;
+  if (!row.invite_code) {
+    return {
+      sent: false,
+      error: "invite_code_missing",
+      to,
+    };
+  }
   const url = buildOnboardingUrl(row.invite_code);
-  await safeSend({
-    to: row.contact_email,
+  return safeSend({
+    to,
     subject: `【White Night Job】掲載審査に通過しました（${row.application_number}）`,
     text: [
       `${row.contact_name} 様`,
@@ -436,8 +443,8 @@ export async function notifyApplicantApproved(
 
 export async function notifyApplicantRejected(
   row: ListingApplicationRow,
-): Promise<void> {
-  await safeSend({
+): Promise<NotifyMailResult> {
+  return safeSend({
     to: row.contact_email,
     subject: `【White Night Job】掲載審査の結果について（${row.application_number}）`,
     text: [
@@ -460,12 +467,12 @@ export async function notifyApplicantRejected(
 
 export async function notifyApplicantNeedsInfo(
   row: ListingApplicationRow,
-): Promise<void> {
+): Promise<NotifyMailResult> {
   const uploadUrl = row.needs_info_upload_token
     ? buildNeedsInfoUploadUrl(row.needs_info_upload_token)
     : null;
 
-  await safeSend({
+  return safeSend({
     to: row.contact_email,
     subject: `【White Night Job】掲載審査の追加確認のお願い（${row.application_number}）`,
     text: [
