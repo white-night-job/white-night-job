@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/api-error";
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IDENTITY_BUCKET,
   LISTING_APPLICATION_IMAGE_BUCKET,
 } from "@/lib/supabase";
 
@@ -17,6 +18,15 @@ const DOC_ALLOWED_TYPES = new Set([
 ]);
 
 const DOC_ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "pdf", "heic", "heif"]);
+
+const IDENTITY_ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+]);
+
+const IDENTITY_ALLOWED_EXT = new Set(["jpg", "jpeg", "png", "pdf"]);
 
 const IMAGE_ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -42,6 +52,11 @@ const DOC_TYPE_TO_FOLDER: Record<string, string> = {
   "business-license": "business-license",
   "entertainment-license": "entertainment-license",
   "late-night-alcohol-notification": "late-night-alcohol-notification",
+};
+
+const IDENTITY_TYPE_TO_FOLDER: Record<string, string> = {
+  "identity-document-front": "identity-front",
+  "identity-document-back": "identity-back",
 };
 
 const IMAGE_TYPE_TO_KIND: Record<string, "exterior" | "interior"> = {
@@ -114,8 +129,9 @@ export async function POST(request: Request) {
 
     const imageKind = IMAGE_TYPE_TO_KIND[docType];
     const docFolder = DOC_TYPE_TO_FOLDER[docType];
+    const identityFolder = IDENTITY_TYPE_TO_FOLDER[docType];
 
-    if (!imageKind && !docFolder) {
+    if (!imageKind && !docFolder && !identityFolder) {
       return NextResponse.json(
         { message: "不正なアップロード種別です。" },
         { status: 400 },
@@ -123,6 +139,7 @@ export async function POST(request: Request) {
     }
 
     const isImage = Boolean(imageKind);
+    const isIdentity = Boolean(identityFolder);
     isImageUpload = isImage;
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     const mime = (file.type || "").toLowerCase();
@@ -143,6 +160,19 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
+    } else if (isIdentity) {
+      if (
+        !IDENTITY_ALLOWED_EXT.has(extension) &&
+        !IDENTITY_ALLOWED_TYPES.has(mime)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "身分証明書は JPEG / PNG / PDF のみアップロードできます。",
+          },
+          { status: 400 },
+        );
+      }
     } else if (
       !DOC_ALLOWED_EXT.has(extension) &&
       !DOC_ALLOWED_TYPES.has(mime)
@@ -153,20 +183,47 @@ export async function POST(request: Request) {
       );
     }
 
-    const safeExt = isImage ? detectImageExt(file) : detectDocExt(file);
-    const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
-    const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}.${safeExt}`;
-    const folder = isImage ? imageKind! : docFolder!;
+    const safeExt = isImage
+      ? detectImageExt(file)
+      : isIdentity
+        ? (() => {
+            const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+            if (IDENTITY_ALLOWED_EXT.has(ext)) {
+              return ext === "jpeg" ? "jpg" : ext;
+            }
+            if (mime.includes("pdf")) return "pdf";
+            if (mime.includes("png")) return "png";
+            return "jpg";
+          })()
+        : detectDocExt(file);
+
+    // Identity docs: never include original filename (may contain PII).
+    const fileName = isIdentity
+      ? `${Date.now()}-${randomUUID().slice(0, 8)}.${safeExt}`
+      : (() => {
+          const safeName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
+          return `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}.${safeExt}`;
+        })();
+
+    const folder = isImage
+      ? imageKind!
+      : isIdentity
+        ? identityFolder!
+        : docFolder!;
     const path = `draft/${draftId}/${folder}/${fileName}`;
     const bucket = isImage
       ? LISTING_APPLICATION_IMAGE_BUCKET
-      : LISTING_APPLICATION_DOCUMENT_BUCKET;
+      : isIdentity
+        ? LISTING_APPLICATION_IDENTITY_BUCKET
+        : LISTING_APPLICATION_DOCUMENT_BUCKET;
 
     const supabase = createSupabaseAdmin();
     const buffer = Buffer.from(await file.arrayBuffer());
     const contentType =
       file.type ||
-      (safeExt === "pdf" ? "application/pdf" : `image/${safeExt === "jpg" ? "jpeg" : safeExt}`);
+      (safeExt === "pdf"
+        ? "application/pdf"
+        : `image/${safeExt === "jpg" ? "jpeg" : safeExt}`);
 
     const { error } = await supabase.storage.from(bucket).upload(path, buffer, {
       contentType,
@@ -191,9 +248,15 @@ export async function POST(request: Request) {
     }
 
     const uploadedAt = new Date().toISOString();
+    const displayName = isIdentity
+      ? identityFolder === "identity-front"
+        ? `identity-front.${safeExt}`
+        : `identity-back.${safeExt}`
+      : file.name;
+
     const document = {
       storagePath: path,
-      fileName: file.name,
+      fileName: displayName,
       mimeType: contentType,
       size: file.size,
       uploadedAt,

@@ -30,6 +30,11 @@ export const LISTING_APPLICATION_DOCUMENT_BUCKET =
 
 export const LISTING_APPLICATION_IMAGE_BUCKET = "listing-application-images";
 
+/** Private bucket for ID documents (admin signed URL only). */
+export const LISTING_APPLICATION_IDENTITY_BUCKET =
+  process.env.SUPABASE_LISTING_APPLICATION_IDENTITY_BUCKET ??
+  "listing-application-identity";
+
 export function hasSupabasePublicConfig(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&

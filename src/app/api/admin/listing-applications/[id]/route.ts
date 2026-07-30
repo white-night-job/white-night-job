@@ -14,6 +14,7 @@ import {
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IDENTITY_BUCKET,
   LISTING_APPLICATION_IMAGE_BUCKET,
 } from "@/lib/supabase";
 import type { ListingShopImage } from "@/lib/listing-application";
@@ -69,12 +70,12 @@ async function appendEvent(options: {
 
 async function attachSignedDocumentUrls(row: ListingApplicationRow) {
   const supabase = createSupabaseAdmin();
-  const signDoc = async (doc: unknown) => {
+  const signDoc = async (doc: unknown, bucket: string) => {
     if (!doc || typeof doc !== "object") return doc ?? null;
     const storagePath = (doc as { storagePath?: string }).storagePath;
     if (!storagePath) return doc;
     const { data, error } = await supabase.storage
-      .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
+      .from(bucket)
       .createSignedUrl(storagePath, 60 * 10);
     if (error) return doc;
     return { ...(doc as Record<string, unknown>), signedUrl: data.signedUrl };
@@ -101,12 +102,25 @@ async function attachSignedDocumentUrls(row: ListingApplicationRow) {
   };
   return {
     ...row,
-    business_license_document: await signDoc(row.business_license_document),
+    business_license_document: await signDoc(
+      row.business_license_document,
+      LISTING_APPLICATION_DOCUMENT_BUCKET,
+    ),
     entertainment_license_document: await signDoc(
       row.entertainment_license_document,
+      LISTING_APPLICATION_DOCUMENT_BUCKET,
     ),
     late_night_alcohol_notification_document: await signDoc(
       row.late_night_alcohol_notification_document,
+      LISTING_APPLICATION_DOCUMENT_BUCKET,
+    ),
+    identity_document_front: await signDoc(
+      row.identity_document_front,
+      LISTING_APPLICATION_IDENTITY_BUCKET,
+    ),
+    identity_document_back: await signDoc(
+      row.identity_document_back,
+      LISTING_APPLICATION_IDENTITY_BUCKET,
     ),
     shop_exterior_images: await signImages(row.shop_exterior_images),
     shop_interior_images: await signImages(row.shop_interior_images),

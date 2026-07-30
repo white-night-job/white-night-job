@@ -17,10 +17,14 @@ import {
   isJobPlan,
   type JobPlan,
 } from "@/lib/job-plan";
-import type {
-  ListingAttachment,
-  ListingDocumentMeta,
-  ListingShopImage,
+import {
+  isListingApplicantType,
+  isValidCorporateNumber,
+  normalizeCorporateNumber,
+  type ListingApplicantType,
+  type ListingAttachment,
+  type ListingDocumentMeta,
+  type ListingShopImage,
 } from "@/lib/listing-application";
 import {
   FORM_I18N,
@@ -98,7 +102,9 @@ type LocalFileInfo = {
 type DocKey =
   | "businessLicenseDocument"
   | "entertainmentLicenseDocument"
-  | "lateNightAlcoholNotificationDocument";
+  | "lateNightAlcoholNotificationDocument"
+  | "identityDocumentFront"
+  | "identityDocumentBack";
 
 type FormState = {
   shopName: string;
@@ -110,6 +116,13 @@ type FormState = {
   contactName: string;
   contactPhone: string;
   contactEmail: string;
+  applicantType: ListingApplicantType | "";
+  corporateName: string;
+  corporateNameKana: string;
+  corporateNumber: string;
+  representativeName: string;
+  identityDocumentFront: ListingDocumentMeta | null;
+  identityDocumentBack: ListingDocumentMeta | null;
   websiteUrl: string;
   instagramUrl: string;
   xUrl: string;
@@ -144,6 +157,13 @@ const EMPTY: FormState = {
   contactName: "",
   contactPhone: "",
   contactEmail: "",
+  applicantType: "",
+  corporateName: "",
+  corporateNameKana: "",
+  corporateNumber: "",
+  representativeName: "",
+  identityDocumentFront: null,
+  identityDocumentBack: null,
   websiteUrl: "",
   instagramUrl: "",
   xUrl: "",
@@ -167,6 +187,8 @@ const EMPTY_LOCAL: LocalFilesState = {
   businessLicenseDocument: null,
   entertainmentLicenseDocument: null,
   lateNightAlcoholNotificationDocument: null,
+  identityDocumentFront: null,
+  identityDocumentBack: null,
 };
 
 export function planNameJa(plan: JobPlan): string {
@@ -209,10 +231,15 @@ function loadDraft(): FormState | null {
         ? parsed.shopInteriorImages
         : [],
       requestedPlan: isJobPlan(parsed.requestedPlan) ? parsed.requestedPlan : "",
+      applicantType: isListingApplicantType(parsed.applicantType)
+        ? parsed.applicantType
+        : "",
       businessLicenseDocument: parsed.businessLicenseDocument ?? null,
       entertainmentLicenseDocument: parsed.entertainmentLicenseDocument ?? null,
       lateNightAlcoholNotificationDocument:
         parsed.lateNightAlcoholNotificationDocument ?? null,
+      identityDocumentFront: parsed.identityDocumentFront ?? null,
+      identityDocumentBack: parsed.identityDocumentBack ?? null,
     };
   } catch {
     return null;
@@ -336,6 +363,29 @@ function validateStep(
     } else if (!isValidEmail(form.contactEmail)) {
       errors.contactEmail = FORM_I18N.errContactEmailFormat;
     }
+    if (!isListingApplicantType(form.applicantType)) {
+      errors.applicantType = FORM_I18N.errApplicantType;
+    } else if (form.applicantType === "corporation") {
+      if (!form.corporateName.trim()) {
+        errors.corporateName = FORM_I18N.errCorporateName;
+      }
+      if (!form.corporateNameKana.trim()) {
+        errors.corporateNameKana = FORM_I18N.errCorporateNameKana;
+      }
+      if (!isValidCorporateNumber(form.corporateNumber)) {
+        errors.corporateNumber = FORM_I18N.errCorporateNumber;
+      }
+      if (!form.representativeName.trim()) {
+        errors.representativeName = FORM_I18N.errRepresentativeName;
+      }
+    }
+    const hasIdentityLocal = Boolean(localFiles?.identityDocumentFront);
+    const hasIdentityUploaded = Boolean(
+      form.identityDocumentFront?.storagePath,
+    );
+    if (!hasIdentityLocal && !hasIdentityUploaded) {
+      errors.identityDocumentFront = FORM_I18N.errIdentityDocument;
+    }
   }
   if (step === 3) {
     const url = form.websiteUrl.trim();
@@ -432,6 +482,8 @@ export function ListingApplicationForm() {
     businessLicenseDocument: null,
     entertainmentLicenseDocument: null,
     lateNightAlcoholNotificationDocument: null,
+    identityDocumentFront: null,
+    identityDocumentBack: null,
   });
   const exteriorInputRef = useRef<HTMLInputElement | null>(null);
   const interiorInputRef = useRef<HTMLInputElement | null>(null);
@@ -513,10 +565,15 @@ export function ListingApplicationForm() {
           ? merged.shopInteriorImages
           : [],
         requestedPlan: isJobPlan(merged.requestedPlan) ? merged.requestedPlan : "",
+        applicantType: isListingApplicantType(merged.applicantType)
+          ? merged.applicantType
+          : "",
         businessLicenseDocument: merged.businessLicenseDocument ?? null,
         entertainmentLicenseDocument: merged.entertainmentLicenseDocument ?? null,
         lateNightAlcoholNotificationDocument:
           merged.lateNightAlcoholNotificationDocument ?? null,
+        identityDocumentFront: merged.identityDocumentFront ?? null,
+        identityDocumentBack: merged.identityDocumentBack ?? null,
       });
     } else if (draft) {
       setForm({
@@ -647,7 +704,11 @@ export function ListingApplicationForm() {
         ? "business-license"
         : key === "entertainmentLicenseDocument"
           ? "entertainment-license"
-          : "late-night-alcohol-notification";
+          : key === "lateNightAlcoholNotificationDocument"
+            ? "late-night-alcohol-notification"
+            : key === "identityDocumentFront"
+              ? "identity-document-front"
+              : "identity-document-back";
 
     const previewUrl =
       file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name)
@@ -1514,6 +1575,135 @@ export function ListingApplicationForm() {
                 onChange={(e) => update("contactEmail", e.target.value)}
               />
             </Field>
+
+            <Field error={fe.applicantType}>
+              <p className={labelClass}>{FORM_I18N.labelApplicantType}</p>
+              <div
+                className="mt-1 flex flex-col gap-2 sm:flex-row"
+                data-error-field={fe.applicantType ? "1" : undefined}
+              >
+                {(
+                  [
+                    ["individual", FORM_I18N.applicantIndividual],
+                    ["corporation", FORM_I18N.applicantCorporation],
+                  ] as const
+                ).map(([value, label]) => (
+                  <label
+                    key={value}
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+                      form.applicantType === value
+                        ? "border-gold bg-ivory ring-2 ring-gold/30"
+                        : fe.applicantType
+                          ? "border-red-400 bg-white"
+                          : "border-gold/25 bg-white"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="applicantType"
+                      checked={form.applicantType === value}
+                      onChange={() => {
+                        update("applicantType", value);
+                        if (value === "individual") {
+                          setForm((current) => ({
+                            ...current,
+                            applicantType: value,
+                            corporateName: "",
+                            corporateNameKana: "",
+                            corporateNumber: "",
+                            representativeName: "",
+                          }));
+                          setFieldErrors((prev) => {
+                            const next = { ...prev };
+                            delete next.corporateName;
+                            delete next.corporateNameKana;
+                            delete next.corporateNumber;
+                            delete next.representativeName;
+                            delete next.applicantType;
+                            return next;
+                          });
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            {form.applicantType === "corporation" ? (
+              <>
+                <Field error={fe.corporateName}>
+                  <label className={labelClass}>
+                    {FORM_I18N.labelCorporateName}
+                  </label>
+                  <input
+                    className={fe.corporateName ? inputErr : inputOk}
+                    value={form.corporateName}
+                    onChange={(e) => update("corporateName", e.target.value)}
+                  />
+                </Field>
+                <Field error={fe.corporateNameKana}>
+                  <label className={labelClass}>
+                    {FORM_I18N.labelCorporateNameKana}
+                  </label>
+                  <input
+                    className={fe.corporateNameKana ? inputErr : inputOk}
+                    value={form.corporateNameKana}
+                    onChange={(e) => update("corporateNameKana", e.target.value)}
+                  />
+                </Field>
+                <Field error={fe.corporateNumber}>
+                  <label className={labelClass}>
+                    {FORM_I18N.labelCorporateNumber}
+                  </label>
+                  <input
+                    className={fe.corporateNumber ? inputErr : inputOk}
+                    value={form.corporateNumber}
+                    inputMode="numeric"
+                    maxLength={13}
+                    placeholder={FORM_I18N.phCorporateNumber}
+                    onChange={(e) =>
+                      update(
+                        "corporateNumber",
+                        normalizeCorporateNumber(e.target.value).slice(0, 13),
+                      )
+                    }
+                  />
+                </Field>
+                <Field error={fe.representativeName}>
+                  <label className={labelClass}>
+                    {FORM_I18N.labelRepresentativeName}
+                  </label>
+                  <input
+                    className={fe.representativeName ? inputErr : inputOk}
+                    value={form.representativeName}
+                    onChange={(e) =>
+                      update("representativeName", e.target.value)
+                    }
+                  />
+                </Field>
+              </>
+            ) : null}
+
+            <div className="space-y-3 rounded-xl border border-gold/25 bg-ivory/40 p-4">
+              <p className="text-sm font-medium text-charcoal">
+                {FORM_I18N.identityUploadTitle}
+              </p>
+              <p className="text-xs text-muted">{FORM_I18N.identityUploadHint}</p>
+              {renderDocUploader(
+                "identityDocumentFront",
+                FORM_I18N.identityFrontLabel,
+                true,
+              )}
+              {renderDocUploader(
+                "identityDocumentBack",
+                FORM_I18N.identityBackLabel,
+                false,
+                FORM_I18N.identityBackHint,
+              )}
+            </div>
           </section>
         ) : null}
 
@@ -1788,6 +1978,45 @@ export function ListingApplicationForm() {
                 <dt className="text-muted">{FORM_I18N.dtContact}</dt>
                 <dd>
                   {form.contactName} / {form.contactEmail}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">{FORM_I18N.dtApplicantType}</dt>
+                <dd>
+                  {form.applicantType === "corporation"
+                    ? FORM_I18N.applicantCorporation
+                    : form.applicantType === "individual"
+                      ? FORM_I18N.applicantIndividual
+                      : FORM_I18N.notSelected}
+                </dd>
+              </div>
+              {form.applicantType === "corporation" ? (
+                <>
+                  <div>
+                    <dt className="text-muted">{FORM_I18N.dtCorporateName}</dt>
+                    <dd>{form.corporateName || FORM_I18N.emDash}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">{FORM_I18N.dtCorporateNumber}</dt>
+                    <dd>{form.corporateNumber || FORM_I18N.emDash}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">
+                      {FORM_I18N.dtRepresentativeName}
+                    </dt>
+                    <dd>{form.representativeName || FORM_I18N.emDash}</dd>
+                  </div>
+                </>
+              ) : null}
+              <div>
+                <dt className="text-muted">{FORM_I18N.dtIdentityDocument}</dt>
+                <dd>
+                  {form.identityDocumentFront
+                    ? `${FORM_I18N.identityFrontLabel}: ${FORM_I18N.submitted}`
+                    : FORM_I18N.notSubmitted}
+                  {form.identityDocumentBack
+                    ? ` / ${FORM_I18N.identityBackLabel}: ${FORM_I18N.submitted}`
+                    : ""}
                 </dd>
               </div>
               <div>

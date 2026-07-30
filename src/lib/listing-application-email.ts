@@ -1,6 +1,8 @@
 import {
   buildNeedsInfoUploadUrl,
   getSiteOrigin,
+  LISTING_APPLICANT_TYPE_LABELS,
+  isListingApplicantType,
   planLabel,
   type ListingApplicationRow,
   type ListingDocumentMeta,
@@ -291,6 +293,11 @@ export async function notifyAdminNewApplication(
       formatImageSection("店内画像", row.shop_interior_images),
     ]);
 
+    const applicantTypeLabel = isListingApplicantType(row.applicant_type)
+      ? LISTING_APPLICANT_TYPE_LABELS[row.applicant_type]
+      : "—";
+    const isCorporation = row.applicant_type === "corporation";
+
     const result = await safeSend({
       to,
       subject: "【White Night Job】新しい店舗掲載申請が届きました",
@@ -299,6 +306,9 @@ export async function notifyAdminNewApplication(
         "",
         `申請番号: ${row.application_number}`,
         `申請日時: ${formatSubmittedAt(row.created_at)}`,
+        `申請者区分: ${applicantTypeLabel}`,
+        isCorporation ? `法人名: ${dash(row.corporate_name)}` : null,
+        isCorporation ? `法人番号: ${dash(row.corporate_number)}` : null,
         `店舗名: ${dash(row.shop_name)}`,
         `担当者名: ${dash(row.contact_name)}`,
         `メールアドレス: ${dash(row.contact_email)}`,
@@ -309,6 +319,8 @@ export async function notifyAdminNewApplication(
         `営業時間: ${dash(row.business_hours)}`,
         `紹介文: ${intro}`,
         `選択プラン: ${planLabel(row.requested_plan)}`,
+        "",
+        "身分証明書は管理画面で確認してください",
         "",
         businessLicenseLine,
         entertainmentLicenseLine,
@@ -322,7 +334,9 @@ export async function notifyAdminNewApplication(
         buildAdminSiteUrl(row.id),
         "",
         "※画像・書類のURLは一定期間で期限切れになります。期限後は管理画面から確認してください。",
-      ].join("\n"),
+      ]
+        .filter((line) => line !== null)
+        .join("\n"),
       replyTo: row.contact_email,
     });
 

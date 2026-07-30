@@ -50,6 +50,37 @@ export type ListingDocumentMeta = {
   signedUrl?: string;
 };
 
+export const LISTING_APPLICANT_TYPES = ["individual", "corporation"] as const;
+export type ListingApplicantType = (typeof LISTING_APPLICANT_TYPES)[number];
+
+export const LISTING_APPLICANT_TYPE_LABELS: Record<ListingApplicantType, string> =
+  {
+    individual: "個人事業主",
+    corporation: "法人",
+  };
+
+export function isListingApplicantType(
+  value: unknown,
+): value is ListingApplicantType {
+  return (
+    typeof value === "string" &&
+    (LISTING_APPLICANT_TYPES as readonly string[]).includes(value)
+  );
+}
+
+/** Corporate number: exactly 13 ASCII digits. */
+export function normalizeCorporateNumber(value: string | undefined): string {
+  return String(value ?? "")
+    .replace(/[\uFF10-\uFF19]/g, (d) =>
+      String.fromCharCode(d.charCodeAt(0) - 0xfee0),
+    )
+    .replace(/\D/g, "");
+}
+
+export function isValidCorporateNumber(value: string | undefined): boolean {
+  return /^\d{13}$/.test(normalizeCorporateNumber(value));
+}
+
 
 export type ListingShopImageKind = "exterior" | "interior";
 
@@ -74,6 +105,13 @@ export type ListingApplicationInput = {
   contactName: string;
   contactPhone: string;
   contactEmail: string;
+  applicantType: ListingApplicantType;
+  corporateName?: string;
+  corporateNameKana?: string;
+  corporateNumber?: string;
+  representativeName?: string;
+  identityDocumentFront?: ListingDocumentMeta | null;
+  identityDocumentBack?: ListingDocumentMeta | null;
   websiteUrl: string;
   instagramUrl: string;
   xUrl: string;
@@ -244,6 +282,35 @@ export function validateListingApplicationInput(
     if (error) return error;
   }
 
+  if (!isListingApplicantType(input.applicantType)) {
+    return "申請者区分を選択してください。";
+  }
+
+  if (input.applicantType === "corporation") {
+    if (!String(input.corporateName ?? "").trim()) {
+      return "法人名を入力してください。";
+    }
+    if (!String(input.corporateNameKana ?? "").trim()) {
+      return "法人名フリガナを入力してください。";
+    }
+    if (!isValidCorporateNumber(input.corporateNumber)) {
+      return "法人番号は数字13桁で入力してください。";
+    }
+    if (!String(input.representativeName ?? "").trim()) {
+      return "代表者名を入力してください。";
+    }
+  }
+
+  if (!isDocMeta(input.identityDocumentFront)) {
+    return "顔写真付き身分証明書をアップロードしてください。";
+  }
+  if (
+    input.identityDocumentBack != null &&
+    !isDocMeta(input.identityDocumentBack)
+  ) {
+    return "身分証明書（裏面）の形式が正しくありません。";
+  }
+
   if (!isDocMeta(input.businessLicenseDocument)) {
     return "営業許可証をアップロードしてください。";
   }
@@ -355,6 +422,12 @@ export function normalizeListingApplicationInput(
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const applicantType: ListingApplicantType = isListingApplicantType(
+    input.applicantType,
+  )
+    ? input.applicantType
+    : "individual";
+
   return {
     shopName: trim(input.shopName),
     shopAddress: trim(input.shopAddress),
@@ -365,6 +438,25 @@ export function normalizeListingApplicationInput(
     contactName: trim(input.contactName),
     contactPhone: trim(input.contactPhone),
     contactEmail: trim(input.contactEmail).toLowerCase(),
+    applicantType,
+    corporateName:
+      applicantType === "corporation"
+        ? trim(input.corporateName) || undefined
+        : undefined,
+    corporateNameKana:
+      applicantType === "corporation"
+        ? trim(input.corporateNameKana) || undefined
+        : undefined,
+    corporateNumber:
+      applicantType === "corporation"
+        ? normalizeCorporateNumber(input.corporateNumber) || undefined
+        : undefined,
+    representativeName:
+      applicantType === "corporation"
+        ? trim(input.representativeName) || undefined
+        : undefined,
+    identityDocumentFront: normalizeDoc(input.identityDocumentFront),
+    identityDocumentBack: normalizeDoc(input.identityDocumentBack),
     websiteUrl: trim(input.websiteUrl),
     instagramUrl: trim(input.instagramUrl),
     xUrl: trim(input.xUrl),
@@ -413,6 +505,25 @@ export function inputToDbRow(
     contact_name: input.contactName,
     contact_phone: input.contactPhone,
     contact_email: input.contactEmail,
+    applicant_type: input.applicantType,
+    corporate_name:
+      input.applicantType === "corporation"
+        ? (input.corporateName ?? null)
+        : null,
+    corporate_name_kana:
+      input.applicantType === "corporation"
+        ? (input.corporateNameKana ?? null)
+        : null,
+    corporate_number:
+      input.applicantType === "corporation"
+        ? (input.corporateNumber ?? null)
+        : null,
+    representative_name:
+      input.applicantType === "corporation"
+        ? (input.representativeName ?? null)
+        : null,
+    identity_document_front: input.identityDocumentFront ?? null,
+    identity_document_back: input.identityDocumentBack ?? null,
     website_url: input.websiteUrl,
     instagram_url: input.instagramUrl,
     x_url: input.xUrl,
@@ -453,6 +564,13 @@ export type ListingApplicationRow = {
   contact_name: string;
   contact_phone: string;
   contact_email: string;
+  applicant_type: ListingApplicantType | null;
+  corporate_name: string | null;
+  corporate_name_kana: string | null;
+  corporate_number: string | null;
+  representative_name: string | null;
+  identity_document_front: ListingDocumentMeta | null;
+  identity_document_back: ListingDocumentMeta | null;
   website_url: string;
   instagram_url: string;
   x_url: string;

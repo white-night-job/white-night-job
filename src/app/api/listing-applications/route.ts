@@ -16,6 +16,7 @@ import {
 import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
+  LISTING_APPLICATION_IDENTITY_BUCKET,
   LISTING_APPLICATION_IMAGE_BUCKET,
 } from "@/lib/supabase";
 import type { ListingShopImage } from "@/lib/listing-application";
@@ -123,6 +124,15 @@ export async function POST(request: Request) {
       ],
     ] as const;
 
+    const identityMappings = [
+      [
+        "identityDocumentFront",
+        "identity_document_front",
+        "identity-front",
+      ],
+      ["identityDocumentBack", "identity_document_back", "identity-back"],
+    ] as const;
+
     const updatePayload: Record<string, unknown> = {};
     for (const [inputKey, dbKey, folder] of documentMappings) {
       const doc = input[inputKey];
@@ -136,6 +146,33 @@ export async function POST(request: Request) {
           .move(doc.storagePath, targetPath);
         if (moveError) {
           console.error("[listing-applications] document move failed:", moveError);
+          continue;
+        }
+      }
+      updatePayload[dbKey] = {
+        storagePath: targetPath,
+        fileName: doc.fileName,
+        mimeType: doc.mimeType,
+        size: doc.size,
+        uploadedAt: doc.uploadedAt,
+      };
+    }
+
+    for (const [inputKey, dbKey, folder] of identityMappings) {
+      const doc = input[inputKey];
+      if (!doc?.storagePath) continue;
+      const fileName = doc.storagePath.split("/").pop();
+      if (!fileName) continue;
+      const targetPath = `${saved.id}/${folder}/${fileName}`;
+      if (doc.storagePath !== targetPath) {
+        const { error: moveError } = await supabase.storage
+          .from(LISTING_APPLICATION_IDENTITY_BUCKET)
+          .move(doc.storagePath, targetPath);
+        if (moveError) {
+          console.error(
+            "[listing-applications] identity document move failed:",
+            moveError,
+          );
           continue;
         }
       }

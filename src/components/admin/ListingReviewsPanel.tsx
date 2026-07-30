@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { type JobPlan } from "@/lib/job-plan";
 import {
+  LISTING_APPLICANT_TYPE_LABELS,
   LISTING_APPLICATION_STATUS_LABELS,
+  isListingApplicantType,
   planLabel,
   type ListingApplicationStatus,
 } from "@/lib/listing-application";
@@ -42,6 +44,21 @@ type DetailApplication = Record<string, unknown> & {
   contact_name?: string | null;
   contact_phone?: string | null;
   contact_email?: string | null;
+  applicant_type?: string | null;
+  corporate_name?: string | null;
+  corporate_name_kana?: string | null;
+  corporate_number?: string | null;
+  representative_name?: string | null;
+  identity_document_front?: {
+    fileName?: string;
+    mimeType?: string;
+    signedUrl?: string;
+  } | null;
+  identity_document_back?: {
+    fileName?: string;
+    mimeType?: string;
+    signedUrl?: string;
+  } | null;
   website_url?: string | null;
   instagram_url?: string | null;
   x_url?: string | null;
@@ -171,14 +188,28 @@ function DocumentCard({
               />
             </a>
           ) : null}
-          <a
-            href={doc.signedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-sm text-gold-dark underline break-all"
-          >
-            {doc.fileName ?? "書類を開く"}
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={doc.signedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-gold/40 px-3 py-1.5 text-xs font-medium text-gold-dark hover:bg-ivory"
+            >
+              安全に閲覧
+            </a>
+            <a
+              href={doc.signedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={doc.fileName ?? undefined}
+              className="inline-flex rounded-full border border-gold/40 px-3 py-1.5 text-xs font-medium text-gold-dark hover:bg-ivory"
+            >
+              ダウンロード
+            </a>
+          </div>
+          <p className="text-[11px] text-muted break-all">
+            {doc.fileName ?? "書類"}
+          </p>
         </div>
       ) : (
         <p className="mt-1 text-sm text-muted">未提出</p>
@@ -644,6 +675,20 @@ export function ListingReviewsPanel() {
                   ["担当者", detail.contact_name],
                   ["電話番号", detail.contact_phone],
                   ["メールアドレス", detail.contact_email],
+                  [
+                    "申請者区分",
+                    isListingApplicantType(detail.applicant_type)
+                      ? LISTING_APPLICANT_TYPE_LABELS[detail.applicant_type]
+                      : detail.applicant_type || null,
+                  ],
+                  ...(detail.applicant_type === "corporation"
+                    ? ([
+                        ["法人名", detail.corporate_name],
+                        ["法人名フリガナ", detail.corporate_name_kana],
+                        ["法人番号", detail.corporate_number],
+                        ["代表者名", detail.representative_name],
+                      ] as Array<[string, unknown]>)
+                    : []),
                   ["所在地", detail.shop_address],
                   ["エリア", detail.area],
                   ["業種", detail.business_type],
@@ -743,6 +788,25 @@ export function ListingReviewsPanel() {
                   doc={detail.late_night_alcohol_notification_document}
                 />
               </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium">
+                顔写真付き身分証明書
+              </p>
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <DocumentCard
+                  label="表面"
+                  doc={detail.identity_document_front}
+                />
+                <DocumentCard
+                  label="裏面"
+                  doc={detail.identity_document_back}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                閲覧URLは短時間のみ有効です。期限切れの場合は詳細を開き直してください。
+              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
