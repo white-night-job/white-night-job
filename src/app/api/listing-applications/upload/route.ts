@@ -78,7 +78,19 @@ function detectImageExt(file: File): string {
   return "jpg";
 }
 
+function isBucketNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const message = String((error as { message?: string }).message ?? "");
+  const code = String((error as { code?: string }).code ?? "");
+  return (
+    /bucket not found/i.test(message) ||
+    /bucket/i.test(message) ||
+    /NoSuchBucket/i.test(code)
+  );
+}
+
 export async function POST(request: Request) {
+  let isImageUpload = false;
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -111,6 +123,7 @@ export async function POST(request: Request) {
     }
 
     const isImage = Boolean(imageKind);
+    isImageUpload = isImage;
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     const mime = (file.type || "").toLowerCase();
 
@@ -208,6 +221,23 @@ export async function POST(request: Request) {
       document,
     });
   } catch (error) {
+    if (isImageUpload && isBucketNotFoundError(error)) {
+      return NextResponse.json(
+        {
+          message:
+            "画像の保存先が設定されていません。管理者へお問い合わせください。",
+        },
+        { status: 503 },
+      );
+    }
+    if (isImageUpload) {
+      return NextResponse.json(
+        {
+          message: "画像のアップロードに失敗しました。もう一度お試しください。",
+        },
+        { status: 500 },
+      );
+    }
     return NextResponse.json(
       {
         message: getErrorMessage(

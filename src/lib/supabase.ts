@@ -28,9 +28,7 @@ export const LISTING_APPLICATION_DOCUMENT_BUCKET =
   process.env.SUPABASE_LISTING_APPLICATION_DOCUMENT_BUCKET ??
   "listing-application-documents";
 
-export const LISTING_APPLICATION_IMAGE_BUCKET =
-  process.env.SUPABASE_LISTING_APPLICATION_IMAGE_BUCKET ??
-  "listing-application-images";
+export const LISTING_APPLICATION_IMAGE_BUCKET = "listing-application-images";
 
 export function hasSupabasePublicConfig(): boolean {
   return Boolean(
