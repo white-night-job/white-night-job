@@ -153,6 +153,12 @@ export const FORM_I18N = {
   navigating: "移動中...",
   submitting: "送信中...",
   submit: "審査を申し込む",
+
+  compressing: "圧縮中...",
+  uploadingProgress: "アップロード中",
+  retryUpload: "再試行",
+  uploadWait: "アップロード完了までお待ちください。",
+  duplicateImageSkipped: "同じ画像はすでに選択済みのためスキップしました。",
 } as const;
 
 /** Full-width digits ０-９ */

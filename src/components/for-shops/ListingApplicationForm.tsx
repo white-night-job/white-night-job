@@ -28,8 +28,33 @@ import {
   PHONE_INTL_SEP_RE,
   PHONE_SEP_RE,
 } from "@/components/for-shops/listing-application-form-i18n";
+import {
+  compressListingImage,
+  fileFingerprint,
+  mapPool,
+  uploadWithProgress,
+} from "@/lib/listing-image-compress";
 
 void (null as ListingAttachment | null);
+
+const SHOP_UPLOAD_CONCURRENCY = 3;
+
+type DocUploadUi = {
+  phase: "compressing" | "uploading";
+  progress: number;
+};
+
+type PendingShopUpload = {
+  id: string;
+  kind: "exterior" | "interior";
+  fingerprint: string;
+  fileName: string;
+  previewUrl: string | null;
+  progress: number;
+  phase: "compressing" | "uploading" | "error";
+  error?: string;
+  sourceFile: File;
+};
 
 const DRAFT_KEY = "wnj-listing-application-draft-v2";
 const RETURN_STEP_KEY = "listingApplicationCurrentStep";
@@ -380,6 +405,12 @@ export function ListingApplicationForm() {
   const [loading, setLoading] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [docUploadUi, setDocUploadUi] = useState<Partial<Record<DocKey, DocUploadUi>>>(
+    {},
+  );
+  const [pendingShopUploads, setPendingShopUploads] = useState<PendingShopUpload[]>(
+    [],
+  );
   const [submitMessage, setSubmitMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [duplicateWarning, setDuplicateWarning] = useState(false);
@@ -390,6 +421,13 @@ export function ListingApplicationForm() {
   const submittingRef = useRef(false);
   const restoredFromReturnRef = useRef(false);
   const restoreScrollYRef = useRef<number | null>(null);
+  const draftIdRef = useRef(draftId);
+  const inFlightUploadsRef = useRef(0);
+  const docUploadLockRef = useRef<Partial<Record<DocKey, boolean>>>({});
+  const shopFingerprintsRef = useRef<Set<string>>(new Set());
+  const shopSortOrderRef = useRef({ exterior: 0, interior: 0 });
+  const pendingShopCountRef = useRef({ exterior: 0, interior: 0 });
+  const shopUploadedCountRef = useRef({ exterior: 0, interior: 0 });
   const docInputRefs = useRef<Record<DocKey, HTMLInputElement | null>>({
     businessLicenseDocument: null,
     entertainmentLicenseDocument: null,
@@ -397,6 +435,33 @@ export function ListingApplicationForm() {
   });
   const exteriorInputRef = useRef<HTMLInputElement | null>(null);
   const interiorInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    draftIdRef.current = draftId;
+  }, [draftId]);
+
+  useEffect(() => {
+    shopUploadedCountRef.current = {
+      exterior: form.shopExteriorImages.length,
+      interior: form.shopInteriorImages.length,
+    };
+  }, [form.shopExteriorImages.length, form.shopInteriorImages.length]);
+
+  const shopUploadsBusy = pendingShopUploads.some(
+    (p) => p.phase === "compressing" || p.phase === "uploading",
+  );
+  const shopUploadsIncomplete = pendingShopUploads.length > 0;
+  const uploadsBlockingNext = uploading || shopUploadsIncomplete;
+
+  function beginUploadFlight() {
+    inFlightUploadsRef.current += 1;
+    setUploading(true);
+  }
+
+  function endUploadFlight() {
+    inFlightUploadsRef.current = Math.max(0, inFlightUploadsRef.current - 1);
+    if (inFlightUploadsRef.current === 0) setUploading(false);
+  }
 
   useEffect(() => {
     const draft = loadDraft();
@@ -466,6 +531,20 @@ export function ListingApplicationForm() {
       restoredFromReturnRef.current = restoredFromReturn;
       restoreScrollYRef.current = restoredScrollY;
     }
+    const initialExterior = Array.isArray(restoredForm?.shopExteriorImages)
+      ? restoredForm!.shopExteriorImages!
+      : Array.isArray(draft?.shopExteriorImages)
+        ? draft!.shopExteriorImages
+        : [];
+    const initialInterior = Array.isArray(restoredForm?.shopInteriorImages)
+      ? restoredForm!.shopInteriorImages!
+      : Array.isArray(draft?.shopInteriorImages)
+        ? draft!.shopInteriorImages
+        : [];
+    shopSortOrderRef.current = {
+      exterior: initialExterior.length,
+      interior: initialInterior.length,
+    };
     setHydrated(true);
   }, [searchParams]);
 
@@ -520,7 +599,7 @@ export function ListingApplicationForm() {
   }
 
   function goNext() {
-    if (navigating || uploading || loading) return;
+    if (navigating || uploadsBlockingNext || loading) return;
     setNavigating(true);
     const errors = validateStep(step, form, localFiles);
     if (Object.keys(errors).length > 0) {
@@ -539,7 +618,7 @@ export function ListingApplicationForm() {
   }
 
   function goBack() {
-    if (navigating || uploading || loading) return;
+    if (navigating || uploadsBlockingNext || loading) return;
     setNavigating(true);
     setFieldErrors({});
     setSubmitMessage("");
@@ -560,6 +639,9 @@ export function ListingApplicationForm() {
   }
 
   async function uploadDocument(file: File, key: DocKey) {
+    if (docUploadLockRef.current[key]) return;
+    docUploadLockRef.current[key] = true;
+
     const docType =
       key === "businessLicenseDocument"
         ? "business-license"
@@ -567,9 +649,10 @@ export function ListingApplicationForm() {
           ? "entertainment-license"
           : "late-night-alcohol-notification";
 
-    const previewUrl = file.type.startsWith("image/")
-      ? URL.createObjectURL(file)
-      : null;
+    const previewUrl =
+      file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name)
+        ? URL.createObjectURL(file)
+        : null;
     const localInfo: LocalFileInfo = {
       name: file.name,
       size: file.size,
@@ -589,17 +672,43 @@ export function ListingApplicationForm() {
       });
     }
 
-    setUploading(true);
+    beginUploadFlight();
     setSubmitMessage("");
+    setDocUploadUi((prev) => ({
+      ...prev,
+      [key]: { phase: "compressing", progress: 0 },
+    }));
     try {
+      const compressed = await compressListingImage(file, { preferWebp: false });
+      const uploadFile = compressed.file;
+      setLocalFiles((prev) => ({
+        ...prev,
+        [key]: {
+          name: uploadFile.name,
+          size: uploadFile.size,
+          type: uploadFile.type,
+          previewUrl: prev[key]?.previewUrl ?? null,
+        },
+      }));
+      setDocUploadUi((prev) => ({
+        ...prev,
+        [key]: { phase: "uploading", progress: 0 },
+      }));
+
       const body = new FormData();
-      body.append("file", file);
-      body.append("draftId", draftId);
+      body.append("file", uploadFile);
+      body.append("draftId", draftIdRef.current);
       body.append("docType", docType);
-      const res = await fetch("/api/listing-applications/upload", {
-        method: "POST",
+      const res = await uploadWithProgress(
+        "/api/listing-applications/upload",
         body,
-      });
+        (percent) => {
+          setDocUploadUi((prev) => ({
+            ...prev,
+            [key]: { phase: "uploading", progress: percent },
+          }));
+        },
+      );
       const data = (await res.json()) as {
         message?: string;
         draftId?: string;
@@ -622,7 +731,13 @@ export function ListingApplicationForm() {
       );
       scrollToStepHeader();
     } finally {
-      setUploading(false);
+      setDocUploadUi((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      docUploadLockRef.current[key] = false;
+      endUploadFlight();
     }
   }
 
@@ -634,36 +749,58 @@ export function ListingApplicationForm() {
     update(key, null);
   }
 
-  async function uploadShopImage(
-    file: File,
-    kind: "exterior" | "interior",
+  function patchPendingShop(
+    id: string,
+    patch: Partial<PendingShopUpload>,
   ) {
-    const max = kind === "exterior" ? 5 : 10;
-    const current =
-      kind === "exterior" ? form.shopExteriorImages : form.shopInteriorImages;
-    if (current.length >= max) {
-      setSubmitMessage(
-        kind === "exterior" ? FORM_I18N.exteriorMax : FORM_I18N.interiorMax,
-      );
-      scrollToStepHeader();
-      return;
-    }
+    setPendingShopUploads((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
 
-    setUploading(true);
-    setSubmitMessage("");
+  function clearShopImageErrors() {
+    setFieldErrors((prev) => {
+      if (!prev.shopExteriorImages && !prev.shopInteriorImages) return prev;
+      const next = { ...prev };
+      delete next.shopExteriorImages;
+      delete next.shopInteriorImages;
+      return next;
+    });
+  }
+
+  async function runShopImageUpload(pending: PendingShopUpload) {
+    beginUploadFlight();
+    patchPendingShop(pending.id, {
+      phase: "compressing",
+      progress: 0,
+      error: undefined,
+    });
     try {
+      const compressed = await compressListingImage(pending.sourceFile, {
+        preferWebp: true,
+      });
+      patchPendingShop(pending.id, { phase: "uploading", progress: 0 });
+
+      const sortOrder = shopSortOrderRef.current[pending.kind]++;
       const body = new FormData();
-      body.append("file", file);
-      body.append("draftId", draftId);
+      body.append("file", compressed.file);
+      body.append("draftId", draftIdRef.current);
       body.append(
         "docType",
-        kind === "exterior" ? "shop-exterior" : "shop-interior",
+        pending.kind === "exterior" ? "shop-exterior" : "shop-interior",
       );
-      body.append("sortOrder", String(current.length));
-      const res = await fetch("/api/listing-applications/upload", {
-        method: "POST",
+      body.append("sortOrder", String(sortOrder));
+
+      const res = await uploadWithProgress(
+        "/api/listing-applications/upload",
         body,
-      });
+        (percent) => {
+          patchPendingShop(pending.id, {
+            phase: "uploading",
+            progress: percent,
+          });
+        },
+      );
       const data = (await res.json()) as {
         message?: string;
         draftId?: string;
@@ -674,36 +811,133 @@ export function ListingApplicationForm() {
       }
       if (data.draftId) setDraftId(data.draftId);
       if (data.image) {
-        if (kind === "exterior") {
-          update("shopExteriorImages", [...form.shopExteriorImages, data.image]);
-          if (fieldErrors.shopExteriorImages) {
-            setFieldErrors((prev) => {
-              const next = { ...prev };
-              delete next.shopExteriorImages;
-              delete next.shopInteriorImages;
-              return next;
-            });
-          }
+        if (pending.kind === "exterior") {
+          setForm((c) => ({
+            ...c,
+            shopExteriorImages: [...c.shopExteriorImages, data.image!],
+          }));
         } else {
-          update("shopInteriorImages", [...form.shopInteriorImages, data.image]);
-          if (fieldErrors.shopInteriorImages || fieldErrors.shopExteriorImages) {
-            setFieldErrors((prev) => {
-              const next = { ...prev };
-              delete next.shopExteriorImages;
-              delete next.shopInteriorImages;
-              return next;
-            });
-          }
+          setForm((c) => ({
+            ...c,
+            shopInteriorImages: [...c.shopInteriorImages, data.image!],
+          }));
         }
+        clearShopImageErrors();
       }
-    } catch (e) {
-      setSubmitMessage(
-        e instanceof Error ? e.message : FORM_I18N.uploadFailed,
+      shopFingerprintsRef.current.delete(pending.fingerprint);
+      pendingShopCountRef.current[pending.kind] = Math.max(
+        0,
+        pendingShopCountRef.current[pending.kind] - 1,
       );
+      setPendingShopUploads((prev) => {
+        const target = prev.find((p) => p.id === pending.id);
+        if (target?.previewUrl) revokeUrl(target.previewUrl);
+        return prev.filter((p) => p.id !== pending.id);
+      });
+    } catch (e) {
+      shopFingerprintsRef.current.delete(pending.fingerprint);
+      const message =
+        e instanceof Error ? e.message : FORM_I18N.uploadFailed;
+      patchPendingShop(pending.id, {
+        phase: "error",
+        progress: 0,
+        error: message,
+      });
+      setSubmitMessage(message);
       scrollToStepHeader();
     } finally {
-      setUploading(false);
+      endUploadFlight();
     }
+  }
+
+  async function enqueueShopImages(
+    files: File[],
+    kind: "exterior" | "interior",
+  ) {
+    const max = kind === "exterior" ? 5 : 10;
+    let slots =
+      max -
+      shopUploadedCountRef.current[kind] -
+      pendingShopCountRef.current[kind];
+
+    if (slots <= 0) {
+      setSubmitMessage(
+        kind === "exterior" ? FORM_I18N.exteriorMax : FORM_I18N.interiorMax,
+      );
+      scrollToStepHeader();
+      return;
+    }
+
+    setSubmitMessage("");
+    const toStart: PendingShopUpload[] = [];
+    let skippedDuplicate = false;
+
+    for (const file of files) {
+      if (slots <= 0) {
+        setSubmitMessage(
+          kind === "exterior" ? FORM_I18N.exteriorMax : FORM_I18N.interiorMax,
+        );
+        scrollToStepHeader();
+        break;
+      }
+      const fingerprint = fileFingerprint(file);
+      if (shopFingerprintsRef.current.has(fingerprint)) {
+        skippedDuplicate = true;
+        continue;
+      }
+      shopFingerprintsRef.current.add(fingerprint);
+      const id = crypto.randomUUID();
+      const previewUrl = URL.createObjectURL(file);
+      toStart.push({
+        id,
+        kind,
+        fingerprint,
+        fileName: file.name,
+        previewUrl,
+        progress: 0,
+        phase: "compressing",
+        sourceFile: file,
+      });
+      slots -= 1;
+    }
+
+    if (skippedDuplicate && toStart.length === 0) {
+      setSubmitMessage(FORM_I18N.duplicateImageSkipped);
+      scrollToStepHeader();
+      return;
+    }
+    if (skippedDuplicate) {
+      setSubmitMessage(FORM_I18N.duplicateImageSkipped);
+    }
+    if (toStart.length === 0) return;
+
+    pendingShopCountRef.current[kind] += toStart.length;
+    setPendingShopUploads((prev) => [...prev, ...toStart]);
+    await mapPool(toStart, SHOP_UPLOAD_CONCURRENCY, async (item) => {
+      await runShopImageUpload(item);
+    });
+  }
+
+  function retryShopUpload(id: string) {
+    const pending = pendingShopUploads.find((p) => p.id === id);
+    if (!pending || pending.phase !== "error") return;
+    shopFingerprintsRef.current.add(pending.fingerprint);
+    void runShopImageUpload(pending);
+  }
+
+  function dismissPendingShop(id: string) {
+    setPendingShopUploads((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) {
+        shopFingerprintsRef.current.delete(target.fingerprint);
+        pendingShopCountRef.current[target.kind] = Math.max(
+          0,
+          pendingShopCountRef.current[target.kind] - 1,
+        );
+        revokeUrl(target.previewUrl);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
   }
 
   function removeShopImage(kind: "exterior" | "interior", storagePath: string) {
@@ -882,6 +1116,15 @@ export function ListingApplicationForm() {
                 </p>
                 {uploaded?.storagePath ? (
                   <p className="text-xs text-muted">{FORM_I18N.uploaded}</p>
+                ) : docUploadUi[key] ? (
+                  <p className="text-xs text-muted">
+                    {docUploadUi[key]?.phase === "compressing"
+                      ? FORM_I18N.compressing
+                      : FORM_I18N.uploadingProgress}
+                    {docUploadUi[key]?.phase === "uploading"
+                      ? ` ${docUploadUi[key]?.progress ?? 0}%`
+                      : ""}
+                  </p>
                 ) : uploading ? (
                   <p className="text-xs text-muted">{FORM_I18N.uploading}</p>
                 ) : null}
@@ -954,15 +1197,89 @@ export function ListingApplicationForm() {
           ref={inputRef}
           type="file"
           accept={SHOP_IMAGE_ACCEPT}
+          multiple
           className="sr-only absolute h-0 w-0 opacity-0"
           tabIndex={-1}
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void uploadShopImage(file, kind);
+            const list = e.target.files;
+            if (list && list.length > 0) {
+              void enqueueShopImages(Array.from(list), kind);
+            }
             e.target.value = "";
           }}
         />
         <div className="grid grid-cols-2 gap-3">
+          {pendingShopUploads
+            .filter((p) => p.kind === kind)
+            .map((p) => (
+              <div
+                key={p.id}
+                className="overflow-hidden rounded-xl border border-gold/25 bg-white"
+              >
+                {p.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.previewUrl}
+                    alt={p.fileName}
+                    className="aspect-square w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
+                    {FORM_I18N.noPreview}
+                  </div>
+                )}
+                <div className="space-y-1 p-2">
+                  <p className="truncate text-xs font-medium text-charcoal">
+                    {p.fileName}
+                  </p>
+                  {p.phase === "error" ? (
+                    <>
+                      <p className="text-[11px] text-red-600">
+                        {p.error ?? FORM_I18N.uploadFailed}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => retryShopUpload(p.id)}
+                          className="text-xs text-gold-dark disabled:opacity-60"
+                        >
+                          {FORM_I18N.retryUpload}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => dismissPendingShop(p.id)}
+                          className="text-xs text-red-600 disabled:opacity-60"
+                        >
+                          {FORM_I18N.removeShort}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-muted">
+                        {p.phase === "compressing"
+                          ? FORM_I18N.compressing
+                          : `${FORM_I18N.uploadingProgress} ${p.progress}%`}
+                      </p>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-gold/15">
+                        <div
+                          className="h-full rounded-full bg-gold transition-[width]"
+                          style={{
+                            width: `${
+                              p.phase === "compressing"
+                                ? 8
+                                : Math.max(8, p.progress)
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
           {images.map((img) => (
             <div
               key={img.storagePath}
@@ -995,7 +1312,7 @@ export function ListingApplicationForm() {
                 <p className="text-[11px] text-muted">{formatBytes(img.size)}</p>
                 <button
                   type="button"
-                  disabled={uploading || loading}
+                  disabled={loading}
                   onClick={() => removeShopImage(kind, img.storagePath)}
                   className="text-xs text-red-600 disabled:opacity-60"
                 >
@@ -1004,10 +1321,12 @@ export function ListingApplicationForm() {
               </div>
             </div>
           ))}
-          {images.length < max ? (
+          {images.length +
+            pendingShopUploads.filter((p) => p.kind === kind).length <
+          max ? (
             <button
               type="button"
-              disabled={uploading || loading}
+              disabled={loading}
               onClick={() => inputRef.current?.click()}
               className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gold/40 bg-ivory/50 text-sm text-gold-dark disabled:opacity-60"
             >
@@ -1433,8 +1752,12 @@ export function ListingApplicationForm() {
               FORM_I18N.interiorDesc,
               10,
             )}
-            {uploading ? (
-              <p className="text-sm text-muted">{FORM_I18N.uploading}</p>
+            {uploadsBlockingNext ? (
+              <p className="text-sm text-muted">
+                {shopUploadsBusy || uploading
+                  ? FORM_I18N.uploading
+                  : FORM_I18N.uploadWait}
+              </p>
             ) : null}
           </section>
         ) : null}
@@ -1585,7 +1908,7 @@ export function ListingApplicationForm() {
         {step > 1 ? (
           <button
             type="button"
-            disabled={navigating || loading || uploading}
+            disabled={navigating || loading || uploadsBlockingNext}
             onClick={goBack}
             className="rounded-full border border-gold/40 px-5 py-3 text-sm font-medium text-gold-dark disabled:opacity-60"
           >
@@ -1596,7 +1919,7 @@ export function ListingApplicationForm() {
         {step < STEPS.length ? (
           <button
             type="button"
-            disabled={navigating || loading || uploading}
+            disabled={navigating || loading || uploadsBlockingNext}
             onClick={goNext}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
@@ -1607,7 +1930,7 @@ export function ListingApplicationForm() {
         {step === STEPS.length ? (
           <button
             type="button"
-            disabled={loading || navigating || uploading}
+            disabled={loading || navigating || uploadsBlockingNext}
             onClick={() => void submit(false)}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
