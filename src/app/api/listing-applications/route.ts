@@ -140,8 +140,11 @@ export async function POST(request: Request) {
         }
       }
       updatePayload[dbKey] = {
-        ...doc,
         storagePath: targetPath,
+        fileName: doc.fileName,
+        mimeType: doc.mimeType,
+        size: doc.size,
+        uploadedAt: doc.uploadedAt,
       };
     }
 
@@ -164,15 +167,27 @@ export async function POST(request: Request) {
             .move(img.storagePath, targetPath);
           if (moveError) {
             console.error("[listing-applications] image move failed:", moveError);
-            moved.push({ ...img, kind, sortOrder: i });
+            // Keep the path that still exists; do not keep stale signedUrl
+            moved.push({
+              storagePath: img.storagePath,
+              fileName: img.fileName,
+              mimeType: img.mimeType,
+              size: img.size,
+              kind,
+              sortOrder: i,
+              uploadedAt: img.uploadedAt,
+            });
             continue;
           }
         }
         moved.push({
-          ...img,
           storagePath: targetPath,
+          fileName: img.fileName,
+          mimeType: img.mimeType,
+          size: img.size,
           kind,
           sortOrder: i,
+          uploadedAt: img.uploadedAt,
         });
       }
       return moved;

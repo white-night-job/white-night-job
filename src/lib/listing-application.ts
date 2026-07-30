@@ -317,7 +317,7 @@ export function normalizeListingApplicationInput(
           mimeType: doc.mimeType.trim(),
           size: Number(doc.size || 0),
           uploadedAt: doc.uploadedAt,
-          signedUrl: doc.signedUrl,
+          // signedUrl is ephemeral (preview only); never persist to DB
         }
       : null;
 
@@ -335,7 +335,6 @@ export function normalizeListingApplicationInput(
         kind,
         sortOrder: Number.isFinite(img.sortOrder) ? img.sortOrder : index,
         uploadedAt: img.uploadedAt,
-        signedUrl: img.signedUrl,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
 

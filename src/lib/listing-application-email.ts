@@ -16,6 +16,107 @@ import {
 /** メール内リンク用（7日） */
 const EMAIL_SIGNED_URL_TTL_SEC = 60 * 60 * 24 * 7;
 
+const bucketPublicCache = new Map<string, boolean>();
+
+async function isBucketPublic(bucket: string): Promise<boolean> {
+  if (bucketPublicCache.has(bucket)) {
+    return bucketPublicCache.get(bucket)!;
+  }
+  try {
+    const supabase = createSupabaseAdmin();
+    const { data, error } = await supabase.storage.listBuckets();
+    if (error || !data) {
+      bucketPublicCache.set(bucket, false);
+      return false;
+    }
+    const found = data.find((b) => b.id === bucket || b.name === bucket);
+    const isPublic = Boolean(found?.public);
+    bucketPublicCache.set(bucket, isPublic);
+    return isPublic;
+  } catch {
+    bucketPublicCache.set(bucket, false);
+    return false;
+  }
+}
+
+async function storageObjectExists(
+  bucket: string,
+  storagePath: string,
+): Promise<boolean> {
+  const supabase = createSupabaseAdmin();
+  const lastSlash = storagePath.lastIndexOf("/");
+  const folder = lastSlash >= 0 ? storagePath.slice(0, lastSlash) : "";
+  const name = lastSlash >= 0 ? storagePath.slice(lastSlash + 1) : storagePath;
+  if (!name) return false;
+
+  const { data, error } = await supabase.storage.from(bucket).list(folder, {
+    limit: 100,
+    search: name,
+  });
+  if (error || !data) {
+    console.warn(
+      "[listing-application-email] object list failed:",
+      bucket,
+      storagePath,
+      error,
+    );
+    return false;
+  }
+  return data.some((item) => item.name === name);
+}
+
+/**
+ * Resolve a usable URL for email. Never reuses DB/client signedUrl
+ * (those often point at draft/ paths after files were moved).
+ */
+async function resolveEmailStorageUrl(
+  bucket: string,
+  storagePath: string | undefined | null,
+): Promise<string | null> {
+  const path = typeof storagePath === "string" ? storagePath.trim() : "";
+  if (!path) return null;
+
+  const exists = await storageObjectExists(bucket, path);
+  if (!exists) {
+    console.warn(
+      "[listing-application-email] object missing, skip URL:",
+      bucket,
+      path,
+    );
+    return null;
+  }
+
+  try {
+    const supabase = createSupabaseAdmin();
+    if (await isBucketPublic(bucket)) {
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      return data?.publicUrl || null;
+    }
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, EMAIL_SIGNED_URL_TTL_SEC);
+    if (error || !data?.signedUrl) {
+      console.warn(
+        "[listing-application-email] createSignedUrl failed:",
+        bucket,
+        path,
+        error,
+      );
+      return null;
+    }
+    return data.signedUrl;
+  } catch (error) {
+    console.error(
+      "[listing-application-email] resolve URL failed:",
+      bucket,
+      path,
+      error,
+    );
+    return null;
+  }
+}
+
 async function safeSend(options: {
   to: string;
   subject: string;
@@ -63,18 +164,10 @@ async function signDocumentUrl(
   doc: ListingDocumentMeta | null | undefined,
 ): Promise<string | null> {
   if (!doc?.storagePath) return null;
-  if (doc.signedUrl) return doc.signedUrl;
-  try {
-    const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase.storage
-      .from(LISTING_APPLICATION_DOCUMENT_BUCKET)
-      .createSignedUrl(doc.storagePath, EMAIL_SIGNED_URL_TTL_SEC);
-    if (error || !data?.signedUrl) return null;
-    return data.signedUrl;
-  } catch (error) {
-    console.error("[listing-application-email] sign document failed:", error);
-    return null;
-  }
+  return resolveEmailStorageUrl(
+    LISTING_APPLICATION_DOCUMENT_BUCKET,
+    doc.storagePath,
+  );
 }
 
 async function formatDocumentLine(
@@ -85,7 +178,7 @@ async function formatDocumentLine(
   const url = await signDocumentUrl(doc);
   const name = doc.fileName || doc.storagePath;
   if (url) return `${label}: ${name}\n  ${url}`;
-  return `${label}: ${name}（URL生成に失敗。管理画面で確認してください）`;
+  return `${label}: ${name}（ファイル確認不可。管理画面で確認してください）`;
 }
 
 async function formatImageSection(
@@ -96,29 +189,18 @@ async function formatImageSection(
   if (list.length === 0) return `${title}: なし`;
 
   const lines: string[] = [`${title}: ${list.length}枚`];
-  try {
-    const supabase = createSupabaseAdmin();
-    for (let i = 0; i < list.length; i++) {
-      const img = list[i];
-      const name = img.fileName || img.storagePath || `画像${i + 1}`;
-      let url = img.signedUrl;
-      if (!url && img.storagePath) {
-        const { data, error } = await supabase.storage
-          .from(LISTING_APPLICATION_IMAGE_BUCKET)
-          .createSignedUrl(img.storagePath, EMAIL_SIGNED_URL_TTL_SEC);
-        if (!error) url = data?.signedUrl;
-      }
-      lines.push(`  ${i + 1}. ${name}`);
-      lines.push(
-        url
-          ? `     ${url}`
-          : "     （URL生成に失敗。管理画面で確認してください）",
-      );
-    }
-  } catch (error) {
-    console.error("[listing-application-email] sign images failed:", error);
+  for (let i = 0; i < list.length; i++) {
+    const img = list[i];
+    const name = img.fileName || img.storagePath || `画像${i + 1}`;
+    const url = await resolveEmailStorageUrl(
+      LISTING_APPLICATION_IMAGE_BUCKET,
+      img.storagePath,
+    );
+    lines.push(`  ${i + 1}. ${name}`);
     lines.push(
-      "  （署名URLの生成に失敗しました。管理画面で確認してください）",
+      url
+        ? `     ${url}`
+        : "     （ファイル確認不可。管理画面で確認してください）",
     );
   }
   return lines.join("\n");
