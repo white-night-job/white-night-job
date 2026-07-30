@@ -44,6 +44,8 @@ export const FORM_I18N = {
   errConsentAccuracy:
     "求人内容と実際の勤務条件に相違がないことへの同意が必要です。",
   errConsentTerms: "利用規約・プライバシーポリシーへの同意が必要です。",
+  errConsentAntisocial:
+    "反社会的勢力に該当しないことの確認が必要です。",
   errShopImagesBoth: "店舗外観と店舗内観の画像をアップロードしてください",
   errShopExterior: "店舗外観の画像をアップロードしてください",
   errShopInterior: "店舗内観の画像をアップロードしてください",
@@ -140,6 +142,8 @@ export const FORM_I18N = {
   privacyLink: "プライバシーポリシー",
   consentTermsJoiner: "、",
   consentTermsSuffix: "に同意します。*",
+  consentAntisocialText:
+    "申請者、代表者、役員および実質的経営者は、反社会的勢力に該当せず、関係も有していません。*",
 
   headingImages: "7. 店舗画像",
   imagesHint: "店舗の外観と内観が分かる画像をアップロードしてください。",

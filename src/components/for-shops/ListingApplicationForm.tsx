@@ -137,6 +137,7 @@ type FormState = {
   requestedPlan: JobPlan | "";
   consentAccuracy: boolean;
   consentTerms: boolean;
+  consentAntisocial: boolean;
   shopExteriorImages: ListingShopImage[];
   shopInteriorImages: ListingShopImage[];
   website: string;
@@ -178,6 +179,7 @@ const EMPTY: FormState = {
   requestedPlan: "",
   consentAccuracy: false,
   consentTerms: false,
+  consentAntisocial: false,
   shopExteriorImages: [],
   shopInteriorImages: [],
   website: "",
@@ -414,6 +416,9 @@ function validateStep(
     }
     if (!form.consentTerms) {
       errors.consentTerms = FORM_I18N.errConsentTerms;
+    }
+    if (!form.consentAntisocial) {
+      errors.consentAntisocial = FORM_I18N.errConsentAntisocial;
     }
   }
   if (step === 7) {
@@ -1919,6 +1924,26 @@ export function ListingApplicationForm() {
               </label>
               {fe.consentTerms ? (
                 <p className={errTextClass}>{fe.consentTerms}</p>
+              ) : null}
+            </div>
+            <div data-error-field={fe.consentAntisocial ? "1" : undefined}>
+              <label
+                className={`flex items-start gap-3 text-sm ${
+                  fe.consentAntisocial ? "text-red-700" : "text-charcoal"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.consentAntisocial}
+                  onChange={(e) =>
+                    update("consentAntisocial", e.target.checked)
+                  }
+                  className="mt-1"
+                />
+                <span>{FORM_I18N.consentAntisocialText}</span>
+              </label>
+              {fe.consentAntisocial ? (
+                <p className={errTextClass}>{fe.consentAntisocial}</p>
               ) : null}
             </div>
           </section>

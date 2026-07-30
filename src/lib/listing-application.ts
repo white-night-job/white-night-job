@@ -8,6 +8,7 @@ import {
   parseJobPlan,
   type JobPlan,
 } from "@/lib/job-plan";
+import { SHOP_TERMS_VERSION } from "@/lib/shop-terms";
 
 export const LISTING_APPLICATION_STATUSES = [
   "pending",
@@ -126,6 +127,7 @@ export type ListingApplicationInput = {
   notes?: string;
   consentAccuracy: boolean;
   consentTerms: boolean;
+  consentAntisocial: boolean;
   attachments?: ListingAttachment[];
   shopExteriorImages?: ListingShopImage[];
   shopInteriorImages?: ListingShopImage[];
@@ -325,6 +327,9 @@ export function validateListingApplicationInput(
   if (!input.consentTerms) {
     return "利用規約・プライバシーポリシーへの同意が必要です。";
   }
+  if (!input.consentAntisocial) {
+    return "反社会的勢力に該当しないことの確認が必要です。";
+  }
 
   if (!EMAIL_RE.test(String(input.contactEmail).trim())) {
     return "担当者メールアドレスの形式が正しくありません。";
@@ -472,6 +477,7 @@ export function normalizeListingApplicationInput(
     notes: undefined,
     consentAccuracy: Boolean(input.consentAccuracy),
     consentTerms: Boolean(input.consentTerms),
+    consentAntisocial: Boolean(input.consentAntisocial),
     attachments: [],
     shopExteriorImages: normalizeImages(input.shopExteriorImages, "exterior"),
     shopInteriorImages: normalizeImages(input.shopInteriorImages, "interior"),
@@ -539,6 +545,11 @@ export function inputToDbRow(
     notes: null,
     consent_accuracy: input.consentAccuracy,
     consent_terms: input.consentTerms,
+    consent_antisocial: input.consentAntisocial,
+    consent_antisocial_at: input.consentAntisocial
+      ? new Date().toISOString()
+      : null,
+    shop_terms_version: input.consentAntisocial ? SHOP_TERMS_VERSION : null,
     attachments: [],
     shop_exterior_images: input.shopExteriorImages ?? [],
     shop_interior_images: input.shopInteriorImages ?? [],
@@ -590,6 +601,9 @@ export type ListingApplicationRow = {
   notes: string | null;
   consent_accuracy: boolean;
   consent_terms: boolean;
+  consent_antisocial: boolean;
+  consent_antisocial_at: string | null;
+  shop_terms_version: string | null;
   attachments: ListingAttachment[] | null;
   shop_exterior_images: ListingShopImage[] | null;
   shop_interior_images: ListingShopImage[] | null;

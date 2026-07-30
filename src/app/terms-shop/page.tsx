@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/LegalDocument";
+import { SHOP_TERMS_VERSION } from "@/lib/shop-terms";
 import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
@@ -9,7 +10,7 @@ export const metadata: Metadata = buildPageMetadata(
   "/terms-shop",
 );
 
-const UPDATED_AT = "2026年6月18日";
+const UPDATED_AT = "2026年7月31日";
 
 export default function TermsShopPage() {
   return (
@@ -156,8 +157,70 @@ export default function TermsShopPage() {
           ),
         },
         {
+          id: "antisocial",
+          title: "16. 反社会的勢力の排除",
+          content: (
+            <div className="space-y-4">
+              <p>
+                1.
+                掲載店舗は、現在および将来にわたり、自ら、その代表者、役員、実質的経営者、従業員、代理人その他関係者が、次の各号のいずれにも該当しないことを表明し、保証するものとします。
+              </p>
+              <ol className="list-decimal space-y-1 pl-6">
+                <li>暴力団</li>
+                <li>暴力団員</li>
+                <li>暴力団員でなくなった時から5年を経過しない者</li>
+                <li>暴力団準構成員</li>
+                <li>暴力団関係企業</li>
+                <li>
+                  総会屋、社会運動等標ぼうゴロ、特殊知能暴力集団その他これらに準ずる者
+                </li>
+                <li>前各号に該当する者と密接な関係を有する者</li>
+              </ol>
+              <p>
+                2.
+                掲載店舗は、次の各号に該当する関係を有しないことを表明し、保証するものとします。
+              </p>
+              <ol className="list-decimal space-y-1 pl-6">
+                <li>反社会的勢力が経営を支配している関係</li>
+                <li>反社会的勢力が経営に実質的に関与している関係</li>
+                <li>反社会的勢力を利用している関係</li>
+                <li>反社会的勢力に資金、利益または便宜を提供している関係</li>
+                <li>反社会的勢力と社会的に非難されるべき関係</li>
+              </ol>
+              <p>
+                3.
+                掲載店舗は、自らまたは第三者を利用して、次の行為を行ってはなりません。
+              </p>
+              <ol className="list-decimal space-y-1 pl-6">
+                <li>暴力的な要求行為</li>
+                <li>法的な責任を超えた不当な要求行為</li>
+                <li>脅迫的な言動または暴力を用いる行為</li>
+                <li>
+                  風説の流布、偽計または威力を用いて当サイトの信用を毀損し、または業務を妨害する行為
+                </li>
+                <li>その他前各号に準ずる行為</li>
+              </ol>
+              <p>
+                4.
+                当サイトは、掲載店舗が前各項のいずれかに違反している、または違反している疑いがあると合理的に判断した場合、事前の通知または催告を行うことなく、掲載の拒否、停止、削除、利用契約の解除その他必要な措置を講じることができます。
+              </p>
+              <p>
+                5.
+                当サイトは、前項の措置により掲載店舗に損害が生じても、一切の責任を負いません。
+              </p>
+              <p>
+                6.
+                掲載店舗は、本条への違反により当サイトまたは第三者に損害を与えた場合、その損害を賠償するものとします。
+              </p>
+              <p className="text-xs text-muted">
+                規約バージョン: {SHOP_TERMS_VERSION}
+              </p>
+            </div>
+          ),
+        },
+        {
           id: "disclaimer",
-          title: "16. 免責事項",
+          title: "17. 免責事項",
           content: (
             <p>
               当サイトは、掲載継続、応募数、採用成果、売上向上等を保証しません。利用に伴う損害について、故意または重過失を除き責任を負いません。
@@ -166,7 +229,7 @@ export default function TermsShopPage() {
         },
         {
           id: "changes",
-          title: "17. 規約変更",
+          title: "18. 規約変更",
           content: (
             <p>
               当サイトは必要に応じて本規約を変更できます。変更後の規約は当サイト掲載時点で効力を生じます。
@@ -175,7 +238,7 @@ export default function TermsShopPage() {
         },
         {
           id: "law",
-          title: "18. 準拠法",
+          title: "19. 準拠法",
           content: (
             <p>
               本規約は日本法に準拠し、本規約に関する紛争は運営者所在地を管轄する裁判所を第一審の専属的合意管轄とします。
