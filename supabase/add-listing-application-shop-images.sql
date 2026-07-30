@@ -1,6 +1,8 @@
 -- 掲載申込の店舗画像（非公開Storage）とJSONBカラム
 -- Supabase SQL Editor で実行してください
 -- 既存の listing_reason / shop_features / notes / attachments は削除しません
+-- ※推奨: バケット制限込みの add-listing-application-images.sql を実行
+-- 型は jsonb（ListingShopImage オブジェクト配列）。text[] ではない。
 
 insert into storage.buckets (id, name, public)
 select 'listing-application-images', 'listing-application-images', false

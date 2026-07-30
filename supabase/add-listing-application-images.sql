@@ -1,5 +1,21 @@
--- 掲載申込の店舗画像バケット作成（非公開）
+-- 掲載申込の店舗画像バケット作成（非公開）＋ DBカラム追加
 -- Supabase SQL Editor で実行してください
+-- 既存データ・既存カラムは壊しません（IF NOT EXISTS）
+--
+-- コード側の保存値（ListingShopImage オブジェクト配列）に合わせ jsonb を使用:
+--   storagePath, fileName, mimeType, size, kind, sortOrder, uploadedAt
+-- PostgREST キー名:
+--   shop_exterior_images / shop_interior_images
+
+-- listing_applications に店舗画像カラムを追加
+alter table public.listing_applications
+  add column if not exists shop_exterior_images jsonb not null default '[]'::jsonb,
+  add column if not exists shop_interior_images jsonb not null default '[]'::jsonb;
+
+comment on column public.listing_applications.shop_exterior_images is
+  '店舗外観画像メタデータ配列（jsonb）。必須・最大5枚。';
+comment on column public.listing_applications.shop_interior_images is
+  '店舗内観画像メタデータ配列（jsonb）。必須・最大10枚。';
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 select
