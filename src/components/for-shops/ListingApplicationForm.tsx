@@ -282,7 +282,7 @@ function validateStep(
     }
     if (!form.consentTerms) {
       errors.consentTerms =
-        "利用規約・掲載基準・プライバシーポリシーへの同意が必要です。";
+        "利用規約・プライバシーポリシーへの同意が必要です。";
     }
   }
   if (step === 7) {
@@ -1240,13 +1240,6 @@ export function ListingApplicationForm() {
                 <span>
                   <Link href="/terms-shop" className="text-gold-dark underline">
                     利用規約
-                  </Link>
-                  、
-                  <Link
-                    href="/listing-criteria"
-                    className="text-gold-dark underline"
-                  >
-                    掲載基準
                   </Link>
                   、
                   <Link href="/privacy" className="text-gold-dark underline">

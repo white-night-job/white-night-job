@@ -19,6 +19,7 @@ export default function PrivacyPage() {
       updatedAt={UPDATED_AT}
       pathname="/privacy"
       breadcrumbLabel="プライバシーポリシー"
+      showBackToApply
       sections={[
         {
           id: "operator",

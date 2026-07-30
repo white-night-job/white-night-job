@@ -239,7 +239,7 @@ export function validateListingApplicationInput(
     return "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
   }
   if (!input.consentTerms) {
-    return "利用規約・掲載基準・プライバシーポリシーへの同意が必要です。";
+    return "利用規約・プライバシーポリシーへの同意が必要です。";
   }
 
   if (!EMAIL_RE.test(String(input.contactEmail).trim())) {

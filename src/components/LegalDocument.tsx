@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BackToApplyButton } from "@/components/BackToApplyButton";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
 import { buildWebPageJsonLd } from "@/lib/seo";
@@ -18,6 +19,7 @@ type LegalDocumentProps = {
   pathname: string;
   breadcrumbLabel: string;
   sections: LegalSection[];
+  showBackToApply?: boolean;
 };
 
 const FOOTER_LINKS = [
@@ -38,10 +40,12 @@ export function LegalDocument({
   pathname,
   breadcrumbLabel,
   sections,
+  showBackToApply = false,
 }: LegalDocumentProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
+      {showBackToApply ? <BackToApplyButton /> : null}
       <Breadcrumbs items={[{ label: breadcrumbLabel }]} />
 
       <header className="mb-8">

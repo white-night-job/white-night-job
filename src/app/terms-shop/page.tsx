@@ -19,6 +19,7 @@ export default function TermsShopPage() {
       updatedAt={UPDATED_AT}
       pathname="/terms-shop"
       breadcrumbLabel="掲載店舗向け利用規約"
+      showBackToApply
       sections={[
         {
           id: "listing",
