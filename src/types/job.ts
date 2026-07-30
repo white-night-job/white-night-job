@@ -137,6 +137,10 @@ export interface Job {
   /** 管理画面のみ。公開APIでは返さない */
   shopLoginPassword?: string;
   chatRecommend?: ChatRecommendSettings;
+  /** draft=下書き / published=公開中 / paused=掲載停止 */
+  listingStatus?: "draft" | "published" | "paused";
+  /** 互換: listingStatus === 'published' と同義 */
+  published?: boolean;
 }
 
 export interface JobFilters {

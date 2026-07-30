@@ -1,5 +1,6 @@
 import { rowToChatRecommend } from "@/lib/chat-recommend-db";
 import { inferJobPlan, parseJobPlan } from "@/lib/job-plan";
+import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -104,6 +105,8 @@ type JobRow = {
   chat_recommend_high_salary?: boolean | null;
   chat_recommend_relaxed?: boolean | null;
   chat_recommend_high_earning?: boolean | null;
+  listing_status?: string | null;
+  published?: boolean | null;
 };
 
 type RowToJobOptions = {
@@ -174,6 +177,8 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
         }
       : {}),
     chatRecommend: rowToChatRecommend(row),
+    listingStatus: resolveJobListingStatus(row),
+    published: resolveJobListingStatus(row) === "published",
   };
 }
 
@@ -251,8 +256,14 @@ export function hasRecruiterContent(
   );
 }
 
-export function payloadToRow(payload: JobPayload) {
-  const shopName = payload.shopName.trim();
+export function payloadToRow(payload: JobPayload, options?: { forDraft?: boolean }) {
+  const shopName =
+    payload.shopName.trim() || (options?.forDraft ? "（下書き）" : "");
+  const salary =
+    payload.salary.trim() || (options?.forDraft ? "未設定" : "");
+  const lineUrl =
+    payload.lineUrl.trim() ||
+    (options?.forDraft ? "https://line.me/" : "");
 
   return {
     shop_name: shopName,
@@ -260,7 +271,7 @@ export function payloadToRow(payload: JobPayload) {
     district: payload.district,
     job_type: payload.jobType,
     title: `${shopName}｜${payload.jobType}募集`,
-    salary: payload.salary.trim(),
+    salary,
     work_hours: payload.workHours ?? "20:00〜LAST",
     business_hours: payload.businessHours?.trim() || null,
     age_group: payload.ageGroup?.trim() || null,
@@ -290,7 +301,7 @@ export function payloadToRow(payload: JobPayload) {
     tiktok_url: payload.tiktokUrl?.trim() || null,
     youtube_url: payload.youtubeUrl?.trim() || null,
     website_url: payload.websiteUrl?.trim() || null,
-    line_url: payload.lineUrl.trim(),
+    line_url: lineUrl,
   };
 }
 
@@ -429,6 +440,40 @@ export function validateJobPayload(payload: JobPayload): string | null {
   if (!payload.jobType) return "職種を選択してください。";
   if (!payload.salary.trim()) return "時給を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
+  return null;
+}
+
+/** Draft save: allow incomplete forms (placeholders applied in payloadToRow). */
+export function validateDraftJobPayload(payload: JobPayload): string | null {
+  if (!payload.district) return "地区を選択してください。";
+  if (!payload.jobType) return "職種を選択してください。";
+  return null;
+}
+
+export function validatePublishJobPayload(
+  payload: JobPayload,
+): { field?: string; message: string } | null {
+  if (!payload.shopName.trim()) {
+    return { field: "shopName", message: "店名を入力してください。" };
+  }
+  if (!payload.district) {
+    return { field: "district", message: "地区を選択してください。" };
+  }
+  if (!payload.jobType) {
+    return { field: "jobType", message: "職種を選択してください。" };
+  }
+  if (!payload.salary.trim()) {
+    return { field: "salary", message: "時給を入力してください。" };
+  }
+  if (!payload.lineUrl.trim()) {
+    return { field: "lineUrl", message: "LINE応募URLを入力してください。" };
+  }
+  if (!/^https?:\/\//i.test(payload.lineUrl.trim())) {
+    return {
+      field: "lineUrl",
+      message: "LINE応募URLは https:// から始まる形式で入力してください。",
+    };
+  }
   return null;
 }
 

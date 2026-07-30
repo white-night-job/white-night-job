@@ -8,8 +8,14 @@ import {
   payloadToRow,
   rowToJob,
   shopCredentialsToRow,
-  validateJobPayload,
+  validateDraftJobPayload,
+  validatePublishJobPayload,
 } from "@/lib/job-db";
+import {
+  isJobListingStatus,
+  listingStatusToRow,
+  type JobListingStatus,
+} from "@/lib/job-listing-status";
 import {
   chatRecommendToRow,
   parseChatRecommendFromBody,
@@ -72,6 +78,34 @@ function openDateToRow(body: Record<string, unknown>): Record<string, unknown> {
   const openDate = parseOpenDateFromBody(body);
   if (openDate === undefined) return {};
   return { open_date: openDate };
+}
+
+function resolveSaveIntent(body: Record<string, unknown>): {
+  intent: "draft" | "publish" | "pause" | "keep";
+  targetStatus: JobListingStatus | null;
+} {
+  const intentRaw = String(body.saveIntent ?? body.intent ?? "").trim();
+  if (intentRaw === "draft" || intentRaw === "save_draft") {
+    return { intent: "draft", targetStatus: "draft" };
+  }
+  if (intentRaw === "publish") {
+    return { intent: "publish", targetStatus: "published" };
+  }
+  if (intentRaw === "pause") {
+    return { intent: "pause", targetStatus: "paused" };
+  }
+  if (intentRaw === "republish") {
+    return { intent: "publish", targetStatus: "published" };
+  }
+  const status = body.listingStatus ?? body.listing_status;
+  if (isJobListingStatus(status)) {
+    return {
+      intent: status === "published" ? "publish" : status === "paused" ? "pause" : "draft",
+      targetStatus: status,
+    };
+  }
+  // Default for create: draft (never auto-publish)
+  return { intent: "draft", targetStatus: "draft" };
 }
 
 export async function GET(request: Request) {
@@ -257,9 +291,26 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const payload = normalizeJobPayload(body);
-    const validationError = validateJobPayload(payload);
-    if (validationError) {
-      return NextResponse.json({ message: validationError }, { status: 400 });
+    const { intent, targetStatus } = resolveSaveIntent(body);
+    const status: JobListingStatus = targetStatus ?? "draft";
+
+    if (intent === "publish") {
+      const publishError = validatePublishJobPayload(payload);
+      if (publishError) {
+        return NextResponse.json(
+          {
+            message: publishError.message,
+            field: publishError.field,
+            validation: publishError,
+          },
+          { status: 400 },
+        );
+      }
+    } else {
+      const draftError = validateDraftJobPayload(payload);
+      if (draftError) {
+        return NextResponse.json({ message: draftError }, { status: 400 });
+      }
     }
 
     const shopCredentials = parseShopCredentialsFromBody(body);
@@ -272,12 +323,13 @@ export async function POST(request: Request) {
     const planRow = planMetaToRow(body);
     const postedAtRow = postedAtToRow(body);
     const openDateRow = openDateToRow(body);
+    const statusRow = listingStatusToRow(status);
 
     const supabase = createSupabaseAdmin();
     const { data, error } = await supabase
       .from("jobs")
       .insert({
-        ...payloadToRow(payload),
+        ...payloadToRow(payload, { forDraft: status !== "published" }),
         ...credentialRow,
         ...chatRecommendRow,
         ...pickupRow,
@@ -285,6 +337,7 @@ export async function POST(request: Request) {
         ...planRow,
         ...postedAtRow,
         ...openDateRow,
+        ...statusRow,
       })
       .select("*")
       .single();
@@ -297,11 +350,13 @@ export async function POST(request: Request) {
     }
 
     const job = rowToJob(data, { includeShopLoginPassword: true });
-    void runAutoNotificationsAfterJobChange({
-      before: null,
-      after: job,
-      wasCreate: true,
-    });
+    if (status === "published") {
+      void runAutoNotificationsAfterJobChange({
+        before: null,
+        after: job,
+        wasCreate: true,
+      });
+    }
 
     invalidateAdminCacheByPrefix("admin:");
     return NextResponse.json({ job }, { status: 201 });

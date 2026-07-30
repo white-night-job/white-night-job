@@ -29,13 +29,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
     const region = searchParams.get("region")?.trim() || "all";
+    const statusFilter = searchParams.get("status")?.trim() || "all";
     const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
     const limit = Math.min(
       MAX_LIMIT,
       Math.max(1, Number(searchParams.get("limit") ?? DEFAULT_LIMIT) || DEFAULT_LIMIT),
     );
 
-    if (!q && region === "all") {
+    if (!q && region === "all" && statusFilter === "all") {
       return NextResponse.json({
         jobs: [],
         total: 0,
@@ -45,11 +46,11 @@ export async function GET(request: Request) {
         details: {},
         viewCounts: {},
         searched: false,
-        message: "店舗名やエリアを入力して検索してください",
+        message: "店舗名・エリア・公開状態のいずれかで絞り込んでください",
       });
     }
 
-    const cacheKey = `admin:jobs-search:${region}:${q}:${page}:${limit}`;
+    const cacheKey = `admin:jobs-search:${region}:${statusFilter}:${q}:${page}:${limit}`;
     const cached = getAdminCache<Record<string, unknown>>(cacheKey);
     if (cached) {
       console.info("[admin/jobs/search] cache-hit", {
@@ -60,12 +61,19 @@ export async function GET(request: Request) {
 
     const supabase = createSupabaseAdmin();
 
-    // Slim pass for fuzzy name filter (avoid loading full rows for every job).
+    // Admin search includes draft / paused / published (public APIs stay published-only).
     let slimQuery = supabase
       .from("jobs")
-      .select("id, shop_name, district, area, created_at")
-      .eq("published", true)
+      .select("id, shop_name, district, area, created_at, published, listing_status")
       .order("created_at", { ascending: false });
+
+    if (statusFilter === "published") {
+      slimQuery = slimQuery.eq("published", true);
+    } else if (statusFilter === "draft") {
+      slimQuery = slimQuery.eq("listing_status", "draft");
+    } else if (statusFilter === "paused") {
+      slimQuery = slimQuery.eq("listing_status", "paused");
+    }
 
     if (region !== "all" && region !== FIXED_AREA) {
       slimQuery = slimQuery.eq("district", region as District);

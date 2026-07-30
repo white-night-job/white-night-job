@@ -8,8 +8,15 @@ import {
   payloadToRow,
   rowToJob,
   shopCredentialsToRow,
-  validateJobPayload,
+  validateDraftJobPayload,
+  validatePublishJobPayload,
 } from "@/lib/job-db";
+import {
+  isJobListingStatus,
+  listingStatusToRow,
+  resolveJobListingStatus,
+  type JobListingStatus,
+} from "@/lib/job-listing-status";
 import {
   chatRecommendToRow,
   parseChatRecommendFromBody,
@@ -58,6 +65,42 @@ function openDateToRow(body: Record<string, unknown>): Record<string, unknown> {
   const openDate = parseOpenDateFromBody(body);
   if (openDate === undefined) return {};
   return { open_date: openDate };
+}
+
+function resolveUpdateIntent(
+  body: Record<string, unknown>,
+  currentStatus: JobListingStatus,
+): {
+  intent: "draft" | "publish" | "pause" | "keep";
+  targetStatus: JobListingStatus;
+} {
+  const intentRaw = String(body.saveIntent ?? body.intent ?? "").trim();
+  if (intentRaw === "draft" || intentRaw === "save_draft") {
+    // Content save without unpublishing a live job
+    return { intent: "keep", targetStatus: currentStatus };
+  }
+  if (intentRaw === "publish" || intentRaw === "republish") {
+    return { intent: "publish", targetStatus: "published" };
+  }
+  if (intentRaw === "pause") {
+    return { intent: "pause", targetStatus: "paused" };
+  }
+  if (intentRaw === "set_draft") {
+    return { intent: "draft", targetStatus: "draft" };
+  }
+  const status = body.listingStatus ?? body.listing_status;
+  if (isJobListingStatus(status)) {
+    return {
+      intent:
+        status === "published"
+          ? "publish"
+          : status === "paused"
+            ? "pause"
+            : "draft",
+      targetStatus: status,
+    };
+  }
+  return { intent: "keep", targetStatus: currentStatus };
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
@@ -113,10 +156,6 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const { id } = await params;
     const body = (await request.json()) as Record<string, unknown>;
     const payload = normalizeJobPayload(body);
-    const validationError = validateJobPayload(payload);
-    if (validationError) {
-      return NextResponse.json({ message: validationError }, { status: 400 });
-    }
 
     const shopCredentials = parseShopCredentialsFromBody(body);
     const credentialRow = shopCredentialsToRow(shopCredentials);
@@ -136,10 +175,39 @@ export async function PUT(request: Request, { params }: RouteContext) {
       .eq("id", id)
       .maybeSingle();
 
+    if (!previous) {
+      return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+
+    const currentStatus = resolveJobListingStatus(previous);
+    const { intent, targetStatus } = resolveUpdateIntent(body, currentStatus);
+
+    if (intent === "publish" || targetStatus === "published") {
+      const publishError = validatePublishJobPayload(payload);
+      if (publishError) {
+        return NextResponse.json(
+          {
+            message: publishError.message,
+            field: publishError.field,
+            validation: publishError,
+          },
+          { status: 400 },
+        );
+      }
+    } else {
+      const draftError = validateDraftJobPayload(payload);
+      if (draftError) {
+        return NextResponse.json({ message: draftError }, { status: 400 });
+      }
+    }
+
+    const statusRow = listingStatusToRow(targetStatus);
+    const forDraft = targetStatus !== "published";
+
     const { data, error } = await supabase
       .from("jobs")
       .update({
-        ...payloadToRow(payload),
+        ...payloadToRow(payload, { forDraft }),
         ...credentialRow,
         ...chatRecommendRow,
         ...pickupRow,
@@ -147,6 +215,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         ...planRow,
         ...postedAtRow,
         ...openDateRow,
+        ...statusRow,
       })
       .eq("id", id)
       .select("*")
@@ -162,7 +231,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
     const before = previous ? rowToJob(previous) : null;
     const after = rowToJob(data, { includeShopLoginPassword: true });
-    void runAutoNotificationsAfterJobChange({ before, after });
+    if (targetStatus === "published") {
+      void runAutoNotificationsAfterJobChange({ before, after });
+    }
 
     invalidateAdminCacheByPrefix("admin:");
     revalidateTag(`job-detail:${id}`);

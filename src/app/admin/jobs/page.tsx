@@ -52,6 +52,11 @@ import {
   planToFormPatch,
   type JobPlan,
 } from "@/lib/job-plan";
+import {
+  JOB_LISTING_STATUS_LABELS,
+  resolveJobListingStatus,
+  type JobListingStatus,
+} from "@/lib/job-listing-status";
 
 const emptyCastVoiceEntry = (): CastVoiceEntry => ({
   name: "",
@@ -293,6 +298,12 @@ export default function AdminJobsPage() {
   >({});
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formDirty, setFormDirty] = useState(false);
+  const [editingListingStatus, setEditingListingStatus] =
+    useState<JobListingStatus>("draft");
+  const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
@@ -371,6 +382,7 @@ export default function AdminJobsPage() {
       const params = new URLSearchParams({
         q,
         region: regionFilter,
+        status: statusFilter,
         page: String(page),
         limit: String(SEARCH_LIMIT),
       });
@@ -412,7 +424,7 @@ export default function AdminJobsPage() {
 
   async function refreshAfterMutation() {
     await loadMonthlySummary();
-    if (shopSearchQuery.trim() || regionFilter !== "all") {
+    if (shopSearchQuery.trim() || regionFilter !== "all" || statusFilter !== "all") {
       await runShopSearch(1, false);
     }
   }
@@ -432,6 +444,13 @@ export default function AdminJobsPage() {
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+    setFormDirty(true);
+    setFieldErrors((prev) => {
+      if (!prev[key as string]) return prev;
+      const next = { ...prev };
+      delete next[key as string];
+      return next;
+    });
   }
 
   function applyPlan(plan: JobPlan) {
@@ -487,31 +506,29 @@ export default function AdminJobsPage() {
   function resetForm() {
     setForm(emptyForm);
     setEditingId(null);
+    setEditingListingStatus("draft");
     setIsAddFormOpen(false);
     setShowPreview(false);
+    setFormDirty(false);
+    setFieldErrors({});
     setDraftJobId(crypto.randomUUID());
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
-      setMessage("店舗名・時給・LINE URLは必須です。");
-      return;
-    }
-    requestScrollToTop();
-    setShowPreview(true);
-  }
-
-  async function handleConfirmPublish() {
-    if (publishLockRef.current || loading) return;
+  async function saveJob(saveIntent: "draft" | "publish" | "pause" | "republish", options?: { silent?: boolean }) {
+    if (publishLockRef.current || loading) return null;
     publishLockRef.current = true;
-    setLoading(true);
-    setMessage("");
+    if (!options?.silent) {
+      setLoading(true);
+      setMessage("");
+      setFieldErrors({});
+    }
     try {
       const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
       const method = editingId ? "PUT" : "POST";
-      const payload = await promoteTempImagesInPayload(toPayload(form));
+      const payload = {
+        ...(await promoteTempImagesInPayload(toPayload(form))),
+        saveIntent,
+      };
       const { job: savedJob } = await readJson<{ job: Job }>(
         await fetch(url, {
           method,
@@ -520,39 +537,64 @@ export default function AdminJobsPage() {
           body: JSON.stringify(payload),
         }),
       );
-      const savedStoreImageCount = getDisplayStoreImages(savedJob).length;
-      const storeImageNote =
-        savedStoreImageCount > 0
-          ? `（店舗ギャラリー ${savedStoreImageCount}枚）`
-          : payload.storeImages && payload.storeImages.length > 0
-            ? "（店舗ギャラリーの保存に失敗した可能性があります。Supabaseの store_images カラムを確認してください）"
-            : "";
-      const shopLoginNote = savedJob.shopLoginId
-        ? `（店舗ログインID: ${savedJob.shopLoginId}）`
-        : "";
-      setMessage(
-        editingId
-          ? `求人を更新しました。${storeImageNote}${shopLoginNote}`
-          : `求人を追加しました。${storeImageNote}${shopLoginNote}`,
-      );
-      await refreshAfterMutation();
-      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
-      requestScrollToTop();
-      setShowPreview(false);
-      if (editingId) {
-        setEditingId(savedJob.id);
-        setForm(toForm(savedJob));
-        setIsAddFormOpen(false);
-      } else {
-        resetForm();
+      if (!options?.silent) {
+        const status = resolveJobListingStatus(savedJob);
+        const label = JOB_LISTING_STATUS_LABELS[status];
+        setMessage(
+          saveIntent === "publish" || saveIntent === "republish"
+            ? `求人を公開しました（${label}）。`
+            : saveIntent === "pause"
+              ? `求人を掲載停止にしました。`
+              : editingId
+                ? `下書きとして保存しました（公開状態: ${label}）。`
+                : `下書きを保存しました。`,
+        );
+        await refreshAfterMutation();
+        window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+        requestScrollToTop();
+        setShowPreview(false);
       }
+      setEditingId(savedJob.id);
+      setForm(toForm(savedJob));
+      setEditingListingStatus(resolveJobListingStatus(savedJob));
+      setIsAddFormOpen(false);
+      setFormDirty(false);
+      setDraftJobId(savedJob.id);
+      return savedJob;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
-      requestScrollToTop();
-      setShowPreview(false);
+      const message =
+        error instanceof Error ? error.message : "保存に失敗しました。";
+      if (!options?.silent) {
+        setMessage(message);
+        if (message.includes("店名")) setFieldErrors({ shopName: message });
+        if (message.includes("時給")) setFieldErrors((p) => ({ ...p, salary: message }));
+        if (message.includes("LINE")) setFieldErrors((p) => ({ ...p, lineUrl: message }));
+        requestScrollToTop();
+        setShowPreview(false);
+      }
+      throw error;
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
       publishLockRef.current = false;
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
+      setMessage("公開前確認には店舗名・時給・LINE URLが必要です。不足がある場合は「下書き保存」を使ってください。");
+      return;
+    }
+    requestScrollToTop();
+    setShowPreview(true);
+  }
+
+  async function handleConfirmPublish() {
+    try {
+      await saveJob("publish");
+    } catch {
+      /* message set in saveJob */
     }
   }
 
@@ -700,13 +742,32 @@ export default function AdminJobsPage() {
   function handleEdit(job: Job) {
     setEditingId(job.id);
     setForm(toForm(job));
+    setEditingListingStatus(resolveJobListingStatus(job));
     setIsAddFormOpen(false);
     setShowPreview(false);
+    setFormDirty(false);
     setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const isFormVisible = editingId !== null || isAddFormOpen;
+
+  useEffect(() => {
+    if (!isFormVisible || !formDirty) return;
+    if (autosaveTimerRef.current) clearInterval(autosaveTimerRef.current);
+    autosaveTimerRef.current = setInterval(() => {
+      if (!formDirty || publishLockRef.current || loading) return;
+      if (!editingId) return; // 新規は手動の下書き保存のみ（重複作成防止）
+      void saveJob("draft", { silent: true }).catch(() => {
+        /* keep editing; silent autosave failures are non-blocking */
+      });
+    }, 45000);
+    return () => {
+      if (autosaveTimerRef.current) clearInterval(autosaveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormVisible, formDirty, editingId, loading]);
+
 
   if (showPreview) {
     const previewJob = buildPreviewJobFromAdminForm(form, {
@@ -846,7 +907,7 @@ export default function AdminJobsPage() {
                   void runShopSearch(1, false);
                 }}
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <label htmlFor="region-filter" className={labelClass}>
                       地域で絞り込み
@@ -862,6 +923,22 @@ export default function AdminJobsPage() {
                           {option.label}
                         </option>
                       ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="status-filter" className={labelClass}>
+                      公開状態
+                    </label>
+                    <select
+                      id="status-filter"
+                      value={statusFilter}
+                      onChange={(event) => setStatusFilter(event.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="all">すべて</option>
+                      <option value="draft">下書き</option>
+                      <option value="published">公開中</option>
+                      <option value="paused">掲載停止</option>
                     </select>
                   </div>
                   <div>
@@ -890,7 +967,7 @@ export default function AdminJobsPage() {
 
             {!searchPerformed ? (
               <div className="rounded-2xl border border-dashed border-gold/30 bg-white px-4 py-10 text-center text-sm text-muted">
-                店舗名やエリアを入力して検索してください
+                店舗名・エリア・公開状態のいずれかで絞り込んで検索してください
               </div>
             ) : searchLoading && jobs.length === 0 ? (
               <div className="h-32 animate-pulse rounded-2xl border border-gold/20 bg-white" />
@@ -927,6 +1004,15 @@ export default function AdminJobsPage() {
                             </p>
                             <p className="mt-1 text-lg font-semibold text-charcoal">
                               {job.shopName}
+                            </p>
+                            <p className="mt-1">
+                              <span className="inline-flex rounded-full border border-black/10 bg-ivory px-2.5 py-0.5 text-xs font-semibold text-charcoal">
+                                {
+                                  JOB_LISTING_STATUS_LABELS[
+                                    resolveJobListingStatus(job)
+                                  ]
+                                }
+                              </span>
                             </p>
                             <p className="mt-1 text-xs font-medium text-gold-dark">
                               プラン：
@@ -998,13 +1084,23 @@ export default function AdminJobsPage() {
                           </div>
 
                           <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(job)}
-                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-                            >
-                              編集
-                            </button>
+                            {resolveJobListingStatus(job) === "draft" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(job)}
+                                className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                              >
+                                編集を続ける
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(job)}
+                                className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                              >
+                                編集
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleDelete(job)}
@@ -2105,23 +2201,64 @@ export default function AdminJobsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 pt-2">
+        <div className="flex flex-wrap gap-3 border-t border-gold/15 pt-4">
           <button
-            type="submit"
+            type="button"
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
-            className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60"
+            onClick={() => void saveJob("draft").catch(() => undefined)}
+            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-gold-dark disabled:opacity-60"
           >
-            {editingId ? "変更内容を確認する" : "掲載内容を確認する"}
+            下書き保存
           </button>
-          {editingId && (
+          <button
+            type="button"
+            disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
+            onClick={() => {
+              setMessage("");
+              if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
+                setMessage("公開には店舗名・時給・LINE URLが必要です。");
+                const next: Record<string, string> = {};
+                if (!form.shopName.trim()) next.shopName = "店名を入力してください。";
+                if (!form.salary.trim()) next.salary = "時給を入力してください。";
+                if (!form.lineUrl.trim()) next.lineUrl = "LINE応募URLを入力してください。";
+                setFieldErrors(next);
+                requestScrollToTop();
+                return;
+              }
+              requestScrollToTop();
+              setShowPreview(true);
+            }}
+            className="rounded-full bg-[#8f7344] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            公開する
+          </button>
+          {editingId && editingListingStatus === "published" ? (
             <button
               type="button"
-              onClick={resetForm}
-              className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-muted hover:text-charcoal"
+              disabled={loading}
+              onClick={() => void saveJob("pause").catch(() => undefined)}
+              className="rounded-full border border-black/20 px-6 py-3 text-sm font-medium text-charcoal disabled:opacity-60"
             >
-              キャンセル
+              掲載停止にする
             </button>
-          )}
+          ) : null}
+          {editingId && editingListingStatus === "paused" ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void saveJob("republish").catch(() => undefined)}
+              className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-gold-dark disabled:opacity-60"
+            >
+              再公開する
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={resetForm}
+            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-muted hover:text-charcoal"
+          >
+            キャンセル
+          </button>
         </div>
           </form>
       </section>

@@ -200,6 +200,7 @@ export async function POST(request: Request, context: RouteContext) {
       youtube_url: application.youtube_url,
       line_url: lineUrl,
       published: false,
+      listing_status: "draft",
       plan: plan as JobPlan,
       shop_login_id: shopLoginId,
       shop_login_password: shopLoginPassword,
