@@ -26,6 +26,10 @@ import type {
 void (null as ListingAttachment | null);
 
 const DRAFT_KEY = "wnj-listing-application-draft-v2";
+const RETURN_STEP_KEY = "listingApplicationCurrentStep";
+const RETURN_FORM_KEY = "listingApplicationFormData";
+const RETURN_SCROLL_KEY = "listingApplicationScrollY";
+const RETURN_PATH_KEY = "listingApplicationReturnPath";
 const HEADER_OFFSET = 90;
 
 const inputBase =
@@ -38,14 +42,14 @@ const sectionClass =
 const errTextClass = "mt-1.5 text-sm font-medium text-red-600";
 
 const STEPS = [
-  { id: 1, title: "店舗基本情報" },
-  { id: 2, title: "担当者情報" },
-  { id: 3, title: "SNS・Web情報" },
-  { id: 4, title: "営業・許可情報" },
-  { id: 5, title: "希望プラン" },
-  { id: 6, title: "確認事項" },
-  { id: 7, title: "店舗画像" },
-  { id: 8, title: "内容確認" },
+  { id: 1, title: "??????" },
+  { id: 2, title: "?????" },
+  { id: 3, title: "SNS?Web??" },
+  { id: 4, title: "???????" },
+  { id: 5, title: "?????" },
+  { id: 6, title: "????" },
+  { id: 7, title: "????" },
+  { id: 8, title: "????" },
 ] as const;
 
 const DOC_ACCEPT =
@@ -135,15 +139,15 @@ const EMPTY_LOCAL: LocalFilesState = {
 };
 
 export function planNameJa(plan: JobPlan): string {
-  return `${JOB_PLAN_DEFINITIONS[plan].label}プラン`;
+  return `${JOB_PLAN_DEFINITIONS[plan].label}???`;
 }
 
 export function planPriceJa(plan: JobPlan): string {
-  return `月額 ${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}（税込）`;
+  return `?? ${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}????`;
 }
 
 export function formatBytes(size: number): string {
-  if (!Number.isFinite(size) || size < 0) return "—";
+  if (!Number.isFinite(size) || size < 0) return "?";
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
@@ -231,34 +235,34 @@ function validateStep(
 ): FieldError {
   const errors: FieldError = {};
   if (step === 1) {
-    if (!form.shopName.trim()) errors.shopName = "店舗名を入力してください。";
+    if (!form.shopName.trim()) errors.shopName = "?????????????";
     if (!form.shopAddress.trim())
-      errors.shopAddress = "店舗住所を入力してください。";
+      errors.shopAddress = "??????????????";
     if (!form.businessType.trim())
-      errors.businessType = "業種を入力してください。";
+      errors.businessType = "????????????";
     if (!form.businessHours.trim())
-      errors.businessHours = "営業時間を入力してください。";
+      errors.businessHours = "??????????????";
     if (!form.shopPhone.trim())
-      errors.shopPhone = "店舗電話番号を入力してください。";
+      errors.shopPhone = "????????????????";
   }
   if (step === 2) {
     if (!form.contactName.trim())
-      errors.contactName = "担当者名を入力してください。";
+      errors.contactName = "??????????????";
     if (!form.contactPhone.trim())
-      errors.contactPhone = "担当者電話番号を入力してください。";
+      errors.contactPhone = "?????????????????";
     if (!form.contactEmail.trim()) {
-      errors.contactEmail = "担当者メールアドレスを入力してください。";
+      errors.contactEmail = "????????????????????";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())) {
-      errors.contactEmail = "メールアドレスの形式が正しくありません。";
+      errors.contactEmail = "????????????????????";
     }
   }
   if (step === 3) {
     const url = form.websiteUrl.trim();
     if (!url) {
       errors.websiteUrl =
-        "公式WebサイトまたはSNSのURLを入力してください。";
+        "??Web??????SNS?URL??????????";
     } else if (!/^https?:\/\/.+/i.test(url)) {
-      errors.websiteUrl = "正しいURLを入力してください。";
+      errors.websiteUrl = "???URL??????????";
     }
   }
   if (step === 4) {
@@ -266,23 +270,23 @@ function validateStep(
     const hasUploaded = Boolean(form.businessLicenseDocument?.storagePath);
     if (!hasLocal && !hasUploaded) {
       errors.businessLicenseDocument =
-        "営業許可証をアップロードしてください。";
+        "???????????????????";
     }
-    if (!form.openDate.trim()) errors.openDate = "オープン日を入力してください。";
+    if (!form.openDate.trim()) errors.openDate = "???????????????";
   }
   if (step === 5) {
     if (!isJobPlan(form.requestedPlan)) {
-      errors.requestedPlan = "料金プランを選択してください";
+      errors.requestedPlan = "??????????????";
     }
   }
   if (step === 6) {
     if (!form.consentAccuracy) {
       errors.consentAccuracy =
-        "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
+        "??????????????????????????????";
     }
     if (!form.consentTerms) {
       errors.consentTerms =
-        "利用規約・プライバシーポリシーへの同意が必要です。";
+        "?????????????????????????";
     }
   }
   if (step === 7) {
@@ -290,13 +294,13 @@ function validateStep(
     const interiorEmpty = form.shopInteriorImages.length === 0;
     if (exteriorEmpty && interiorEmpty) {
       errors.shopExteriorImages =
-        "店舗外観と店舗内観の画像をアップロードしてください";
+        "?????????????????????????";
     } else if (exteriorEmpty) {
       errors.shopExteriorImages =
-        "店舗外観の画像をアップロードしてください";
+        "????????????????????";
     } else if (interiorEmpty) {
       errors.shopInteriorImages =
-        "店舗内観の画像をアップロードしてください";
+        "????????????????????";
     }
   }
   return errors;
@@ -335,6 +339,8 @@ export function ListingApplicationForm() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const shouldScrollRef = useRef(false);
   const submittingRef = useRef(false);
+  const restoredFromReturnRef = useRef(false);
+  const restoreScrollYRef = useRef<number | null>(null);
   const docInputRefs = useRef<Record<DocKey, HTMLInputElement | null>>({
     businessLicenseDocument: null,
     entertainmentLicenseDocument: null,
@@ -345,15 +351,71 @@ export function ListingApplicationForm() {
 
   useEffect(() => {
     const draft = loadDraft();
+    let restoredFromReturn = false;
+    let restoredStep: number | null = null;
+    let restoredScrollY: number | null = null;
+    let restoredForm: Partial<FormState> | null = null;
+    try {
+      const returnPath = window.sessionStorage.getItem(RETURN_PATH_KEY);
+      if (returnPath === "/for-shops/apply") {
+        const rawStep = window.sessionStorage.getItem(RETURN_STEP_KEY);
+        const rawScrollY = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
+        const rawForm = window.sessionStorage.getItem(RETURN_FORM_KEY);
+        const parsedStep = Number(rawStep);
+        const parsedScrollY = Number(rawScrollY);
+        if (Number.isFinite(parsedStep)) {
+          restoredStep = Math.min(STEPS.length, Math.max(1, Math.floor(parsedStep)));
+        }
+        if (Number.isFinite(parsedScrollY) && parsedScrollY >= 0) {
+          restoredScrollY = parsedScrollY;
+        }
+        if (rawForm) {
+          restoredForm = JSON.parse(rawForm) as Partial<FormState>;
+        }
+        restoredFromReturn = true;
+      }
+    } catch {
+      restoredFromReturn = false;
+    } finally {
+      window.sessionStorage.removeItem(RETURN_PATH_KEY);
+      window.sessionStorage.removeItem(RETURN_STEP_KEY);
+      window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
+      window.sessionStorage.removeItem(RETURN_FORM_KEY);
+    }
     const planParam = searchParams.get("plan");
     const planFromUrl = isJobPlan(planParam) ? planParam : null;
-    if (draft) {
+    if (restoredForm) {
+      const merged = {
+        ...EMPTY,
+        ...(draft ?? {}),
+        ...restoredForm,
+      } as FormState;
+      setForm({
+        ...merged,
+        shopExteriorImages: Array.isArray(merged.shopExteriorImages)
+          ? merged.shopExteriorImages
+          : [],
+        shopInteriorImages: Array.isArray(merged.shopInteriorImages)
+          ? merged.shopInteriorImages
+          : [],
+        requestedPlan: isJobPlan(merged.requestedPlan) ? merged.requestedPlan : "",
+        businessLicenseDocument: merged.businessLicenseDocument ?? null,
+        entertainmentLicenseDocument: merged.entertainmentLicenseDocument ?? null,
+        lateNightAlcoholNotificationDocument:
+          merged.lateNightAlcoholNotificationDocument ?? null,
+      });
+    } else if (draft) {
       setForm({
         ...draft,
         requestedPlan: planFromUrl ?? draft.requestedPlan,
       });
     } else if (planFromUrl) {
       setForm((c) => ({ ...c, requestedPlan: planFromUrl }));
+    }
+    if (restoredStep) {
+      setStep(restoredStep);
+      restoredFromReturnRef.current = restoredFromReturn;
+      restoreScrollYRef.current = restoredScrollY;
     }
     setHydrated(true);
   }, [searchParams]);
@@ -368,6 +430,20 @@ export function ListingApplicationForm() {
     shouldScrollRef.current = false;
     scrollToStepHeader();
   }, [step]);
+
+  useEffect(() => {
+    if (!hydrated || !restoredFromReturnRef.current) return;
+    restoredFromReturnRef.current = false;
+    requestAnimationFrame(() => {
+      if (restoreScrollYRef.current != null) {
+        const y = Math.max(0, restoreScrollYRef.current);
+        restoreScrollYRef.current = null;
+        window.scrollTo({ top: y, behavior: "auto" });
+      } else {
+        scrollToStepHeader();
+      }
+    });
+  }, [hydrated, step]);
 
   useEffect(() => {
     return () => {
@@ -401,7 +477,7 @@ export function ListingApplicationForm() {
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setSubmitMessage(
-        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+        "????????????????????????????",
       );
       scrollToStepHeader();
       focusFirstError(sectionRef.current);
@@ -423,6 +499,17 @@ export function ListingApplicationForm() {
     shouldScrollRef.current = true;
     setStep((c) => Math.max(1, c - 1));
     setNavigating(false);
+  }
+
+  function saveReturnStateForLegal() {
+    try {
+      window.sessionStorage.setItem(RETURN_PATH_KEY, "/for-shops/apply");
+      window.sessionStorage.setItem(RETURN_STEP_KEY, String(step));
+      window.sessionStorage.setItem(RETURN_FORM_KEY, JSON.stringify(form));
+      window.sessionStorage.setItem(RETURN_SCROLL_KEY, String(window.scrollY));
+    } catch {
+      // ignore storage errors and continue navigation
+    }
   }
 
   async function uploadDocument(file: File, key: DocKey) {
@@ -472,7 +559,7 @@ export function ListingApplicationForm() {
         document?: ListingDocumentMeta;
       };
       if (!res.ok) {
-        throw new Error(data.message ?? "アップロードに失敗しました。");
+        throw new Error(data.message ?? "??????????????");
       }
       if (data.draftId) setDraftId(data.draftId);
       if (data.document) {
@@ -510,8 +597,8 @@ export function ListingApplicationForm() {
     if (current.length >= max) {
       setSubmitMessage(
         kind === "exterior"
-          ? "店舗外観は最大5枚までです。"
-          : "店舗内観は最大10枚までです。",
+          ? "???????5??????"
+          : "???????10??????",
       );
       scrollToStepHeader();
       return;
@@ -538,7 +625,7 @@ export function ListingApplicationForm() {
         image?: ListingShopImage;
       };
       if (!res.ok) {
-        throw new Error(data.message ?? "アップロードに失敗しました。");
+        throw new Error(data.message ?? "??????????????");
       }
       if (data.draftId) setDraftId(data.draftId);
       if (data.image) {
@@ -566,7 +653,7 @@ export function ListingApplicationForm() {
       }
     } catch (e) {
       setSubmitMessage(
-        e instanceof Error ? e.message : "アップロードに失敗しました。",
+        e instanceof Error ? e.message : "??????????????",
       );
       scrollToStepHeader();
     } finally {
@@ -595,15 +682,15 @@ export function ListingApplicationForm() {
     if (Object.keys(consentErrors).length > 0) {
       setFieldErrors(consentErrors);
       setSubmitMessage(
-        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+        "????????????????????????????",
       );
       shouldScrollRef.current = true;
       setStep(6);
       return;
     }
     if (!isJobPlan(form.requestedPlan)) {
-      setFieldErrors({ requestedPlan: "料金プランを選択してください" });
-      setSubmitMessage("料金プランを選択してください");
+      setFieldErrors({ requestedPlan: "??????????????" });
+      setSubmitMessage("??????????????");
       shouldScrollRef.current = true;
       setStep(5);
       return;
@@ -612,7 +699,7 @@ export function ListingApplicationForm() {
     if (Object.keys(imageErrors).length > 0) {
       setFieldErrors(imageErrors);
       setSubmitMessage(
-        "入力内容にエラーがあります。赤字の項目をご確認ください。",
+        "????????????????????????????",
       );
       shouldScrollRef.current = true;
       setStep(7);
@@ -640,18 +727,18 @@ export function ListingApplicationForm() {
       if (res.status === 409 && data.duplicateWarning) {
         setDuplicateWarning(true);
         setSubmitMessage(
-          data.message ?? "重複する申請の可能性があります。",
+          data.message ?? "????????????????",
         );
         scrollToStepHeader();
         return;
       }
-      if (!res.ok) throw new Error(data.message ?? "申請に失敗しました。");
+      if (!res.ok) throw new Error(data.message ?? "??????????");
       window.localStorage.removeItem(DRAFT_KEY);
       router.push(
         `/for-shops/apply/complete?no=${encodeURIComponent(data.applicationNumber ?? "")}`,
       );
     } catch (e) {
-      setSubmitMessage(e instanceof Error ? e.message : "申請に失敗しました。");
+      setSubmitMessage(e instanceof Error ? e.message : "??????????");
       scrollToStepHeader();
     } finally {
       setLoading(false);
@@ -685,7 +772,7 @@ export function ListingApplicationForm() {
       <Field error={error}>
         <label className={labelClass}>
           {label}
-          {required ? " *" : "（任意）"}
+          {required ? " *" : "????"}
         </label>
         {hint ? <p className="mb-1 text-xs text-muted">{hint}</p> : null}
         <input
@@ -713,7 +800,7 @@ export function ListingApplicationForm() {
                 : "border-gold/40 text-gold-dark hover:bg-ivory"
             } disabled:opacity-60`}
           >
-            ファイルを選択
+            ???????
           </button>
         ) : (
           <div className="rounded-xl border border-gold/25 bg-ivory/60 p-3">
@@ -733,12 +820,12 @@ export function ListingApplicationForm() {
               <div className="min-w-0 flex-1 space-y-1 text-sm">
                 <p className="truncate font-medium text-charcoal">{displayName}</p>
                 <p className="text-xs text-muted">
-                  形式: {displayType} / サイズ: {formatBytes(displaySize)}
+                  ??: {displayType} / ???: {formatBytes(displaySize)}
                 </p>
                 {uploaded?.storagePath ? (
-                  <p className="text-xs text-muted">アップロード済み</p>
+                  <p className="text-xs text-muted">????????</p>
                 ) : uploading ? (
-                  <p className="text-xs text-muted">アップロード中...</p>
+                  <p className="text-xs text-muted">???????...</p>
                 ) : null}
               </div>
             </div>
@@ -749,7 +836,7 @@ export function ListingApplicationForm() {
                 onClick={() => docInputRefs.current[key]?.click()}
                 className="rounded-full border border-gold/40 px-3 py-1.5 text-xs font-medium text-gold-dark disabled:opacity-60"
               >
-                変更する
+                ????
               </button>
               <button
                 type="button"
@@ -757,7 +844,7 @@ export function ListingApplicationForm() {
                 onClick={() => clearDocument(key)}
                 className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 disabled:opacity-60"
               >
-                削除する
+                ????
               </button>
             </div>
           </div>
@@ -839,7 +926,7 @@ export function ListingApplicationForm() {
                   />
                 ) : (
                   <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
-                    プレビューなし
+                    ???????
                   </div>
                 )}
               </button>
@@ -854,7 +941,7 @@ export function ListingApplicationForm() {
                   onClick={() => removeShopImage(kind, img.storagePath)}
                   className="text-xs text-red-600 disabled:opacity-60"
                 >
-                  削除
+                  ??
                 </button>
               </div>
             </div>
@@ -866,8 +953,8 @@ export function ListingApplicationForm() {
               onClick={() => inputRef.current?.click()}
               className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gold/40 bg-ivory/50 text-sm text-gold-dark disabled:opacity-60"
             >
-              <span className="text-lg leading-none">＋</span>
-              <span>追加</span>
+              <span className="text-lg leading-none">?</span>
+              <span>??</span>
               <span className="text-[11px] text-muted">
                 {images.length}/{max}
               </span>
@@ -881,7 +968,7 @@ export function ListingApplicationForm() {
   if (!hydrated) {
     return (
       <p className="rounded-xl border border-gold/20 bg-white px-4 py-6 text-sm text-muted">
-        読み込み中...
+        ?????...
       </p>
     );
   }
@@ -899,7 +986,7 @@ export function ListingApplicationForm() {
       >
         <div className="mb-2 flex items-center justify-between text-xs text-muted">
           <span>
-            ステップ {step} / {STEPS.length}：{STEPS[step - 1]?.title}
+            ???? {step} / {STEPS.length}?{STEPS[step - 1]?.title}
           </span>
           <span>{progress}%</span>
         </div>
@@ -927,7 +1014,7 @@ export function ListingApplicationForm() {
       {duplicateWarning ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-charcoal">
           <p>
-            同じ店舗名またはメールアドレスの申請が見つかりました。内容を確認してください。
+            ???????????????????????????????????????
           </p>
           <button
             type="button"
@@ -935,7 +1022,7 @@ export function ListingApplicationForm() {
             onClick={() => void submit(true)}
             className="mt-3 rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-white disabled:opacity-60"
           >
-            内容を確認して送信する
+            ???????????
           </button>
         </div>
       ) : null}
@@ -958,9 +1045,9 @@ export function ListingApplicationForm() {
       <div ref={sectionRef}>
         {step === 1 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">1. 店舗基本情報</h2>
+            <h2 className="font-serif text-lg text-charcoal">1. ??????</h2>
             <Field error={fe.shopName}>
-              <label className={labelClass}>店舗名 *</label>
+              <label className={labelClass}>??? *</label>
               <input
                 className={fe.shopName ? inputErr : inputOk}
                 value={form.shopName}
@@ -968,43 +1055,43 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field error={fe.shopAddress}>
-              <label className={labelClass}>店舗住所 *</label>
+              <label className={labelClass}>???? *</label>
               <input
                 className={fe.shopAddress ? inputErr : inputOk}
                 value={form.shopAddress}
                 onChange={(e) => update("shopAddress", e.target.value)}
-                placeholder="例：札幌市中央区南◯条西◯丁目"
+                placeholder="???????????????"
               />
             </Field>
             <Field>
-              <label className={labelClass}>エリア（任意）</label>
+              <label className={labelClass}>???????</label>
               <input
                 className={inputOk}
                 value={form.area}
                 onChange={(e) => update("area", e.target.value)}
-                placeholder="例：すすきの"
+                placeholder="??????"
               />
             </Field>
             <Field error={fe.businessType}>
-              <label className={labelClass}>業種 *</label>
+              <label className={labelClass}>?? *</label>
               <input
                 className={fe.businessType ? inputErr : inputOk}
                 value={form.businessType}
                 onChange={(e) => update("businessType", e.target.value)}
-                placeholder="例：ニュークラブ"
+                placeholder="????????"
               />
             </Field>
             <Field error={fe.businessHours}>
-              <label className={labelClass}>営業時間 *</label>
+              <label className={labelClass}>???? *</label>
               <input
                 className={fe.businessHours ? inputErr : inputOk}
                 value={form.businessHours}
                 onChange={(e) => update("businessHours", e.target.value)}
-                placeholder="例：20:00〜LAST"
+                placeholder="??20:00?LAST"
               />
             </Field>
             <Field error={fe.shopPhone}>
-              <label className={labelClass}>店舗電話番号 *</label>
+              <label className={labelClass}>?????? *</label>
               <input
                 className={fe.shopPhone ? inputErr : inputOk}
                 value={form.shopPhone}
@@ -1017,9 +1104,9 @@ export function ListingApplicationForm() {
 
         {step === 2 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">2. 担当者情報</h2>
+            <h2 className="font-serif text-lg text-charcoal">2. ?????</h2>
             <Field error={fe.contactName}>
-              <label className={labelClass}>担当者名 *</label>
+              <label className={labelClass}>???? *</label>
               <input
                 className={fe.contactName ? inputErr : inputOk}
                 value={form.contactName}
@@ -1027,7 +1114,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field error={fe.contactPhone}>
-              <label className={labelClass}>担当者電話番号 *</label>
+              <label className={labelClass}>??????? *</label>
               <input
                 className={fe.contactPhone ? inputErr : inputOk}
                 value={form.contactPhone}
@@ -1036,7 +1123,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field error={fe.contactEmail}>
-              <label className={labelClass}>担当者メールアドレス *</label>
+              <label className={labelClass}>?????????? *</label>
               <input
                 className={fe.contactEmail ? inputErr : inputOk}
                 type="email"
@@ -1049,27 +1136,27 @@ export function ListingApplicationForm() {
 
         {step === 3 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">3. SNS・Web情報</h2>
+            <h2 className="font-serif text-lg text-charcoal">3. SNS?Web??</h2>
             <p className="text-xs text-muted">
-              URLは https:// から始まる形式で入力してください。
+              URL? https:// ?????????????????
             </p>
             <Field error={fe.websiteUrl}>
               <label className={labelClass}>
-                公式Webサイト（Instagram等可） *
+                ??Web????Instagram??? *
               </label>
               <input
                 className={fe.websiteUrl ? inputErr : inputOk}
                 value={form.websiteUrl}
                 onChange={(e) => update("websiteUrl", e.target.value)}
-                placeholder="例：https://example.com"
+                placeholder="??https://example.com"
               />
               <p className="mt-1 text-xs text-muted">
-                店舗の確認ができる公式サイトやSNS（Instagram / X /
-                TikTok等）のURLを入力してください。
+                ???????????????SNS?Instagram / X /
+                TikTok???URL??????????
               </p>
             </Field>
             <Field>
-              <label className={labelClass}>Instagram（任意）</label>
+              <label className={labelClass}>Instagram????</label>
               <input
                 className={inputOk}
                 value={form.instagramUrl}
@@ -1077,7 +1164,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>X（任意）</label>
+              <label className={labelClass}>X????</label>
               <input
                 className={inputOk}
                 value={form.xUrl}
@@ -1085,7 +1172,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>TikTok（任意）</label>
+              <label className={labelClass}>TikTok????</label>
               <input
                 className={inputOk}
                 value={form.tiktokUrl}
@@ -1093,7 +1180,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>LINE公式アカウント（任意）</label>
+              <label className={labelClass}>LINE???????????</label>
               <input
                 className={inputOk}
                 value={form.lineOfficialUrl}
@@ -1101,7 +1188,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>YouTube（任意）</label>
+              <label className={labelClass}>YouTube????</label>
               <input
                 className={inputOk}
                 value={form.youtubeUrl}
@@ -1109,7 +1196,7 @@ export function ListingApplicationForm() {
               />
             </Field>
             <Field>
-              <label className={labelClass}>その他SNS（任意）</label>
+              <label className={labelClass}>???SNS????</label>
               <textarea
                 className={inputOk}
                 rows={3}
@@ -1122,25 +1209,25 @@ export function ListingApplicationForm() {
 
         {step === 4 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">4. 営業・許可情報</h2>
+            <h2 className="font-serif text-lg text-charcoal">4. ???????</h2>
             {renderDocUploader(
               "businessLicenseDocument",
-              "営業許可証",
+              "?????",
               true,
-              "店舗の営業許可証をアップロードしてください。",
+              "??????????????????????",
             )}
             {renderDocUploader(
               "entertainmentLicenseDocument",
-              "風俗営業許可証（社交飲食店営業許可証）",
+              "???????????????????",
               false,
             )}
             {renderDocUploader(
               "lateNightAlcoholNotificationDocument",
-              "深夜酒類提供飲食店営業・開始届出（受領書）",
+              "?????????????????????",
               false,
             )}
             <Field error={fe.openDate}>
-              <label className={labelClass}>オープン日 *</label>
+              <label className={labelClass}>????? *</label>
               <input
                 className={fe.openDate ? inputErr : inputOk}
                 type="date"
@@ -1153,9 +1240,9 @@ export function ListingApplicationForm() {
 
         {step === 5 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">5. 希望プラン</h2>
+            <h2 className="font-serif text-lg text-charcoal">5. ?????</h2>
             <p className="text-xs text-muted">
-              審査承認後に最終確定します。この時点では料金請求は確定しません。
+              ????????????????????????????????
             </p>
             {fe.requestedPlan ? (
               <p className={errTextClass}>{fe.requestedPlan}</p>
@@ -1191,7 +1278,7 @@ export function ListingApplicationForm() {
                         </span>
                         {selected ? (
                           <span className="text-xs font-medium text-gold-dark">
-                            ✓ 選択中
+                            ? ???
                           </span>
                         ) : null}
                       </span>
@@ -1208,7 +1295,7 @@ export function ListingApplicationForm() {
 
         {step === 6 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">6. 確認事項</h2>
+            <h2 className="font-serif text-lg text-charcoal">6. ????</h2>
             <div data-error-field={fe.consentAccuracy ? "1" : undefined}>
               <label
                 className={`flex items-start gap-3 text-sm ${
@@ -1222,7 +1309,7 @@ export function ListingApplicationForm() {
                   className="mt-1"
                 />
                 <span>
-                  求人内容と実際の勤務条件に相違がないことに同意します。*
+                  ???????????????????????????*
                 </span>
               </label>
               {fe.consentAccuracy ? (
@@ -1242,14 +1329,22 @@ export function ListingApplicationForm() {
                   className="mt-1"
                 />
                 <span>
-                  <Link href="/terms-shop" className="text-gold-dark underline">
-                    利用規約
+                  <Link
+                    href="/terms-shop"
+                    className="text-gold-dark underline"
+                    onClick={saveReturnStateForLegal}
+                  >
+                    ????
                   </Link>
-                  、
-                  <Link href="/privacy" className="text-gold-dark underline">
-                    プライバシーポリシー
+                  ?
+                  <Link
+                    href="/privacy"
+                    className="text-gold-dark underline"
+                    onClick={saveReturnStateForLegal}
+                  >
+                    ??????????
                   </Link>
-                  に同意します。*
+                  ???????*
                 </span>
               </label>
               {fe.consentTerms ? (
@@ -1261,84 +1356,84 @@ export function ListingApplicationForm() {
 
         {step === 7 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">7. 店舗画像</h2>
+            <h2 className="font-serif text-lg text-charcoal">7. ????</h2>
             <p className="text-xs text-muted">
-              店舗の外観と内観が分かる画像をアップロードしてください。
+              ????????????????????????????
             </p>
             {renderShopImageSection(
               "exterior",
-              "店舗外観",
-              "店舗の入口や建物外観が分かる画像をアップロードしてください。",
+              "????",
+              "??????????????????????????????",
               5,
             )}
             {renderShopImageSection(
               "interior",
-              "店舗内観",
-              "店内の雰囲気や設備が分かる画像をアップロードしてください。",
+              "????",
+              "?????????????????????????????",
               10,
             )}
             {uploading ? (
-              <p className="text-sm text-muted">アップロード中...</p>
+              <p className="text-sm text-muted">???????...</p>
             ) : null}
           </section>
         ) : null}
 
         {step === 8 ? (
           <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">8. 内容確認</h2>
+            <h2 className="font-serif text-lg text-charcoal">8. ????</h2>
             <dl className="space-y-2 text-sm text-charcoal">
               <div>
-                <dt className="text-muted">店舗名</dt>
+                <dt className="text-muted">???</dt>
                 <dd>{form.shopName}</dd>
               </div>
               <div>
-                <dt className="text-muted">所在地</dt>
+                <dt className="text-muted">???</dt>
                 <dd>{form.shopAddress}</dd>
               </div>
               <div>
-                <dt className="text-muted">業種</dt>
+                <dt className="text-muted">??</dt>
                 <dd>{form.businessType}</dd>
               </div>
               <div>
-                <dt className="text-muted">営業時間</dt>
+                <dt className="text-muted">????</dt>
                 <dd>{form.businessHours}</dd>
               </div>
               <div>
-                <dt className="text-muted">担当者</dt>
+                <dt className="text-muted">???</dt>
                 <dd>
                   {form.contactName} / {form.contactEmail}
                 </dd>
               </div>
               <div>
-                <dt className="text-muted">選択プラン</dt>
-                <dd>{selectedPlan ? planNameJa(selectedPlan) : "未選択"}</dd>
+                <dt className="text-muted">?????</dt>
+                <dd>{selectedPlan ? planNameJa(selectedPlan) : "???"}</dd>
               </div>
               <div>
-                <dt className="text-muted">月額料金</dt>
+                <dt className="text-muted">????</dt>
                 <dd>
                   {selectedPlan
-                    ? `${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[selectedPlan])}（税込）`
-                    : "—"}
+                    ? `${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[selectedPlan])}????`
+                    : "?"}
                 </dd>
               </div>
               <div>
-                <dt className="text-muted">営業許可証</dt>
+                <dt className="text-muted">?????</dt>
                 <dd>
-                  {form.businessLicenseDocument ? "提出済み" : "未提出"}
+                  {form.businessLicenseDocument ? "????" : "???"}
                 </dd>
               </div>
               <div>
-                <dt className="text-muted">風俗営業許可証</dt>
+                <dt className="text-muted">???????</dt>
                 <dd>
-                  {form.entertainmentLicenseDocument ? "提出済み" : "未提出"}
+                  {form.entertainmentLicenseDocument ? "????" : "???"}
                 </dd>
               </div>
               <div>
-                <dt className="text-muted">深夜酒類提供届出</dt>
+                <dt className="text-muted">????????</dt>
                 <dd>
                   {form.lateNightAlcoholNotificationDocument
-                    ? "提出済み"
-                    : "未提出"}
+                    ? "????"
+                    : "???"}
                 </dd>
               </div>
             </dl>
@@ -1346,7 +1441,7 @@ export function ListingApplicationForm() {
             <div className="mt-4 space-y-3">
               <div>
                 <p className="text-sm font-medium text-charcoal">
-                  店舗外観（{form.shopExteriorImages.length}枚）
+                  ?????{form.shopExteriorImages.length}??
                 </p>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {form.shopExteriorImages.map((img) => (
@@ -1376,7 +1471,7 @@ export function ListingApplicationForm() {
               </div>
               <div>
                 <p className="text-sm font-medium text-charcoal">
-                  店舗内観（{form.shopInteriorImages.length}枚）
+                  ?????{form.shopInteriorImages.length}??
                 </p>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {form.shopInteriorImages.map((img) => (
@@ -1407,7 +1502,7 @@ export function ListingApplicationForm() {
             </div>
 
             <p className="mt-4 text-xs text-muted">
-              審査申請のみでは求人は公開されません。承認後に登録手続きへ進みます。
+              ??????????????????????????????????
             </p>
           </section>
         ) : null}
@@ -1421,7 +1516,7 @@ export function ListingApplicationForm() {
             onClick={goBack}
             className="rounded-full border border-gold/40 px-5 py-3 text-sm font-medium text-gold-dark disabled:opacity-60"
           >
-            戻る
+            ??
           </button>
         ) : null}
 
@@ -1432,7 +1527,7 @@ export function ListingApplicationForm() {
             onClick={goNext}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {navigating ? "移動中..." : "次へ"}
+            {navigating ? "???..." : "??"}
           </button>
         ) : null}
 
@@ -1443,7 +1538,7 @@ export function ListingApplicationForm() {
             onClick={() => void submit(false)}
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {loading ? "送信中..." : "審査を申し込む"}
+            {loading ? "???..." : "???????"}
           </button>
         ) : null}
       </div>
