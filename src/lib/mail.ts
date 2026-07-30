@@ -3,6 +3,22 @@ import nodemailer from "nodemailer";
 
 const DEFAULT_ADMIN_EMAIL = "whitenightjob.info@gmail.com";
 
+/** Authenticated-domain From. Never falls back to resend.dev. */
+export function getResendFromEmail(): string {
+  const from = process.env.RESEND_FROM_EMAIL?.trim();
+  if (!from) {
+    throw new Error(
+      "RESEND_FROM_EMAIL が設定されていません。例: White Night Job <info@whitenightjob.jp>",
+    );
+  }
+  if (/resend\.dev/i.test(from)) {
+    throw new Error(
+      "RESEND_FROM_EMAIL に resend.dev は使用できません。認証済みドメイン（例: info@whitenightjob.jp）を設定してください。",
+    );
+  }
+  return from;
+}
+
 export function getAdminNotifyEmail(): string {
   return (
     process.env.REPORT_EMAIL?.trim() ||
@@ -30,6 +46,9 @@ function describeMailConfig(): Record<string, boolean | string> {
   return {
     hasResendApiKey: Boolean(process.env.RESEND_API_KEY?.trim()),
     hasResendFrom: Boolean(process.env.RESEND_FROM_EMAIL?.trim()),
+    resendFromPreview: process.env.RESEND_FROM_EMAIL?.trim()
+      ? process.env.RESEND_FROM_EMAIL.trim()
+      : "(unset)",
     hasSmtpHost: Boolean(process.env.SMTP_HOST?.trim()),
     hasSmtpUser: Boolean(process.env.SMTP_USER?.trim()),
     hasSmtpPass: Boolean(process.env.SMTP_PASS?.trim()),
@@ -70,9 +89,7 @@ async function sendViaResend(options: SendMailOptions): Promise<SendMailResult> 
   }
 
   const resend = new Resend(apiKey);
-  const from =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "White Night Job <onboarding@resend.dev>";
+  const from = getResendFromEmail();
 
   console.info("[mail] Resend send start", {
     to: options.to,
@@ -138,7 +155,10 @@ async function sendViaNodemailer(
     );
   }
 
-  const from = process.env.SMTP_FROM?.trim() || user;
+  const from =
+    process.env.SMTP_FROM?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    user;
   const port = Number(process.env.SMTP_PORT ?? 587);
 
   console.info("[mail] SMTP send start", {
@@ -194,7 +214,9 @@ export async function sendMail(
 }
 
 export function hasMailConfig(): boolean {
-  if (process.env.RESEND_API_KEY?.trim()) return true;
+  if (process.env.RESEND_API_KEY?.trim()) {
+    return Boolean(process.env.RESEND_FROM_EMAIL?.trim());
+  }
   return Boolean(
     process.env.SMTP_HOST?.trim() &&
       process.env.SMTP_USER?.trim() &&

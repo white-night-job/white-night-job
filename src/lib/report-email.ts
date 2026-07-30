@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import { getResendFromEmail } from "@/lib/mail";
 
 const DEFAULT_REPORT_EMAIL = "whitenightjob.info@gmail.com";
 
@@ -96,9 +97,7 @@ async function sendViaResend(
   }
 
   const resend = new Resend(apiKey);
-  const from =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "White Night Job <onboarding@resend.dev>";
+  const from = getResendFromEmail();
 
   const { error } = await resend.emails.send({
     from,
