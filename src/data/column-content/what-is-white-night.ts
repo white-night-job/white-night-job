@@ -19,7 +19,7 @@ export const whatIsWhiteNightSections: ColumnSection[] = [
       "3つ目は、トラブル時のサポート導線です。体入ホワイトナイトにはブラック店舗報告の窓口があり、掲載店舗に関する不安や疑いがある場合は、運営へ情報を届けられる仕組みを整えています。お店選びは一人で抱え込まず、サイトの機能も活用してください。",
     ],
     links: [
-      { label: "優良店掲載基準を見る", href: "/listing-criteria" },
+      { label: "初めての方へ", href: "/first-time-guide" },
       { label: "ブラック店舗報告はこちら", href: "/report" },
     ],
   },

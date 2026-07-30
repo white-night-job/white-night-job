@@ -12,7 +12,6 @@ const FOOTER_LINKS = [
   { href: "/company", label: "会社概要" },
   { href: "/contact", label: "お問い合わせ" },
   { href: "/first-time-guide", label: "初めての方へ" },
-  { href: "/listing-criteria", label: "優良店掲載基準" },
   { href: "/report", label: "ブラック店舗報告" },
   { href: "/faq", label: "よくある質問" },
   { href: "/cast-guide", label: "キャスト向けガイド" },

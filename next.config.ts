@@ -36,6 +36,20 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/listing-criteria",
+        destination: "/first-time-guide",
+        permanent: true,
+      },
+      {
+        source: "/listing-criteria/:path*",
+        destination: "/first-time-guide",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

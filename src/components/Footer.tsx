@@ -22,7 +22,6 @@ const footerSections = [
     title: "掲載店舗向け",
     links: [
       { href: "/for-shops", label: "店舗向け掲載案内" },
-      { href: "/listing-criteria", label: "優良店掲載基準" },
       { href: "/shop-login", label: "店舗ログイン" },
       { href: "/terms-shop", label: "利用規約（掲載店舗）" },
       { href: "/legal", label: "特定商取引法に基づく表記" },
