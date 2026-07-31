@@ -3,6 +3,8 @@ import {
   mapDiagnosisJobTypeToFilter,
 } from "@/lib/job-type-diagnosis-engine";
 import type { DiagnosisResult, RecommendedDiagnosisShop } from "@/lib/job-type-diagnosis-types";
+import { parseJobPlan } from "@/lib/job-plan";
+import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import { formatLocation } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
 
@@ -22,6 +24,12 @@ function buildShopReason(job: Job, result: DiagnosisResult, index: number): stri
   return templates[index % templates.length];
 }
 
+function isPublishedPremiumJob(job: Job): boolean {
+  const status = resolveJobListingStatus(job);
+  if (status !== "published") return false;
+  return parseJobPlan(job.plan) === "premium";
+}
+
 export function pickRecommendedDiagnosisShops(
   jobs: Job[],
   result: DiagnosisResult,
@@ -30,7 +38,9 @@ export function pickRecommendedDiagnosisShops(
   const primary = mapDiagnosisJobTypeToFilter(result.topTwo[0].jobType);
   const secondary = mapDiagnosisJobTypeToFilter(result.topTwo[1].jobType);
 
+  // 職種診断からの紹介はプレミアム・公開中のみ（他プランへフォールバックしない）
   const ranked = jobs
+    .filter(isPublishedPremiumJob)
     .map((job) => {
       let score = 0;
       if (job.jobType === primary) score += 12;

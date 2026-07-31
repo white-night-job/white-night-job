@@ -299,13 +299,16 @@ export function JobTypeDiagnosisResults({
             ))}
           </div>
         ) : (
-          <p className="job-diagnosis-shops-empty">
-            現在表示できるおすすめ店舗がありません。
-            <Link href={primaryJobsUrl} className="job-diagnosis-inline-link">
-              第1位の職種一覧
+          <div className="job-diagnosis-shops-empty">
+            <p>
+              現在、診断結果に合う掲載店舗はありません。
+              <br />
+              店舗検索をご利用ください。
+            </p>
+            <Link href="/#shop-search" className="job-diagnosis-shops-search-btn">
+              店舗を検索する
             </Link>
-            からご覧ください。
-          </p>
+          </div>
         )}
       </section>
 

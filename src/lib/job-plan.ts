@@ -15,6 +15,8 @@ export type JobPlanFeatures = {
   lineRecommendNotify: boolean;
   boost: boolean;
   analytics: boolean;
+  /** 職種診断結果からの店舗紹介対象 */
+  diagnosisRecommend: boolean;
 };
 
 export type JobPlanDefinition = {
@@ -68,6 +70,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
       lineRecommendNotify: false,
       boost: true,
       analytics: false,
+      diagnosisRecommend: false,
     },
   },
   standard: {
@@ -85,6 +88,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
       lineRecommendNotify: false,
       boost: true,
       analytics: true,
+      diagnosisRecommend: false,
     },
   },
   premium: {
@@ -102,6 +106,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
       lineRecommendNotify: true,
       boost: true,
       analytics: true,
+      diagnosisRecommend: true,
     },
   },
 };
@@ -116,6 +121,7 @@ export const JOB_PLAN_FEATURE_LABELS: Array<{
   { key: "pickup", label: "PickUp掲載", isBoolean: true },
   { key: "aiRecommend", label: "AIおすすめ表示", isBoolean: true },
   { key: "lineRecommendNotify", label: "LINEおすすめ通知", isBoolean: true },
+  { key: "diagnosisRecommend", label: "職種診断からの紹介", isBoolean: true },
   { key: "analytics", label: "応募分析", isBoolean: true },
 ];
 

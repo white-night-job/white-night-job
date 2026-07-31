@@ -43,6 +43,7 @@ const PLAN_FEATURE_ROWS = [
   { label: "上位表示ボタン", light: "1日5回", standard: "1日5回", premium: "1日5回" },
   { label: "応募分析", light: "○", standard: "○", premium: "○" },
   { label: "LINEおすすめ通知", light: "－", standard: "－", premium: "○" },
+  { label: "職種診断からの紹介", light: "－", standard: "－", premium: "○" },
 ] as const;
 
 type PlanKey = "light" | "standard" | "premium";
@@ -191,6 +192,11 @@ export default function ForShopsPage() {
                   </span>
                   <small>/ 月（税込）</small>
                 </p>
+                {plan.key === "premium" ? (
+                  <p className="for-shops-plan-desc">
+                    職種診断の結果に応じて、条件に合う求職者へ店舗を紹介します。
+                  </p>
+                ) : null}
                 <ul className="for-shops-plan-list">
                   {PLAN_FEATURE_ROWS.map((row) => (
                     <li key={row.label}>

@@ -2678,8 +2678,19 @@
     color: rgba(17, 17, 17, 0.5);
   }
 
+  .for-shops-plan-desc {
+    margin: 0.75rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.65;
+    color: rgba(17, 17, 17, 0.72);
+  }
+
+  .for-shops-plan-card.is-recommended .for-shops-plan-desc {
+    color: rgba(42, 34, 24, 0.8);
+  }
+
   .for-shops-plan-list {
-    margin: 0 0 1.1rem;
+    margin: 0.85rem 0 1.1rem;
     padding: 0;
     list-style: none;
     flex: 1;
@@ -5170,6 +5181,35 @@
   line-height: 1.65;
   color: rgba(42, 34, 24, 0.7);
   background: rgba(255, 253, 248, 0.8);
+}
+
+.job-diagnosis-shops-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.job-diagnosis-shops-empty p {
+  margin: 0;
+}
+
+.job-diagnosis-shops-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #c4a574, #8f7344);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.job-diagnosis-shops-search-btn:active {
+  transform: scale(0.98);
 }
 
 .job-diagnosis-inline-link {
