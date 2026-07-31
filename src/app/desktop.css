@@ -17,9 +17,9 @@
   display: inline;
 }
 
-/* Transparent wrapper on mobile/tablet — PC overrides inside 1024px media */
+/* Mobile/tablet scroll container — PC overrides inside 1024px media */
 .header-drawer-body {
-  display: contents;
+  display: block;
 }
 
 .line-login-promo-layout {
@@ -297,7 +297,9 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    padding-bottom: 1.75rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
     scrollbar-width: thin;
     scrollbar-color: rgba(212, 188, 142, 0.35) transparent;
   }
