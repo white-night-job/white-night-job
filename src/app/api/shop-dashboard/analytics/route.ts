@@ -30,8 +30,8 @@ function parsePeriod(raw: string | null): AnalyticsPeriod {
 }
 
 /**
- * Shop-only analytics. Always scoped to the authenticated shop's job_id.
- * Standard / Premium plans only (plan.analytics).
+ * Shop-only detailed analytics. Always scoped to the authenticated shop's job_id.
+ * Standard / Premium only (plan.analytics). Light plans must use improvement-report light summary.
  */
 export async function GET(request: Request) {
   const jobId = await getAuthenticatedShopJobId();
@@ -49,13 +49,14 @@ export async function GET(request: Request) {
 
     if (jobError) throw jobError;
 
-    const features = getPlanFeatures(parseJobPlan(jobRow?.plan));
+    const plan = parseJobPlan(jobRow?.plan);
+    const features = getPlanFeatures(plan);
     if (!features.analytics) {
       return NextResponse.json(
         {
           message:
-            "応募分析はスタンダード以上のプランでご利用いただけます。",
-          plan: parseJobPlan(jobRow?.plan),
+            "詳細なクリック分析・改善レポートはスタンダード以上のプランでご利用いただけます。ライトプランは店舗ダッシュボードの基本集計をご利用ください。",
+          plan,
         },
         { status: 403 },
       );

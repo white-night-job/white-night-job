@@ -1829,10 +1829,10 @@ function AdminJobsPageInner() {
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
-              応募分析
+              アクセス・応募分析レポート
             </h3>
             <p className="mt-1 text-xs text-white/75 sm:text-sm">
-              プランに連動します（スタンダード・プレミアムでON）。店舗ダッシュボードのアクセス・応募分析の利用可否に反映されます。
+              ライトは基本集計のみ、スタンダード・プレミアムは詳細クリック分析と改善レポートが利用できます。
             </p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/10 p-4">
@@ -1840,10 +1840,12 @@ function AdminJobsPageInner() {
               className={`inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${
                 getPlanFeatures(form.plan).analytics
                   ? "border border-gold/40 bg-gold/20 text-gold-light"
-                  : "border border-white/15 bg-white/5 text-white/60"
+                  : "border border-white/15 bg-white/5 text-white/80"
               }`}
             >
-              {getPlanFeatures(form.plan).analytics ? "ON" : "OFF"}
+              {getPlanFeatures(form.plan).analytics
+                ? "詳細レポート ON"
+                : "基本集計のみ"}
             </p>
           </div>
         </div>

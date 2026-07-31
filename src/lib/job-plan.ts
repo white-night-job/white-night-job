@@ -122,7 +122,7 @@ export const JOB_PLAN_FEATURE_LABELS: Array<{
   { key: "aiRecommend", label: "AIおすすめ表示", isBoolean: true },
   { key: "lineRecommendNotify", label: "LINEおすすめ通知", isBoolean: true },
   { key: "diagnosisRecommend", label: "職種診断からの紹介", isBoolean: true },
-  { key: "analytics", label: "応募分析", isBoolean: true },
+  { key: "analytics", label: "アクセス・応募分析レポート（詳細）", isBoolean: true },
 ];
 
 export function isJobPlan(value: unknown): value is JobPlan {
@@ -220,6 +220,14 @@ export function getEnabledFeatureLabels(plan: JobPlan): string[] {
   }
   for (const item of JOB_PLAN_FEATURE_LABELS) {
     if (item.key === "newListing") continue;
+    if (item.key === "analytics") {
+      if (features.analytics) {
+        labels.push("アクセス・応募分析レポート（詳細）");
+      } else {
+        labels.push("アクセス・応募分析レポート（基本集計）");
+      }
+      continue;
+    }
     if (item.isBoolean && features[item.key] === true) {
       labels.push(item.label);
     }

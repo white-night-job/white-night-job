@@ -70,10 +70,10 @@ export async function GET(request: Request) {
     const plan = parseJobPlan(jobRow.plan);
     const { monthKey } = getReportMonthRanges();
 
-    // ライトは簡易集計のみ。改善レポート（詳細クリック・率・改善判定）は
+    // ライトは簡易集計のみ。詳細クリック・改善レポートは
     // サーバー側で返さないため、APIを直接呼んでも取得できない。
     if (!getPlanFeatures(plan).analytics) {
-      const cacheKey = `shop-light-analytics:${jobId}:${monthKey}`;
+      const cacheKey = `shop-light-analytics:v2:${jobId}:${monthKey}`;
       const cached = getShopScopedCache<ShopLightAnalyticsSummary>(
         cacheKey,
         jobId,

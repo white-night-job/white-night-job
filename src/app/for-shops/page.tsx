@@ -41,7 +41,12 @@ const PLAN_FEATURE_ROWS = [
   { label: "ピックアップ掲載", light: "－", standard: "－", premium: "○" },
   { label: "AIおすすめ表示", light: "－", standard: "優先", premium: "最優先" },
   { label: "上位表示ボタン", light: "1日5回", standard: "1日5回", premium: "1日5回" },
-  { label: "応募分析", light: "○", standard: "○", premium: "○" },
+  {
+    label: "アクセス・応募分析レポート",
+    light: "▲",
+    standard: "○",
+    premium: "○",
+  },
   { label: "LINEおすすめ通知", light: "－", standard: "－", premium: "○" },
   { label: "職種診断からの紹介", light: "－", standard: "－", premium: "○" },
 ] as const;
@@ -62,9 +67,10 @@ function planMonthlyPrice(key: PlanKey): string {
   return formatJpyAmount(JOB_PLAN_MONTHLY_PRICES[key]);
 }
 
-function planFeatureTone(value: string): "yes" | "no" | "normal" | "priority" | "top" | "text" {
+function planFeatureTone(value: string): "yes" | "no" | "partial" | "normal" | "priority" | "top" | "text" {
   if (value === "○") return "yes";
   if (value === "－") return "no";
+  if (value === "▲") return "partial";
   if (value === "最優先") return "top";
   if (value === "優先") return "priority";
   if (value === "通常") return "normal";
@@ -270,6 +276,25 @@ export default function ForShopsPage() {
           <p className="for-shops-plan-note">
             ※表示価格は税込の目安です。審査承認後にプランを最終確定します。承認前に料金請求は確定しません。
           </p>
+          <div className="for-shops-plan-analytics-notes">
+            <p className="for-shops-plan-analytics-notes-title">
+              アクセス・応募分析レポートについて
+            </p>
+            <ul className="for-shops-plan-analytics-notes-list">
+              <li>
+                <span>ライト</span>
+                基本的なアクセス・応募状況をいつでも確認可能
+              </li>
+              <li>
+                <span>スタンダード</span>
+                詳細なクリック分析・改善レポートをいつでも確認可能
+              </li>
+              <li>
+                <span>プレミアム</span>
+                詳細なクリック分析・改善レポートをいつでも確認可能
+              </li>
+            </ul>
+          </div>
 
           <div className="for-shops-apply-cta">
             <h3 className="for-shops-apply-cta-title">掲載審査を申し込む</h3>

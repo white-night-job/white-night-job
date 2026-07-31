@@ -248,31 +248,30 @@ export function ShopImprovementReport({
           <div className="space-y-5">
             <div>
               <h3 className="text-sm font-semibold text-charcoal">
-                {light.monthLabel}の状況
+                基本的なアクセス・応募状況
               </h3>
+              <p className="mt-1 text-xs text-muted">
+                対象期間：{light.periodLabel || light.monthLabel}
+              </p>
               <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
                 <MetricCard label="表示回数" value={light.current.impressions} />
                 <MetricCard
-                  label="LINE応募クリック"
+                  label="LINE応募数"
                   value={light.current.lineClicks}
                 />
                 <MetricCard
-                  label="電話応募クリック"
+                  label="電話応募数"
                   value={light.current.phoneClicks}
                 />
                 <MetricCard
-                  label="応募クリック合計"
+                  label="応募数"
                   value={light.current.applyTotal}
                 />
               </div>
             </div>
 
-            <ShopMonthlyImpressionBarChart data={light.monthly ?? []} />
-
-            {monthlyApplicationsBlock}
-
             <p className="text-[11px] leading-relaxed text-muted">
-              応募クリック数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの1分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。
+              応募数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの1分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。
             </p>
           </div>
         )}
