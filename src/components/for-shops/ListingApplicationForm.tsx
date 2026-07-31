@@ -1975,10 +1975,45 @@ export function ListingApplicationForm() {
                 <dd>{form.businessHours}</dd>
               </div>
               <div>
-                <dt className="text-muted">{FORM_I18N.dtContact}</dt>
-                <dd>
-                  {form.contactName} / {form.contactEmail}
+                <dt className="text-muted">{FORM_I18N.dtContactName}</dt>
+                <dd className="break-words">
+                  {form.contactName.trim() || FORM_I18N.notEntered}
                 </dd>
+              </div>
+              <div>
+                <dt className="text-muted">{FORM_I18N.dtContactPhone}</dt>
+                <dd className="break-all">
+                  {form.contactPhone.trim() || FORM_I18N.notEntered}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">{FORM_I18N.dtContactEmail}</dt>
+                <dd className="break-all">
+                  {form.contactEmail.trim() || FORM_I18N.notEntered}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">{FORM_I18N.dtIdentityDocument}</dt>
+                <dd className="break-words">
+                  {form.identityDocumentFront
+                    ? `${FORM_I18N.identityFrontLabel}: ${FORM_I18N.submitted}`
+                    : FORM_I18N.notSubmitted}
+                  {form.identityDocumentBack
+                    ? ` / ${FORM_I18N.identityBackLabel}: ${FORM_I18N.submitted}`
+                    : ""}
+                </dd>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    shouldScrollRef.current = true;
+                    setStep(2);
+                  }}
+                  className="text-sm font-medium text-gold-dark underline underline-offset-2"
+                >
+                  {FORM_I18N.edit}
+                </button>
               </div>
               <div>
                 <dt className="text-muted">{FORM_I18N.dtApplicantType}</dt>
@@ -2008,17 +2043,6 @@ export function ListingApplicationForm() {
                   </div>
                 </>
               ) : null}
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtIdentityDocument}</dt>
-                <dd>
-                  {form.identityDocumentFront
-                    ? `${FORM_I18N.identityFrontLabel}: ${FORM_I18N.submitted}`
-                    : FORM_I18N.notSubmitted}
-                  {form.identityDocumentBack
-                    ? ` / ${FORM_I18N.identityBackLabel}: ${FORM_I18N.submitted}`
-                    : ""}
-                </dd>
-              </div>
               <div>
                 <dt className="text-muted">{FORM_I18N.dtPlan}</dt>
                 <dd>
