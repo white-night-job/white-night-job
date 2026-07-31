@@ -18,6 +18,11 @@ const NAV_ITEMS = [
   },
   { href: "/admin/jobs", label: "求人管理", match: "prefix" as const },
   {
+    href: "/admin/user-activity",
+    label: "女の子利用状況",
+    match: "prefix" as const,
+  },
+  {
     href: "/admin/line-broadcast",
     label: "LINE配信管理",
     match: "prefix" as const,

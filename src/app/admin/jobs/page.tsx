@@ -344,7 +344,6 @@ function AdminJobsPageInner() {
   const [editingListingStatus, setEditingListingStatus] =
     useState<JobListingStatus>("draft");
   const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
@@ -381,49 +380,6 @@ function AdminJobsPageInner() {
   const [draftUpdatedFrom, setDraftUpdatedFrom] = useState("");
   const [draftUpdatedTo, setDraftUpdatedTo] = useState("");
 
-  const [monthlySummary, setMonthlySummary] = useState<{
-    periodLabel: string;
-    previousPeriodLabel: string;
-    publishedJobCount: number;
-    views: { current: number; previous: number; changePercent: number | null };
-    applications: {
-      current: number;
-      previous: number;
-      changePercent: number | null;
-    };
-  } | null>(null);
-  const [monthlySummaryLoading, setMonthlySummaryLoading] = useState(true);
-
-  async function loadMonthlySummary() {
-    setMonthlySummaryLoading(true);
-    console.time("admin:monthly-summary");
-    try {
-      const data = await readJson<{
-        periodLabel: string;
-        previousPeriodLabel: string;
-        publishedJobCount: number;
-        views: { current: number; previous: number; changePercent: number | null };
-        applications: {
-          current: number;
-          previous: number;
-          changePercent: number | null;
-        };
-      }>(
-        await fetch("/api/admin/monthly-summary", {
-          cache: "no-store",
-          credentials: "include",
-        }),
-      );
-      setMonthlySummary(data);
-      console.timeEnd("admin:monthly-summary");
-    } catch (error) {
-      console.timeEnd("admin:monthly-summary");
-      console.error("[admin] monthly summary failed", error);
-    } finally {
-      setMonthlySummaryLoading(false);
-    }
-  }
-
   async function runShopSearch(page = 1, append = false) {
     const q = shopSearchQuery.trim();
     if (!q && regionFilter === "all") {
@@ -433,7 +389,6 @@ function AdminJobsPageInner() {
       setSearchHasMore(false);
       setSearchPage(1);
       setApplicationDetails({});
-      setViewCounts({});
       setMessage("店舗名やエリアを入力して検索してください");
       return;
     }
@@ -455,7 +410,6 @@ function AdminJobsPageInner() {
         page: number;
         hasMore: boolean;
         details: Record<string, JobApplicationDetail>;
-        viewCounts: Record<string, number>;
         searched?: boolean;
         message?: string;
       }>(
@@ -482,9 +436,6 @@ function AdminJobsPageInner() {
       });
       setApplicationDetails((current) =>
         append ? { ...current, ...data.details } : data.details,
-      );
-      setViewCounts((current) =>
-        append ? { ...current, ...data.viewCounts } : data.viewCounts,
       );
       console.timeEnd("admin:shop-search");
     } catch (error) {
@@ -552,7 +503,6 @@ function AdminJobsPageInner() {
   }
 
   async function refreshAfterMutation() {
-    await loadMonthlySummary();
     await loadDraftTotal();
     if (shopSearchQuery.trim() || regionFilter !== "all" || statusFilter !== "all") {
       await runShopSearch(1, false);
@@ -572,7 +522,6 @@ function AdminJobsPageInner() {
   }
 
   useEffect(() => {
-    void loadMonthlySummary();
     void loadDraftTotal();
   }, []);
 
@@ -1091,79 +1040,6 @@ function AdminJobsPageInner() {
         </p>
       )}
 
-      <section className="mb-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
-          <p className="text-sm font-medium text-muted">今月の表示回数</p>
-          {monthlySummaryLoading && !monthlySummary ? (
-            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
-          ) : (
-            <>
-              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
-                {(monthlySummary?.views.current ?? 0).toLocaleString("ja-JP")}
-                <span className="ml-1 text-base font-sans font-medium text-muted">
-                  回
-                </span>
-              </p>
-              {monthlySummary?.views.changePercent != null && (
-                <p
-                  className={`mt-2 text-xs font-medium ${
-                    monthlySummary.views.changePercent >= 0
-                      ? "text-[#047a3b]"
-                      : "text-red-600"
-                  }`}
-                >
-                  前月比{" "}
-                  {monthlySummary.views.changePercent > 0 ? "+" : ""}
-                  {monthlySummary.views.changePercent}%
-                  <span className="ml-1 text-muted">
-                    （{monthlySummary.previousPeriodLabel}:{" "}
-                    {monthlySummary.views.previous.toLocaleString("ja-JP")}回）
-                  </span>
-                </p>
-              )}
-            </>
-          )}
-        </div>
-        <div className="rounded-2xl border border-gold/25 bg-white p-5 shadow-gold">
-          <p className="text-sm font-medium text-muted">今月の応募回数</p>
-          {monthlySummaryLoading && !monthlySummary ? (
-            <div className="mt-3 h-10 w-32 animate-pulse rounded bg-gold/20" />
-          ) : (
-            <>
-              <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
-                {(monthlySummary?.applications.current ?? 0).toLocaleString(
-                  "ja-JP",
-                )}
-                <span className="ml-1 text-base font-sans font-medium text-muted">
-                  回
-                </span>
-              </p>
-              {monthlySummary?.applications.changePercent != null && (
-                <p
-                  className={`mt-2 text-xs font-medium ${
-                    monthlySummary.applications.changePercent >= 0
-                      ? "text-[#047a3b]"
-                      : "text-red-600"
-                  }`}
-                >
-                  前月比{" "}
-                  {monthlySummary.applications.changePercent > 0 ? "+" : ""}
-                  {monthlySummary.applications.changePercent}%
-                  <span className="ml-1 text-muted">
-                    （{monthlySummary.previousPeriodLabel}:{" "}
-                    {monthlySummary.applications.previous.toLocaleString("ja-JP")}
-                    回）
-                  </span>
-                </p>
-              )}
-              <p className="mt-1 text-xs text-muted">
-                LINE応募クリック + 電話応募クリックの合計
-              </p>
-            </>
-          )}
-        </div>
-      </section>
-
       <section id="admin-jobs" className="mt-0">
         <button
           type="button"
@@ -1174,11 +1050,6 @@ function AdminJobsPageInner() {
         >
           <span className="text-base font-semibold text-charcoal sm:text-lg">
             {isShopSearchOpen ? "▼" : "▶"} 掲載店舗検索
-            {monthlySummary && !isShopSearchOpen && (
-              <span className="ml-2 text-sm font-normal text-muted">
-                （掲載 {monthlySummary.publishedJobCount.toLocaleString("ja-JP")}件）
-              </span>
-            )}
           </span>
         </button>
 
@@ -1278,7 +1149,6 @@ function AdminJobsPageInner() {
                     const detail =
                       applicationDetails[job.id] ?? emptyApplicationDetail();
                     const historyOpen = expandedHistoryJobIds.has(job.id);
-                    const viewCount = viewCounts[job.id] ?? 0;
 
                     return (
                       <li
@@ -1307,33 +1177,6 @@ function AdminJobsPageInner() {
                               {JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
                             </p>
                             <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
-
-                            <dl className="mt-3 space-y-1 rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm">
-                              <div className="flex flex-wrap gap-x-2">
-                                <dt className="font-medium text-muted">LINE応募数:</dt>
-                                <dd className="font-semibold text-[#047a3b]">
-                                  {detail.line}
-                                </dd>
-                              </div>
-                              <div className="flex flex-wrap gap-x-2">
-                                <dt className="font-medium text-muted">電話応募数:</dt>
-                                <dd className="font-semibold text-gold-dark">
-                                  {detail.phone}
-                                </dd>
-                              </div>
-                              <div className="flex flex-wrap gap-x-2">
-                                <dt className="font-medium text-muted">合計応募数:</dt>
-                                <dd className="font-semibold text-charcoal">
-                                  {detail.total}
-                                </dd>
-                              </div>
-                              <div className="flex flex-wrap gap-x-2">
-                                <dt className="font-medium text-muted">表示回数:</dt>
-                                <dd className="font-semibold text-charcoal">
-                                  {viewCount}
-                                </dd>
-                              </div>
-                            </dl>
 
                             <button
                               type="button"

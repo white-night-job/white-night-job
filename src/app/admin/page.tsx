@@ -12,6 +12,11 @@ const CARDS = [
     description: "掲載店舗の検索、求人の追加・編集、公開状態の管理。",
   },
   {
+    href: "/admin/user-activity",
+    title: "女の子利用状況",
+    description: "求人閲覧・応募クリック・診断・報告などの匿名利用状況。",
+  },
+  {
     href: "/admin/line-broadcast",
     title: "LINE配信管理",
     description: "エリア配信やおすすめ通知などのLINE配信操作。",
