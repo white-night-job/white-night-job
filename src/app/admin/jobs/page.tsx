@@ -352,6 +352,13 @@ function AdminJobsPageInner() {
   const [isDraftSearchOpen, setIsDraftSearchOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const publishLockRef = useRef(false);
+  const editorSectionRef = useRef<HTMLElement | null>(null);
+  const jobsListAnchorRef = useRef<HTMLElement | null>(null);
+  const pendingScrollToEditorRef = useRef(false);
+  const pendingScrollToListRef = useRef(false);
+  const [pendingSaveIntent, setPendingSaveIntent] = useState<
+    "draft" | "publish" | "pause" | "republish" | null
+  >(null);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -462,7 +469,17 @@ function AdminJobsPageInner() {
       setSearchTotal(data.total);
       setSearchHasMore(data.hasMore);
       setSearchPage(data.page);
-      setJobs((current) => (append ? [...current, ...data.jobs] : data.jobs));
+      setJobs((current) => {
+        if (!append) return data.jobs;
+        const seen = new Set(current.map((job) => job.id));
+        const merged = [...current];
+        for (const job of data.jobs) {
+          if (seen.has(job.id)) continue;
+          seen.add(job.id);
+          merged.push(job);
+        }
+        return merged;
+      });
       setApplicationDetails((current) =>
         append ? { ...current, ...data.details } : data.details,
       );
@@ -657,7 +674,31 @@ function AdminJobsPageInner() {
     }));
   }
 
-  function resetForm() {
+  function scrollWithHeaderOffset(element: HTMLElement | null) {
+    if (!element) return;
+    const headerOffset = 72; // sticky admin topbar
+    const top =
+      element.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }
+
+  function scrollToEditorSection() {
+    scrollWithHeaderOffset(editorSectionRef.current);
+  }
+
+  function scrollToJobsList() {
+    const messageEl =
+      typeof document !== "undefined"
+        ? document.getElementById("admin-jobs-message")
+        : null;
+    scrollWithHeaderOffset(messageEl ?? jobsListAnchorRef.current);
+  }
+
+  function closeEditor(options?: {
+    keepMessage?: boolean;
+    message?: string;
+    scrollToList?: boolean;
+  }) {
     setForm(emptyForm);
     setEditingId(null);
     setEditingListingStatus("draft");
@@ -665,8 +706,22 @@ function AdminJobsPageInner() {
     setShowPreview(false);
     setFormDirty(false);
     setFieldErrors({});
+    setPendingSaveIntent(null);
+    pendingScrollToEditorRef.current = false;
+    if (options?.message != null) {
+      setMessage(options.message);
+    } else if (!options?.keepMessage) {
+      setMessage("");
+    }
     setDraftJobId(crypto.randomUUID());
     router.replace("/admin/jobs", { scroll: false });
+    if (options?.scrollToList) {
+      pendingScrollToListRef.current = true;
+    }
+  }
+
+  function resetForm() {
+    closeEditor();
   }
 
   async function saveJob(saveIntent: "draft" | "publish" | "pause" | "republish", options?: { silent?: boolean }) {
@@ -674,6 +729,7 @@ function AdminJobsPageInner() {
     publishLockRef.current = true;
     if (!options?.silent) {
       setLoading(true);
+      setPendingSaveIntent(saveIntent);
       setMessage("");
       setFieldErrors({});
     }
@@ -692,34 +748,41 @@ function AdminJobsPageInner() {
           body: JSON.stringify(payload),
         }),
       );
-      if (!options?.silent) {
-        const status = resolveJobListingStatus(savedJob);
-        const label = JOB_LISTING_STATUS_LABELS[status];
-        setMessage(
-          saveIntent === "publish" || saveIntent === "republish"
-            ? `求人を公開しました（${label}）。`
-            : saveIntent === "pause"
-              ? `求人を掲載停止にしました。`
-              : editingId
-                ? `下書きとして保存しました（公開状態: ${label}）。`
-                : `下書きを保存しました。`,
-        );
-        await refreshAfterMutation();
-        window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
-        requestScrollToTop();
-        setShowPreview(false);
-        if (saveIntent === "publish" || saveIntent === "republish") {
+
+      if (options?.silent) {
+        setEditingId(savedJob.id);
+        setForm(toForm(savedJob));
+        setEditingListingStatus(resolveJobListingStatus(savedJob));
+        setFormDirty(false);
+        setDraftJobId(savedJob.id);
+        if (!editingId) {
           router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
         }
+        return savedJob;
       }
-      setEditingId(savedJob.id);
-      setForm(toForm(savedJob));
-      setEditingListingStatus(resolveJobListingStatus(savedJob));
-      setIsAddFormOpen(false);
-      setFormDirty(false);
-      setDraftJobId(savedJob.id);
-      if (!editingId) {
-        router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
+
+      await refreshAfterMutation();
+      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+      setShowPreview(false);
+
+      if (saveIntent === "publish" || saveIntent === "republish") {
+        closeEditor({
+          message: "求人を公開しました",
+          scrollToList: true,
+        });
+      } else if (saveIntent === "pause") {
+        setEditingId(savedJob.id);
+        setForm(toForm(savedJob));
+        setEditingListingStatus(resolveJobListingStatus(savedJob));
+        setIsAddFormOpen(false);
+        setFormDirty(false);
+        setDraftJobId(savedJob.id);
+        setMessage("求人を掲載停止にしました。");
+      } else {
+        closeEditor({
+          message: "下書きを保存しました",
+          scrollToList: true,
+        });
       }
       return savedJob;
     } catch (error) {
@@ -744,12 +807,14 @@ function AdminJobsPageInner() {
           if (message.includes("職種"))
             setFieldErrors((p) => ({ ...p, jobType: message }));
         }
-        requestScrollToTop();
         setShowPreview(false);
       }
       throw error;
     } finally {
-      if (!options?.silent) setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+        setPendingSaveIntent(null);
+      }
       publishLockRef.current = false;
     }
   }
@@ -931,6 +996,7 @@ function AdminJobsPageInner() {
     job: Job,
     options?: { skipUrlUpdate?: boolean },
   ) {
+    // Single editor only — reusing the same form state (no duplicate mounts).
     setEditingId(job.id);
     setForm(toForm(job));
     setEditingListingStatus(resolveJobListingStatus(job));
@@ -943,10 +1009,34 @@ function AdminJobsPageInner() {
     if (!options?.skipUrlUpdate) {
       router.replace(`/admin/jobs?edit=${job.id}`, { scroll: false });
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    pendingScrollToEditorRef.current = true;
   }
 
   const isFormVisible = editingId !== null || isAddFormOpen;
+
+  useEffect(() => {
+    if (!pendingScrollToEditorRef.current || !editingId) return;
+    if (!isFormVisible) return;
+    pendingScrollToEditorRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollToEditorSection();
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [editingId, isFormVisible, form]);
+
+  useEffect(() => {
+    if (!pendingScrollToListRef.current) return;
+    if (isFormVisible) return;
+    pendingScrollToListRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollToJobsList();
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isFormVisible, message]);
 
   useEffect(() => {
     if (!isFormVisible || !formDirty) return;
@@ -993,7 +1083,10 @@ function AdminJobsPageInner() {
       </header>
 
       {message && (
-        <p className="mb-4 rounded-xl border border-gold/30 bg-gold-light/20 px-4 py-3 text-sm text-charcoal">
+        <p
+          id="admin-jobs-message"
+          className="mb-4 rounded-xl border border-gold/30 bg-gold-light/20 px-4 py-3 text-sm text-charcoal"
+        >
           {message}
         </p>
       )}
@@ -1308,7 +1401,11 @@ function AdminJobsPageInner() {
         )}
       </section>
 
-      <section id="admin-draft-jobs" className="mt-3">
+      <section
+        id="admin-draft-jobs"
+        ref={jobsListAnchorRef}
+        className="mt-3"
+      >
         <button
           type="button"
           onClick={() => setIsDraftSearchOpen((open) => !open)}
@@ -1564,7 +1661,11 @@ function AdminJobsPageInner() {
       )}
 
       {isFormVisible && (
-      <section className={`rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6 ${editingId ? "mt-4" : "mt-3"}`}>
+      <section
+        id="admin-job-editor"
+        ref={editorSectionRef}
+        className={`rounded-2xl border border-gold/25 bg-white p-5 shadow-gold sm:p-6 ${editingId ? "mt-4" : "mt-3"}`}
+      >
           <form
             onSubmit={handleSubmit}
             className="space-y-4"
@@ -2636,7 +2737,9 @@ function AdminJobsPageInner() {
             onClick={() => void saveJob("draft").catch(() => undefined)}
             className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-gold-dark disabled:opacity-60"
           >
-            下書き保存
+            {loading && pendingSaveIntent === "draft"
+              ? "保存中..."
+              : "下書き保存"}
           </button>
           <button
             type="button"
@@ -2650,7 +2753,6 @@ function AdminJobsPageInner() {
                 if (!form.salary.trim()) next.salary = "時給を入力してください。";
                 if (!form.lineUrl.trim()) next.lineUrl = "LINE応募URLを入力してください。";
                 setFieldErrors(next);
-                requestScrollToTop();
                 return;
               }
               requestScrollToTop();
@@ -2658,7 +2760,11 @@ function AdminJobsPageInner() {
             }}
             className="rounded-full bg-[#8f7344] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
-            公開する
+            {loading &&
+            (pendingSaveIntent === "publish" ||
+              pendingSaveIntent === "republish")
+              ? "公開中..."
+              : "公開する"}
           </button>
           {editingId && editingListingStatus === "published" ? (
             <button
@@ -2667,7 +2773,9 @@ function AdminJobsPageInner() {
               onClick={() => void saveJob("pause").catch(() => undefined)}
               className="rounded-full border border-black/20 px-6 py-3 text-sm font-medium text-charcoal disabled:opacity-60"
             >
-              掲載停止にする
+              {loading && pendingSaveIntent === "pause"
+                ? "処理中..."
+                : "掲載停止にする"}
             </button>
           ) : null}
           {editingId && editingListingStatus === "paused" ? (
@@ -2677,13 +2785,16 @@ function AdminJobsPageInner() {
               onClick={() => void saveJob("republish").catch(() => undefined)}
               className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-gold-dark disabled:opacity-60"
             >
-              再公開する
+              {loading && pendingSaveIntent === "republish"
+                ? "公開中..."
+                : "再公開する"}
             </button>
           ) : null}
           <button
             type="button"
-            onClick={resetForm}
-            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-muted hover:text-charcoal"
+            disabled={loading}
+            onClick={() => closeEditor({ scrollToList: true })}
+            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-muted hover:text-charcoal disabled:opacity-60"
           >
             キャンセル
           </button>

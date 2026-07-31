@@ -50,7 +50,7 @@ export function JobListingPreview({
             disabled={submitting}
             className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60"
           >
-            {submitting ? "処理中..." : confirmLabel}
+            {submitting ? "公開中..." : confirmLabel}
           </button>
         </div>
       </div>
