@@ -1548,6 +1548,23 @@ export function ListingApplicationForm() {
               {FORM_I18N.headingContact}
             </h2>
 
+            <Field error={fe.contactName}>
+              <label className={labelClass}>{FORM_I18N.labelContactName}</label>
+              <input
+                className={fe.contactName ? inputErr : inputOk}
+                value={form.contactName}
+                onChange={(e) => update("contactName", e.target.value)}
+              />
+            </Field>
+            <Field error={fe.contactPhone}>
+              <label className={labelClass}>{FORM_I18N.labelContactPhone}</label>
+              <input
+                className={fe.contactPhone ? inputErr : inputOk}
+                value={form.contactPhone}
+                onChange={(e) => update("contactPhone", e.target.value)}
+                inputMode="tel"
+              />
+            </Field>
             <Field error={fe.contactEmail}>
               <label className={labelClass}>{FORM_I18N.labelContactEmail}</label>
               <input
@@ -1667,24 +1684,6 @@ export function ListingApplicationForm() {
                 </Field>
               </div>
             ) : null}
-
-            <Field error={fe.contactName}>
-              <label className={labelClass}>{FORM_I18N.labelContactName}</label>
-              <input
-                className={fe.contactName ? inputErr : inputOk}
-                value={form.contactName}
-                onChange={(e) => update("contactName", e.target.value)}
-              />
-            </Field>
-            <Field error={fe.contactPhone}>
-              <label className={labelClass}>{FORM_I18N.labelContactPhone}</label>
-              <input
-                className={fe.contactPhone ? inputErr : inputOk}
-                value={form.contactPhone}
-                onChange={(e) => update("contactPhone", e.target.value)}
-                inputMode="tel"
-              />
-            </Field>
           </section>
         ) : null}
 
