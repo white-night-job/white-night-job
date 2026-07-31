@@ -32,7 +32,6 @@ export const FORM_I18N = {
   errApplicantType: "申請者区分を選択してください。",
   errCorporateName: "法人名を入力してください。",
   errCorporateNameKana: "法人名フリガナを入力してください。",
-  errCorporateNumber: "法人番号は数字13桁で入力してください。",
   errRepresentativeName: "代表者名を入力してください。",
   errIdentityDocument:
     "顔写真付き身分証明書をアップロードしてください",
@@ -102,9 +101,8 @@ export const FORM_I18N = {
   applicantCorporation: "法人",
   labelCorporateName: "法人名 *",
   labelCorporateNameKana: "法人名フリガナ *",
-  labelCorporateNumber: "法人番号（13桁） *",
-  phCorporateNumber: "例：1234567890123",
   labelRepresentativeName: "代表者名 *",
+  identityHeading: "顔写真付き身分証明書",
   identityUploadTitle: "顔写真付き身分証明書をアップロードしてください",
   identityUploadHint:
     "運転免許証・マイナンバーカード・パスポート・在留カードなど（JPEG / PNG / PDF、1ファイル10MBまで）",
@@ -160,7 +158,7 @@ export const FORM_I18N = {
   dtContact: "担当者",
   dtApplicantType: "申請者区分",
   dtCorporateName: "法人名",
-  dtCorporateNumber: "法人番号",
+  dtCorporateNameKana: "法人名フリガナ",
   dtRepresentativeName: "代表者名",
   dtIdentityDocument: "顔写真付き身分証明書",
   dtPlan: "選択プラン",

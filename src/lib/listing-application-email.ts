@@ -308,7 +308,12 @@ export async function notifyAdminNewApplication(
         `申請日時: ${formatSubmittedAt(row.created_at)}`,
         `申請者区分: ${applicantTypeLabel}`,
         isCorporation ? `法人名: ${dash(row.corporate_name)}` : null,
-        isCorporation ? `法人番号: ${dash(row.corporate_number)}` : null,
+        isCorporation
+          ? `法人名フリガナ: ${dash(row.corporate_name_kana)}`
+          : null,
+        isCorporation
+          ? `代表者名: ${dash(row.representative_name)}`
+          : null,
         `店舗名: ${dash(row.shop_name)}`,
         `担当者名: ${dash(row.contact_name)}`,
         `メールアドレス: ${dash(row.contact_email)}`,

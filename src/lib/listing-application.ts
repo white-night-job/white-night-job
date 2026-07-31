@@ -109,7 +109,6 @@ export type ListingApplicationInput = {
   applicantType: ListingApplicantType;
   corporateName?: string;
   corporateNameKana?: string;
-  corporateNumber?: string;
   representativeName?: string;
   identityDocumentFront?: ListingDocumentMeta | null;
   identityDocumentBack?: ListingDocumentMeta | null;
@@ -295,9 +294,6 @@ export function validateListingApplicationInput(
     if (!String(input.corporateNameKana ?? "").trim()) {
       return "法人名フリガナを入力してください。";
     }
-    if (!isValidCorporateNumber(input.corporateNumber)) {
-      return "法人番号は数字13桁で入力してください。";
-    }
     if (!String(input.representativeName ?? "").trim()) {
       return "代表者名を入力してください。";
     }
@@ -452,10 +448,6 @@ export function normalizeListingApplicationInput(
       applicantType === "corporation"
         ? trim(input.corporateNameKana) || undefined
         : undefined,
-    corporateNumber:
-      applicantType === "corporation"
-        ? normalizeCorporateNumber(input.corporateNumber) || undefined
-        : undefined,
     representativeName:
       applicantType === "corporation"
         ? trim(input.representativeName) || undefined
@@ -520,10 +512,8 @@ export function inputToDbRow(
       input.applicantType === "corporation"
         ? (input.corporateNameKana ?? null)
         : null,
-    corporate_number:
-      input.applicantType === "corporation"
-        ? (input.corporateNumber ?? null)
-        : null,
+    // Keep DB column; no longer collected on the form.
+    corporate_number: null,
     representative_name:
       input.applicantType === "corporation"
         ? (input.representativeName ?? null)

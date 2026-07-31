@@ -685,7 +685,6 @@ export function ListingReviewsPanel() {
                     ? ([
                         ["法人名", detail.corporate_name],
                         ["法人名フリガナ", detail.corporate_name_kana],
-                        ["法人番号", detail.corporate_number],
                         ["代表者名", detail.representative_name],
                       ] as Array<[string, unknown]>)
                     : []),

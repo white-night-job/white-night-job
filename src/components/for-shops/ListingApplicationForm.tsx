@@ -19,8 +19,6 @@ import {
 } from "@/lib/job-plan";
 import {
   isListingApplicantType,
-  isValidCorporateNumber,
-  normalizeCorporateNumber,
   type ListingApplicantType,
   type ListingAttachment,
   type ListingDocumentMeta,
@@ -119,7 +117,6 @@ type FormState = {
   applicantType: ListingApplicantType | "";
   corporateName: string;
   corporateNameKana: string;
-  corporateNumber: string;
   representativeName: string;
   identityDocumentFront: ListingDocumentMeta | null;
   identityDocumentBack: ListingDocumentMeta | null;
@@ -161,7 +158,6 @@ const EMPTY: FormState = {
   applicantType: "",
   corporateName: "",
   corporateNameKana: "",
-  corporateNumber: "",
   representativeName: "",
   identityDocumentFront: null,
   identityDocumentBack: null,
@@ -373,9 +369,6 @@ function validateStep(
       }
       if (!form.corporateNameKana.trim()) {
         errors.corporateNameKana = FORM_I18N.errCorporateNameKana;
-      }
-      if (!isValidCorporateNumber(form.corporateNumber)) {
-        errors.corporateNumber = FORM_I18N.errCorporateNumber;
       }
       if (!form.representativeName.trim()) {
         errors.representativeName = FORM_I18N.errRepresentativeName;
@@ -1554,23 +1547,7 @@ export function ListingApplicationForm() {
             <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingContact}
             </h2>
-            <Field error={fe.contactName}>
-              <label className={labelClass}>{FORM_I18N.labelContactName}</label>
-              <input
-                className={fe.contactName ? inputErr : inputOk}
-                value={form.contactName}
-                onChange={(e) => update("contactName", e.target.value)}
-              />
-            </Field>
-            <Field error={fe.contactPhone}>
-              <label className={labelClass}>{FORM_I18N.labelContactPhone}</label>
-              <input
-                className={fe.contactPhone ? inputErr : inputOk}
-                value={form.contactPhone}
-                onChange={(e) => update("contactPhone", e.target.value)}
-                inputMode="tel"
-              />
-            </Field>
+
             <Field error={fe.contactEmail}>
               <label className={labelClass}>{FORM_I18N.labelContactEmail}</label>
               <input
@@ -1580,6 +1557,24 @@ export function ListingApplicationForm() {
                 onChange={(e) => update("contactEmail", e.target.value)}
               />
             </Field>
+
+            <div className="space-y-3 rounded-xl border border-gold/25 bg-ivory/40 p-4">
+              <p className="text-sm font-medium text-charcoal">
+                {FORM_I18N.identityHeading}
+              </p>
+              <p className="text-xs text-muted">{FORM_I18N.identityUploadHint}</p>
+              {renderDocUploader(
+                "identityDocumentFront",
+                FORM_I18N.identityFrontLabel,
+                true,
+              )}
+              {renderDocUploader(
+                "identityDocumentBack",
+                FORM_I18N.identityBackLabel,
+                false,
+                FORM_I18N.identityBackHint,
+              )}
+            </div>
 
             <Field error={fe.applicantType}>
               <p className={labelClass}>{FORM_I18N.labelApplicantType}</p>
@@ -1608,25 +1603,24 @@ export function ListingApplicationForm() {
                       name="applicantType"
                       checked={form.applicantType === value}
                       onChange={() => {
-                        update("applicantType", value);
                         if (value === "individual") {
                           setForm((current) => ({
                             ...current,
                             applicantType: value,
                             corporateName: "",
                             corporateNameKana: "",
-                            corporateNumber: "",
                             representativeName: "",
                           }));
                           setFieldErrors((prev) => {
                             const next = { ...prev };
                             delete next.corporateName;
                             delete next.corporateNameKana;
-                            delete next.corporateNumber;
                             delete next.representativeName;
                             delete next.applicantType;
                             return next;
                           });
+                        } else {
+                          update("applicantType", value);
                         }
                       }}
                       className="h-4 w-4"
@@ -1638,7 +1632,7 @@ export function ListingApplicationForm() {
             </Field>
 
             {form.applicantType === "corporation" ? (
-              <>
+              <div className="space-y-4">
                 <Field error={fe.corporateName}>
                   <label className={labelClass}>
                     {FORM_I18N.labelCorporateName}
@@ -1659,24 +1653,6 @@ export function ListingApplicationForm() {
                     onChange={(e) => update("corporateNameKana", e.target.value)}
                   />
                 </Field>
-                <Field error={fe.corporateNumber}>
-                  <label className={labelClass}>
-                    {FORM_I18N.labelCorporateNumber}
-                  </label>
-                  <input
-                    className={fe.corporateNumber ? inputErr : inputOk}
-                    value={form.corporateNumber}
-                    inputMode="numeric"
-                    maxLength={13}
-                    placeholder={FORM_I18N.phCorporateNumber}
-                    onChange={(e) =>
-                      update(
-                        "corporateNumber",
-                        normalizeCorporateNumber(e.target.value).slice(0, 13),
-                      )
-                    }
-                  />
-                </Field>
                 <Field error={fe.representativeName}>
                   <label className={labelClass}>
                     {FORM_I18N.labelRepresentativeName}
@@ -1689,26 +1665,26 @@ export function ListingApplicationForm() {
                     }
                   />
                 </Field>
-              </>
+              </div>
             ) : null}
 
-            <div className="space-y-3 rounded-xl border border-gold/25 bg-ivory/40 p-4">
-              <p className="text-sm font-medium text-charcoal">
-                {FORM_I18N.identityUploadTitle}
-              </p>
-              <p className="text-xs text-muted">{FORM_I18N.identityUploadHint}</p>
-              {renderDocUploader(
-                "identityDocumentFront",
-                FORM_I18N.identityFrontLabel,
-                true,
-              )}
-              {renderDocUploader(
-                "identityDocumentBack",
-                FORM_I18N.identityBackLabel,
-                false,
-                FORM_I18N.identityBackHint,
-              )}
-            </div>
+            <Field error={fe.contactName}>
+              <label className={labelClass}>{FORM_I18N.labelContactName}</label>
+              <input
+                className={fe.contactName ? inputErr : inputOk}
+                value={form.contactName}
+                onChange={(e) => update("contactName", e.target.value)}
+              />
+            </Field>
+            <Field error={fe.contactPhone}>
+              <label className={labelClass}>{FORM_I18N.labelContactPhone}</label>
+              <input
+                className={fe.contactPhone ? inputErr : inputOk}
+                value={form.contactPhone}
+                onChange={(e) => update("contactPhone", e.target.value)}
+                inputMode="tel"
+              />
+            </Field>
           </section>
         ) : null}
 
@@ -2022,8 +1998,8 @@ export function ListingApplicationForm() {
                     <dd>{form.corporateName || FORM_I18N.emDash}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted">{FORM_I18N.dtCorporateNumber}</dt>
-                    <dd>{form.corporateNumber || FORM_I18N.emDash}</dd>
+                    <dt className="text-muted">{FORM_I18N.dtCorporateNameKana}</dt>
+                    <dd>{form.corporateNameKana || FORM_I18N.emDash}</dd>
                   </div>
                   <div>
                     <dt className="text-muted">
