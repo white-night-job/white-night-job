@@ -129,8 +129,36 @@ export function isJobPlan(value: unknown): value is JobPlan {
   return typeof value === "string" && (JOB_PLANS as readonly string[]).includes(value);
 }
 
+/** DB・フォーム・表記ゆれ（premium / プレミアム / PREMIUM 等）を正規化する。 */
 export function parseJobPlan(value: unknown): JobPlan {
-  return isJobPlan(value) ? value : "light";
+  if (typeof value !== "string") return "light";
+  const trimmed = value.trim();
+  if (isJobPlan(trimmed)) return trimmed;
+
+  const normalized = trimmed.toLowerCase().replace(/\s+/g, "");
+  if (
+    normalized === "premium" ||
+    normalized === "プレミアム" ||
+    normalized === "プレミアムプラン"
+  ) {
+    return "premium";
+  }
+  if (
+    normalized === "standard" ||
+    normalized === "スタンダード" ||
+    normalized === "スタンダードプラン"
+  ) {
+    return "standard";
+  }
+  if (
+    normalized === "light" ||
+    normalized === "ライト" ||
+    normalized === "ライトプラン"
+  ) {
+    return "light";
+  }
+
+  return "light";
 }
 
 export function getPlanFeatures(plan: JobPlan | null | undefined): JobPlanFeatures {

@@ -119,7 +119,18 @@ export async function GET(request: Request) {
     const message = searchParams.get("message") ?? "";
 
     const jobs = await fetchPublishedChatJobs();
-    const recommendations = matchRecommendations(jobs, preferences, message);
+    const supabase = createSupabaseAdmin();
+    const boostMap = await fetchBoostStatsForJobs(
+      supabase,
+      jobs.map((job) => job.id),
+    );
+    const recommendations = matchRecommendations(
+      jobs,
+      preferences,
+      message,
+      MAX_RECOMMENDATIONS,
+      boostMap,
+    );
     const limit = Number(searchParams.get("limit") ?? "5");
     const limited = recommendations.slice(0, Math.min(limit, MAX_RECOMMENDATIONS));
 

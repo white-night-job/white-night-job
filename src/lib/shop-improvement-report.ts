@@ -6,18 +6,15 @@ import {
 import { formatMonthLabel, getCurrentJstMonthKey } from "@/lib/job-applications";
 import { parseCastVoices, parseStoreImages } from "@/lib/job-db";
 import {
-  getPlanDefinition,
-  getPlanFeatures,
-  type JobPlan,
-} from "@/lib/job-plan";
-import {
-  listingPriorityRank,
-  parseListingPriority,
-} from "@/lib/listing-priority";
-import {
   calculateDistrictRank,
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
+import {
+  getPlanDefinition,
+  getPlanFeatures,
+  parseJobPlan,
+  type JobPlan,
+} from "@/lib/job-plan";
 
 /** 同一セッションの連続表示をまとめる間隔。既存グラフの集計には影響させない。 */
 const IMPRESSION_DEDUPE_MS = 60 * 1000;
@@ -1177,7 +1174,7 @@ async function fetchListingContext(
   try {
     const { data: districtRows, error } = await supabase
       .from("jobs")
-      .select("id, created_at, listing_priority")
+      .select("id, created_at, updated_at, plan")
       .eq("published", true)
       .eq("district", jobRow.district);
 
@@ -1186,9 +1183,8 @@ async function fetchListingContext(
     const districtJobs = (districtRows ?? []).map((row) => ({
       id: row.id as string,
       created_at: row.created_at as string,
-      listingPriorityRank: listingPriorityRank(
-        parseListingPriority(row.listing_priority),
-      ),
+      updated_at: (row.updated_at as string | null) ?? null,
+      plan: (row.plan as string | null) ?? null,
     }));
 
     const boostMap = await fetchBoostStatsForJobs(

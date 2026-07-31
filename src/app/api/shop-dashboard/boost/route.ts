@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     invalidateShopScopedCache(jobId);
 
     // Never mutate listing_priority / pickup / AI recommend / plan here.
-    // Ranking within priority tier uses today's shop_boosts rows only.
+    // Ranking uses plan + today's shop_boosts (premium never below standard/light).
 
     const { data: jobRow, error: jobError } = await supabase
       .from("jobs")
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
     const { data: districtRows, error: districtError } = await supabase
       .from("jobs")
-      .select("id, created_at")
+      .select("id, created_at, updated_at, plan")
       .eq("published", true)
       .eq("district", jobRow.district);
 

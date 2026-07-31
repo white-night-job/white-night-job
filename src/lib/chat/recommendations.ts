@@ -1,4 +1,5 @@
 import type { BoostStatsMap } from "@/lib/shop-boosts";
+import { compareJobsForListing } from "@/lib/shop-boosts";
 import { jobMatchesSelectedAreas } from "./area-options";
 import type { ChatJob, ChatPreferences, ChatRecommendation } from "./types";
 
@@ -58,13 +59,51 @@ function getBoostBonus(boostMap: BoostStatsMap, jobId: string): number {
   return stats.todayCount * 30 + (stats.latestBoostAt ? 5 : 0);
 }
 
+function compareChatJobsByListingOrder(
+  a: ChatJob,
+  b: ChatJob,
+  boostMap: BoostStatsMap,
+): number {
+  return compareJobsForListing(
+    {
+      id: a.id,
+      plan: a.plan,
+      createdAt: a.postedAt,
+      updatedAt: a.updatedAt ?? null,
+    },
+    {
+      id: b.id,
+      plan: b.plan,
+      createdAt: b.postedAt,
+      updatedAt: b.updatedAt ?? null,
+    },
+    boostMap,
+  );
+}
+
+function compareScoredChatJobs(
+  a: { job: ChatJob; score: number },
+  b: { job: ChatJob; score: number },
+  boostMap: BoostStatsMap,
+): number {
+  const listingDiff = compareChatJobsByListingOrder(a.job, b.job, boostMap);
+  if (listingDiff !== 0) return listingDiff;
+  if (b.score !== a.score) return b.score - a.score;
+  return a.job.id.localeCompare(b.job.id);
+}
+
 export function matchPriorityRecommendations(
   jobs: ChatJob[],
   limit = 5,
+  boostMap: BoostStatsMap = {},
 ): ChatRecommendation[] {
   return jobs
     .filter((job) => job.chatRecommend.enabled)
-    .sort((a, b) => b.chatRecommend.priority - a.chatRecommend.priority)
+    .sort((a, b) => {
+      const listingDiff = compareChatJobsByListingOrder(a, b, boostMap);
+      if (listingDiff !== 0) return listingDiff;
+      return b.chatRecommend.priority - a.chatRecommend.priority;
+    })
     .slice(0, limit)
     .map((job) => ({
       id: job.id,
@@ -239,6 +278,7 @@ export function matchRecommendations(
   prefs: ChatPreferences,
   message = "",
   limit = 5,
+  boostMap: BoostStatsMap = {},
 ): ChatRecommendation[] {
   const messageKeywords = extractMessageKeywords(message);
   const hasPreferences = Object.keys(prefs).length > 0 || messageKeywords.length > 0;
@@ -249,7 +289,7 @@ export function matchRecommendations(
       return { job, score, details };
     })
     .filter((item) => item.score >= 0)
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => compareScoredChatJobs(a, b, boostMap));
 
   const results = hasPreferences
     ? scored
@@ -260,7 +300,7 @@ export function matchRecommendations(
           score: job.chatRecommend.priority,
           details: [] as string[],
         }))
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => compareScoredChatJobs(a, b, boostMap));
 
   return results.slice(0, limit).map(({ job, details }) =>
     jobToRecommendation(job, prefs, details),
@@ -319,15 +359,7 @@ export function matchRecommendationsForAreas(
   const enabledScored = areaJobs
     .map((job) => scoreEntry(job, true))
     .filter((item) => item.score >= 0)
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      const boostDiff =
-        getBoostBonus(boostMap, b.job.id) - getBoostBonus(boostMap, a.job.id);
-      if (boostDiff !== 0) return boostDiff;
-      return (
-        new Date(b.job.postedAt).getTime() - new Date(a.job.postedAt).getTime()
-      );
-    });
+    .sort((a, b) => compareScoredChatJobs(a, b, boostMap));
 
   const usedIds = new Set<string>();
   const results: Array<{ job: ChatJob; details: string[] }> = [];
@@ -343,13 +375,7 @@ export function matchRecommendationsForAreas(
       .filter((job) => !usedIds.has(job.id))
       .map((job) => scoreEntry(job, false))
       .filter((item) => item.score >= 0)
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return (
-          new Date(b.job.postedAt).getTime() -
-          new Date(a.job.postedAt).getTime()
-        );
-      });
+      .sort((a, b) => compareScoredChatJobs(a, b, boostMap));
 
     for (const item of fillers) {
       if (results.length >= limit) break;

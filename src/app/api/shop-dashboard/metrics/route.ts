@@ -103,7 +103,7 @@ export async function GET() {
     try {
       const { data: districtRows, error: districtError } = await supabase
         .from("jobs")
-        .select("id, created_at")
+        .select("id, created_at, updated_at, plan")
         .eq("published", true)
         .eq("district", jobRow.district);
 

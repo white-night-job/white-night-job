@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseJobPlan, type JobPlan } from "@/lib/job-plan";
 
 export const DAILY_BOOST_LIMIT = 5;
 const TOKYO_TIME_ZONE = "Asia/Tokyo";
@@ -15,11 +16,19 @@ type BoostRow = {
   boosted_at: string;
 };
 
-type SortableJobRow = {
+/** 公開一覧・地区内順位の並び替えに使う最小フィールド */
+export type SortableJobRow = {
   id: string;
   created_at: string;
-  /** 公開一覧と同じ並びにする場合のみ渡す（未指定時は通常優先度） */
-  listingPriorityRank?: number;
+  updated_at?: string | null;
+  plan?: string | null;
+};
+
+export type ListingSortKey = {
+  id: string;
+  plan?: JobPlan | string | null;
+  createdAt: string;
+  updatedAt?: string | null;
 };
 
 export function getTokyoDayBounds(now = new Date()): {
@@ -45,37 +54,84 @@ export function getTokyoDayBounds(now = new Date()): {
   };
 }
 
-export function compareJobsForListing(
-  aId: string,
-  bId: string,
-  boostMap: BoostStatsMap,
-  aCreatedAt: string,
-  bCreatedAt: string,
-  aListingPriority = 1,
-  bListingPriority = 1,
+export function isBoostedToday(stats: BoostStats | undefined | null): boolean {
+  return (stats?.todayCount ?? 0) > 0;
+}
+
+/**
+ * 表示グループ優先度（大きいほど上）。
+ * 1. プレミアム＋上位表示中
+ * 2. プレミアム通常
+ * 3. スタンダード＋上位表示中
+ * 4. ライト＋上位表示中
+ * 5. スタンダード通常
+ * 6. ライト通常
+ */
+export function listingDisplayGroupRank(
+  plan: JobPlan | string | null | undefined,
+  boosted: boolean,
 ): number {
-  if (aListingPriority !== bListingPriority) {
-    return bListingPriority - aListingPriority;
+  const normalized = parseJobPlan(plan);
+  if (normalized === "premium") return boosted ? 6 : 5;
+  if (normalized === "standard") return boosted ? 4 : 2;
+  return boosted ? 3 : 1;
+}
+
+function toSortKey(row: SortableJobRow): ListingSortKey {
+  return {
+    id: row.id,
+    plan: row.plan,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * 求人一覧・検索・地区内順位の共通比較。
+ * グループ内は既存の上位表示ロジック → 更新日時 → 作成日時 → ID。
+ */
+export function compareJobsForListing(
+  a: ListingSortKey,
+  b: ListingSortKey,
+  boostMap: BoostStatsMap,
+): number {
+  const aBoost = boostMap[a.id] ?? { todayCount: 0, latestBoostAt: null };
+  const bBoost = boostMap[b.id] ?? { todayCount: 0, latestBoostAt: null };
+  const aBoosted = isBoostedToday(aBoost);
+  const bBoosted = isBoostedToday(bBoost);
+
+  const groupDiff =
+    listingDisplayGroupRank(b.plan, bBoosted) -
+    listingDisplayGroupRank(a.plan, aBoosted);
+  if (groupDiff !== 0) return groupDiff;
+
+  // 同じグループ内：既存の上位表示ロジック（回数 → 最新ブースト時刻）
+  if (aBoost.todayCount !== bBoost.todayCount) {
+    return bBoost.todayCount - aBoost.todayCount;
   }
 
-  const a = boostMap[aId] ?? { todayCount: 0, latestBoostAt: null };
-  const b = boostMap[bId] ?? { todayCount: 0, latestBoostAt: null };
-
-  if (a.todayCount !== b.todayCount) {
-    return b.todayCount - a.todayCount;
-  }
-
-  if (a.latestBoostAt && b.latestBoostAt) {
-    const diff =
-      new Date(b.latestBoostAt).getTime() - new Date(a.latestBoostAt).getTime();
-    if (diff !== 0) return diff;
-  } else if (a.latestBoostAt) {
+  if (aBoost.latestBoostAt && bBoost.latestBoostAt) {
+    const boostTimeDiff =
+      new Date(bBoost.latestBoostAt).getTime() -
+      new Date(aBoost.latestBoostAt).getTime();
+    if (boostTimeDiff !== 0) return boostTimeDiff;
+  } else if (aBoost.latestBoostAt) {
     return -1;
-  } else if (b.latestBoostAt) {
+  } else if (bBoost.latestBoostAt) {
     return 1;
   }
 
-  return new Date(bCreatedAt).getTime() - new Date(aCreatedAt).getTime();
+  const aUpdated = a.updatedAt ?? a.createdAt;
+  const bUpdated = b.updatedAt ?? b.createdAt;
+  const updatedDiff =
+    new Date(bUpdated).getTime() - new Date(aUpdated).getTime();
+  if (updatedDiff !== 0) return updatedDiff;
+
+  const createdDiff =
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  if (createdDiff !== 0) return createdDiff;
+
+  return a.id.localeCompare(b.id);
 }
 
 export function sortJobRowsByBoost<T extends SortableJobRow>(
@@ -83,15 +139,7 @@ export function sortJobRowsByBoost<T extends SortableJobRow>(
   boostMap: BoostStatsMap,
 ): T[] {
   return [...rows].sort((a, b) =>
-    compareJobsForListing(
-      a.id,
-      b.id,
-      boostMap,
-      a.created_at,
-      b.created_at,
-      a.listingPriorityRank ?? 1,
-      b.listingPriorityRank ?? 1,
-    ),
+    compareJobsForListing(toSortKey(a), toSortKey(b), boostMap),
   );
 }
 

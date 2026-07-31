@@ -25,7 +25,7 @@ import {
   listingPriorityToRow,
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
-import { parsePlanFromBody } from "@/lib/job-plan";
+import { parseJobPlan, parsePlanFromBody } from "@/lib/job-plan";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import {
   emptyApplicationDetail,
@@ -45,10 +45,6 @@ import {
   compareJobsForListing,
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
-import {
-  listingPriorityRank,
-  parseListingPriority,
-} from "@/lib/listing-priority";
 import { isNewListingJob, isNewlyOpenedShopJob, parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -163,13 +159,46 @@ export async function GET(request: Request) {
         );
     }
 
-    if (listing === "new" || listing === "pickup" || listing === "new-open") {
+    if (listing === "new" || listing === "pickup") {
+      const boostMap = await fetchBoostStatsForJobs(
+        supabase,
+        rows.map((row) => row.id as string),
+      );
+      const jobs = [...rows]
+        .sort((a, b) =>
+          compareJobsForListing(
+            {
+              id: String(a.id),
+              plan: a.plan,
+              createdAt: String(a.created_at),
+              updatedAt: a.updated_at ? String(a.updated_at) : null,
+            },
+            {
+              id: String(b.id),
+              plan: b.plan,
+              createdAt: String(b.created_at),
+              updatedAt: b.updated_at ? String(b.updated_at) : null,
+            },
+            boostMap,
+          ),
+        )
+        .map((row) => rowToJob(row));
+      return NextResponse.json({ jobs });
+    }
+
+    if (listing === "new-open") {
       const jobs = rows.map((row) => rowToJob(row));
       return NextResponse.json({ jobs });
     }
 
     const createdAtMap = Object.fromEntries(
       rows.map((row) => [row.id, String(row.created_at)]),
+    );
+    const updatedAtMap = Object.fromEntries(
+      rows.map((row) => [
+        row.id,
+        row.updated_at ? String(row.updated_at) : null,
+      ]),
     );
     const isAdmin = await isAdminAuthenticated();
     const jobs = rows.map((row) =>
@@ -211,13 +240,19 @@ export async function GET(request: Request) {
     );
     const sortedJobs = [...filteredJobs].sort((a, b) =>
       compareJobsForListing(
-        a.id,
-        b.id,
+        {
+          id: a.id,
+          plan: parseJobPlan(a.plan),
+          createdAt: createdAtMap[a.id] ?? a.postedAt,
+          updatedAt: updatedAtMap[a.id] ?? a.updatedAt ?? null,
+        },
+        {
+          id: b.id,
+          plan: parseJobPlan(b.plan),
+          createdAt: createdAtMap[b.id] ?? b.postedAt,
+          updatedAt: updatedAtMap[b.id] ?? b.updatedAt ?? null,
+        },
         boostMap,
-        createdAtMap[a.id] ?? a.postedAt,
-        createdAtMap[b.id] ?? b.postedAt,
-        listingPriorityRank(parseListingPriority(a.listingPriority)),
-        listingPriorityRank(parseListingPriority(b.listingPriority)),
       ),
     );
 

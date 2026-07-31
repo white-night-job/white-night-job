@@ -36,6 +36,8 @@ export type ChatJob = {
   lineUrl: string;
   imageUrl?: string;
   postedAt: string;
+  updatedAt?: string;
+  plan?: string;
   benefits: string[];
   chatRecommend: {
     enabled: boolean;
