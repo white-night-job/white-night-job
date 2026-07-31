@@ -230,14 +230,22 @@ export async function PATCH(request: Request, context: RouteContext) {
       eventMessage = `却下（${nowIso}）: ${reason}`;
     }
 
+    // Prevent duplicate processing under concurrent requests.
     const { data, error } = await supabase
       .from("listing_applications")
       .update(patch)
       .eq("id", id)
+      .eq("status", current.status)
       .select("*")
-      .single();
+      .maybeSingle();
 
-    if (error || !data) throw error ?? new Error("update failed");
+    if (error) throw error;
+    if (!data) {
+      return NextResponse.json(
+        { message: "この申請は既に処理済みです。" },
+        { status: 409 },
+      );
+    }
     const updated = data as ListingApplicationRow;
 
     await appendEvent({

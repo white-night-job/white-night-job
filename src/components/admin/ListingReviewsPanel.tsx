@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { type JobPlan } from "@/lib/job-plan";
 import {
@@ -305,9 +305,13 @@ export function ListingReviewsPanel() {
   const [detail, setDetail] = useState<DetailApplication | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [actor, setActor] = useState("admin");
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [showRejectForm, setShowRejectForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<"approve" | "reject" | null>(
+    null,
+  );
+  const [modalRejectionReason, setModalRejectionReason] = useState("");
+  const [modalError, setModalError] = useState("");
+  const actionLockRef = useRef(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const hasActiveFilters =
@@ -370,8 +374,9 @@ export function ListingReviewsPanel() {
   async function openDetail(id: string) {
     setSelectedId(id);
     setMessage("");
-    setShowRejectForm(false);
-    setRejectionReason("");
+    setConfirmModal(null);
+    setModalRejectionReason("");
+    setModalError("");
     try {
       const response = await fetch(`/api/admin/listing-applications/${id}`, {
         credentials: "include",
@@ -384,7 +389,6 @@ export function ListingReviewsPanel() {
       if (!response.ok) throw new Error(data.message ?? "詳細の取得に失敗しました。");
       setDetail(data.application ?? null);
       setEvents(data.events ?? []);
-      setRejectionReason(String(data.application?.rejection_reason ?? ""));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "詳細の取得に失敗しました。");
     }
@@ -394,9 +398,11 @@ export function ListingReviewsPanel() {
     action: "approve" | "reject",
     extra: Record<string, unknown> = {},
   ) {
-    if (!selectedId) return;
+    if (!selectedId || actionLockRef.current) return;
+    actionLockRef.current = true;
     setBusy(true);
     setMessage("");
+    setModalError("");
     try {
       const response = await fetch(
         `/api/admin/listing-applications/${selectedId}`,
@@ -407,7 +413,6 @@ export function ListingReviewsPanel() {
           body: JSON.stringify({
             action,
             actor,
-            rejectionReason,
             ...extra,
           }),
         },
@@ -420,7 +425,8 @@ export function ListingReviewsPanel() {
       if (!response.ok) throw new Error(data.message ?? "更新に失敗しました。");
       setDetail(data.application ?? null);
       setEvents(data.events ?? []);
-      setShowRejectForm(false);
+      setConfirmModal(null);
+      setModalRejectionReason("");
       setMessage(
         action === "approve"
           ? "承認し、申請者へメールを送信しました。"
@@ -428,10 +434,57 @@ export function ListingReviewsPanel() {
       );
       await loadList();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "更新に失敗しました。");
+      const errMessage =
+        error instanceof Error ? error.message : "更新に失敗しました。";
+      setModalError(errMessage);
+      setMessage(errMessage);
     } finally {
       setBusy(false);
+      actionLockRef.current = false;
     }
+  }
+
+  function closeConfirmModal() {
+    if (busy) return;
+    setConfirmModal(null);
+    setModalError("");
+    setModalRejectionReason("");
+  }
+
+  function openApproveConfirm() {
+    if (busy) return;
+    setModalError("");
+    setConfirmModal("approve");
+  }
+
+  function openRejectConfirm() {
+    if (busy) return;
+    setModalError("");
+    setModalRejectionReason("");
+    setConfirmModal("reject");
+  }
+
+  function confirmApprove() {
+    void runAction("approve");
+  }
+
+  function confirmReject() {
+    if (!modalRejectionReason.trim()) {
+      setModalError("却下理由を入力してください。");
+      return;
+    }
+    void runAction("reject", {
+      rejectionReason: modalRejectionReason.trim(),
+    });
+  }
+
+  function closeDetail() {
+    if (busy) return;
+    setSelectedId(null);
+    setDetail(null);
+    setConfirmModal(null);
+    setModalError("");
+    setModalRejectionReason("");
   }
 
   return (
@@ -625,10 +678,7 @@ export function ListingReviewsPanel() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="listing-review-detail-title"
-          onClick={() => {
-            setSelectedId(null);
-            setDetail(null);
-          }}
+          onClick={closeDetail}
         >
           <div
             className="my-4 w-full max-w-4xl space-y-4 rounded-2xl border border-gold/25 bg-white p-5 shadow-xl"
@@ -654,13 +704,9 @@ export function ListingReviewsPanel() {
               </div>
               <button
                 type="button"
-                className="rounded-full border border-gold/30 px-3 py-1.5 text-sm text-muted"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDetail(null);
-                  setShowRejectForm(false);
-                  setRejectionReason("");
-                }}
+                disabled={busy}
+                className="rounded-full border border-gold/30 px-3 py-1.5 text-sm text-muted disabled:opacity-50"
+                onClick={closeDetail}
               >
                 閉じる
               </button>
@@ -858,32 +904,15 @@ export function ListingReviewsPanel() {
                       className={inputClass}
                       value={actor}
                       onChange={(e) => setActor(e.target.value)}
+                      disabled={busy}
                     />
                   </div>
-
-                  {showRejectForm ? (
-                    <div>
-                      <label className="mb-1 block text-xs text-muted">
-                        却下理由（必須）
-                      </label>
-                      <textarea
-                        className={inputClass}
-                        rows={3}
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="申請者へ送信する却下理由を入力してください"
-                      />
-                    </div>
-                  ) : null}
 
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => {
-                        setShowRejectForm(false);
-                        void runAction("approve");
-                      }}
+                      onClick={openApproveConfirm}
                       className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                     >
                       承認
@@ -891,18 +920,7 @@ export function ListingReviewsPanel() {
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => {
-                        if (!showRejectForm) {
-                          setShowRejectForm(true);
-                          setMessage("却下理由を入力して、もう一度「却下」を押してください。");
-                          return;
-                        }
-                        if (!rejectionReason.trim()) {
-                          setMessage("却下理由を入力してください。");
-                          return;
-                        }
-                        void runAction("reject");
-                      }}
+                      onClick={openRejectConfirm}
                       className="rounded-full border border-red-300 px-5 py-2.5 text-sm text-red-700 disabled:opacity-60"
                     >
                       却下
@@ -953,6 +971,133 @@ export function ListingReviewsPanel() {
           </div>
         </div>
       )}
+
+      {detail && confirmModal ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="listing-review-confirm-title"
+          onClick={closeConfirmModal}
+        >
+          <div
+            className="my-auto w-full max-w-md max-h-[min(90vh,40rem)] overflow-y-auto rounded-2xl border border-gold/30 bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="listing-review-confirm-title"
+              className="font-serif text-lg text-charcoal"
+            >
+              {confirmModal === "approve" ? "承認の確認" : "却下の確認"}
+            </h3>
+
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex gap-2">
+                <dt className="w-24 shrink-0 text-muted">店舗名</dt>
+                <dd className="break-all font-medium text-charcoal">
+                  {displayText(detail.shop_name)}
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="w-24 shrink-0 text-muted">担当者名</dt>
+                <dd className="break-all font-medium text-charcoal">
+                  {displayText(detail.contact_name)}
+                </dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="w-24 shrink-0 text-muted">申請番号</dt>
+                <dd className="break-all font-medium text-charcoal">
+                  {displayText(detail.application_number)}
+                </dd>
+              </div>
+              {confirmModal === "approve" ? (
+                <div className="flex gap-2">
+                  <dt className="w-24 shrink-0 text-muted">現在のステータス</dt>
+                  <dd className="font-medium text-charcoal">
+                    {statusBadgeLabel(detail.status)}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+
+            {confirmModal === "approve" ? (
+              <div className="mt-4 space-y-2 text-sm">
+                <p className="font-medium text-charcoal">
+                  この申請を承認しますか？
+                </p>
+                <p className="text-muted">
+                  承認結果は申請者のメールアドレスへ自動送信されます
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3 text-sm">
+                <p className="font-medium text-charcoal">
+                  この申請を却下しますか？
+                </p>
+                <div>
+                  <label
+                    htmlFor="listing-reject-reason"
+                    className="mb-1 block text-xs text-muted"
+                  >
+                    却下理由（必須）
+                  </label>
+                  <textarea
+                    id="listing-reject-reason"
+                    className={inputClass}
+                    rows={4}
+                    value={modalRejectionReason}
+                    disabled={busy}
+                    onChange={(e) => {
+                      setModalRejectionReason(e.target.value);
+                      if (modalError) setModalError("");
+                    }}
+                    placeholder="申請者へ送信する却下理由を入力してください"
+                  />
+                </div>
+                <p className="text-muted">
+                  却下理由は申請者へのメールに記載されます
+                </p>
+              </div>
+            )}
+
+            {modalError ? (
+              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {modalError}
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={closeConfirmModal}
+                className="rounded-full border border-gold/30 px-5 py-2.5 text-sm text-charcoal disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              {confirmModal === "approve" ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={confirmApprove}
+                  className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {busy ? "処理中..." : "承認を確定する"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy || !modalRejectionReason.trim()}
+                  onClick={confirmReject}
+                  className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {busy ? "処理中..." : "却下を確定する"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
