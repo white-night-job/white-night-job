@@ -8,7 +8,7 @@ import { parseCastVoices, parseStoreImages } from "@/lib/job-db";
 import type { JobPlan } from "@/lib/job-plan";
 
 /** 同一セッションの連続表示をまとめる間隔。既存グラフの集計には影響させない。 */
-const IMPRESSION_DEDUPE_MS = 2 * 60 * 1000;
+const IMPRESSION_DEDUPE_MS = 60 * 1000;
 
 const MAX_ADVICES = 3;
 
@@ -189,7 +189,7 @@ export function getReportMonthRanges(referenceDate = new Date()) {
 }
 
 /**
- * 表示回数のみ、同一セッション・同一求人の2分以内の連続表示を1回に丸める。
+ * 表示回数のみ、同一セッション・同一求人の1分以内の連続表示を1回に丸める。
  * クリック系はユーザー行動として1件ずつ数える。
  */
 function countEventsWithImpressionDedupe(

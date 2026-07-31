@@ -1,4 +1,4 @@
-const VIEW_DEDUP_MS = 2 * 60 * 1000; // 2 minutes
+const VIEW_DEDUP_MS = 60 * 1000; // 1 minute
 
 function shouldSkipDuplicateView(jobId: string): boolean {
   if (typeof window === "undefined") return false;
