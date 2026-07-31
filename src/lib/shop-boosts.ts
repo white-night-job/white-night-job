@@ -18,6 +18,8 @@ type BoostRow = {
 type SortableJobRow = {
   id: string;
   created_at: string;
+  /** 公開一覧と同じ並びにする場合のみ渡す（未指定時は通常優先度） */
+  listingPriorityRank?: number;
 };
 
 export function getTokyoDayBounds(now = new Date()): {
@@ -81,7 +83,15 @@ export function sortJobRowsByBoost<T extends SortableJobRow>(
   boostMap: BoostStatsMap,
 ): T[] {
   return [...rows].sort((a, b) =>
-    compareJobsForListing(a.id, b.id, boostMap, a.created_at, b.created_at),
+    compareJobsForListing(
+      a.id,
+      b.id,
+      boostMap,
+      a.created_at,
+      b.created_at,
+      a.listingPriorityRank ?? 1,
+      b.listingPriorityRank ?? 1,
+    ),
   );
 }
 

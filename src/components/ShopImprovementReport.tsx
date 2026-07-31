@@ -5,6 +5,8 @@ import { MonthlyApplicationChart } from "@/components/MonthlyApplicationChart";
 import { ShopMonthlyImpressionBarChart } from "@/components/ShopMonthlyImpressionBarChart";
 import type { MonthlyApplicationBucket } from "@/lib/job-applications";
 import type {
+  AdvicePriorityLevel,
+  ImprovementAdvice,
   ShopImprovementReport as ReportPayload,
   ShopLightAnalyticsSummary,
 } from "@/lib/shop-improvement-report";
@@ -135,6 +137,74 @@ function AdviceBlock({
         </ul>
       )}
     </div>
+  );
+}
+
+const PRIORITY_LABEL: Record<AdvicePriorityLevel, string> = {
+  high: "高",
+  medium: "中",
+  low: "低",
+};
+
+const PRIORITY_TONE: Record<AdvicePriorityLevel, string> = {
+  high: "bg-red-50 text-red-800 border-red-200",
+  medium: "bg-amber-50 text-amber-900 border-amber-200",
+  low: "bg-slate-50 text-slate-700 border-slate-200",
+};
+
+function groupAdvicesByPriority(advices: ImprovementAdvice[]) {
+  const groups: Record<AdvicePriorityLevel, ImprovementAdvice[]> = {
+    high: [],
+    medium: [],
+    low: [],
+  };
+  for (const advice of advices) {
+    groups[advice.priorityLevel].push(advice);
+  }
+  return groups;
+}
+
+function ConcreteAdviceList({ advices }: { advices: ImprovementAdvice[] }) {
+  if (advices.length === 0) {
+    return (
+      <p className="mt-2 text-sm text-muted">
+        大きな改善提案はありません。現状維持で問題ありません。
+      </p>
+    );
+  }
+
+  return (
+    <ol className="mt-2 space-y-3">
+      {advices.map((advice, index) => (
+        <li
+          key={advice.id}
+          className="rounded-xl border border-gold/20 bg-white p-3.5"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/20 text-xs font-semibold text-gold-dark">
+              {index + 1}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${PRIORITY_TONE[advice.priorityLevel]}`}
+            >
+              優先度：{PRIORITY_LABEL[advice.priorityLevel]}
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-charcoal">
+            {advice.action}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted">
+            {advice.issue}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-charcoal/80">
+            期待効果：{advice.expectedEffect}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted">
+            理由：{advice.reason}
+          </p>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -353,25 +423,115 @@ export function ShopImprovementReport({
               </ul>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-              <AdviceBlock
-                title="良い点"
-                tone="good"
-                items={report.goodPoints}
-                emptyText="来月に向けて数値を蓄積中です。"
-              />
-              <AdviceBlock
-                title="改善できる点"
-                tone="issue"
-                items={report.issues}
-                emptyText="大きな課題は見つかりませんでした。"
-              />
-              <AdviceBlock
-                title="今月おすすめの対応"
-                tone="action"
-                items={report.actions}
-                emptyText="現状の内容を維持しましょう。"
-              />
+            <div>
+              <h3 className="text-sm font-semibold text-charcoal">現在の状況</h3>
+              <ul className="mt-2 space-y-1.5 rounded-xl border border-gold/20 bg-ivory/40 p-4">
+                {(report.situationSummary ?? []).map((line) => (
+                  <li
+                    key={line}
+                    className="flex gap-2 text-sm leading-relaxed text-charcoal"
+                  >
+                    <span aria-hidden="true" className="text-gold-dark">
+                      ・
+                    </span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+              {report.peerComparison && (
+                <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                  同業比較は同一エリア・同一業種の公開求人
+                  {report.peerComparison.sampleSize}件
+                  {report.peerComparison.isReference
+                    ? "に基づく参考値です。件数が少ないため断定には使いません。"
+                    : "の平均値です。"}
+                </p>
+              )}
+            </div>
+
+            <AdviceBlock
+              title="良い点"
+              tone="good"
+              items={report.goodPoints}
+              emptyText="来月に向けて数値を蓄積中です。"
+            />
+
+            <div className="rounded-xl border border-gold/20 bg-ivory/40 p-4">
+              <h3 className="text-sm font-semibold text-charcoal">改善優先度</h3>
+              {(() => {
+                const groups = groupAdvicesByPriority(report.advices ?? []);
+                const levels: AdvicePriorityLevel[] = ["high", "medium", "low"];
+                const hasAny = levels.some((level) => groups[level].length > 0);
+                if (!hasAny) {
+                  return (
+                    <p className="mt-2 text-sm text-muted">
+                      優先して直す項目はありません（現状維持）。
+                    </p>
+                  );
+                }
+                return (
+                  <div className="mt-3 space-y-3">
+                    {levels.map((level) =>
+                      groups[level].length === 0 ? null : (
+                        <div key={level}>
+                          <p className="text-xs font-medium text-muted">
+                            {PRIORITY_LABEL[level]}
+                          </p>
+                          <ul className="mt-1 space-y-1">
+                            {groups[level].map((advice) => (
+                              <li
+                                key={advice.id}
+                                className="text-sm leading-relaxed text-charcoal"
+                              >
+                                ・{advice.issue}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-charcoal">
+                具体的な改善内容
+              </h3>
+              <p className="mt-1 text-xs text-muted">
+                影響が大きい順に最大3件まで表示します。
+              </p>
+              <ConcreteAdviceList advices={report.advices ?? []} />
+            </div>
+
+            <div className="rounded-xl border border-[#047a3b]/20 bg-[#047a3b]/5 p-4">
+              <h3 className="text-sm font-semibold text-charcoal">
+                改善後に期待できること
+              </h3>
+              {(report.advices ?? []).length === 0 ? (
+                <p className="mt-2 text-sm text-muted">
+                  現状維持により、既存の閲覧率・応募率を保てます。
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {[
+                    ...new Set(
+                      (report.advices ?? []).map((a) => a.expectedEffect),
+                    ),
+                  ].map((effect) => (
+                    <li
+                      key={effect}
+                      className="flex gap-2 text-sm leading-relaxed text-charcoal"
+                    >
+                      <span aria-hidden="true" className="text-gold-dark">
+                        ・
+                      </span>
+                      <span>{effect}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {premium && (
@@ -380,47 +540,96 @@ export function ShopImprovementReport({
                   プレミアム限定の詳細分析
                 </h3>
 
-                {premium.topPriorityAction && (
+                <div>
+                  <p className="text-xs font-medium text-muted">現在の強み</p>
+                  {premium.strengths?.length ? (
+                    <ul className="mt-1 space-y-1">
+                      {premium.strengths.map((item) => (
+                        <li
+                          key={item}
+                          className="text-sm leading-relaxed text-charcoal"
+                        >
+                          ・{item}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">計測を蓄積中です。</p>
+                  )}
+                </div>
+
+                {premium.mainChallenge && (
                   <div className="rounded-xl border border-charcoal/20 bg-charcoal px-4 py-3">
                     <p className="text-[11px] font-medium text-gold">
-                      最優先で対応したい項目
+                      最大の課題
                     </p>
                     <p className="mt-1 text-sm font-semibold leading-relaxed text-white">
-                      最優先：{premium.topPriorityAction}
+                      {premium.mainChallenge}
                     </p>
                   </div>
                 )}
 
                 <div>
                   <p className="text-xs font-medium text-muted">
-                    優先度付きの改善案
+                    優先して直す項目
                   </p>
-                  {premium.prioritizedAdvices.length === 0 ? (
-                    <p className="mt-1 text-sm text-muted">
-                      改善が必要な項目は見つかりませんでした。
-                    </p>
-                  ) : (
+                  {premium.priorityFixes?.length ? (
                     <ol className="mt-2 space-y-2">
-                      {premium.prioritizedAdvices.map((advice, index) => (
+                      {premium.priorityFixes.map((fix, index) => (
                         <li
-                          key={advice.id}
-                          className="flex gap-2.5 rounded-lg bg-white p-3 text-sm"
+                          key={`${index}-${fix.slice(0, 24)}`}
+                          className="flex gap-2.5 rounded-lg bg-white p-3 text-sm leading-relaxed text-charcoal"
                         >
                           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold/20 text-xs font-semibold text-gold-dark">
                             {index + 1}
                           </span>
-                          <span className="space-y-1">
-                            <span className="block leading-relaxed text-charcoal">
-                              {advice.action}
-                            </span>
-                            <span className="block text-xs leading-relaxed text-muted">
-                              {advice.issue}
-                            </span>
-                          </span>
+                          <span>{fix}</span>
                         </li>
                       ))}
                     </ol>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">
+                      優先して直す項目はありません。
+                    </p>
                   )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted">
+                    競合平均との差
+                  </p>
+                  {premium.peerGaps?.length ? (
+                    <ul className="mt-1 space-y-1">
+                      {premium.peerGaps.map((gap) => (
+                        <li
+                          key={gap}
+                          className="text-sm leading-relaxed text-charcoal"
+                        >
+                          ・{gap}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">
+                      同一エリア・同一業種の比較対象が足りないため、今回は省略しています。
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-muted">
+                    次に確認すべき数値
+                  </p>
+                  <ul className="mt-1 flex flex-wrap gap-1.5">
+                    {(premium.nextMetricsToWatch ?? []).map((metric) => (
+                      <li
+                        key={metric}
+                        className="rounded-full border border-gold/30 bg-white px-2.5 py-1 text-xs text-charcoal"
+                      >
+                        {metric}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 <div>

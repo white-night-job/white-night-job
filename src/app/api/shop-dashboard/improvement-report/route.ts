@@ -87,7 +87,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ light, cache: "miss" });
     }
 
-    const cacheKey = `shop-improvement-report:${jobId}:${monthKey}:${plan}`;
+    // v3: 具体提案・同業比較・表示順位ガード付きのレポート構造
+    const cacheKey = `shop-improvement-report:v3:${jobId}:${monthKey}:${plan}`;
     const cached = getShopScopedCache<ShopImprovementReport>(cacheKey, jobId);
     if (cached) {
       return NextResponse.json({ report: cached, cache: "hit" });
