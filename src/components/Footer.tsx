@@ -1,5 +1,14 @@
 import Link from "next/link";
 import {
+  BUSINESS_ADDRESS_DISPLAY,
+  BUSINESS_EMAIL,
+  BUSINESS_HOURS_DISPLAY,
+  BUSINESS_LEGAL_NAME,
+  BUSINESS_MAPS_SEARCH_URL,
+  BUSINESS_PHONE_DISPLAY,
+  BUSINESS_PHONE_TEL,
+} from "@/lib/business";
+import {
   SITE_BRAND_JA,
   SITE_FORMAL_NAME,
   SITE_TAGLINE,
@@ -74,7 +83,51 @@ export function Footer() {
           ))}
         </nav>
 
-        <p className="mt-8 border-t border-gold/15 pt-5 text-center text-xs text-white/50">
+        <div className="mt-8 border-t border-gold/15 pt-5 text-sm leading-7 text-white/70">
+          <p className="font-medium text-gold-light">{BUSINESS_LEGAL_NAME}</p>
+          <p className="mt-1">{BUSINESS_ADDRESS_DISPLAY}</p>
+          <p className="mt-1">
+            電話：
+            <a
+              href={`tel:${BUSINESS_PHONE_TEL}`}
+              className="text-white/85 underline-offset-2 hover:text-gold-light hover:underline"
+            >
+              {BUSINESS_PHONE_DISPLAY}
+            </a>
+            <span className="mx-2 text-white/35" aria-hidden>
+              /
+            </span>
+            メール：
+            <a
+              href={`mailto:${BUSINESS_EMAIL}`}
+              className="text-white/85 underline-offset-2 hover:text-gold-light hover:underline"
+            >
+              {BUSINESS_EMAIL}
+            </a>
+          </p>
+          <p className="mt-1">営業時間：{BUSINESS_HOURS_DISPLAY}</p>
+          <p className="mt-2">
+            <a
+              href={BUSINESS_MAPS_SEARCH_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold-light underline-offset-2 hover:underline"
+            >
+              Googleマップで所在地を見る
+            </a>
+            <span className="mx-2 text-white/35" aria-hidden>
+              /
+            </span>
+            <Link
+              href="/company"
+              className="text-gold-light underline-offset-2 hover:underline"
+            >
+              会社概要
+            </Link>
+          </p>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-white/50">
           © {SITE_FORMAL_NAME}
         </p>
       </div>

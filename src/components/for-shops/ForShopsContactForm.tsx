@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import {
+  BUSINESS_EMAIL,
+  BUSINESS_PHONE_DISPLAY,
+  BUSINESS_PHONE_TEL,
+} from "@/lib/business";
 
-const CONTACT_EMAIL = "whitenightjob.info@gmail.com";
-const CONTACT_PHONE = "090-8371-7443";
 const CONTACT_LINE_URL = "https://lin.ee/V68PwOj";
 
 export function ForShopsContactForm() {
@@ -31,7 +34,7 @@ export function ForShopsContactForm() {
       message,
     ].join("\n");
 
-    const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
+    const mailto = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(
       `【掲載相談】${shopName || "店舗名未入力"}`,
     )}&body=${encodeURIComponent(body)}`;
 
@@ -131,13 +134,13 @@ export function ForShopsContactForm() {
 
       <div className="for-shops-contact-channels">
         <p className="for-shops-contact-channels-title">その他のご連絡方法</p>
-        <a href={`tel:${CONTACT_PHONE.replace(/-/g, "")}`} className="for-shops-channel-card">
+        <a href={`tel:${BUSINESS_PHONE_TEL}`} className="for-shops-channel-card">
           <span className="for-shops-channel-label">電話</span>
-          <span className="for-shops-channel-value">{CONTACT_PHONE}</span>
+          <span className="for-shops-channel-value">{BUSINESS_PHONE_DISPLAY}</span>
         </a>
-        <a href={`mailto:${CONTACT_EMAIL}`} className="for-shops-channel-card">
+        <a href={`mailto:${BUSINESS_EMAIL}`} className="for-shops-channel-card">
           <span className="for-shops-channel-label">メール</span>
-          <span className="for-shops-channel-value">{CONTACT_EMAIL}</span>
+          <span className="for-shops-channel-value">{BUSINESS_EMAIL}</span>
         </a>
         <a
           href={CONTACT_LINE_URL}

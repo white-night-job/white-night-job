@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import type { Job } from "@/types/job";
 import {
+  BUSINESS_EMAIL,
+  BUSINESS_LEGAL_NAME,
+  BUSINESS_PHONE_DISPLAY,
+  buildBusinessPostalAddressJsonLd,
+  buildOpeningHoursSpecificationJsonLd,
+} from "@/lib/business";
+import {
   SITE_BRAND_JA,
   SITE_DESCRIPTION,
   SITE_FORMAL_NAME,
@@ -76,11 +83,19 @@ export function buildOrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
-    alternateName: [SITE_BRAND_JA, SITE_FORMAL_NAME],
+    legalName: BUSINESS_LEGAL_NAME,
+    alternateName: [SITE_BRAND_JA, SITE_FORMAL_NAME, BUSINESS_LEGAL_NAME],
     url: `${SITE_URL}/`,
     logo: SITE_LOGO_URL,
+    image: SITE_LOGO_URL,
+    telephone: BUSINESS_PHONE_DISPLAY,
+    email: BUSINESS_EMAIL,
+    address: buildBusinessPostalAddressJsonLd(),
+    openingHoursSpecification: buildOpeningHoursSpecificationJsonLd(),
   };
 }
+
+export { buildLocalBusinessJsonLd } from "@/lib/business";
 
 /** WebSite schema（name / alternateName / url は Search Console 向け）. */
 export function buildWebSiteJsonLd() {

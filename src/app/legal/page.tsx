@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/components/LegalDocument";
+import {
+  BUSINESS_ADDRESS_DISPLAY,
+  BUSINESS_EMAIL,
+  BUSINESS_HOURS_DISPLAY,
+  BUSINESS_LEGAL_NAME,
+  BUSINESS_PHONE_DISPLAY,
+  BUSINESS_REPRESENTATIVE,
+} from "@/lib/business";
 import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
@@ -9,7 +17,7 @@ export const metadata: Metadata = buildPageMetadata(
   "/legal",
 );
 
-const UPDATED_AT = "2026年6月3日";
+const UPDATED_AT = "2026年8月1日";
 
 export default function LegalPage() {
   return (
@@ -28,29 +36,32 @@ export default function LegalPage() {
         {
           id: "seller",
           title: "販売事業者",
-          content: <p>合同会社COMSIA</p>,
+          content: <p>{BUSINESS_LEGAL_NAME}</p>,
         },
         {
           id: "operator",
           title: "運営責任者",
-          content: <p>西東時雄</p>,
+          content: <p>{BUSINESS_REPRESENTATIVE}</p>,
         },
         {
           id: "address",
           title: "所在地",
-          content: (
-            <p>〒063-0811 北海道札幌市西区琴似1条5丁目4-18細川ビル3階</p>
-          ),
+          content: <p>{BUSINESS_ADDRESS_DISPLAY}</p>,
         },
         {
           id: "phone",
           title: "電話番号",
-          content: <p>011-600-1073</p>,
+          content: <p>{BUSINESS_PHONE_DISPLAY}</p>,
         },
         {
           id: "email",
           title: "メールアドレス",
-          content: <p>comsia.info@gmail.com</p>,
+          content: <p>{BUSINESS_EMAIL}</p>,
+        },
+        {
+          id: "hours",
+          title: "営業時間",
+          content: <p>{BUSINESS_HOURS_DISPLAY}</p>,
         },
         {
           id: "price",
