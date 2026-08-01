@@ -1,8 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { SEO_JOBS_PAGE_SIZE } from "@/lib/susukino-seo";
 import type { Job, JobType } from "@/types/job";
+
+export const SEO_JOBS_PAGE_SIZE = 12;
 
 /** Columns needed to render public JobCard on SEO landings. */
 const SEO_JOB_CARD_COLUMNS = [
@@ -123,6 +124,60 @@ export async function getPublishedSeoJobsPage(params: {
       }),
     ["seo-area-jobs", params.district, jobTypeKey, String(page), String(pageSize)],
     { revalidate: 120 },
+  )();
+}
+
+export async function countPublishedJobs(params: {
+  district: string;
+  jobType?: JobType;
+}): Promise<number> {
+  const result = await getPublishedSeoJobsPage({
+    district: params.district,
+    jobType: params.jobType,
+    page: 1,
+    pageSize: 1,
+  });
+  return result.total;
+}
+
+async function listPublishedJobTypesForDistrictUncached(
+  district: string,
+): Promise<JobType[]> {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    return [];
+  }
+
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("job_type")
+    .eq("published", true)
+    .eq("district", district);
+
+  if (error) {
+    console.error("[seo-area-jobs] job_type list failed", error.message);
+    return [];
+  }
+
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    if (typeof row.job_type === "string" && row.job_type) {
+      set.add(row.job_type);
+    }
+  }
+  return [...set] as JobType[];
+}
+
+export async function listPublishedJobTypesForDistrict(
+  district: string,
+): Promise<JobType[]> {
+  return unstable_cache(
+    () => listPublishedJobTypesForDistrictUncached(district),
+    ["seo-district-job-types", district],
+    { revalidate: 300 },
   )();
 }
 

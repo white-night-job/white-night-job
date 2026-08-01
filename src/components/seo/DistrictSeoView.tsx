@@ -9,26 +9,18 @@ import {
 } from "@/lib/seo";
 import type { SeoJobsPageResult } from "@/lib/seo-area-jobs";
 import {
-  RELATED_AREA_LINKS,
-  SUSUKINO_BENEFIT_LINKS,
-  SUSUKINO_JOB_TYPE_PAGES,
-  type SusukinoJobTypePage,
-} from "@/lib/susukino-seo";
+  buildDistrictBenefitLinks,
+  DISTRICT_SEO_RELATED_LINKS,
+  type DistrictAreaPage,
+  type DistrictJobTypePage,
+} from "@/lib/district-seo";
 
-type FaqItem = { question: string; answer: string };
-
-type SusukinoSeoViewProps = {
-  pathname: string;
-  title: string;
-  description: string;
-  h1: string;
-  intro: readonly string[];
-  beginnerGuide: readonly string[];
-  faqs: readonly FaqItem[];
+type DistrictSeoViewProps = {
+  area: DistrictAreaPage;
   jobsResult: SeoJobsPageResult;
-  breadcrumbLabel: string;
-  jobTypePage?: SusukinoJobTypePage;
-  showJobTypeLinks?: boolean;
+  jobTypePage?: DistrictJobTypePage;
+  /** Job-type chips to show (only pages that currently have published jobs). */
+  availableJobTypePages: DistrictJobTypePage[];
 };
 
 function pageHref(basePath: string, page: number) {
@@ -36,23 +28,28 @@ function pageHref(basePath: string, page: number) {
   return `${basePath}?page=${page}`;
 }
 
-export function SusukinoSeoView({
-  pathname,
-  title,
-  description,
-  h1,
-  intro,
-  beginnerGuide,
-  faqs,
+export function DistrictSeoView({
+  area,
   jobsResult,
-  breadcrumbLabel,
   jobTypePage,
-  showJobTypeLinks = true,
-}: SusukinoSeoViewProps) {
+  availableJobTypePages,
+}: DistrictSeoViewProps) {
+  const pathname = jobTypePage?.path ?? area.path;
+  const title = jobTypePage?.title ?? area.title;
+  const description = jobTypePage?.description ?? area.description;
+  const h1 = jobTypePage?.h1 ?? area.h1;
+  const intro = jobTypePage?.intro ?? area.intro;
+  const beginnerGuide = jobTypePage?.guide ?? area.beginnerGuide;
+  const faqs = jobTypePage?.faqs ?? area.faqs;
   const { jobs, page, total, totalPages } = jobsResult;
+  const benefitLinks = buildDistrictBenefitLinks(area.district);
   const listHeading = jobTypePage
     ? `公開中の${jobTypePage.displayName}求人`
-    : "公開中のすすきの求人";
+    : `公開中の${area.displayName}求人`;
+
+  const relatedLinks = DISTRICT_SEO_RELATED_LINKS.filter(
+    (link) => link.href !== area.path,
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
@@ -62,12 +59,12 @@ export function SusukinoSeoView({
           jobTypePage
             ? [
                 { label: "トップ", href: "/" },
-                { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
-                { label: breadcrumbLabel },
+                { label: area.h1, href: area.path },
+                { label: jobTypePage.h1 },
               ]
             : [
                 { label: "トップ", href: "/" },
-                { label: breadcrumbLabel },
+                { label: area.h1 },
               ],
         )}
       />
@@ -77,10 +74,10 @@ export function SusukinoSeoView({
         items={[
           { label: "トップ", href: "/" },
           {
-            label: "すすきのの夜職求人",
-            href: jobTypePage ? "/sapporo/susukino" : undefined,
+            label: area.h1,
+            href: jobTypePage ? area.path : undefined,
           },
-          ...(jobTypePage ? [{ label: breadcrumbLabel }] : []),
+          ...(jobTypePage ? [{ label: jobTypePage.h1 }] : []),
         ]}
       />
 
@@ -90,24 +87,24 @@ export function SusukinoSeoView({
         </h1>
         <div className="mt-4 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
           {intro.map((paragraph) => (
-            <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            <p key={paragraph.slice(0, 28)}>{paragraph}</p>
           ))}
         </div>
       </header>
 
-      {showJobTypeLinks && (
-        <section className="mt-8" aria-labelledby="susukino-job-types">
+      {availableJobTypePages.length > 0 && (
+        <section className="mt-8" aria-labelledby="district-job-types">
           <h2
-            id="susukino-job-types"
+            id="district-job-types"
             className="font-serif text-xl font-semibold text-charcoal"
           >
-            職種別のすすきの求人
+            職種別の{area.displayName}求人
           </h2>
           <p className="mt-2 text-sm text-muted">
-            気になる職種から、すすきのエリアの公開中求人を探せます。
+            現在公開中の求人がある職種だけを表示しています。
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {SUSUKINO_JOB_TYPE_PAGES.map((item) => (
+            {availableJobTypePages.map((item) => (
               <li key={item.slug}>
                 <Link
                   href={item.path}
@@ -121,18 +118,18 @@ export function SusukinoSeoView({
         </section>
       )}
 
-      <section className="mt-8" aria-labelledby="susukino-benefits">
+      <section className="mt-8" aria-labelledby="district-benefits">
         <h2
-          id="susukino-benefits"
+          id="district-benefits"
           className="font-serif text-xl font-semibold text-charcoal"
         >
           待遇から探す
         </h2>
         <p className="mt-2 text-sm text-muted">
-          希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。
+          希望の働き方に近い条件で、{area.displayName}の求人一覧へ絞り込めます。
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
-          {SUSUKINO_BENEFIT_LINKS.map((item) => (
+          {benefitLinks.map((item) => (
             <li key={item.label}>
               <Link
                 href={item.href}
@@ -145,11 +142,11 @@ export function SusukinoSeoView({
         </ul>
       </section>
 
-      <section className="mt-10" aria-labelledby="susukino-jobs">
+      <section className="mt-10" aria-labelledby="district-jobs">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2
-              id="susukino-jobs"
+              id="district-jobs"
               className="font-serif text-xl font-semibold text-charcoal"
             >
               {listHeading}
@@ -159,7 +156,7 @@ export function SusukinoSeoView({
             </p>
           </div>
           <Link
-            href={`/jobs?district=${encodeURIComponent("すすきの")}${
+            href={`/jobs?district=${encodeURIComponent(area.district)}${
               jobTypePage
                 ? `&jobType=${encodeURIComponent(jobTypePage.jobType)}`
                 : ""
@@ -174,7 +171,7 @@ export function SusukinoSeoView({
           <div className="rounded-2xl border border-gold/20 bg-white py-12 text-center">
             <p className="text-muted">現在、公開中の該当求人はありません。</p>
             <p className="mt-1 text-sm text-muted">
-              条件を変えるか、札幌の求人一覧もご覧ください。
+              他のエリアや求人一覧もあわせてご覧ください。
             </p>
             <Link
               href="/jobs"
@@ -227,43 +224,52 @@ export function SusukinoSeoView({
         )}
       </section>
 
-      <section className="mt-10" aria-labelledby="susukino-beginner">
+      <section className="mt-10" aria-labelledby="district-beginner">
         <h2
-          id="susukino-beginner"
+          id="district-beginner"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          初めて夜職を探す方へ
+          未経験から探す方へ
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
           {beginnerGuide.map((paragraph) => (
-            <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            <p key={paragraph.slice(0, 28)}>{paragraph}</p>
           ))}
         </div>
-        <p className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+        <p className="mt-4">
           <Link
             href="/first-time-guide"
             className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
           >
             初めての方への案内を読む
           </Link>
-          <Link
-            href="/column/susukino-night-job-beginner"
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            すすきので未経験から夜職を始める方法
-          </Link>
-          <Link
-            href="/column/trial-work-checklist"
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            体験入店で確認するポイント
-          </Link>
         </p>
       </section>
 
-      <section className="mt-10" aria-labelledby="susukino-faq">
+      <section className="mt-10" aria-labelledby="district-columns">
         <h2
-          id="susukino-faq"
+          id="district-columns"
+          className="font-serif text-xl font-semibold text-charcoal"
+        >
+          関連コラム
+        </h2>
+        <ul className="mt-4 space-y-2">
+          {area.columnLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="mt-10" aria-labelledby="district-faq">
+        <h2
+          id="district-faq"
           className="font-serif text-xl font-semibold text-charcoal"
         >
           よくある質問
@@ -283,47 +289,34 @@ export function SusukinoSeoView({
         </div>
       </section>
 
-      <section className="mt-10 mb-4" aria-labelledby="susukino-related">
+      <section className="mt-10 mb-4" aria-labelledby="district-related">
         <h2
-          id="susukino-related"
+          id="district-related"
           className="font-serif text-xl font-semibold text-charcoal"
         >
           関連エリアの求人
         </h2>
         <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-          {!jobTypePage &&
-            RELATED_AREA_LINKS.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
           {jobTypePage && (
-            <>
-              <li>
-                <Link
-                  href="/sapporo/susukino"
-                  className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-                >
-                  すすきのの夜職求人（全職種）
-                </Link>
-              </li>
-              {RELATED_AREA_LINKS.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </>
+            <li>
+              <Link
+                href={area.path}
+                className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+              >
+                {area.displayName}の夜職求人（全職種）
+              </Link>
+            </li>
           )}
+          {relatedLinks.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
         </ul>
       </section>
     </div>

@@ -147,6 +147,7 @@ export function buildArticleJsonLd(params: {
   title: string;
   description: string;
   pathname: string;
+  datePublished?: string;
   dateModified: string;
   category: string;
 }) {
@@ -156,6 +157,7 @@ export function buildArticleJsonLd(params: {
     headline: params.title,
     description: params.description,
     url: `${SITE_URL}${params.pathname}`,
+    ...(params.datePublished ? { datePublished: params.datePublished } : {}),
     dateModified: params.dateModified,
     author: {
       "@type": "Organization",

@@ -52,6 +52,7 @@ export default async function ColumnArticlePage({ params }: ColumnArticlePagePro
           title: article.title,
           description: article.metaDescription,
           pathname,
+          datePublished: article.publishedAtIso,
           dateModified: article.updatedAtIso,
           category: article.category,
         })}
@@ -71,7 +72,13 @@ export default async function ColumnArticlePage({ params }: ColumnArticlePagePro
         <h1 className="mt-2 font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
           {article.title}
         </h1>
-        <p className="mt-3 text-xs text-muted">更新日：{article.updatedAt}</p>
+        <p className="mt-3 text-xs text-muted">
+          公開日：{article.publishedAt}
+          <span className="mx-2 text-gold/40" aria-hidden>
+            /
+          </span>
+          更新日：{article.updatedAt}
+        </p>
       </header>
 
       <div className="mb-8">

@@ -15,10 +15,28 @@ export function SusukinoSeoLinks({ className = "" }: { className?: string }) {
         ·
       </span>
       <Link
-        href="/sapporo/susukino/girls-bar"
+        href="/sapporo/kotoni"
         className="font-medium text-gold-dark underline-offset-2 hover:underline"
       >
-        すすきののガールズバー求人
+        琴似の夜職求人
+      </Link>
+      <span className="mx-1.5 text-gold/40" aria-hidden>
+        ·
+      </span>
+      <Link
+        href="/sapporo/kita24jo"
+        className="font-medium text-gold-dark underline-offset-2 hover:underline"
+      >
+        北24条の夜職求人
+      </Link>
+      <span className="mx-1.5 text-gold/40" aria-hidden>
+        ·
+      </span>
+      <Link
+        href="/sapporo/teine"
+        className="font-medium text-gold-dark underline-offset-2 hover:underline"
+      >
+        手稲の夜職求人
       </Link>
     </p>
   );

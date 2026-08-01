@@ -28,6 +28,11 @@ export const sapporoTrialShopsSections: ColumnSection[] = [
       "24条・手稲なども、エリアごとに客層や店舗規模が異なります。体入ホワイトナイト（White Night Job）では、エリア名で検索できるため、自宅から近い場所を優先して探すことも可能です。",
       "「とにかく有名な歓楽街で働きたい」のか「落ち着いたエリアで無理なく始めたい」のかで、選ぶエリアは変わります。体験入店は複数エリアの店舗を比較しても良いので、条件に合う店舗を広く見てみてください。",
     ],
+    links: [
+      { label: "琴似の夜職求人", href: "/sapporo/kotoni" },
+      { label: "北24条の夜職求人", href: "/sapporo/kita24jo" },
+      { label: "手稲の夜職求人", href: "/sapporo/teine" },
+    ],
   },
   {
     id: "how-to-search",

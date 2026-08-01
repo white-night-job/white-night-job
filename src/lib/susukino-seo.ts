@@ -2,7 +2,7 @@ import type { JobType } from "@/types/job";
 
 export const SUSUKINO_DISTRICT = "すすきの" as const;
 export const SUSUKINO_BASE_PATH = "/sapporo/susukino";
-export const SEO_JOBS_PAGE_SIZE = 12;
+export { SEO_JOBS_PAGE_SIZE } from "@/lib/seo-area-jobs";
 
 export type SusukinoJobTypeSlug =
   | "girls-bar"
@@ -319,10 +319,10 @@ export const SUSUKINO_BENEFIT_LINKS = [
 ] as const;
 
 export const RELATED_AREA_LINKS = [
+  { label: "琴似の夜職求人", href: "/sapporo/kotoni" },
+  { label: "北24条の夜職求人", href: "/sapporo/kita24jo" },
+  { label: "手稲の夜職求人", href: "/sapporo/teine" },
   { label: "札幌の求人一覧を見る", href: "/jobs" },
-  { label: "琴似の求人を探す", href: `/jobs?district=${encodeURIComponent("琴似")}` },
-  { label: "24条の求人を探す", href: `/jobs?district=${encodeURIComponent("24条")}` },
-  { label: "手稲の求人を探す", href: `/jobs?district=${encodeURIComponent("手稲")}` },
 ] as const;
 
 export function getSusukinoJobTypePage(

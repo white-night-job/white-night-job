@@ -1,8 +1,13 @@
 import type { ColumnJobFilter } from "@/lib/column-jobs";
 import { conceptCafeJobSections } from "@/data/column-content/concept-cafe-job";
 import { girlsBarBeginnerSections } from "@/data/column-content/girls-bar-beginner";
+import { girlsBarVsNewClubSections } from "@/data/column-content/girls-bar-vs-new-club";
 import { nightJobFirstGuideSections } from "@/data/column-content/night-job-first-guide";
+import { nightJobInterviewSections } from "@/data/column-content/night-job-interview";
+import { noAlcoholNightJobSections } from "@/data/column-content/no-alcohol-night-job";
 import { sapporoTrialShopsSections } from "@/data/column-content/sapporo-trial-shops";
+import { susukinoNightJobBeginnerSections } from "@/data/column-content/susukino-night-job-beginner";
+import { trialWorkChecklistSections } from "@/data/column-content/trial-work-checklist";
 import { whatIsTaiinSections } from "@/data/column-content/what-is-taiin";
 import { whatIsWhiteNightSections } from "@/data/column-content/what-is-white-night";
 
@@ -24,6 +29,8 @@ export type ColumnArticle = {
   category: string;
   description: string;
   metaDescription: string;
+  publishedAt: string;
+  publishedAtIso: string;
   updatedAt: string;
   updatedAtIso: string;
   thumbnailTone: "gold" | "charcoal" | "champagne";
@@ -51,6 +58,8 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "体入ホワイトナイト（White Night Job）の特徴や、安心してお店選びができる理由をわかりやすく解説します。",
     metaDescription:
       "体入ホワイトナイト（White Night Job）とは？審査済み店舗のみ掲載する夜職求人サイトの特徴や、体験入店前に知っておきたいポイントを解説します。",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
     updatedAt: "2026年7月9日",
     updatedAtIso: "2026-07-09",
     thumbnailTone: "gold",
@@ -66,10 +75,16 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "体入（体験入店）の意味や流れ、初めての方向けの注意点を解説します。",
     metaDescription:
       "体入（体験入店）とは何かを解説。体入ホワイトナイト（White Night Job）で安心して体験入店を検討するための基本知識をまとめました。",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
     updatedAt: "2026年7月9日",
     updatedAtIso: "2026-07-09",
     thumbnailTone: "champagne",
-    relatedSlugs: ["what-is-white-night", "night-job-first-guide", "sapporo-trial-shops"],
+    relatedSlugs: [
+      "trial-work-checklist",
+      "what-is-white-night",
+      "night-job-first-guide",
+    ],
     jobFilter: { benefit: "未経験者大歓迎", limit: 3 },
     sections: whatIsTaiinSections,
   },
@@ -81,10 +96,16 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "札幌エリアで体験入店を検討している方向けに、エリア別の探し方とおすすめの見方を紹介します。",
     metaDescription:
       "札幌で体験入店できるお店の探し方を特集。すすきの・琴似など、体入ホワイトナイト（White Night Job）掲載店舗の見方を解説します。",
-    updatedAt: "2026年7月9日",
-    updatedAtIso: "2026-07-09",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
     thumbnailTone: "charcoal",
-    relatedSlugs: ["what-is-taiin", "girls-bar-beginner", "concept-cafe-job"],
+    relatedSlugs: [
+      "susukino-night-job-beginner",
+      "trial-work-checklist",
+      "girls-bar-beginner",
+    ],
     jobFilter: { district: "すすきの", limit: 3 },
     sections: sapporoTrialShopsSections,
   },
@@ -96,10 +117,12 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "ガールズバーが初めての方向けに、仕事内容・雰囲気・体入の進め方を解説します。",
     metaDescription:
       "ガールズバー初心者向けガイド。体入ホワイトナイト（White Night Job）掲載のガールズバー求人の見方と、初めてでも安心して体験入店するコツを紹介。",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
     updatedAt: "2026年7月9日",
     updatedAtIso: "2026-07-09",
     thumbnailTone: "gold",
-    relatedSlugs: ["concept-cafe-job", "night-job-first-guide", "what-is-taiin"],
+    relatedSlugs: ["girls-bar-vs-new-club", "concept-cafe-job", "what-is-taiin"],
     jobFilter: { jobType: "ガールズバー", limit: 3 },
     sections: girlsBarBeginnerSections,
   },
@@ -111,6 +134,8 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "コンカフェの仕事内容や向いている方の特徴、体験入店前のチェックポイントを解説します。",
     metaDescription:
       "コンカフェの仕事内容を解説。体入ホワイトナイト（White Night Job）でコンカフェ求人を探す際のポイントや体験入店の流れを紹介します。",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
     updatedAt: "2026年7月9日",
     updatedAtIso: "2026-07-09",
     thumbnailTone: "champagne",
@@ -126,12 +151,119 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
       "夜職・ナイトワークが初めての方に向けて、お店選びから体験入店までの流れをまとめました。",
     metaDescription:
       "夜職が初めての方向け完全ガイド。体入ホワイトナイト（White Night Job）で安心して求人を探すためのステップをわかりやすく解説します。",
+    publishedAt: "2026年7月9日",
+    publishedAtIso: "2026-07-09",
     updatedAt: "2026年7月9日",
     updatedAtIso: "2026-07-09",
     thumbnailTone: "charcoal",
-    relatedSlugs: ["what-is-white-night", "what-is-taiin", "girls-bar-beginner"],
+    relatedSlugs: [
+      "susukino-night-job-beginner",
+      "night-job-interview",
+      "what-is-taiin",
+    ],
     jobFilter: { benefit: "未経験者大歓迎", limit: 3 },
     sections: nightJobFirstGuideSections,
+  },
+  {
+    slug: "susukino-night-job-beginner",
+    title: "すすきので未経験から夜職を始める方法",
+    category: "エリア特集",
+    description:
+      "すすきので夜職を未経験から始める方向けに、職種の違い・体験入店・面接時の確認・注意点を整理します。",
+    metaDescription:
+      "すすきので未経験から夜職を始める方法。職種の違い、体験入店、面接の確認項目、ノルマや罰金への注意、安心できる求人の探し方を解説します。",
+    publishedAt: "2026年8月1日",
+    publishedAtIso: "2026-08-01",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
+    thumbnailTone: "gold",
+    relatedSlugs: [
+      "trial-work-checklist",
+      "girls-bar-vs-new-club",
+      "night-job-interview",
+    ],
+    jobFilter: { district: "すすきの", benefit: "未経験者大歓迎", limit: 3 },
+    sections: susukinoNightJobBeginnerSections,
+  },
+  {
+    slug: "girls-bar-vs-new-club",
+    title: "ガールズバーとニュークラの違い",
+    category: "職種ガイド",
+    description:
+      "ガールズバーとニュークラ（ニュークラブ）の仕事内容・接客・給与・衣装・客層の違いと、未経験者の選び方を解説します。",
+    metaDescription:
+      "ガールズバーとニュークラの違いを比較。仕事内容、接客、給与、衣装、客層、向いている人、未経験者が選ぶポイントをわかりやすく解説します。",
+    publishedAt: "2026年8月1日",
+    publishedAtIso: "2026-08-01",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
+    thumbnailTone: "champagne",
+    relatedSlugs: [
+      "girls-bar-beginner",
+      "susukino-night-job-beginner",
+      "night-job-interview",
+    ],
+    jobFilter: { jobType: "ガールズバー", limit: 3 },
+    sections: girlsBarVsNewClubSections,
+  },
+  {
+    slug: "trial-work-checklist",
+    title: "夜職の体験入店で確認するポイント",
+    category: "体入・体験入店",
+    description:
+      "体験入店（体入）の前後で確認したい給与・費用・客層・スタッフ対応・ノルマ・送迎などのチェックポイントをまとめます。",
+    metaDescription:
+      "夜職の体験入店で確認するポイント。給与とバック、引かれる費用、客層、スタッフ対応、ノルマ・罰金、送迎、本入店を断れるか、求人との相違を解説。",
+    publishedAt: "2026年8月1日",
+    publishedAtIso: "2026-08-01",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
+    thumbnailTone: "charcoal",
+    relatedSlugs: ["what-is-taiin", "night-job-interview", "no-alcohol-night-job"],
+    jobFilter: { benefit: "未経験者大歓迎", limit: 3 },
+    sections: trialWorkChecklistSections,
+  },
+  {
+    slug: "night-job-interview",
+    title: "夜職の面接で聞かれることと準備",
+    category: "はじめての方へ",
+    description:
+      "夜職の面接でよく聞かれる質問、服装、身分証明書、希望勤務日数の伝え方、店舗側への確認事項を整理します。",
+    metaDescription:
+      "夜職の面接で聞かれることと準備。よくある質問、服装、身分証、希望勤務日数、経験の有無、面接で店舗へ確認すべきことを解説します。",
+    publishedAt: "2026年8月1日",
+    publishedAtIso: "2026-08-01",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
+    thumbnailTone: "gold",
+    relatedSlugs: [
+      "trial-work-checklist",
+      "night-job-first-guide",
+      "no-alcohol-night-job",
+    ],
+    jobFilter: { benefit: "未経験者大歓迎", limit: 3 },
+    sections: nightJobInterviewSections,
+  },
+  {
+    slug: "no-alcohol-night-job",
+    title: "お酒が飲めなくても働ける夜職はある？",
+    category: "はじめての方へ",
+    description:
+      "お酒が飲めない方向けに、飲酒を強制されない求人の見方、確認すべきこと、無理をしない店舗の選び方を解説します。",
+    metaDescription:
+      "お酒が飲めなくても働ける夜職はある？ソフトドリンク対応や応募前の確認、面接前相談の使い方、無理をしない店舗選びを解説します。",
+    publishedAt: "2026年8月1日",
+    publishedAtIso: "2026-08-01",
+    updatedAt: "2026年8月1日",
+    updatedAtIso: "2026-08-01",
+    thumbnailTone: "champagne",
+    relatedSlugs: [
+      "trial-work-checklist",
+      "night-job-interview",
+      "susukino-night-job-beginner",
+    ],
+    jobFilter: { benefit: "お酒飲めなくてもOK", limit: 3 },
+    sections: noAlcoholNightJobSections,
   },
 ];
 
