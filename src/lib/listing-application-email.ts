@@ -395,7 +395,7 @@ export async function notifyApplicantReceived(
         "",
         "審査結果は、24時間以内にご登録いただいたメールアドレスまたは電話番号へご連絡します。",
         "",
-        "宜しくお願い致します。",
+        "宜しくお願いいたします。",
         "",
         "審査状況の確認:",
         `${getSiteOrigin()}/for-shops/review-status`,

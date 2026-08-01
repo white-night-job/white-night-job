@@ -2956,7 +2956,7 @@
 
   .for-shops-step {
     width: 100%;
-    max-width: 22rem;
+    max-width: min(24rem, 100%);
   }
 
   @media (min-width: 900px) {
@@ -2995,8 +2995,12 @@
   .for-shops-step-card p {
     margin: 0.4rem 0 0;
     font-size: 0.75rem;
-    line-height: 1.6;
+    line-height: 1.7;
     color: rgba(17, 17, 17, 0.62);
+    text-wrap: pretty;
+    line-break: strict;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 
   .for-shops-step-arrow {

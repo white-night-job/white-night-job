@@ -84,9 +84,21 @@ function PlanFeatureValue({ value }: { value: string }) {
 
 const STEPS = [
   { step: "01", title: "掲載審査申込", desc: "店舗情報を入力し、掲載審査を申し込みます。" },
-  { step: "02", title: "審査", desc: "掲載基準に沿って店舗情報を確認します。" },
-  { step: "03", title: "掲載準備", desc: "承認後に求人情報・写真・プランを整えます。" },
-  { step: "04", title: "公開", desc: "サイト上に公開し、採用活動をスタート。" },
+  {
+    step: "02",
+    title: "審査",
+    desc: "24時間以内に掲載基準に沿って店舗情報を確認し、審査結果をお送りいたします。",
+  },
+  {
+    step: "03",
+    title: "掲載準備",
+    desc: "審査通過後、24時間以内に求人情報・写真・プランを整えます。",
+  },
+  {
+    step: "04",
+    title: "公開",
+    desc: "お申し込み日から当日〜翌営業日以内にサイト上へ公開し、採用活動をスタートします。",
+  },
 ] as const;
 
 function CheckIcon({ positive }: { positive: boolean }) {
