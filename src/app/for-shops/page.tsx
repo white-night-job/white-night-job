@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ForShopsApplyDocumentsNotice } from "@/components/for-shops/ForShopsApplyDocumentsNotice";
 import { ForShopsContactForm } from "@/components/for-shops/ForShopsContactForm";
 import { ForShopsFaq } from "@/components/for-shops/ForShopsFaq";
 import { ForShopsLandingFeatures } from "@/components/for-shops/ForShopsLandingFeatures";
@@ -314,6 +315,7 @@ export default function ForShopsPage() {
               掲載前に店舗情報を確認し、当サイトの掲載基準に沿って審査を行います。
               審査通過後に、プラン選択・求人情報入力・掲載開始へ進みます。
             </p>
+            <ForShopsApplyDocumentsNotice />
             <Link href="/for-shops/apply" className="for-shops-btn for-shops-btn-primary">
               掲載審査を申し込む
             </Link>
@@ -369,6 +371,7 @@ export default function ForShopsPage() {
             まずは掲載審査へお申し込みください。お問い合わせのみのご相談も受け付けています。
           </p>
           <div className="mb-6 flex flex-col items-center gap-3">
+            <ForShopsApplyDocumentsNotice />
             <Link href="/for-shops/apply" className="for-shops-btn for-shops-btn-primary">
               掲載審査を申し込む
             </Link>

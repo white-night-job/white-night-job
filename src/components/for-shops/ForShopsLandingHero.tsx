@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ForShopsApplyDocumentsNotice } from "@/components/for-shops/ForShopsApplyDocumentsNotice";
 import { IMAGE_ALT_BRAND, SITE_FORMAL_NAME } from "@/lib/site";
 
 export const FOR_SHOPS_HERO_IMAGE = "/images/for-shops-hero.png";
@@ -86,6 +87,7 @@ export function ForShopsLandingHero() {
             ›
           </span>
         </a>
+        <ForShopsApplyDocumentsNotice />
         <Link href={FOR_SHOPS_APPLY_HREF} className="fsl-btn fsl-btn--primary">
           <span className="fsl-btn__icon">
             <ApplyIcon />
