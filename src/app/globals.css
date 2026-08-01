@@ -2923,6 +2923,11 @@
     font-size: 0.8125rem;
     line-height: 1.7;
     color: rgba(17, 17, 17, 0.72);
+    white-space: pre-line;
+    text-wrap: pretty;
+    line-break: strict;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 
   .for-shops-steps {
