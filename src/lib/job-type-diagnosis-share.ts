@@ -1,4 +1,5 @@
 import type { DiagnosisResult } from "@/lib/job-type-diagnosis-types";
+import { SITE_URL } from "@/lib/site";
 
 export function buildDiagnosisShareText(result: DiagnosisResult): string {
   const top = result.topTwo[0];
@@ -12,7 +13,7 @@ export function buildDiagnosisShareText(result: DiagnosisResult): string {
 }
 
 export function buildDiagnosisShareUrl(): string {
-  if (typeof window === "undefined") return "https://whitenightjob.jp/diagnosis";
+  if (typeof window === "undefined") return `${SITE_URL}/diagnosis`;
   return `${window.location.origin}/diagnosis`;
 }
 

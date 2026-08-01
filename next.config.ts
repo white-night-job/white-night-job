@@ -38,10 +38,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Apex → www (path + query preserved by Next.js). www itself never redirects here.
       {
         source: "/:path*",
-        has: [{ type: "host" as const, value: "www.whitenightjob.jp" }],
-        destination: "https://whitenightjob.jp/:path*",
+        has: [{ type: "host" as const, value: "whitenightjob.jp" }],
+        destination: "https://www.whitenightjob.jp/:path*",
         permanent: true,
       },
       {

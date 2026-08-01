@@ -2,8 +2,8 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.whitenightjob.jp" }],
-      "destination": "https://whitenightjob.jp/:path*",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/:path*",
       "permanent": true
     }
   ],

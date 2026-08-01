@@ -9,9 +9,24 @@ export const SITE_DESCRIPTION =
 export const SITE_OG_TITLE = "体入ホワイトナイト | White Night Job";
 export const SITE_TAGLINE =
   "体入ホワイトナイト（White Night Job）は、安心して働ける夜職求人サイトです。";
-/** Canonical origin (apex, https). Prefer NEXT_PUBLIC_SITE_URL in production. */
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://whitenightjob.jp";
+/** Canonical origin (www, https). Prefer NEXT_PUBLIC_SITE_URL in production. */
+function resolveSiteUrl(): string {
+  const fallback = "https://www.whitenightjob.jp";
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || fallback;
+  try {
+    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    if (url.hostname === "whitenightjob.jp") {
+      url.hostname = "www.whitenightjob.jp";
+    }
+    url.protocol = "https:";
+    url.port = "";
+    return url.origin;
+  } catch {
+    return fallback;
+  }
+}
+
+export const SITE_URL = resolveSiteUrl();
 /** Official brand mark used in Organization structured data / OG. */
 export const SITE_LOGO_PATH = "/images/brand/white-night-job-mark.png";
 export const SITE_LOGO_URL = `${SITE_URL}${SITE_LOGO_PATH}`;

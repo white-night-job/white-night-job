@@ -183,7 +183,7 @@ export function generateInviteCode(): string {
 }
 
 /** Canonical public site origin for applicant-facing links (onboarding, email). */
-export const DEFAULT_PUBLIC_SITE_ORIGIN = "https://whitenightjob.jp";
+export const DEFAULT_PUBLIC_SITE_ORIGIN = "https://www.whitenightjob.jp";
 
 /**
  * Public site origin for listing-application links.
@@ -199,9 +199,19 @@ export function getSiteOrigin(): string {
     // Guard: preview deployments sometimes set NEXT_PUBLIC_SITE_URL to the
     // deployment URL. Applicant-facing links must stay on the production domain.
     if (!/\.vercel\.app$/i.test(normalized.replace(/^https?:\/\//i, ""))) {
-      return normalized.startsWith("http")
-        ? normalized
-        : `https://${normalized}`;
+      try {
+        const url = new URL(
+          normalized.startsWith("http") ? normalized : `https://${normalized}`,
+        );
+        if (url.hostname === "whitenightjob.jp") {
+          url.hostname = "www.whitenightjob.jp";
+        }
+        url.protocol = "https:";
+        url.port = "";
+        return url.origin;
+      } catch {
+        return DEFAULT_PUBLIC_SITE_ORIGIN;
+      }
     }
   }
   return DEFAULT_PUBLIC_SITE_ORIGIN;
