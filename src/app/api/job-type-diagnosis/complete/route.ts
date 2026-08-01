@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 /**
  * 職種診断の結果画面到達を匿名で記録する。
  * ログイン不要。個人を特定する情報は受け取らない。
+ * DB 書き込みは service_role（RLS バイパス）。event_type はサーバー固定。
  */
 export async function POST(request: Request) {
   try {
@@ -15,6 +16,9 @@ export async function POST(request: Request) {
       completionKey?: string;
       resultJobType?: string;
       area?: string;
+      // クライアントからの event_type 指定は無視する
+      event_type?: unknown;
+      eventType?: unknown;
     };
 
     const sessionId = body.sessionId?.trim();

@@ -26,6 +26,7 @@ export async function recordJobDiagnosisCompleted(
   }
 
   const supabase = createSupabaseAdmin();
+  // event_type は常に job_diagnosis_completed 固定（クライアント指定不可）
   const { error } = await supabase.from("job_diagnosis_events").insert({
     event_type: JOB_DIAGNOSIS_COMPLETED,
     occurred_at: input.occurredAt?.trim() || new Date().toISOString(),

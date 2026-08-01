@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { JobFilters } from "@/types/job";
 import { luxurySectionDivider, luxurySectionHeading } from "@/lib/luxury-styles";
+import { SusukinoSeoLinks } from "@/components/seo/SusukinoSeoLinks";
 import { JobCount } from "./JobCount";
 import { JobFilterSearch } from "./JobFilterSearch";
 import { JobList } from "./JobList";
@@ -45,6 +46,7 @@ export function JobSearchSection({
         onApply={setAppliedFilters}
         resultsPath={resultsPath}
       />
+      <SusukinoSeoLinks />
 
       {showJobList && (
       <section id="jobs-section" className={`scroll-mt-20 ${luxurySectionDivider} pt-6`}>

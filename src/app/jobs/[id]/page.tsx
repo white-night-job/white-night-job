@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JobDetailClient } from "@/components/JobDetailClient";
+import { JsonLd } from "@/components/JsonLd";
 import { getPublishedJobDetail } from "@/lib/job-detail-data";
-import { SITE_BRAND_JA, SITE_URL } from "@/lib/site";
+import {
+  buildBreadcrumbJsonLd,
+  buildJobDetailMetadata,
+  buildJobPostingJsonLd,
+} from "@/lib/seo";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -24,20 +29,7 @@ export async function generateMetadata({
   if (!job) {
     return { title: "求人が見つかりません" };
   }
-  const title = `${job.shopName}｜${job.jobType}の求人`;
-  const description =
-    job.introductionText?.slice(0, 120) ||
-    `${job.shopName}（${job.district}）の求人情報。時給 ${job.salary}`;
-  return {
-    title,
-    description,
-    openGraph: {
-      title: `${title}｜${SITE_BRAND_JA}`,
-      description,
-      url: `${SITE_URL}/jobs/${job.id}`,
-      type: "website",
-    },
-  };
+  return buildJobDetailMetadata(job);
 }
 
 export default async function JobDetailPage({ params }: PageProps) {
@@ -73,5 +65,19 @@ export default async function JobDetailPage({ params }: PageProps) {
     );
   }
 
-  return <JobDetailClient job={job} />;
+  return (
+    <>
+      <JsonLd data={buildJobPostingJsonLd(job)} />
+      <JsonLd
+        data={buildBreadcrumbJsonLd([
+          { label: "求人一覧", href: "/jobs" },
+          ...(job.district === "すすきの"
+            ? [{ label: "すすきのの夜職求人", href: "/sapporo/susukino" }]
+            : []),
+          { label: `${job.shopName}の求人` },
+        ])}
+      />
+      <JobDetailClient job={job} />
+    </>
+  );
 }

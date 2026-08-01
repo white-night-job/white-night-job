@@ -33,6 +33,7 @@ export const nightJobFirstGuideSections: ColumnSection[] = [
       "エリアも重要です。札幌ではすすきのを中心に、琴似・24条などエリアごとに店舗の傾向が異なります。体入ホワイトナイトのエリア検索を使い、通勤や生活圏に合った場所から探してみてください。",
     ],
     links: [
+      { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
       { label: "ガールズバー初心者ガイド", href: "/column/girls-bar-beginner" },
       { label: "コンカフェの仕事内容", href: "/column/concept-cafe-job" },
     ],
@@ -45,7 +46,10 @@ export const nightJobFirstGuideSections: ColumnSection[] = [
       "体入ホワイトナイト（White Night Job）の求人詳細では、待遇タグ・店内写真・キャストの声などを確認できます。写真の印象だけで決めず、条件面も必ずチェックしてください。",
       "お気に入り登録や比較機能（LINEログイン後）を使えば、候補店舗を整理しながら検討できます。",
     ],
-    links: [{ label: "求人一覧を見る", href: "/jobs" }],
+    links: [
+      { label: "すすきので夜職を探す", href: "/sapporo/susukino" },
+      { label: "求人一覧を見る", href: "/jobs" },
+    ],
   },
   {
     id: "step4",

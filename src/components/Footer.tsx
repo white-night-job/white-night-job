@@ -14,6 +14,7 @@ const footerSections = [
       { href: "/cast-guide", label: "キャスト向けガイド" },
       { href: "/#about-brand", label: `${SITE_BRAND_JA}とは` },
       { href: "/jobs", label: "求人一覧" },
+      { href: "/sapporo/susukino", label: "すすきのの夜職求人" },
       { href: "/#shop-search", label: "店舗を探す" },
       { href: "/faq", label: "よくある質問" },
     ],

@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: "www.whitenightjob.jp" }],
+        destination: "https://whitenightjob.jp/:path*",
+        permanent: true,
+      },
+      {
         source: "/listing-criteria",
         destination: "/first-time-guide",
         permanent: true,

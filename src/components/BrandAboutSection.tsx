@@ -1,5 +1,6 @@
 import { luxuryPremiumCard } from "@/lib/luxury-styles";
 import { SITE_BRAND_JA, SITE_FORMAL_NAME } from "@/lib/site";
+import Link from "next/link";
 
 export function BrandAboutSection() {
   return (
@@ -15,6 +16,14 @@ export function BrandAboutSection() {
           <p className="mt-4">
             {SITE_FORMAL_NAME}は、体験入店を含め、安心して働ける夜職求人だけを掲載する札幌エリアの求人サイトです。
             審査済みの優良店舗のみを厳選し、初めての方でも比較しやすい情報設計を心がけています。
+          </p>
+          <p className="mt-3">
+            <Link
+              href="/sapporo/susukino"
+              className="font-medium text-gold-dark underline-offset-2 hover:underline"
+            >
+              すすきのの夜職求人を見る
+            </Link>
           </p>
         </div>
 

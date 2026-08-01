@@ -11,7 +11,7 @@ import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
 import { HomeHashScroll } from "@/components/HomeHashScroll";
-import { SITE_BRAND_JA, SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
 const HOME_TITLE =
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: HOME_TITLE,
     description: SITE_DESCRIPTION,
-    siteName: SITE_BRAND_JA,
+    siteName: SITE_NAME,
     url: `${SITE_URL}/`,
     type: "website",
     locale: "ja_JP",

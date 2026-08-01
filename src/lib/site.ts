@@ -9,8 +9,11 @@ export const SITE_DESCRIPTION =
 export const SITE_OG_TITLE = "体入ホワイトナイト | White Night Job";
 export const SITE_TAGLINE =
   "体入ホワイトナイト（White Night Job）は、安心して働ける夜職求人サイトです。";
+/** Canonical origin (apex, https). Prefer NEXT_PUBLIC_SITE_URL in production. */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-  "https://www.whitenightjob.jp";
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://whitenightjob.jp";
+/** Official brand mark used in Organization structured data / OG. */
+export const SITE_LOGO_PATH = "/images/brand/white-night-job-mark.png";
+export const SITE_LOGO_URL = `${SITE_URL}${SITE_LOGO_PATH}`;
 export const LOGO_ALT = "体入ホワイトナイト White Night Job";
 export const IMAGE_ALT_BRAND = "体入ホワイトナイト";

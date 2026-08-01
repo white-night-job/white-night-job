@@ -55,6 +55,7 @@ export const whatIsWhiteNightSections: ColumnSection[] = [
       "STEP5：体験入店後、自分に合うかどうかを判断する。その場で入店を決めなくても構いません。複数店舗を体験してから決める方も多くいます。",
     ],
     links: [
+      { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
       { label: "求人一覧を見る", href: "/jobs" },
       { label: "初めての方へガイド", href: "/first-time-guide" },
     ],

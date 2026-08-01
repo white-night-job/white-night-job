@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { luxuryPremiumCard } from "@/lib/luxury-styles";
 import { SITE_FORMAL_NAME } from "@/lib/site";
 
@@ -91,6 +92,14 @@ function GuideContent({ showHeading = true }: { showHeading?: boolean }) {
             まずは気になるお店を、
             <br />
             ゆっくり探してみてください。
+          </p>
+          <p className="mt-5 text-sm font-medium sm:text-base">
+            <Link
+              href="/sapporo/susukino"
+              className="text-gold-dark underline-offset-2 hover:underline"
+            >
+              すすきので夜職を探す
+            </Link>
           </p>
         </div>
       </div>

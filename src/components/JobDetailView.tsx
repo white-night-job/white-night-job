@@ -287,7 +287,10 @@ export function JobDetailView({
         <Breadcrumbs
           items={[
             { label: "求人一覧", href: preview ? undefined : "/jobs" },
-            { label: job.shopName },
+            ...(!preview && job.district === "すすきの"
+              ? [{ label: "すすきのの夜職求人", href: "/sapporo/susukino" }]
+              : []),
+            { label: `${job.shopName}の求人` },
           ]}
         />
       )}
@@ -300,7 +303,7 @@ export function JobDetailView({
             </p>
             <div className="mt-1 flex items-start justify-between gap-3">
               <h1 className="font-serif text-xl font-semibold sm:text-2xl">
-                {job.title}
+                {job.shopName}の求人
               </h1>
               <div className="flex flex-col items-end gap-1">
                 <FavoriteSlot
@@ -322,7 +325,7 @@ export function JobDetailView({
                 )}
               </div>
             </div>
-            <p className="mt-2 font-medium text-charcoal">{job.shopName}</p>
+            <p className="mt-2 font-medium text-charcoal">{job.title}</p>
             {job.introductionText && (
               <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">
                 {job.introductionText}

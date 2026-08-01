@@ -40,7 +40,7 @@ export const conceptCafeJobSections: ColumnSection[] = [
       "研修：未経験向けの研修期間やサポート体制",
       "コンカフェはお店ごとの個性が強いため、体入ホワイトナイトの求人詳細を読んだうえで、不明点はLINEで質問してから体験に進みましょう。",
     ],
-    links: [{ label: "コンカフェ求人を見る", href: "/jobs?jobType=コンカフェ" }],
+    links: [{ label: "すすきののコンカフェ求人", href: "/sapporo/susukino/concept-cafe" }],
   },
   {
     id: "trial",
