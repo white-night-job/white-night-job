@@ -35,6 +35,12 @@ export type DailyPickupFailure = {
   blocked: boolean;
 };
 
+export type DailyPickupBatchStatus =
+  | "processing"
+  | "completed"
+  | "failed"
+  | "skipped";
+
 export type DailyPickupResult = {
   scheduledDate: string;
   dryRun: boolean;
@@ -43,12 +49,15 @@ export type DailyPickupResult = {
   executedAtJst: string;
   messagingTokenConfigured: boolean;
   envDryRunForced: boolean;
+  batchStatus: DailyPickupBatchStatus;
+  batchId: string | null;
   funnel: DailyPickupFunnel;
   targetUsers: number;
   sent: number;
   failed: number;
   skippedNoShop: number;
   skippedDuplicate: number;
+  skippedOther: number;
   lineHttpStatuses: number[];
   failures: DailyPickupFailure[];
   deliveredJobIds: string[];
@@ -60,6 +69,14 @@ export type DailyPickupResult = {
     district: string;
   }>;
 };
+
+function getMessagingAccessToken(): string | null {
+  return (
+    process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim() ||
+    process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim() ||
+    null
+  );
+}
 
 type EligibleUser = {
   userId: string;
@@ -297,14 +314,47 @@ async function claimDailySlot(params: {
     job_id: params.jobId,
     notification_type: DAILY_PICKUP_TYPE,
     scheduled_date: params.scheduledDate,
-    status: "pending",
+    status: "processing",
+    error_message: null,
+    sent_at: null,
     created_at: new Date().toISOString(),
   });
 
-  if (error) {
-    if (error.code === "23505") return "duplicate";
-    throw error;
-  }
+  if (!error) return "claimed";
+  if (error.code !== "23505") throw error;
+
+  // 既存行: 送信済みのみ二重送信防止。pending/processing/failed は再送する。
+  const { data: existing, error: existingError } = await supabase
+    .from("line_notification_logs")
+    .select("id, status")
+    .eq("user_id", params.userId)
+    .eq("scheduled_date", params.scheduledDate)
+    .eq("notification_type", DAILY_PICKUP_TYPE)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (!existing) throw error;
+  if (existing.status === "sent") return "duplicate";
+
+  const { data: reclaimed, error: reclaimError } = await supabase
+    .from("line_notification_logs")
+    .update({
+      line_user_id: params.lineUserId,
+      job_id: params.jobId,
+      status: "processing",
+      error_message: null,
+      sent_at: null,
+    })
+    .eq("id", existing.id)
+    .neq("status", "sent")
+    .select("id")
+    .maybeSingle();
+  if (reclaimError) throw reclaimError;
+  if (!reclaimed) return "duplicate";
+  console.info("[daily-pickup] reclaim slot for retry", {
+    userId: params.userId,
+    scheduledDate: params.scheduledDate,
+    previousStatus: existing.status,
+  });
   return "claimed";
 }
 
@@ -315,7 +365,7 @@ async function finalizeDailySlot(params: {
   errorMessage?: string;
 }) {
   const supabase = createSupabaseAdmin();
-  await supabase
+  const { error } = await supabase
     .from("line_notification_logs")
     .update({
       status: params.status,
@@ -324,31 +374,192 @@ async function finalizeDailySlot(params: {
     })
     .eq("user_id", params.userId)
     .eq("scheduled_date", params.scheduledDate)
-    .eq("notification_type", DAILY_PICKUP_TYPE);
+    .eq("notification_type", DAILY_PICKUP_TYPE)
+    .neq("status", "sent");
+  if (error) {
+    console.error("[daily-pickup] finalizeDailySlot failed", {
+      userId: params.userId,
+      scheduledDate: params.scheduledDate,
+      status: params.status,
+      message: error.message,
+    });
+    throw error;
+  }
 }
 
-async function writeBatchSummary(params: {
+async function beginDailyBatch(params: {
   scheduledDate: string;
   targetCount: number;
-  successCount: number;
-  failCount: number;
-  dryRun: boolean;
   onlyUserId?: string | null;
-}) {
+}): Promise<string | null> {
   const supabase = createSupabaseAdmin();
-  const scope = params.onlyUserId
-    ? `test-user ${params.onlyUserId.slice(0, 8)}…`
-    : `scheduled ${params.scheduledDate}`;
-  await supabase.from("line_notification_batches").insert({
+  const isTest = Boolean(params.onlyUserId);
+  const detail = isTest
+    ? `test-user ${params.onlyUserId!.slice(0, 8)}…`
+    : `daily ${params.scheduledDate}`;
+
+  // 本番は1日1バッチ。既存 processing/completed があれば再利用 or 拒否。
+  if (!isTest) {
+    const { data: existing } = await supabase
+      .from("line_notification_batches")
+      .select("id, status, success_count")
+      .eq("notify_type", DAILY_PICKUP_TYPE)
+      .eq("scheduled_date", params.scheduledDate)
+      .maybeSingle();
+
+    if (existing?.status === "completed" && (existing.success_count ?? 0) > 0) {
+      console.info("[daily-pickup] batch already completed today", {
+        scheduledDate: params.scheduledDate,
+        batchId: existing.id,
+      });
+      return null;
+    }
+
+    if (existing?.id) {
+      const { error } = await supabase
+        .from("line_notification_batches")
+        .update({
+          status: "processing",
+          target_count: params.targetCount,
+          success_count: 0,
+          fail_count: 0,
+          skipped_count: 0,
+          error_message: null,
+          detail,
+          sent_at: new Date().toISOString(),
+          shop_name: "毎日PickUp配信",
+        })
+        .eq("id", existing.id);
+      if (error) {
+        console.error("[daily-pickup] beginDailyBatch update failed", error);
+        throw error;
+      }
+      return existing.id as string;
+    }
+  }
+
+  const payload = {
     shop_name: "毎日PickUp配信",
     job_id: null,
     notify_type: DAILY_PICKUP_TYPE,
     target_count: params.targetCount,
+    success_count: 0,
+    fail_count: 0,
+    skipped_count: 0,
+    status: "processing",
+    scheduled_date: isTest ? null : params.scheduledDate,
+    detail,
+    sent_at: new Date().toISOString(),
+    error_message: null,
+  };
+
+  const { data, error } = await supabase
+    .from("line_notification_batches")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error) {
+    // マイグレーション前のスキーマ向けフォールバック
+    if (/skipped_count|error_message|scheduled_date|\bstatus\b/i.test(error.message)) {
+      const { data: legacy, error: legacyError } = await supabase
+        .from("line_notification_batches")
+        .insert({
+          shop_name: "毎日PickUp配信",
+          job_id: null,
+          notify_type: DAILY_PICKUP_TYPE,
+          target_count: params.targetCount,
+          success_count: 0,
+          fail_count: 0,
+          detail: `processing ${detail}`,
+          sent_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      if (legacyError) {
+        console.error("[daily-pickup] beginDailyBatch legacy insert failed", legacyError);
+        throw legacyError;
+      }
+      return legacy.id as string;
+    }
+    // unique 競合: 同時実行。既存を processing に更新して続行。
+    if (error.code === "23505" && !isTest) {
+      const { data: raced } = await supabase
+        .from("line_notification_batches")
+        .select("id")
+        .eq("notify_type", DAILY_PICKUP_TYPE)
+        .eq("scheduled_date", params.scheduledDate)
+        .maybeSingle();
+      if (raced?.id) {
+        await supabase
+          .from("line_notification_batches")
+          .update({
+            status: "processing",
+            target_count: params.targetCount,
+            detail,
+            sent_at: new Date().toISOString(),
+          })
+          .eq("id", raced.id);
+        return raced.id as string;
+      }
+    }
+    console.error("[daily-pickup] beginDailyBatch insert failed", error);
+    throw error;
+  }
+  return data.id as string;
+}
+
+async function finishDailyBatch(params: {
+  batchId: string | null;
+  status: DailyPickupBatchStatus;
+  targetCount: number;
+  successCount: number;
+  failCount: number;
+  skippedCount: number;
+  errorMessage?: string | null;
+  detail?: string;
+}) {
+  if (!params.batchId) return;
+  const supabase = createSupabaseAdmin();
+  const fullUpdate = {
+    status: params.status,
+    target_count: params.targetCount,
     success_count: params.successCount,
     fail_count: params.failCount,
-    detail: params.dryRun ? `dry-run ${scope}` : scope,
+    skipped_count: params.skippedCount,
+    error_message: params.errorMessage?.slice(0, 1000) ?? null,
+    detail: params.detail ?? undefined,
     sent_at: new Date().toISOString(),
-  });
+  };
+  const { error } = await supabase
+    .from("line_notification_batches")
+    .update(fullUpdate)
+    .eq("id", params.batchId);
+  if (error) {
+    if (/skipped_count|error_message|\bstatus\b/i.test(error.message)) {
+      const { error: legacyError } = await supabase
+        .from("line_notification_batches")
+        .update({
+          target_count: params.targetCount,
+          success_count: params.successCount,
+          fail_count: params.failCount,
+          detail: params.detail ?? params.status,
+          sent_at: new Date().toISOString(),
+        })
+        .eq("id", params.batchId);
+      if (legacyError) {
+        console.error("[daily-pickup] finishDailyBatch legacy failed", {
+          batchId: params.batchId,
+          message: legacyError.message,
+        });
+      }
+      return;
+    }
+    console.error("[daily-pickup] finishDailyBatch failed", {
+      batchId: params.batchId,
+      message: error.message,
+    });
+  }
 }
 
 /**
@@ -407,7 +618,10 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
   const notifyDailyPickup = Boolean(settings?.notify_daily_pickup);
   const hasLineUserId = Boolean(user?.line_user_id);
   const linePushBlocked = Boolean(user?.line_push_blocked);
-  const alreadySentToday = Boolean(todayLog);
+  const alreadySentToday = todayLog?.status === "sent";
+  const stuckPending =
+    todayLog != null &&
+    (todayLog.status === "pending" || todayLog.status === "processing");
 
   if (!user) reasons.push("ユーザーが存在しません");
   if (!notifyDailyPickup) reasons.push("「PickUp店舗の毎日通知」がOFFです");
@@ -420,7 +634,11 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
     );
   }
   if (alreadySentToday) {
-    reasons.push(`本日（${scheduledDate}）は既に配信ログがあります（二重送信防止）`);
+    reasons.push(`本日（${scheduledDate}）は既に配信済みです（二重送信防止）`);
+  } else if (stuckPending) {
+    reasons.push(
+      `本日（${scheduledDate}）に未完了ログ（${todayLog?.status}）があります。再実行で送信を再試行します`,
+    );
   }
 
   const eligible =
@@ -463,9 +681,8 @@ export async function runDailyPickupDelivery(options?: {
   const recentSince = daysAgoTokyoIso(RECENT_DAYS, now);
   const executedAtUtc = now.toISOString();
   const executedAtJst = formatTokyoDateTime(now);
-  const messagingTokenConfigured = Boolean(
-    process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim(),
-  );
+  const messagingToken = getMessagingAccessToken();
+  const messagingTokenConfigured = Boolean(messagingToken);
 
   const [{ users, funnel }, allTopJobs, sendCounts30d] = await Promise.all([
     fetchEligibleUsers({ onlyUserId }),
@@ -482,12 +699,15 @@ export async function runDailyPickupDelivery(options?: {
     executedAtJst,
     messagingTokenConfigured,
     envDryRunForced,
+    batchStatus: "processing",
+    batchId: null,
     funnel,
     targetUsers: users.length,
     sent: 0,
     failed: 0,
     skippedNoShop: 0,
     skippedDuplicate: 0,
+    skippedOther: 0,
     lineHttpStatuses: [],
     failures: [],
     deliveredJobIds: [],
@@ -502,11 +722,97 @@ export async function runDailyPickupDelivery(options?: {
     envDryRunForced,
     onlyUserId: onlyUserId ? `${onlyUserId.slice(0, 8)}…` : null,
     messagingTokenConfigured,
+    tokenEnv:
+      process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim()
+        ? "LINE_MESSAGING_CHANNEL_ACCESS_TOKEN"
+        : process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim()
+          ? "LINE_CHANNEL_ACCESS_TOKEN"
+          : "missing",
     funnel,
     targetUsers: users.length,
+    topPriorityShops: allTopJobs.length,
   });
 
+  if (!dryRun) {
+    result.batchId = await beginDailyBatch({
+      scheduledDate,
+      targetCount: users.length,
+      onlyUserId,
+    });
+    if (result.batchId === null && !onlyUserId) {
+      result.batchStatus = "skipped";
+      result.skippedOther = users.length;
+      console.info("[daily-pickup] skip entire run: already completed today", {
+        scheduledDate,
+      });
+      return result;
+    }
+  }
+
+  if (users.length === 0) {
+    result.batchStatus = "skipped";
+    const reason =
+      funnel.settingsOn === 0
+        ? "毎日PickUp通知ONのユーザーが0人"
+        : funnel.withLineUserId === 0
+          ? "LINE userId 付きユーザーが0人"
+          : funnel.withAreas === 0
+            ? "通知地域設定済みユーザーが0人"
+            : "配信対象ユーザーが0人";
+    if (!dryRun) {
+      await finishDailyBatch({
+        batchId: result.batchId,
+        status: "skipped",
+        targetCount: 0,
+        successCount: 0,
+        failCount: 0,
+        skippedCount: 0,
+        errorMessage: reason,
+        detail: `skipped: ${reason}`,
+      });
+    }
+    console.info("[daily-pickup] skipped no targets", {
+      scheduledDate,
+      reason,
+      funnel,
+    });
+    return result;
+  }
+
+  if (!dryRun && !messagingTokenConfigured) {
+    result.batchStatus = "failed";
+    result.failed = users.length;
+    const reason =
+      "LINE_MESSAGING_CHANNEL_ACCESS_TOKEN / LINE_CHANNEL_ACCESS_TOKEN is not set";
+    for (const user of users) {
+      result.failures.push({
+        userId: user.userId,
+        jobId: null,
+        shopName: null,
+        httpStatus: null,
+        reason,
+        blocked: false,
+      });
+    }
+    await finishDailyBatch({
+      batchId: result.batchId,
+      status: "failed",
+      targetCount: users.length,
+      successCount: 0,
+      failCount: users.length,
+      skippedCount: 0,
+      errorMessage: reason,
+      detail: `failed: ${reason}`,
+    });
+    console.error("[daily-pickup] aborted: messaging token missing", {
+      scheduledDate,
+      targetUsers: users.length,
+    });
+    return result;
+  }
+
   for (const user of users) {
+    let claimed = false;
     try {
       const candidates = jobsForUserAreas(allTopJobs, user.areas);
       if (candidates.length === 0) {
@@ -547,19 +853,6 @@ export async function runDailyPickupDelivery(options?: {
         continue;
       }
 
-      if (!messagingTokenConfigured) {
-        result.failed += 1;
-        result.failures.push({
-          userId: user.userId,
-          jobId: selected.id,
-          shopName: selected.shopName,
-          httpStatus: null,
-          reason: "LINE_MESSAGING_CHANNEL_ACCESS_TOKEN is not set",
-          blocked: false,
-        });
-        continue;
-      }
-
       const claim = await claimDailySlot({
         userId: user.userId,
         lineUserId: user.lineUserId,
@@ -568,15 +861,22 @@ export async function runDailyPickupDelivery(options?: {
       });
       if (claim === "duplicate") {
         result.skippedDuplicate += 1;
-        console.info("[daily-pickup] skip duplicate", {
+        console.info("[daily-pickup] skip duplicate (already sent)", {
           userId: user.userId,
           scheduledDate,
           jobId: selected.id,
         });
         continue;
       }
+      claimed = true;
 
       try {
+        console.info("[daily-pickup] sending LINE push", {
+          userId: user.userId,
+          jobId: selected.id,
+          shopName: selected.shopName,
+          lineUserIdMasked: maskLineUserId(user.lineUserId),
+        });
         const message = buildDailyPickupFlexMessage(selected);
         const push = await sendLinePushMessages(user.lineUserId, [message]);
         result.lineHttpStatuses.push(push.status);
@@ -585,6 +885,7 @@ export async function runDailyPickupDelivery(options?: {
           scheduledDate,
           status: "sent",
         });
+        claimed = false;
         result.sent += 1;
         result.deliveredJobIds.push(selected.id);
         sendCounts30d.set(
@@ -610,6 +911,7 @@ export async function runDailyPickupDelivery(options?: {
           status: "failed",
           errorMessage: messageText,
         });
+        claimed = false;
         if (blocked) {
           await markUserBlocked({
             userId: user.userId,
@@ -641,6 +943,25 @@ export async function runDailyPickupDelivery(options?: {
         userId: user.userId,
         message: error instanceof Error ? error.message : "unknown",
       });
+      if (claimed) {
+        try {
+          await finalizeDailySlot({
+            userId: user.userId,
+            scheduledDate,
+            status: "failed",
+            errorMessage:
+              error instanceof Error ? error.message : "unknown loop error",
+          });
+        } catch (finalizeError) {
+          console.error("[daily-pickup] finalize after loop error failed", {
+            userId: user.userId,
+            message:
+              finalizeError instanceof Error
+                ? finalizeError.message
+                : "unknown",
+          });
+        }
+      }
       result.failed += 1;
       result.failures.push({
         userId: user.userId,
@@ -653,14 +974,48 @@ export async function runDailyPickupDelivery(options?: {
     }
   }
 
+  const skippedTotal =
+    result.skippedNoShop + result.skippedDuplicate + result.skippedOther;
+  if (result.sent > 0 && result.failed === 0) {
+    result.batchStatus = "completed";
+  } else if (result.sent === 0 && result.failed === 0 && skippedTotal > 0) {
+    result.batchStatus = "skipped";
+  } else if (result.sent === 0 && result.failed > 0) {
+    result.batchStatus = "failed";
+  } else {
+    result.batchStatus = "completed";
+  }
+
+  const detailParts = [
+    `status=${result.batchStatus}`,
+    `sent=${result.sent}`,
+    `failed=${result.failed}`,
+    `skippedNoShop=${result.skippedNoShop}`,
+    `skippedDuplicate=${result.skippedDuplicate}`,
+  ];
+  if (result.failures[0]?.reason) {
+    detailParts.push(`error=${result.failures[0].reason.slice(0, 120)}`);
+  }
+
   if (!dryRun) {
-    await writeBatchSummary({
-      scheduledDate,
+    await finishDailyBatch({
+      batchId: result.batchId,
+      status: result.batchStatus,
       targetCount: users.length,
       successCount: result.sent,
       failCount: result.failed,
-      dryRun: false,
-      onlyUserId,
+      skippedCount: skippedTotal,
+      errorMessage:
+        result.batchStatus === "failed"
+          ? result.failures[0]?.reason ?? "送信失敗"
+          : result.batchStatus === "skipped"
+            ? result.skippedNoShop > 0
+              ? "設定地域に一致する最優先店舗がありません"
+              : result.skippedDuplicate > 0
+                ? "本日分は既に送信済み"
+                : "スキップ"
+            : null,
+      detail: detailParts.join(" / "),
     });
   }
 
@@ -669,6 +1024,8 @@ export async function runDailyPickupDelivery(options?: {
     executedAtJst,
     scheduledDate,
     dryRun,
+    batchId: result.batchId,
+    batchStatus: result.batchStatus,
     targetUsers: result.targetUsers,
     sent: result.sent,
     failed: result.failed,

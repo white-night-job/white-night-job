@@ -180,9 +180,13 @@ export async function sendLinePushMessages(
   lineUserId: string,
   messages: unknown[],
 ): Promise<{ status: number }> {
-  const channelToken = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim();
+  const channelToken =
+    process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim() ||
+    process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
   if (!channelToken) {
-    throw new Error("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN is not set.");
+    throw new Error(
+      "LINE_MESSAGING_CHANNEL_ACCESS_TOKEN (or LINE_CHANNEL_ACCESS_TOKEN) is not set.",
+    );
   }
   const response = await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
@@ -204,5 +208,9 @@ export async function sendLinePushMessages(
     });
     throw new LinePushError(response.status, errorBody);
   }
+  console.info("[line-auth] push message ok", {
+    lineUserIdMasked: maskLineUserId(lineUserId),
+    status: response.status,
+  });
   return { status: response.status };
 }

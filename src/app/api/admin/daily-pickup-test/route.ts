@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message:
-            "本日分は既に送信（または予約）済みです。二重送信を防ぐため再送しません。明日、または失敗ログの確認後に再試行してください。",
+            "本日分は既に送信済みです。二重送信を防ぐため再送しません。",
           diagnosis,
         },
         { status: 409 },

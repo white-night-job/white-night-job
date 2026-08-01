@@ -72,6 +72,18 @@ async function handle(request: Request) {
       onlyUserId,
       now,
     });
+    console.info("[cron/line-daily-pickup] result", {
+      scheduledDate: result.scheduledDate,
+      batchStatus: result.batchStatus,
+      batchId: result.batchId,
+      targetUsers: result.targetUsers,
+      sent: result.sent,
+      failed: result.failed,
+      skippedNoShop: result.skippedNoShop,
+      skippedDuplicate: result.skippedDuplicate,
+      lineHttpStatuses: result.lineHttpStatuses,
+      messagingTokenConfigured: result.messagingTokenConfigured,
+    });
     return NextResponse.json({
       ok: true,
       ...result,

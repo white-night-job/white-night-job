@@ -15,7 +15,10 @@ type HistoryRow = {
   targetCount: number;
   successCount: number;
   failCount: number;
+  skippedCount?: number;
+  status?: string | null;
   detail: string | null;
+  errorMessage?: string | null;
 };
 
 type DailySummary = {
@@ -29,7 +32,25 @@ type DailySummary = {
   targetCount: number;
   successCount: number;
   failCount: number;
+  pendingCount?: number;
+  skippedCount?: number;
+  status?: string;
 };
+
+function statusLabel(status: string | null | undefined) {
+  switch (status) {
+    case "processing":
+      return "処理中";
+    case "completed":
+      return "完了";
+    case "failed":
+      return "失敗";
+    case "skipped":
+      return "スキップ";
+    default:
+      return status || "—";
+  }
+}
 
 type ShopStat = {
   jobId: string;
@@ -180,6 +201,7 @@ export function LineNotificationHistoryPanel({
                 <tr className="border-b border-gold/25 text-muted">
                   <th className="px-2 py-2 font-semibold">配信日</th>
                   <th className="px-2 py-2 font-semibold">配信時刻</th>
+                  <th className="px-2 py-2 font-semibold">状態</th>
                   <th className="px-2 py-2 font-semibold">店舗</th>
                   <th className="px-2 py-2 font-semibold">地域</th>
                   <th className="px-2 py-2 font-semibold">対象</th>
@@ -192,6 +214,14 @@ export function LineNotificationHistoryPanel({
                   <tr key={row.id} className="border-b border-gold/10 text-charcoal">
                     <td className="whitespace-nowrap px-2 py-2">{row.deliveryDate}</td>
                     <td className="whitespace-nowrap px-2 py-2">{row.deliveryTime}</td>
+                    <td className="whitespace-nowrap px-2 py-2">
+                      {statusLabel(row.status)}
+                      {(row.pendingCount ?? 0) > 0 ? (
+                        <span className="mt-0.5 block text-[11px] text-amber-700">
+                          未完了{row.pendingCount}件
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-2 py-2">{row.shopName}</td>
                     <td className="px-2 py-2">{row.district}</td>
                     <td className="px-2 py-2">{row.targetCount}</td>
@@ -244,6 +274,7 @@ export function LineNotificationHistoryPanel({
                     <th className="px-2 py-2 font-semibold">送信日時</th>
                     <th className="px-2 py-2 font-semibold">店舗</th>
                     <th className="px-2 py-2 font-semibold">通知種類</th>
+                    <th className="px-2 py-2 font-semibold">状態</th>
                     <th className="px-2 py-2 font-semibold">対象</th>
                     <th className="px-2 py-2 font-semibold">成功</th>
                     <th className="px-2 py-2 font-semibold">失敗</th>
@@ -263,6 +294,14 @@ export function LineNotificationHistoryPanel({
                             {row.detail}
                           </span>
                         ) : null}
+                        {row.errorMessage ? (
+                          <span className="mt-0.5 block text-[11px] text-red-600">
+                            {row.errorMessage}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-2">
+                        {statusLabel(row.status)}
                       </td>
                       <td className="px-2 py-2">{row.targetCount}</td>
                       <td className="px-2 py-2 text-[#047a3b]">{row.successCount}</td>

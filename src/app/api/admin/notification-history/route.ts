@@ -66,16 +66,34 @@ export async function GET(request: Request) {
     const { data: batches, error: batchError, count } = await supabase
       .from("line_notification_batches")
       .select(
-        "id, sent_at, shop_name, job_id, notify_type, target_count, success_count, fail_count, detail",
+        "id, sent_at, shop_name, job_id, notify_type, target_count, success_count, fail_count, skipped_count, status, detail, error_message, scheduled_date",
         { count: "exact" },
       )
       .order("sent_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (batchError) throw batchError;
+    // マイグレーション前でも履歴が読めるようフォールバック
+    const legacyBatchSelect =
+      "id, sent_at, shop_name, job_id, notify_type, target_count, success_count, fail_count, detail";
+    const batchQuery =
+      batchError && /skipped_count|error_message|scheduled_date|\bstatus\b/i.test(batchError.message)
+        ? await supabase
+            .from("line_notification_batches")
+            .select(legacyBatchSelect, { count: "exact" })
+            .order("sent_at", { ascending: false })
+            .range(offset, offset + limit - 1)
+        : { data: batches, error: batchError, count };
 
-    const history = (batches ?? []).map((row) => {
+    if (batchQuery.error) throw batchQuery.error;
+
+    const history = (batchQuery.data ?? []).map((row) => {
       const when = tokyoParts(row.sent_at);
+      const status =
+        "status" in row && row.status
+          ? String(row.status)
+          : typeof row.detail === "string" && row.detail.startsWith("scheduled ")
+            ? "processing"
+            : null;
       return {
         id: row.id,
         sentAt: row.sent_at,
@@ -89,7 +107,17 @@ export async function GET(request: Request) {
         targetCount: row.target_count ?? 0,
         successCount: row.success_count ?? 0,
         failCount: row.fail_count ?? 0,
+        skippedCount: "skipped_count" in row ? Number(row.skipped_count ?? 0) : 0,
+        status,
         detail: row.detail ?? null,
+        errorMessage:
+          "error_message" in row && row.error_message
+            ? String(row.error_message)
+            : null,
+        scheduledDate:
+          "scheduled_date" in row && row.scheduled_date
+            ? String(row.scheduled_date)
+            : null,
       };
     });
 
@@ -122,7 +150,14 @@ export async function GET(request: Request) {
       if (!dailyError) {
         const dailyByDate = new Map<
           string,
-          { target: number; success: number; fail: number; sentAt: string | null }
+          {
+            target: number;
+            success: number;
+            fail: number;
+            pending: number;
+            skipped: number;
+            sentAt: string | null;
+          }
         >();
         const countByJob = new Map<string, number>();
 
@@ -132,6 +167,8 @@ export async function GET(request: Request) {
             target: 0,
             success: 0,
             fail: 0,
+            pending: 0,
+            skipped: 0,
             sentAt: null,
           };
           current.target += 1;
@@ -143,8 +180,13 @@ export async function GET(request: Request) {
                 (countByJob.get(row.job_id as string) ?? 0) + 1,
               );
             }
+          } else if (row.status === "failed") {
+            current.fail += 1;
+          } else if (row.status === "skipped") {
+            current.skipped += 1;
+          } else {
+            current.pending += 1;
           }
-          if (row.status === "failed") current.fail += 1;
           if (row.sent_at && (!current.sentAt || row.sent_at > current.sentAt)) {
             current.sentAt = row.sent_at;
           }
@@ -158,6 +200,16 @@ export async function GET(request: Request) {
             const when = stats.sentAt
               ? tokyoParts(stats.sentAt)
               : { dateLabel: scheduledDate, timeLabel: "—" };
+            const status =
+              stats.pending > 0
+                ? "processing"
+                : stats.success > 0 && stats.fail === 0
+                  ? "completed"
+                  : stats.success === 0 && stats.fail > 0
+                    ? "failed"
+                    : stats.success === 0 && stats.fail === 0
+                      ? "skipped"
+                      : "completed";
             return {
               id: `daily-${scheduledDate}`,
               scheduledDate,
@@ -170,6 +222,9 @@ export async function GET(request: Request) {
               targetCount: stats.target,
               successCount: stats.success,
               failCount: stats.fail,
+              pendingCount: stats.pending,
+              skippedCount: stats.skipped,
+              status,
             };
           });
 
@@ -191,7 +246,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const total = count ?? history.length;
+    const total = batchQuery.count ?? history.length;
     const payload = {
       history,
       dailySummaries,
