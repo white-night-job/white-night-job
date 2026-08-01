@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
   MetricAvailability,
-  UserActivityEvent,
   UserActivityPeriod,
   UserActivityShopStat,
 } from "@/lib/admin-user-activity";
@@ -28,13 +27,10 @@ type ActivityResponse = {
   };
   summary: Summary;
   shopStats: UserActivityShopStat[];
-  recentEvents: UserActivityEvent[];
 };
 
 const PERIOD_OPTIONS: Array<{ value: UserActivityPeriod; label: string }> = [
   { value: "today", label: "今日" },
-  { value: "last_7_days", label: "過去7日" },
-  { value: "last_30_days", label: "過去30日" },
   { value: "this_month", label: "今月" },
   { value: "last_month", label: "先月" },
   { value: "custom", label: "期間指定" },
@@ -52,21 +48,6 @@ const SUMMARY_CARDS: Array<{
   { key: "aiChatUses", label: "AI相談の利用回数" },
   { key: "blackReports", label: "ブラック店報告の件数" },
 ];
-
-function formatDateTime(value: string) {
-  try {
-    return new Intl.DateTimeFormat("ja-JP", {
-      timeZone: "Asia/Tokyo",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-}
 
 function MetricCard({
   label,
@@ -97,7 +78,7 @@ function MetricCard({
 }
 
 export function UserActivityPanel() {
-  const [period, setPeriod] = useState<UserActivityPeriod>("last_7_days");
+  const [period, setPeriod] = useState<UserActivityPeriod>("today");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(true);
@@ -274,51 +255,6 @@ export function UserActivityPanel() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </section>
-
-          <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
-            <h2 className="text-base font-semibold text-charcoal">
-              最近の利用状況
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              利用日時・機能・店舗・端末種別（取得できる場合）を表示します。
-            </p>
-            {data.recentEvents.length === 0 ? (
-              <p className="mt-4 text-sm text-muted">該当データがありません。</p>
-            ) : (
-              <ul className="mt-4 space-y-2">
-                {data.recentEvents.map((event) => (
-                  <li
-                    key={event.id}
-                    className="rounded-xl border border-gold/15 bg-ivory/40 px-3 py-3 text-sm"
-                  >
-                    <p className="font-medium text-charcoal">{event.feature}</p>
-                    <dl className="mt-2 grid gap-1 text-xs text-muted sm:grid-cols-2">
-                      <div className="flex gap-2">
-                        <dt className="shrink-0">利用日時</dt>
-                        <dd>{formatDateTime(event.at)}</dd>
-                      </div>
-                      <div className="flex gap-2">
-                        <dt className="shrink-0">店舗名</dt>
-                        <dd className="break-words">
-                          {event.shopName?.trim() || "—"}
-                        </dd>
-                      </div>
-                      <div className="flex gap-2">
-                        <dt className="shrink-0">エリア</dt>
-                        <dd>{event.district || event.area || "—"}</dd>
-                      </div>
-                      <div className="flex gap-2">
-                        <dt className="shrink-0">端末種別</dt>
-                        <dd>
-                          {event.deviceType ?? "現在取得していません"}
-                        </dd>
-                      </div>
-                    </dl>
-                  </li>
-                ))}
-              </ul>
             )}
           </section>
         </>

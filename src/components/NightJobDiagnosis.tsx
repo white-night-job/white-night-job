@@ -5,6 +5,10 @@ import { JobTypeDiagnosisResults } from "@/components/JobTypeDiagnosisResults";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
+  createDiagnosisCompletionKey,
+  trackJobDiagnosisCompleted,
+} from "@/lib/job-diagnosis-track-client";
+import {
   calculateDiagnosisResult,
   DIAGNOSIS_QUESTIONS,
   type DiagnosisAnswers,
@@ -35,6 +39,7 @@ export function NightJobDiagnosis({ authenticated = false }: NightJobDiagnosisPr
   const { isLoggedIn, ready } = useUserSession();
   const canUseDiagnosis = authenticated || isLoggedIn;
   const resultsRef = useRef<HTMLDivElement>(null);
+  const completionKeyRef = useRef<string | null>(null);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<DiagnosisAnswers>(EMPTY_ANSWERS);
   const [result, setResult] = useState<DiagnosisResult | null>(null);
@@ -60,6 +65,7 @@ export function NightJobDiagnosis({ authenticated = false }: NightJobDiagnosisPr
     }
 
     const nextResult = calculateDiagnosisResult(next);
+    completionKeyRef.current = createDiagnosisCompletionKey();
     setResult(nextResult);
     setPhase("transition");
 
@@ -73,12 +79,22 @@ export function NightJobDiagnosis({ authenticated = false }: NightJobDiagnosisPr
     setAnswers(EMPTY_ANSWERS);
     setResult(null);
     setPhase("questions");
+    completionKeyRef.current = null;
   }
 
   useEffect(() => {
     if (phase !== "results" || !resultsRef.current) return;
     resultsRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "results" || !result || !completionKeyRef.current) return;
+    void trackJobDiagnosisCompleted({
+      completionKey: completionKeyRef.current,
+      resultJobType: result.topTwo[0]?.jobType ?? null,
+      area: null,
+    });
+  }, [phase, result]);
 
   const showGuestGate = ready && !canUseDiagnosis;
 

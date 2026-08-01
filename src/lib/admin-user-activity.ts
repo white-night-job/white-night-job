@@ -2,8 +2,6 @@ import { getJstMonthBounds } from "@/lib/jst-month-bounds";
 
 export type UserActivityPeriod =
   | "today"
-  | "last_7_days"
-  | "last_30_days"
   | "this_month"
   | "last_month"
   | "custom";
@@ -21,16 +19,6 @@ export type UserActivityShopStat = {
   area: string | null;
   views: number;
   applyClicks: number;
-};
-
-export type UserActivityEvent = {
-  id: string;
-  at: string;
-  feature: string;
-  shopName: string | null;
-  district: string | null;
-  area: string | null;
-  deviceType: string | null;
 };
 
 const TOKYO = "Asia/Tokyo";
@@ -70,14 +58,16 @@ export function parseUserActivityPeriod(
 ): UserActivityPeriod {
   switch (value) {
     case "today":
-    case "last_7_days":
-    case "last_30_days":
     case "this_month":
     case "last_month":
     case "custom":
       return value;
+    // 旧URL互換: 管理画面では選べないが、誤指定時は今月へ寄せる
+    case "last_7_days":
+    case "last_30_days":
+      return "this_month";
     default:
-      return "last_7_days";
+      return "today";
   }
 }
 
@@ -94,24 +84,6 @@ export function getUserActivityPeriodRange(
       startIso: jstDayStartIso(today.year, today.month, today.day),
       endIso: jstDayStartIso(tomorrow.year, tomorrow.month, tomorrow.day),
       label: "今日",
-    };
-  }
-
-  if (period === "last_7_days") {
-    const from = addDays(today.year, today.month, today.day, -6);
-    return {
-      startIso: jstDayStartIso(from.year, from.month, from.day),
-      endIso: jstDayStartIso(tomorrow.year, tomorrow.month, tomorrow.day),
-      label: "過去7日",
-    };
-  }
-
-  if (period === "last_30_days") {
-    const from = addDays(today.year, today.month, today.day, -29);
-    return {
-      startIso: jstDayStartIso(from.year, from.month, from.day),
-      endIso: jstDayStartIso(tomorrow.year, tomorrow.month, tomorrow.day),
-      label: "過去30日",
     };
   }
 
@@ -136,7 +108,7 @@ export function getUserActivityPeriodRange(
   const fromRaw = options?.from?.trim() ?? "";
   const toRaw = options?.to?.trim() ?? "";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fromRaw) || !/^\d{4}-\d{2}-\d{2}$/.test(toRaw)) {
-    const fallback = getUserActivityPeriodRange("last_7_days", { now });
+    const fallback = getUserActivityPeriodRange("today", { now });
     return { ...fallback, label: "期間指定（日付を選択してください）" };
   }
 
@@ -185,6 +157,7 @@ export function featureLabelFromEventType(eventType: string): string {
     case "phone":
       return "電話応募クリック";
     case "diagnosis":
+    case "job_diagnosis_completed":
       return "職種診断";
     case "black_report":
       return "ブラック店報告";

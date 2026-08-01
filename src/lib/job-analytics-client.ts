@@ -8,7 +8,7 @@ const DETAIL_PREFIX = "wn-detail-click:";
 const DETAIL_DEDUP_MS = 10_000;
 const IMPRESSION_DEDUP_MS = 60 * 1000;
 
-function getOrCreateSessionId(): string {
+export function getOrCreateAnalyticsSessionId(): string {
   try {
     const existing = window.localStorage.getItem(SESSION_KEY);
     if (existing) return existing;
@@ -21,6 +21,10 @@ function getOrCreateSessionId(): string {
   } catch {
     return `s-${Date.now()}`;
   }
+}
+
+function getOrCreateSessionId(): string {
+  return getOrCreateAnalyticsSessionId();
 }
 
 function shouldSkip(key: string, windowMs: number): boolean {
