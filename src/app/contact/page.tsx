@@ -6,7 +6,6 @@ import {
   BUSINESS_EMAIL,
   BUSINESS_HOURS_DISPLAY,
   BUSINESS_LEGAL_NAME,
-  BUSINESS_MAPS_SEARCH_URL,
   BUSINESS_PHONE_DISPLAY,
   BUSINESS_PHONE_TEL,
 } from "@/lib/business";
@@ -40,15 +39,8 @@ export default function ContactPage() {
             <div>
               <dt className="font-medium text-charcoal">所在地</dt>
               <dd className="mt-0.5">{BUSINESS_ADDRESS_DISPLAY}</dd>
-              <dd className="mt-1">
-                <a
-                  href={BUSINESS_MAPS_SEARCH_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-gold-dark underline-offset-2 hover:underline"
-                >
-                  Googleマップで所在地を見る
-                </a>
+              <dd className="mt-1 text-muted">
+                登記上の所在地です。来店対応の店舗・事務所はありません。
               </dd>
             </div>
             <div>
@@ -74,7 +66,7 @@ export default function ContactPage() {
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-charcoal">営業時間</dt>
+              <dt className="font-medium text-charcoal">受付時間</dt>
               <dd className="mt-0.5">{BUSINESS_HOURS_DISPLAY}</dd>
             </div>
           </dl>

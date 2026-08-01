@@ -95,8 +95,6 @@ export function buildOrganizationJsonLd() {
   };
 }
 
-export { buildLocalBusinessJsonLd } from "@/lib/business";
-
 /** WebSite schema（name / alternateName / url は Search Console 向け）. */
 export function buildWebSiteJsonLd() {
   return {

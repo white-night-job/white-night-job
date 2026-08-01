@@ -8,7 +8,6 @@ import {
   BUSINESS_EMAIL,
   BUSINESS_HOURS_DISPLAY,
   BUSINESS_LEGAL_NAME,
-  BUSINESS_MAPS_SEARCH_URL,
   BUSINESS_PHONE_DISPLAY,
   BUSINESS_PHONE_TEL,
   BUSINESS_REPRESENTATIVE,
@@ -61,15 +60,8 @@ export default function CompanyPage() {
           <p className="mt-4 text-sm leading-7 text-charcoal/90">
             {BUSINESS_ADDRESS_DISPLAY}
           </p>
-          <p className="mt-3">
-            <a
-              href={BUSINESS_MAPS_SEARCH_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-            >
-              Googleマップで所在地を見る
-            </a>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            登記上の所在地です。来店対応の店舗・事務所はありません。
           </p>
         </section>
         <section>
@@ -100,10 +92,13 @@ export default function CompanyPage() {
         </section>
         <section>
           <h2 className="border-b border-gold/20 pb-2 font-serif text-lg font-semibold text-charcoal">
-            営業時間
+            受付時間
           </h2>
           <p className="mt-4 text-sm leading-7 text-charcoal/90">
             {BUSINESS_HOURS_DISPLAY}
+          </p>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            お問い合わせの受付時間です。
           </p>
         </section>
         <section>

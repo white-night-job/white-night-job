@@ -60,7 +60,7 @@ export default function LegalPage() {
         },
         {
           id: "hours",
-          title: "営業時間",
+          title: "受付時間",
           content: <p>{BUSINESS_HOURS_DISPLAY}</p>,
         },
         {

@@ -3,7 +3,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { SiteShell } from "@/components/SiteShell";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
 import { getServerUserSession } from "@/lib/server-user-session";
-import { buildLocalBusinessJsonLd, buildOrganizationJsonLd, buildRootMetadata, buildWebSiteJsonLd } from "@/lib/seo";
+import { buildOrganizationJsonLd, buildRootMetadata, buildWebSiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import "./desktop.css";
 import "./admin.css";
@@ -26,7 +26,6 @@ export default async function RootLayout({
     <html lang="ja">
       <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
         <JsonLd data={buildOrganizationJsonLd()} />
-        <JsonLd data={buildLocalBusinessJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
           <SiteShell>{children}</SiteShell>
