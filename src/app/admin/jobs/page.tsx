@@ -1,9 +1,10 @@
 "use client";
 
 import { JobListingPreview } from "@/components/JobListingPreview";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
@@ -367,6 +368,15 @@ function AdminJobsPageInner() {
     shopLoginPassword: string;
   } | null>(null);
   const [reissuingPassword, setReissuingPassword] = useState(false);
+  const [copyToast, setCopyToast] = useState<{
+    message: string;
+    tone: "success" | "error";
+  } | null>(null);
+  const [copiedKey, setCopiedKey] = useState<
+    "shopLoginId" | "shopLoginPassword" | "both" | null
+  >(null);
+  const copyToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copiedKeyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -592,6 +602,50 @@ function AdminJobsPageInner() {
       return next;
     });
   }
+
+  const showCopyToast = useCallback(
+    (tone: "success" | "error", message: string) => {
+      if (copyToastTimerRef.current) {
+        clearTimeout(copyToastTimerRef.current);
+      }
+      setCopyToast({ tone, message });
+      copyToastTimerRef.current = setTimeout(() => {
+        setCopyToast(null);
+        copyToastTimerRef.current = null;
+      }, 2500);
+    },
+    [],
+  );
+
+  const copyShopCredential = useCallback(
+    async (
+      text: string,
+      key: "shopLoginId" | "shopLoginPassword" | "both",
+    ) => {
+      const ok = await copyTextToClipboard(text);
+      if (ok) {
+        setCopiedKey(key);
+        if (copiedKeyTimerRef.current) {
+          clearTimeout(copiedKeyTimerRef.current);
+        }
+        copiedKeyTimerRef.current = setTimeout(() => {
+          setCopiedKey(null);
+          copiedKeyTimerRef.current = null;
+        }, 2000);
+        showCopyToast("success", "コピーしました");
+      } else {
+        showCopyToast("error", "コピーできませんでした");
+      }
+    },
+    [showCopyToast],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (copyToastTimerRef.current) clearTimeout(copyToastTimerRef.current);
+      if (copiedKeyTimerRef.current) clearTimeout(copiedKeyTimerRef.current);
+    };
+  }, []);
 
   function applyPlan(plan: JobPlan) {
     setForm((current) => ({
@@ -2640,13 +2694,16 @@ function AdminJobsPageInner() {
                 {form.shopLoginId ? (
                   <button
                     type="button"
-                    className="rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark"
+                    className={
+                      copiedKey === "shopLoginId"
+                        ? "rounded-full border border-[#047a3b]/40 bg-[#047a3b]/10 px-3 py-2 text-xs font-semibold text-[#047a3b] transition"
+                        : "rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark transition active:bg-gold/15"
+                    }
                     onClick={() => {
-                      void navigator.clipboard.writeText(form.shopLoginId);
-                      setMessage("ログインIDをコピーしました。");
+                      void copyShopCredential(form.shopLoginId, "shopLoginId");
                     }}
                   >
-                    コピー
+                    {copiedKey === "shopLoginId" ? "✓ コピー済" : "コピー"}
                   </button>
                 ) : null}
               </div>
@@ -2667,13 +2724,19 @@ function AdminJobsPageInner() {
                 {form.shopLoginPassword ? (
                   <button
                     type="button"
-                    className="rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark"
+                    className={
+                      copiedKey === "shopLoginPassword"
+                        ? "rounded-full border border-[#047a3b]/40 bg-[#047a3b]/10 px-3 py-2 text-xs font-semibold text-[#047a3b] transition"
+                        : "rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark transition active:bg-gold/15"
+                    }
                     onClick={() => {
-                      void navigator.clipboard.writeText(form.shopLoginPassword);
-                      setMessage("パスワードをコピーしました。");
+                      void copyShopCredential(
+                        form.shopLoginPassword,
+                        "shopLoginPassword",
+                      );
                     }}
                   >
-                    コピー
+                    {copiedKey === "shopLoginPassword" ? "✓ コピー済" : "コピー"}
                   </button>
                 ) : null}
               </div>
@@ -2838,15 +2901,19 @@ function AdminJobsPageInner() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold text-gold-dark"
+                className={
+                  copiedKey === "both"
+                    ? "rounded-full border border-[#047a3b]/40 bg-[#047a3b]/10 px-4 py-2 text-xs font-semibold text-[#047a3b] transition"
+                    : "rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold text-gold-dark transition active:bg-gold/15"
+                }
                 onClick={() => {
-                  void navigator.clipboard.writeText(
+                  void copyShopCredential(
                     `ID: ${credentialsModal.shopLoginId}\nPW: ${credentialsModal.shopLoginPassword}`,
+                    "both",
                   );
-                  setMessage("ログイン情報をコピーしました。");
                 }}
               >
-                まとめてコピー
+                {copiedKey === "both" ? "✓ コピー済" : "まとめてコピー"}
               </button>
               <button
                 type="button"
@@ -2857,6 +2924,20 @@ function AdminJobsPageInner() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {copyToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-6 left-1/2 z-[90] -translate-x-1/2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg ${
+            copyToast.tone === "success"
+              ? "border border-[#047a3b]/30 bg-[#047a3b] text-white"
+              : "border border-red-300 bg-red-600 text-white"
+          }`}
+        >
+          {copyToast.message}
         </div>
       )}
 
