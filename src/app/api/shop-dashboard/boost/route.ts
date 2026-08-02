@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
-  calculateDistrictRank,
   countTodayBoosts,
   DAILY_BOOST_LIMIT,
-  fetchBoostStatsForJobs,
+  fetchListingRanksForJob,
   insertShopBoost,
 } from "@/lib/shop-boosts";
 import { invalidateShopScopedCache } from "@/lib/shop-scoped-cache";
@@ -47,12 +46,9 @@ export async function POST(request: Request) {
     await insertShopBoost(supabase, jobId);
     invalidateShopScopedCache(jobId);
 
-    // Never mutate listing_priority / pickup / AI recommend / plan here.
-    // Ranking uses plan + today's shop_boosts (premium never below standard/light).
-
     const { data: jobRow, error: jobError } = await supabase
       .from("jobs")
-      .select("id, district, created_at")
+      .select("id, district, published")
       .eq("id", jobId)
       .maybeSingle();
 
@@ -61,26 +57,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
 
-    const { data: districtRows, error: districtError } = await supabase
-      .from("jobs")
-      .select("id, created_at, updated_at, plan")
-      .eq("published", true)
-      .eq("district", jobRow.district);
-
-    if (districtError) throw districtError;
-
-    const districtJobs = districtRows ?? [];
-    const boostMap = await fetchBoostStatsForJobs(
+    const ranks = await fetchListingRanksForJob(
       supabase,
-      districtJobs.map((row) => row.id),
+      jobId,
+      String(jobRow.district ?? ""),
     );
-    const { rank, total } = calculateDistrictRank(jobId, districtJobs, boostMap);
     const boostRemaining = DAILY_BOOST_LIMIT - todayCount - 1;
 
     return NextResponse.json({
       message: "上位表示を適用しました。",
-      districtRank: rank,
-      districtTotal: total,
+      sapporoRank: ranks.sapporoRank,
+      sapporoTotal: ranks.sapporoTotal,
+      districtRank: ranks.districtRank,
+      districtTotal: ranks.districtTotal,
+      district: ranks.district,
       boostRemaining,
       boostLimit: DAILY_BOOST_LIMIT,
     });

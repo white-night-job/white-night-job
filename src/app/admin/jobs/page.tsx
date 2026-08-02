@@ -18,6 +18,7 @@ import {
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import { formatLocation, JOBS_UPDATED_EVENT } from "@/lib/job-storage";
+import type { JobListingRanks } from "@/lib/shop-boosts";
 import {
   getDisplayCastVoices,
   getDisplayStoreImages,
@@ -336,6 +337,11 @@ function AdminJobsPageInner() {
   const [applicationDetails, setApplicationDetails] = useState<
     Record<string, JobApplicationDetail>
   >({});
+  const [listingRanksByJobId, setListingRanksByJobId] = useState<
+    Record<string, JobListingRanks>
+  >({});
+  const [editingListingRanks, setEditingListingRanks] =
+    useState<JobListingRanks | null>(null);
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -389,6 +395,7 @@ function AdminJobsPageInner() {
       setSearchHasMore(false);
       setSearchPage(1);
       setApplicationDetails({});
+      setListingRanksByJobId({});
       setMessage("店舗名やエリアを入力して検索してください");
       return;
     }
@@ -410,6 +417,7 @@ function AdminJobsPageInner() {
         page: number;
         hasMore: boolean;
         details: Record<string, JobApplicationDetail>;
+        listingRanks?: Record<string, JobListingRanks>;
         searched?: boolean;
         message?: string;
       }>(
@@ -436,6 +444,11 @@ function AdminJobsPageInner() {
       });
       setApplicationDetails((current) =>
         append ? { ...current, ...data.details } : data.details,
+      );
+      setListingRanksByJobId((current) =>
+        append
+          ? { ...current, ...(data.listingRanks ?? {}) }
+          : (data.listingRanks ?? {}),
       );
       console.timeEnd("admin:shop-search");
     } catch (error) {
@@ -531,7 +544,10 @@ function AdminJobsPageInner() {
     let cancelled = false;
     void (async () => {
       try {
-        const data = await readJson<{ job: Job }>(
+        const data = await readJson<{
+          job: Job;
+          listingRanks?: JobListingRanks | null;
+        }>(
           await fetch(`/api/admin/jobs/${editId}`, {
             cache: "no-store",
             credentials: "include",
@@ -539,6 +555,7 @@ function AdminJobsPageInner() {
         );
         if (cancelled) return;
         handleEdit(data.job, { skipUrlUpdate: true });
+        setEditingListingRanks(data.listingRanks ?? null);
       } catch (error) {
         if (!cancelled) {
           setMessage(
@@ -949,6 +966,7 @@ function AdminJobsPageInner() {
     setEditingId(job.id);
     setForm(toForm(job));
     setEditingListingStatus(resolveJobListingStatus(job));
+    setEditingListingRanks(listingRanksByJobId[job.id] ?? null);
     setIsAddFormOpen(false);
     setShowPreview(false);
     setFormDirty(false);
@@ -1176,6 +1194,26 @@ function AdminJobsPageInner() {
                               プラン：
                               {JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
                             </p>
+                            {(() => {
+                              const ranks = listingRanksByJobId[job.id];
+                              const sapporoLabel =
+                                ranks?.sapporoRank == null
+                                  ? "—"
+                                  : `${ranks.sapporoRank}位`;
+                              const districtLabel =
+                                ranks?.districtRank == null
+                                  ? "—"
+                                  : `${ranks.districtRank}位`;
+                              return (
+                                <p className="mt-1 text-xs text-muted">
+                                  札幌内 {sapporoLabel}
+                                  <span className="mx-1.5 text-gold/40" aria-hidden>
+                                    /
+                                  </span>
+                                  {job.district}内 {districtLabel}
+                                </p>
+                              );
+                            })()}
                             <p className="mt-0.5 text-sm text-muted">{job.salary}</p>
 
                             <button
@@ -1792,10 +1830,30 @@ function AdminJobsPageInner() {
               表示順位
             </h3>
             <p className="mt-1 text-xs text-white/75 sm:text-sm">
-              プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
+              公開中求人の実表示順位です（下書き・停止中は —）。プラン選択で自動設定されます。最優先へ変更すると条件一致ユーザーへPickUp店舗通知が自動送信されます（管理者のみ手動変更可）。
             </p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/10 p-4">
+            <dl className="mb-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-gold-light/80">札幌内表示順位</dt>
+                <dd className="mt-1 text-lg font-semibold text-white">
+                  {editingListingRanks?.sapporoRank == null
+                    ? "—"
+                    : `${editingListingRanks.sapporoRank}位`}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-gold-light/80">
+                  エリア内表示順位（{form.district || "—"}）
+                </dt>
+                <dd className="mt-1 text-lg font-semibold text-white">
+                  {editingListingRanks?.districtRank == null
+                    ? "—"
+                    : `${editingListingRanks.districtRank}位`}
+                </dd>
+              </div>
+            </dl>
             <div className="grid grid-cols-3 gap-2">
               {(
                 [

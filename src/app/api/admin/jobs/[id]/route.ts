@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { rowToJob } from "@/lib/job-db";
+import { fetchListingRanksForJob } from "@/lib/shop-boosts";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,17 @@ export async function GET(_request: Request, { params }: RouteContext) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
 
+    const district = String((data as { district?: string }).district ?? "");
+    let listingRanks = null;
+    try {
+      listingRanks = await fetchListingRanksForJob(supabase, id, district);
+    } catch (rankError) {
+      console.error("[admin/jobs/id] listing ranks failed", rankError);
+    }
+
     return NextResponse.json({
       job: rowToJob(data, { includeShopLoginPassword: true }),
+      listingRanks,
     });
   } catch (error) {
     return NextResponse.json(

@@ -143,17 +143,117 @@ export function sortJobRowsByBoost<T extends SortableJobRow>(
   );
 }
 
+/** Rank within a job set using the same sort as the public listing. */
+export function calculateListingRank(
+  jobId: string,
+  jobs: SortableJobRow[],
+  boostMap: BoostStatsMap,
+): { rank: number | null; total: number } {
+  const sorted = sortJobRowsByBoost(jobs, boostMap);
+  const index = sorted.findIndex((job) => job.id === jobId);
+  return {
+    rank: index >= 0 ? index + 1 : null,
+    total: jobs.length,
+  };
+}
+
 export function calculateDistrictRank(
   jobId: string,
   districtJobs: SortableJobRow[],
   boostMap: BoostStatsMap,
 ): { rank: number; total: number } {
-  const sorted = sortJobRowsByBoost(districtJobs, boostMap);
-  const index = sorted.findIndex((job) => job.id === jobId);
+  const { rank, total } = calculateListingRank(jobId, districtJobs, boostMap);
   return {
-    rank: index >= 0 ? index + 1 : districtJobs.length,
-    total: districtJobs.length,
+    // Compatible with callers that assume a number (published jobs only).
+    rank: rank ?? Math.max(total, 1),
+    total,
   };
+}
+
+export type JobListingRanks = {
+  sapporoRank: number | null;
+  sapporoTotal: number;
+  districtRank: number | null;
+  districtTotal: number;
+  district: string;
+};
+
+type RankJobRow = SortableJobRow & {
+  district: string;
+};
+
+/**
+ * Compute Sapporo-wide and district ranks from published jobs only.
+ * Returns null ranks when the target job is not in the published set.
+ */
+export async function fetchListingRanksForJobs(
+  supabase: SupabaseClient,
+  targets: Array<{ jobId: string; district: string }>,
+): Promise<Record<string, JobListingRanks>> {
+  const empty: Record<string, JobListingRanks> = {};
+  for (const target of targets) {
+    empty[target.jobId] = {
+      sapporoRank: null,
+      sapporoTotal: 0,
+      districtRank: null,
+      districtTotal: 0,
+      district: target.district,
+    };
+  }
+  if (targets.length === 0) return empty;
+
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("id, district, created_at, updated_at, plan")
+    .eq("published", true);
+
+  if (error) throw error;
+
+  const published = (data ?? []) as RankJobRow[];
+  const boostMap = await fetchBoostStatsForJobs(
+    supabase,
+    published.map((row) => row.id),
+  );
+  const sapporoTotal = published.length;
+
+  const byDistrict = new Map<string, RankJobRow[]>();
+  for (const row of published) {
+    const list = byDistrict.get(row.district) ?? [];
+    list.push(row);
+    byDistrict.set(row.district, list);
+  }
+
+  const result: Record<string, JobListingRanks> = {};
+  for (const target of targets) {
+    const districtJobs = byDistrict.get(target.district) ?? [];
+    const sapporo = calculateListingRank(target.jobId, published, boostMap);
+    const district = calculateListingRank(target.jobId, districtJobs, boostMap);
+    result[target.jobId] = {
+      sapporoRank: sapporo.rank,
+      sapporoTotal,
+      districtRank: district.rank,
+      districtTotal: districtJobs.length,
+      district: target.district,
+    };
+  }
+  return result;
+}
+
+export async function fetchListingRanksForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+  district: string,
+): Promise<JobListingRanks> {
+  const map = await fetchListingRanksForJobs(supabase, [{ jobId, district }]);
+  return (
+    map[jobId] ?? {
+      sapporoRank: null,
+      sapporoTotal: 0,
+      districtRank: null,
+      districtTotal: 0,
+      district,
+    }
+  );
 }
 
 function emptyBoostStatsMap(jobIds: string[]): BoostStatsMap {

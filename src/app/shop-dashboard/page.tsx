@@ -214,8 +214,10 @@ export default function ShopDashboardPage() {
   const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [districtRank, setDistrictRank] = useState(1);
-  const [districtTotal, setDistrictTotal] = useState(1);
+  const [districtRank, setDistrictRank] = useState<number | null>(null);
+  const [districtTotal, setDistrictTotal] = useState(0);
+  const [sapporoRank, setSapporoRank] = useState<number | null>(null);
+  const [sapporoTotal, setSapporoTotal] = useState(0);
   const [boostRemaining, setBoostRemaining] = useState(5);
   const [boostLimit, setBoostLimit] = useState(5);
   const [newJobNotifyCount, setNewJobNotifyCount] = useState(0);
@@ -263,7 +265,9 @@ export default function ShopDashboardPage() {
       const data = await readJson<{
         applicationDetail: JobApplicationDetail;
         viewCount: number;
-        districtRank: number;
+        sapporoRank: number | null;
+        sapporoTotal: number;
+        districtRank: number | null;
         districtTotal: number;
         boostRemaining: number;
         boostLimit: number;
@@ -281,8 +285,14 @@ export default function ShopDashboardPage() {
       }
       setApplicationDetail(data.applicationDetail);
       setViewCount(data.viewCount);
-      setDistrictRank(data.districtRank ?? 1);
-      setDistrictTotal(data.districtTotal ?? 1);
+      setSapporoRank(
+        typeof data.sapporoRank === "number" ? data.sapporoRank : null,
+      );
+      setSapporoTotal(data.sapporoTotal ?? 0);
+      setDistrictRank(
+        typeof data.districtRank === "number" ? data.districtRank : null,
+      );
+      setDistrictTotal(data.districtTotal ?? 0);
       setBoostRemaining(data.boostRemaining ?? 5);
       setBoostLimit(data.boostLimit ?? 5);
       if (data.district) setShellDistrict(data.district);
@@ -459,7 +469,9 @@ export default function ShopDashboardPage() {
       });
       const data = (await response.json()) as {
         message?: string;
-        districtRank?: number;
+        sapporoRank?: number | null;
+        sapporoTotal?: number;
+        districtRank?: number | null;
         districtTotal?: number;
         boostRemaining?: number;
         boostLimit?: number;
@@ -475,8 +487,18 @@ export default function ShopDashboardPage() {
         throw new Error(data.message ?? "上位表示の適用に失敗しました。");
       }
 
-      setDistrictRank(data.districtRank ?? districtRank);
-      setDistrictTotal(data.districtTotal ?? districtTotal);
+      setSapporoRank(
+        typeof data.sapporoRank === "number" ? data.sapporoRank : null,
+      );
+      if (typeof data.sapporoTotal === "number") {
+        setSapporoTotal(data.sapporoTotal);
+      }
+      setDistrictRank(
+        typeof data.districtRank === "number" ? data.districtRank : null,
+      );
+      if (typeof data.districtTotal === "number") {
+        setDistrictTotal(data.districtTotal);
+      }
       setBoostRemaining(data.boostRemaining ?? boostRemaining);
       setBoostLimit(data.boostLimit ?? boostLimit);
       setBoostMessage(data.message ?? "上位表示を適用しました。");
@@ -1156,24 +1178,55 @@ export default function ShopDashboardPage() {
 
       <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-gold-light/90">
-              {displayDistrict || "—"}エリア内 表示順位
-            </p>
-            {metricsLoading ? (
-              <div className="mt-2 h-10 w-28 animate-pulse rounded bg-white/20" />
-            ) : (
-              <p className="mt-1 font-serif text-3xl font-semibold text-white">
-                {districtRank}
-                <span className="ml-1 text-lg font-medium text-gold-light">位</span>
-              </p>
-            )}
-            <p className="mt-1 text-xs text-gold-light/70">
-              {metricsLoading
-                ? "順位を計算中…"
-                : `全${districtTotal}店舗中（本日の上位表示・更新順で算出）`}
-            </p>
-            <p className="mt-2 inline-flex rounded-full border border-gold/40 bg-black/25 px-3 py-1 text-xs font-medium text-gold-light">
+          <div className="min-w-0 flex-1">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-gold-light/90">
+                  札幌内表示順位
+                </p>
+                {metricsLoading ? (
+                  <div className="mt-2 h-10 w-28 animate-pulse rounded bg-white/20" />
+                ) : (
+                  <p className="mt-1 font-serif text-3xl font-semibold text-white">
+                    {sapporoRank == null ? (
+                      <span className="text-2xl text-gold-light/80">—</span>
+                    ) : (
+                      <>
+                        {sapporoRank}
+                        <span className="ml-1 text-lg font-medium text-gold-light">
+                          位
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gold-light/90">
+                  エリア内表示順位
+                </p>
+                {metricsLoading ? (
+                  <div className="mt-2 h-10 w-36 animate-pulse rounded bg-white/20" />
+                ) : (
+                  <p className="mt-1 font-serif text-3xl font-semibold text-white">
+                    <span className="mr-2 text-base font-medium text-gold-light/90">
+                      {displayDistrict || "—"}内
+                    </span>
+                    {districtRank == null ? (
+                      <span className="text-2xl text-gold-light/80">—</span>
+                    ) : (
+                      <>
+                        {districtRank}
+                        <span className="ml-1 text-lg font-medium text-gold-light">
+                          位
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="mt-3 inline-flex rounded-full border border-gold/40 bg-black/25 px-3 py-1 text-xs font-medium text-gold-light">
               掲載プラン：{planDefinition.label}（{planDefinition.priceLabel}）
             </p>
           </div>

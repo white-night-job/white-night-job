@@ -7,9 +7,9 @@ import {
 import { countViewsForJob } from "@/lib/job-views";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
-  calculateDistrictRank,
+  countTodayBoosts,
   DAILY_BOOST_LIMIT,
-  fetchBoostStatsForJobs,
+  fetchListingRanksForJob,
 } from "@/lib/shop-boosts";
 import {
   getShopScopedCache,
@@ -25,11 +25,14 @@ const METRICS_CACHE_TTL_MS = 12_000;
 type MetricsPayload = {
   applicationDetail: ReturnType<typeof emptyApplicationDetail>;
   viewCount: number;
-  districtRank: number;
+  sapporoRank: number | null;
+  sapporoTotal: number;
+  districtRank: number | null;
   districtTotal: number;
   boostRemaining: number;
   boostLimit: number;
   district: string;
+  published: boolean;
 };
 
 export async function GET() {
@@ -64,7 +67,7 @@ export async function GET() {
     const districtStarted = Date.now();
     const { data: jobRow, error: jobError } = await supabase
       .from("jobs")
-      .select("id, district")
+      .select("id, district, published")
       .eq("id", jobId)
       .maybeSingle();
     mark("jobMs", districtStarted);
@@ -94,30 +97,24 @@ export async function GET() {
     }
     mark("countsMs", metricsStarted);
 
-    let districtRank = 1;
-    let districtTotal = 1;
+    let sapporoRank: number | null = null;
+    let sapporoTotal = 0;
+    let districtRank: number | null = null;
+    let districtTotal = 0;
     let boostRemaining = DAILY_BOOST_LIMIT;
     const boostLimit = DAILY_BOOST_LIMIT;
+    const published = jobRow.published === true;
 
     const rankStarted = Date.now();
     try {
-      const { data: districtRows, error: districtError } = await supabase
-        .from("jobs")
-        .select("id, created_at, updated_at, plan")
-        .eq("published", true)
-        .eq("district", jobRow.district);
-
-      if (districtError) throw districtError;
-
-      const districtJobs = districtRows ?? [];
-      const boostMap = await fetchBoostStatsForJobs(
-        supabase,
-        districtJobs.map((row) => row.id),
-      );
-      const rankInfo = calculateDistrictRank(jobId, districtJobs, boostMap);
-      districtRank = rankInfo.rank;
-      districtTotal = rankInfo.total;
-      const todayBoostCount = boostMap[jobId]?.todayCount ?? 0;
+      const [ranks, todayBoostCount] = await Promise.all([
+        fetchListingRanksForJob(supabase, jobId, String(jobRow.district ?? "")),
+        countTodayBoosts(supabase, jobId),
+      ]);
+      sapporoRank = ranks.sapporoRank;
+      sapporoTotal = ranks.sapporoTotal;
+      districtRank = ranks.districtRank;
+      districtTotal = ranks.districtTotal;
       boostRemaining = Math.max(0, DAILY_BOOST_LIMIT - todayBoostCount);
     } catch (error) {
       console.error("[shop-dashboard/metrics] rank failed", error);
@@ -127,11 +124,14 @@ export async function GET() {
     const payload: MetricsPayload = {
       applicationDetail,
       viewCount,
+      sapporoRank,
+      sapporoTotal,
       districtRank,
       districtTotal,
       boostRemaining,
       boostLimit,
-      district: jobRow.district,
+      district: String(jobRow.district ?? ""),
+      published,
     };
 
     setShopScopedCache(cacheKey, jobId, payload, METRICS_CACHE_TTL_MS);

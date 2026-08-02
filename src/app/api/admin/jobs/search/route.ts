@@ -12,6 +12,7 @@ import { rowToJob } from "@/lib/job-db";
 import { aggregateViewCounts } from "@/lib/job-views";
 import { FIXED_AREA, type District } from "@/types/job";
 import { createSupabaseAdmin } from "@/lib/supabase";
+import { fetchListingRanksForJobs } from "@/lib/shop-boosts";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +141,17 @@ export async function GET(request: Request) {
       }
     }
 
+    const listingRanks =
+      pageJobs.length > 0
+        ? await fetchListingRanksForJobs(
+            supabase,
+            pageJobs.map((job) => ({
+              jobId: job.id,
+              district: job.district,
+            })),
+          )
+        : {};
+
     const payload = {
       jobs: pageJobs,
       total,
@@ -148,6 +160,7 @@ export async function GET(request: Request) {
       hasMore: offset + pageJobs.length < total,
       details,
       viewCounts,
+      listingRanks,
       searched: true,
     };
 
