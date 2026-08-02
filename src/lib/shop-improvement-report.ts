@@ -152,6 +152,8 @@ export type ShopLightAnalyticsSummary = {
   /** 対象期間の表示用（例: 2026年7月） */
   periodLabel: string;
   current: LightAnalyticsMetrics;
+  /** 表示回数の月別推移（直近12か月）。スタンダード以上と同じ集計。 */
+  monthly: MonthlyAnalyticsBucket[];
   generatedAt: string;
 };
 
@@ -1429,9 +1431,9 @@ export async function buildShopImprovementReport(
 }
 
 /**
- * ライトプラン向けの簡易集計。当月の表示・応募クリックのみで、
- * 店舗詳細クリック数は返却にも判定にも使わない（改善レポートは含めない）。
- * 月別詳細や詳細クリック系データは含めない。
+ * ライトプラン向けの簡易集計。当月の表示・応募クリックに加え、
+ * 表示回数の月別推移（直近12か月）のみ付与する。
+ * 店舗詳細クリック数・改善レポート・詳細分析は返さない。
  */
 export async function buildShopLightAnalyticsSummary(
   supabase: SupabaseClient,
@@ -1441,13 +1443,16 @@ export async function buildShopLightAnalyticsSummary(
 ): Promise<ShopLightAnalyticsSummary> {
   const ranges = getReportMonthRanges(referenceDate);
 
-  const eventsResult = await supabase
-    .from("job_analytics_events")
-    .select("event_type, session_id, created_at")
-    .eq("job_id", jobId)
-    .eq("is_internal", false)
-    .gte("created_at", ranges.currentStartIso)
-    .lt("created_at", ranges.currentEndIso);
+  const [eventsResult, monthly] = await Promise.all([
+    supabase
+      .from("job_analytics_events")
+      .select("event_type, session_id, created_at")
+      .eq("job_id", jobId)
+      .eq("is_internal", false)
+      .gte("created_at", ranges.currentStartIso)
+      .lt("created_at", ranges.currentEndIso),
+    fetchJobMonthlyAnalytics(supabase, jobId),
+  ]);
 
   if (eventsResult.error) throw eventsResult.error;
 
@@ -1467,6 +1472,7 @@ export async function buildShopLightAnalyticsSummary(
       phoneClicks: counts.phoneClicks,
       applyTotal: counts.applyTotal,
     },
+    monthly,
     generatedAt: new Date().toISOString(),
   };
 }

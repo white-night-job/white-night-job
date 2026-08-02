@@ -28,8 +28,8 @@ const REPORT_LOAD_ERROR_MESSAGE =
  * アクセス・応募分析・レポート。
  * - 店舗は自店舗（Cookie の job_id）のみ取得可能
  * - 管理者は ?jobId= で全店舗を確認可能
- * - プラン判定はサーバー側で行う。ライトには簡易集計（light）のみを返し、
- *   改善レポート（report）は返さない
+ * - プラン判定はサーバー側で行う。ライトには簡易集計（light）と
+ *   表示回数の月別推移のみを返し、改善レポート（report）は返さない
  */
 async function isAdminSafe(): Promise<boolean> {
   // ADMIN_PASSWORD 未設定の環境では例外になるため、店舗判定を止めない。
@@ -70,10 +70,10 @@ export async function GET(request: Request) {
     const plan = parseJobPlan(jobRow.plan);
     const { monthKey } = getReportMonthRanges();
 
-    // ライトは簡易集計のみ。詳細クリック・改善レポートは
+    // ライトは簡易集計＋表示回数の月別推移のみ。詳細クリック・改善レポートは
     // サーバー側で返さないため、APIを直接呼んでも取得できない。
     if (!getPlanFeatures(plan).analytics) {
-      const cacheKey = `shop-light-analytics:v2:${jobId}:${monthKey}`;
+      const cacheKey = `shop-light-analytics:v3:${jobId}:${monthKey}`;
       const cached = getShopScopedCache<ShopLightAnalyticsSummary>(
         cacheKey,
         jobId,
