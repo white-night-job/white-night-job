@@ -53,7 +53,8 @@ export function CompactJobCard({
       <JobImpressionTracker jobId={job.id}>
       <article id={cardId} className="listing-job-card relative">
         <JobDetailPrefetch jobId={job.id} />
-        <div className="absolute right-2 top-2 z-10">
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
+          <CompareButton jobId={job.id} />
           <FavoriteButton jobId={job.id} />
         </div>
         {badge && <ListingBadge badge={badge} />}
@@ -96,9 +97,6 @@ export function CompactJobCard({
             <span className="listing-card-link">求人詳細を見る</span>
           </div>
         </Link>
-        <div className="mt-2 border-t border-gold/10 px-3 pb-3 pt-2">
-          <CompareButton jobId={job.id} />
-        </div>
       </article>
       </JobImpressionTracker>
     );
@@ -111,7 +109,8 @@ export function CompactJobCard({
       className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-gold/45 bg-gradient-to-br from-white via-ivory to-champagne shadow-luxury transition-transform duration-300 hover:-translate-y-0.5"
     >
       <JobDetailPrefetch jobId={job.id} />
-      <div className="absolute right-2 top-2 z-10">
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
+        <CompareButton jobId={job.id} />
         <FavoriteButton jobId={job.id} />
       </div>
       {badge && <ListingBadge badge={badge} />}
@@ -160,9 +159,6 @@ export function CompactJobCard({
           </span>
         </div>
       </Link>
-      <div className="mt-2 border-t border-gold/10 px-3 pb-3 pt-2">
-        <CompareButton jobId={job.id} />
-      </div>
     </article>
     </JobImpressionTracker>
   );

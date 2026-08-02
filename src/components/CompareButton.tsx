@@ -1,59 +1,78 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import {
-  addCompareJobId,
-  COMPARE_MAX,
-  loadCompareJobIds,
-} from "@/lib/compare-jobs";
+import type { MouseEvent } from "react";
+import { useCompare } from "@/components/CompareProvider";
 
 type CompareButtonProps = {
   jobId: string;
   className?: string;
+  /** chip: カード用チェック風 / detail: 詳細ページ用ラベル */
+  variant?: "chip" | "detail";
 };
 
-export function CompareButton({ jobId, className = "" }: CompareButtonProps) {
-  const [jobIds, setJobIds] = useState<string[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
+export function CompareButton({
+  jobId,
+  className = "",
+  variant = "chip",
+}: CompareButtonProps) {
+  const { isCompared, toggleCompare } = useCompare();
+  const added = isCompared(jobId);
 
-  useEffect(() => {
-    setJobIds(loadCompareJobIds());
-  }, []);
-
-  function handleAdd() {
-    setMessage(null);
-    const result = addCompareJobId(jobId);
-    setJobIds(result.jobIds);
-    if (result.ok) {
-      setMessage("比較に追加しました");
-      return;
-    }
-    if (result.reason === "duplicate") {
-      setMessage("すでに比較リストにあります");
-      return;
-    }
-    setMessage(`比較は最大${COMPARE_MAX}店舗までです`);
+  function handleClick(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleCompare(jobId);
   }
 
-  const isAdded = jobIds.includes(jobId);
-
-  return (
-    <div className={`flex flex-col items-start gap-1 ${className}`}>
+  if (variant === "detail") {
+    return (
       <button
         type="button"
-        onClick={handleAdd}
-        disabled={isAdded}
-        className="text-xs font-semibold text-gold-dark underline-offset-2 hover:underline disabled:opacity-50"
+        onClick={handleClick}
+        aria-pressed={added}
+        className={[
+          "rounded-full px-3 py-1.5 text-xs font-semibold transition",
+          added
+            ? "border border-charcoal bg-charcoal text-gold-light"
+            : "border border-gold/40 bg-white text-gold-dark hover:bg-ivory",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
-        {isAdded ? "比較に追加済み" : "比較に追加"}
+        {added ? "比較中" : "比較に追加"}
       </button>
-      {jobIds.length > 0 && (
-        <Link href="/compare" className="text-[10px] text-muted">
-          比較する（{jobIds.length}/{COMPARE_MAX}）
-        </Link>
-      )}
-      {message && <p className="text-[10px] text-muted">{message}</p>}
-    </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-pressed={added}
+      aria-label={added ? "比較中（タップで外す）" : "比較する"}
+      className={[
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11px] font-semibold shadow-sm backdrop-blur transition",
+        added
+          ? "border border-charcoal bg-charcoal text-gold-light"
+          : "border border-gold/45 bg-white/95 text-gold-dark hover:border-gold",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span
+        aria-hidden="true"
+        className={[
+          "flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border text-[9px] leading-none",
+          added
+            ? "border-gold bg-gold text-charcoal"
+            : "border-gold/60 bg-white text-transparent",
+        ].join(" ")}
+      >
+        ✓
+      </span>
+      {added ? "比較中" : "比較する"}
+    </button>
   );
 }

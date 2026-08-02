@@ -20,7 +20,8 @@ export function JobCard({ job }: { job: Job }) {
       className={`relative overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
     >
       <JobDetailPrefetch jobId={job.id} />
-      <div className="absolute right-3 top-3 z-10">
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+        <CompareButton jobId={job.id} />
         <FavoriteButton jobId={job.id} />
       </div>
       <Link href={`/jobs/${job.id}`} scroll={false} prefetch className="block">
@@ -95,9 +96,6 @@ export function JobCard({ job }: { job: Job }) {
           </p>
         </div>
       </Link>
-      <div className="border-t border-gold/10 px-4 pb-4 sm:px-5">
-        <CompareButton jobId={job.id} />
-      </div>
     </article>
     </JobImpressionTracker>
   );

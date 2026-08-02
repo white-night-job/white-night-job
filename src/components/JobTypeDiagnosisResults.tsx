@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useCompare } from "@/components/CompareProvider";
 import { JobTypeDiagnosisSharePanel } from "@/components/JobTypeDiagnosisSharePanel";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
@@ -148,6 +150,8 @@ export function JobTypeDiagnosisResults({
   answers,
   onReset,
 }: JobTypeDiagnosisResultsProps) {
+  const router = useRouter();
+  const { setCompareIds, showToast } = useCompare();
   const { isLoggedIn, ready } = useUserSession();
   const [recommendedShops, setRecommendedShops] = useState<RecommendedDiagnosisShop[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
@@ -158,6 +162,16 @@ export function JobTypeDiagnosisResults({
   const socialProof = getSocialProofApplyRate(result.topTwo[0].jobType);
   const primaryJobsUrl = buildDiagnosisJobsUrl(result.topTwo[0].jobType);
   const trialJobsUrl = buildDiagnosisTrialJobsUrl(result.topTwo[0].jobType);
+
+  function goCompareRecommended() {
+    const ids = recommendedShops.map((shop) => shop.jobId).slice(0, 3);
+    if (ids.length === 0) {
+      showToast("比較できるおすすめ店舗がありません", "error");
+      return;
+    }
+    setCompareIds(ids);
+    router.push("/compare");
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -387,6 +401,17 @@ export function JobTypeDiagnosisResults({
       <Link href={primaryJobsUrl} className="job-diagnosis-primary-cta">
         あなたに合う求人をもっと見る
       </Link>
+
+      {recommendedShops.length > 0 && (
+        <button
+          type="button"
+          onClick={goCompareRecommended}
+          disabled={loadingShops}
+          className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-gold/40 bg-charcoal px-5 text-sm font-semibold text-gold-light disabled:opacity-60"
+        >
+          あなたにおすすめの3店舗を比較する
+        </button>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareButton } from "@/components/CompareButton";
+import { CompareRelatedShops } from "@/components/CompareRelatedShops";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
@@ -321,7 +322,7 @@ export function JobDetailView({
                     比較
                   </button>
                 ) : (
-                  <CompareButton jobId={job.id} />
+                  <CompareButton jobId={job.id} variant="detail" />
                 )}
               </div>
             </div>
@@ -622,7 +623,7 @@ export function JobDetailView({
                   比較
                 </button>
               ) : (
-                <CompareButton jobId={job.id} />
+                <CompareButton jobId={job.id} variant="detail" />
               )}
             </div>
             <div className="mt-5">
@@ -638,6 +639,8 @@ export function JobDetailView({
           </div>
         </aside>
       </div>
+
+      {!preview && <CompareRelatedShops job={job} />}
     </div>
   );
 }

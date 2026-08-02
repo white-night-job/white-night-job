@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ChatBot } from "@/components/ChatBot";
+import { CompareProvider } from "@/components/CompareProvider";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
@@ -21,7 +22,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <CompareProvider>{children}</CompareProvider>
+      </main>
       <Footer />
       <ChatBot />
     </>
