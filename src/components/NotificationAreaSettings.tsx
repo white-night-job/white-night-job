@@ -30,9 +30,12 @@ export const EMPTY_NOTIFICATION_SETTINGS: NotificationSettingsState = {
 export function NotificationPreferenceForm({
   settings,
   onChange,
+  hideHeading = false,
 }: {
   settings: NotificationSettingsState;
   onChange: (next: NotificationSettingsState) => void;
+  /** マイページのアコーディオン見出しと重複する場合に隠す */
+  hideHeading?: boolean;
 }) {
   function toggleArea(area: string) {
     onChange({
@@ -55,7 +58,9 @@ export function NotificationPreferenceForm({
   return (
     <div className="space-y-5">
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-charcoal">通知設定</p>
+        {!hideHeading && (
+          <p className="text-sm font-semibold text-charcoal">通知設定</p>
+        )}
         <label className="flex items-center justify-between gap-3 rounded-xl border border-gold/20 bg-ivory/40 px-3 py-3 text-sm text-charcoal">
           <span>新着求人通知</span>
           <input

@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
+import {
+  MyPageAccordionSection,
+  type MyPageAccordionProps,
+} from "@/components/mypage/MyPageAccordionSection";
 import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 import {
   formatDiagnosisDate,
@@ -17,7 +21,7 @@ function parseDiagnosis(raw: unknown): SavedDiagnosisResult[] {
   return payload.diagnosis ? [payload.diagnosis] : [];
 }
 
-export function MyPageDiagnosisSection() {
+export function MyPageDiagnosisSection({ open, onToggle }: MyPageAccordionProps) {
   const { data, status } = useMyPageSection<SavedDiagnosisResult[]>({
     cacheKey: "mypage:diagnosis",
     url: "/api/job-type-diagnosis",
@@ -28,27 +32,19 @@ export function MyPageDiagnosisSection() {
   const history = Array.isArray(data) ? data : [];
 
   return (
-    <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-      <h2 className="font-serif text-lg font-semibold text-charcoal">診断結果</h2>
-
-      {status === "loading" && (
-        <div className="mt-3">
-          <MyPageSectionSkeleton height="h-20" />
-        </div>
-      )}
+    <MyPageAccordionSection title="診断結果" open={open} onToggle={onToggle}>
+      {status === "loading" && <MyPageSectionSkeleton height="h-20" />}
 
       {status === "error" && (
-        <p className="mt-2 text-sm text-muted">
-          診断結果を読み込めませんでした。
-        </p>
+        <p className="text-sm text-muted">診断結果を読み込めませんでした。</p>
       )}
 
       {status === "ready" && history.length === 0 && (
-        <p className="mt-2 text-sm text-muted">まだ職種診断の結果はありません。</p>
+        <p className="text-sm text-muted">まだ職種診断の結果はありません。</p>
       )}
 
       {status === "ready" && history.length > 0 && (
-        <ul className="mt-4 space-y-3">
+        <ul className="space-y-3">
           {history.map((entry) => (
             <li
               key={entry.id ?? entry.diagnosedAt}
@@ -84,6 +80,6 @@ export function MyPageDiagnosisSection() {
       >
         もう一度診断する
       </Link>
-    </section>
+    </MyPageAccordionSection>
   );
 }

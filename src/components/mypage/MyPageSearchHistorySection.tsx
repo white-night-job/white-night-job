@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  MyPageAccordionSection,
+  type MyPageAccordionProps,
+} from "@/components/mypage/MyPageAccordionSection";
+import {
   buildJobsSearchUrl,
   describeSearchHistory,
   loadSearchHistory,
   type SavedSearchFilters,
 } from "@/lib/search-history";
 
-export function MyPageSearchHistorySection() {
+export function MyPageSearchHistorySection({ open, onToggle }: MyPageAccordionProps) {
   const [searchHistory, setSearchHistory] = useState<SavedSearchFilters | null>(null);
 
   useEffect(() => {
@@ -23,12 +27,15 @@ export function MyPageSearchHistorySection() {
   const summary = searchHistory ? describeSearchHistory(searchHistory) : [];
 
   return (
-    <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-      <h2 className="font-serif text-lg font-semibold text-charcoal">最近の検索条件</h2>
+    <MyPageAccordionSection
+      title="最近の検索条件"
+      open={open}
+      onToggle={onToggle}
+    >
       {summary.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">保存された検索条件はありません。</p>
+        <p className="text-sm text-muted">保存された検索条件はありません。</p>
       ) : (
-        <ul className="mt-3 space-y-1.5 text-sm text-charcoal">
+        <ul className="space-y-1.5 text-sm text-charcoal">
           {summary.map((line) => (
             <li key={line} className="flex gap-2">
               <span className="text-gold-dark">・</span>
@@ -45,6 +52,6 @@ export function MyPageSearchHistorySection() {
           前回の条件で検索する
         </Link>
       )}
-    </section>
+    </MyPageAccordionSection>
   );
 }

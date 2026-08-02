@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { LineLoginButton } from "@/components/LineLoginButton";
 import { ViewHistoryList } from "@/components/ViewHistoryList";
 import { useUserSession } from "@/components/UserSessionProvider";
+import { MyPageAccordionSection } from "@/components/mypage/MyPageAccordionSection";
 import { MyPageDiagnosisSection } from "@/components/mypage/MyPageDiagnosisSection";
 import { MyPageFavoritesSection } from "@/components/mypage/MyPageFavoritesSection";
 import { MyPageLogoutButton } from "@/components/mypage/MyPageLogoutButton";
@@ -11,8 +13,32 @@ import { MyPageNotificationSection } from "@/components/mypage/MyPageNotificatio
 import { MyPageProfileCard } from "@/components/mypage/MyPageProfileCard";
 import { MyPageSearchHistorySection } from "@/components/mypage/MyPageSearchHistorySection";
 
+type SectionKey =
+  | "search"
+  | "favorites"
+  | "history"
+  | "diagnosis"
+  | "notifications";
+
+const INITIAL_OPEN: Record<SectionKey, boolean> = {
+  search: false,
+  favorites: false,
+  history: false,
+  diagnosis: false,
+  notifications: false,
+};
+
 export default function MyPage() {
   const { isLoggedIn, ready } = useUserSession();
+  const [openSections, setOpenSections] =
+    useState<Record<SectionKey, boolean>>(INITIAL_OPEN);
+
+  const toggleSection = useCallback((key: SectionKey) => {
+    setOpenSections((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  }, []);
 
   if (ready && !isLoggedIn) {
     return (
@@ -40,13 +66,21 @@ export default function MyPage() {
     <div className="mx-auto max-w-lg px-4 py-5 sm:max-w-2xl sm:px-6 sm:py-8">
       <MyPageProfileCard />
 
-      <MyPageFavoritesSection />
+      <MyPageSearchHistorySection
+        open={openSections.search}
+        onToggle={() => toggleSection("search")}
+      />
 
-      <MyPageDiagnosisSection />
+      <MyPageFavoritesSection
+        open={openSections.favorites}
+        onToggle={() => toggleSection("favorites")}
+      />
 
-      <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="font-serif text-lg font-semibold text-charcoal">最近見た店舗</h2>
+      <MyPageAccordionSection
+        title="最近見た店舗"
+        open={openSections.history}
+        onToggle={() => toggleSection("history")}
+        headerAside={
           <Link
             href="/mypage/history"
             prefetch
@@ -54,13 +88,20 @@ export default function MyPage() {
           >
             すべて見る
           </Link>
-        </div>
+        }
+      >
         <ViewHistoryList showTitle={false} limit={5} />
-      </section>
+      </MyPageAccordionSection>
 
-      <MyPageSearchHistorySection />
+      <MyPageDiagnosisSection
+        open={openSections.diagnosis}
+        onToggle={() => toggleSection("diagnosis")}
+      />
 
-      <MyPageNotificationSection />
+      <MyPageNotificationSection
+        open={openSections.notifications}
+        onToggle={() => toggleSection("notifications")}
+      />
 
       <MyPageLogoutButton />
     </div>

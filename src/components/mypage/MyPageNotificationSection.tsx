@@ -6,6 +6,10 @@ import {
   NotificationPreferenceForm,
   type NotificationSettingsState,
 } from "@/components/NotificationAreaSettings";
+import {
+  MyPageAccordionSection,
+  type MyPageAccordionProps,
+} from "@/components/mypage/MyPageAccordionSection";
 import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
 import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 
@@ -26,7 +30,7 @@ function parseSettings(raw: unknown): NotificationSettingsState {
   };
 }
 
-export function MyPageNotificationSection() {
+export function MyPageNotificationSection({ open, onToggle }: MyPageAccordionProps) {
   const { data, setData, status } = useMyPageSection<NotificationSettingsState>({
     cacheKey: "mypage:notification-settings",
     url: "/api/notification-settings",
@@ -56,31 +60,33 @@ export function MyPageNotificationSection() {
     }
   }
 
-  if (status === "loading") {
-    return (
-      <section className="mt-5">
-        <MyPageSectionSkeleton height="h-48" />
-      </section>
-    );
-  }
-
   return (
-    <section className="mt-5 rounded-2xl border border-gold/20 bg-white p-5 shadow-gold">
-      {status === "error" && (
-        <p className="mb-3 text-sm text-muted">
-          通知設定を読み込めませんでした。保存すると現在の内容で上書きされます。
-        </p>
+    <MyPageAccordionSection title="通知設定" open={open} onToggle={onToggle}>
+      {status === "loading" ? (
+        <MyPageSectionSkeleton height="h-48" />
+      ) : (
+        <>
+          {status === "error" && (
+            <p className="mb-3 text-sm text-muted">
+              通知設定を読み込めませんでした。保存すると現在の内容で上書きされます。
+            </p>
+          )}
+          <NotificationPreferenceForm
+            settings={data}
+            onChange={setData}
+            hideHeading
+          />
+          <button
+            type="button"
+            onClick={() => void saveSettings()}
+            disabled={saving}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {saving ? "保存中..." : "通知設定を保存"}
+          </button>
+          {message && <p className="mt-2 text-sm text-muted">{message}</p>}
+        </>
       )}
-      <NotificationPreferenceForm settings={data} onChange={setData} />
-      <button
-        type="button"
-        onClick={() => void saveSettings()}
-        disabled={saving}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 text-sm font-semibold text-white disabled:opacity-60"
-      >
-        {saving ? "保存中..." : "通知設定を保存"}
-      </button>
-      {message && <p className="mt-2 text-sm text-muted">{message}</p>}
-    </section>
+    </MyPageAccordionSection>
   );
 }

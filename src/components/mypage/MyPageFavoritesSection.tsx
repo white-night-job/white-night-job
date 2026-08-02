@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { MyPageFavoriteCard } from "@/components/MyPageFavoriteCard";
+import {
+  MyPageAccordionSection,
+  type MyPageAccordionProps,
+} from "@/components/mypage/MyPageAccordionSection";
 import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
 import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 import type { Job } from "@/types/job";
@@ -21,7 +25,7 @@ function parseFavorites(raw: unknown): FavoritesData {
   return { jobs, total: Number.isFinite(total) ? total : jobs.length };
 }
 
-export function MyPageFavoritesSection() {
+export function MyPageFavoritesSection({ open, onToggle }: MyPageAccordionProps) {
   const { data, setData, status } = useMyPageSection<FavoritesData>({
     cacheKey: "mypage:favorites",
     url: `/api/favorites?limit=${PREVIEW_COUNT}`,
@@ -58,10 +62,13 @@ export function MyPageFavoritesSection() {
   }
 
   return (
-    <section className="mt-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-serif text-lg font-semibold text-charcoal">お気に入り店舗</h2>
-        <div className="flex items-center gap-3">
+    <MyPageAccordionSection
+      title="お気に入り店舗"
+      open={open}
+      onToggle={onToggle}
+      variant="plain"
+      headerAside={
+        <>
           <button
             type="button"
             onClick={() => void sendFavoriteShopsToLine()}
@@ -77,8 +84,9 @@ export function MyPageFavoritesSection() {
           >
             すべて見る
           </Link>
-        </div>
-      </div>
+        </>
+      }
+    >
       {lineMessage && <p className="mb-3 text-xs text-muted">{lineMessage}</p>}
 
       {status === "loading" && <MyPageSectionSkeleton height="h-36" />}
@@ -120,6 +128,6 @@ export function MyPageFavoritesSection() {
           )}
         </div>
       )}
-    </section>
+    </MyPageAccordionSection>
   );
 }
