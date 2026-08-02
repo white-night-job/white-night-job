@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { computeJobDraftProgress } from "@/lib/job-draft-progress";
 import { rowToJob } from "@/lib/job-db";
+import { migratePlaintextShopPasswordsInRows } from "@/lib/shop-credentials";
 import { JOB_TYPES, type District, type JobType } from "@/types/job";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -92,6 +93,8 @@ export async function GET(request: Request) {
 
     const { data, error, count } = await query;
     if (error) throw error;
+
+    await migratePlaintextShopPasswordsInRows(supabase, data ?? []);
 
     const jobs = (data ?? []).map((row) =>
       rowToJob(row, { includeShopLoginPassword: true }),

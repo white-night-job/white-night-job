@@ -4,13 +4,12 @@ import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   normalizeJobPayload,
-  parseShopCredentialsFromBody,
   payloadToRow,
   rowToJob,
-  shopCredentialsToRow,
   validateDraftJobPayload,
   validatePublishJobPayload,
 } from "@/lib/job-db";
+import { createEncryptedShopCredentials } from "@/lib/shop-credentials";
 import {
   isJobListingStatus,
   listingStatusToRow,
@@ -348,8 +347,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const shopCredentials = parseShopCredentialsFromBody(body);
-    const credentialRow = shopCredentialsToRow(shopCredentials);
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
     const pickupRow = pickupToRow(parsePickupFromBody(body));
     const listingPriorityRow = listingPriorityToRow(
@@ -361,11 +358,16 @@ export async function POST(request: Request) {
     const statusRow = listingStatusToRow(status);
 
     const supabase = createSupabaseAdmin();
+    // 店舗作成時にログインID・PWを自動発行し、PWは暗号化して保存
+    const credentials = await createEncryptedShopCredentials(supabase);
     const { data, error } = await supabase
       .from("jobs")
       .insert({
         ...payloadToRow(payload, { forDraft: status !== "published" }),
-        ...credentialRow,
+        shop_login_id: credentials.shop_login_id,
+        shop_login_password: credentials.shop_login_password,
+        shop_login_failed_attempts: 0,
+        shop_login_locked_until: null,
         ...chatRecommendRow,
         ...pickupRow,
         ...listingPriorityRow,
@@ -379,12 +381,15 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("jobs insert failed:", error.message, {
-        credentialKeys: Object.keys(credentialRow),
+        credentialKeys: ["shop_login_id", "shop_login_password"],
       });
       throw error;
     }
 
     const job = rowToJob(data, { includeShopLoginPassword: true });
+    // 復号失敗時フォールバック（通常は発行した平文を返す）
+    job.shopLoginPassword = credentials.shopLoginPasswordPlain;
+    job.shopLoginId = credentials.shopLoginId;
     if (status === "published") {
       void runAutoNotificationsAfterJobChange({
         before: null,
@@ -394,7 +399,16 @@ export async function POST(request: Request) {
     }
 
     invalidateAdminCacheByPrefix("admin:");
-    return NextResponse.json({ job }, { status: 201 });
+    return NextResponse.json(
+      {
+        job,
+        issuedCredentials: {
+          shopLoginId: credentials.shopLoginId,
+          shopLoginPassword: credentials.shopLoginPasswordPlain,
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の保存に失敗しました。") },

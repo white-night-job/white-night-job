@@ -1,6 +1,7 @@
 import { rowToChatRecommend } from "@/lib/chat-recommend-db";
 import { inferJobPlan, parseJobPlan } from "@/lib/job-plan";
 import { resolveJobListingStatus } from "@/lib/job-listing-status";
+import { safeDecryptShopPassword } from "@/lib/shop-credentials";
 import {
   FIXED_AREA,
   type CastVoiceEntry,
@@ -175,7 +176,9 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     shopLoginId: row.shop_login_id?.trim() || undefined,
     ...(options?.includeShopLoginPassword
       ? {
-          shopLoginPassword: row.shop_login_password?.trim() || undefined,
+          // 管理者向け: DBの暗号化値を復号して返す（平文はDBに保存しない）
+          shopLoginPassword:
+            safeDecryptShopPassword(row.shop_login_password) || undefined,
         }
       : {}),
     chatRecommend: rowToChatRecommend(row),

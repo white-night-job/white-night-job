@@ -135,7 +135,7 @@ export interface Job {
   lineRecommendNotify?: boolean;
   newListingEnabled?: boolean;
   shopLoginId?: string;
-  /** 管理画面のみ。公開APIでは返さない */
+  /** 管理画面のみ復号して返す。DBには暗号文のみ保存 */
   shopLoginPassword?: string;
   chatRecommend?: ChatRecommendSettings;
   /** draft=下書き / published=公開中 / paused=掲載停止 */

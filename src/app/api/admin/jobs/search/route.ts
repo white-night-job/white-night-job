@@ -10,6 +10,7 @@ import {
 } from "@/lib/job-applications";
 import { rowToJob } from "@/lib/job-db";
 import { aggregateViewCounts } from "@/lib/job-views";
+import { migratePlaintextShopPasswordsInRows } from "@/lib/shop-credentials";
 import { FIXED_AREA, type District } from "@/types/job";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { fetchListingRanksForJobs } from "@/lib/shop-boosts";
@@ -120,6 +121,8 @@ export async function GET(request: Request) {
         ]);
 
       if (fullError) throw fullError;
+
+      await migratePlaintextShopPasswordsInRows(supabase, fullRows ?? []);
 
       const byId = new Map(
         (fullRows ?? []).map((row) => [

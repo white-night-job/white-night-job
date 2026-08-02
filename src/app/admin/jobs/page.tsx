@@ -201,10 +201,7 @@ function toPayload(form: JobForm) {
     youtubeUrl: form.youtubeUrl || undefined,
     websiteUrl: form.websiteUrl || undefined,
     lineUrl: form.lineUrl,
-    shop_login_id: form.shopLoginId.trim(),
-    ...(form.shopLoginPassword.trim()
-      ? { shop_login_password: form.shopLoginPassword }
-      : {}),
+    // 店舗ログインID/PWはサーバ自動発行・再発行APIのみ。保存時は送らない。
     chat_recommend_enabled: form.chatRecommendEnabled,
     chat_recommend_priority: Number(form.chatRecommendPriority) || 0,
     pickup_enabled: form.pickupEnabled,
@@ -364,6 +361,12 @@ function AdminJobsPageInner() {
   const [pendingSaveIntent, setPendingSaveIntent] = useState<
     "draft" | "publish" | "pause" | "republish" | null
   >(null);
+  const [credentialsModal, setCredentialsModal] = useState<{
+    title: string;
+    shopLoginId: string;
+    shopLoginPassword: string;
+  } | null>(null);
+  const [reissuingPassword, setReissuingPassword] = useState(false);
   const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -700,13 +703,20 @@ function AdminJobsPageInner() {
       setFieldErrors({});
     }
     try {
+      const wasCreate = !editingId;
       const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
       const method = editingId ? "PUT" : "POST";
       const payload = {
         ...(await promoteTempImagesInPayload(toPayload(form))),
         saveIntent,
       };
-      const { job: savedJob } = await readJson<{ job: Job }>(
+      const saveResult = await readJson<{
+        job: Job;
+        issuedCredentials?: {
+          shopLoginId: string;
+          shopLoginPassword: string;
+        };
+      }>(
         await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
@@ -714,6 +724,18 @@ function AdminJobsPageInner() {
           body: JSON.stringify(payload),
         }),
       );
+      const savedJob = saveResult.job;
+      const issued = saveResult.issuedCredentials;
+
+      if (issued) {
+        setCredentialsModal({
+          title: wasCreate
+            ? "店舗ログイン情報を発行しました"
+            : "店舗ログイン情報を発行しました（未設定だったため自動発行）",
+          shopLoginId: issued.shopLoginId,
+          shopLoginPassword: issued.shopLoginPassword,
+        });
+      }
 
       if (options?.silent) {
         setEditingId(savedJob.id);
@@ -731,7 +753,21 @@ function AdminJobsPageInner() {
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
       setShowPreview(false);
 
-      if (saveIntent === "publish" || saveIntent === "republish") {
+      if (issued) {
+        setEditingId(savedJob.id);
+        setForm(toForm(savedJob));
+        setEditingListingStatus(resolveJobListingStatus(savedJob));
+        setIsAddFormOpen(false);
+        setFormDirty(false);
+        setDraftJobId(savedJob.id);
+        setMessage(
+          saveIntent === "publish" || saveIntent === "republish"
+            ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
+            : saveIntent === "pause"
+              ? "求人を掲載停止にしました。"
+              : "下書きを保存しました。ログイン情報を店舗へ伝えてください。",
+        );
+      } else if (saveIntent === "publish" || saveIntent === "republish") {
         closeEditor({
           message: "求人を公開しました",
           scrollToList: true,
@@ -2587,46 +2623,118 @@ function AdminJobsPageInner() {
           <div>
             <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
             <p className="mt-1 text-xs text-muted">
-              店舗担当者が /shop-login からログインするためのIDとPWです。
-              パスワードは平文保存の簡易実装です（将来ハッシュ化推奨）。
+              作成時に自動発行されます。管理者のみ確認でき、店舗へ伝えてください。
+              DBにはAES暗号化して保存します（平文保存なし）。
             </p>
           </div>
           <div className="space-y-4">
             <div>
-              <label htmlFor="shopLoginId" className={labelClass}>
-                店舗ログインID
-              </label>
-              <input
-                id="shopLoginId"
-                type="text"
-                value={form.shopLoginId}
-                onChange={(event) =>
-                  setField("shopLoginId", event.target.value)
-                }
-                className={inputClass}
-                placeholder="例: rosetta-shop"
-                autoComplete="off"
-              />
+              <label className={labelClass}>店舗ログインID</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={form.shopLoginId || (editingId ? "（未発行）" : "保存時に自動発行")}
+                  readOnly
+                  className={`${inputClass} font-mono`}
+                />
+                {form.shopLoginId ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(form.shopLoginId);
+                      setMessage("ログインIDをコピーしました。");
+                    }}
+                  >
+                    コピー
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div>
-              <label htmlFor="shopLoginPassword" className={labelClass}>
-                店舗ログインPW
-              </label>
-              <input
-                id="shopLoginPassword"
-                type="text"
-                value={form.shopLoginPassword}
-                onChange={(event) =>
-                  setField("shopLoginPassword", event.target.value)
-                }
-                className={inputClass}
-                placeholder={editingId ? "未設定の場合は空欄" : "初期パスワード"}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              {editingId && (
+              <label className={labelClass}>店舗ログインPW</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={
+                    form.shopLoginPassword ||
+                    (editingId ? "（未発行／再発行で移行）" : "保存時に自動発行")
+                  }
+                  readOnly
+                  className={`${inputClass} font-mono`}
+                  spellCheck={false}
+                />
+                {form.shopLoginPassword ? (
+                  <button
+                    type="button"
+                    className="rounded-full border border-gold/40 px-3 py-2 text-xs font-semibold text-gold-dark"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(form.shopLoginPassword);
+                      setMessage("パスワードをコピーしました。");
+                    }}
+                  >
+                    コピー
+                  </button>
+                ) : null}
+              </div>
+              {editingId ? (
+                <button
+                  type="button"
+                  disabled={reissuingPassword || !form.shopLoginId}
+                  onClick={() => {
+                    void (async () => {
+                      if (
+                        !editingId ||
+                        !window.confirm(
+                          "店舗ログインパスワードを再発行しますか？\n既存のパスワードは使えなくなります。",
+                        )
+                      ) {
+                        return;
+                      }
+                      setReissuingPassword(true);
+                      setMessage("");
+                      try {
+                        const data = await readJson<{
+                          shopLoginId: string;
+                          shopLoginPassword: string;
+                          message?: string;
+                        }>(
+                          await fetch(
+                            `/api/admin/jobs/${editingId}/reissue-shop-password`,
+                            {
+                              method: "POST",
+                              credentials: "include",
+                            },
+                          ),
+                        );
+                        setField("shopLoginPassword", data.shopLoginPassword);
+                        setCredentialsModal({
+                          title: "パスワードを再発行しました",
+                          shopLoginId: data.shopLoginId,
+                          shopLoginPassword: data.shopLoginPassword,
+                        });
+                        setMessage(
+                          data.message ??
+                            "パスワードを再発行しました。店舗へ伝えてください。",
+                        );
+                      } catch (error) {
+                        setMessage(
+                          error instanceof Error
+                            ? error.message
+                            : "パスワード再発行に失敗しました。",
+                        );
+                      } finally {
+                        setReissuingPassword(false);
+                      }
+                    })();
+                  }}
+                  className="mt-3 rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {reissuingPassword ? "再発行中..." : "パスワード再発行"}
+                </button>
+              ) : (
                 <p className="mt-1 text-xs text-muted">
-                  空欄のまま保存すると、現在のパスワードを維持します。
+                  新規作成の保存時に ID・PW を自動発行します。
                 </p>
               )}
             </div>
@@ -2704,6 +2812,52 @@ function AdminJobsPageInner() {
         </div>
           </form>
       </section>
+      )}
+
+      {credentialsModal && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-2xl border border-gold/30 bg-white p-5 shadow-gold">
+            <p className="text-base font-semibold text-gold-dark">
+              {credentialsModal.title}
+            </p>
+            <p className="text-xs text-muted">
+              店舗へこのID・パスワードを伝えてください。編集画面からもいつでも確認できます。
+            </p>
+            <div>
+              <p className="text-xs text-muted">ログインID</p>
+              <p className="mt-1 break-all font-mono text-sm">
+                {credentialsModal.shopLoginId}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">パスワード</p>
+              <p className="mt-1 break-all font-mono text-sm">
+                {credentialsModal.shopLoginPassword}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold text-gold-dark"
+                onClick={() => {
+                  void navigator.clipboard.writeText(
+                    `ID: ${credentialsModal.shopLoginId}\nPW: ${credentialsModal.shopLoginPassword}`,
+                  );
+                  setMessage("ログイン情報をコピーしました。");
+                }}
+              >
+                まとめてコピー
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-2 text-xs font-semibold text-white"
+                onClick={() => setCredentialsModal(null)}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

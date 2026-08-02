@@ -22,6 +22,11 @@ type AppInfo = {
   requestedPlan: JobPlan;
 };
 
+type IssuedCredentials = {
+  shopLoginId: string;
+  shopLoginPassword: string;
+};
+
 export default function ShopOnboardingPage() {
   const params = useParams<{ code: string }>();
   const code = params.code;
@@ -38,9 +43,9 @@ export default function ShopOnboardingPage() {
   const [title, setTitle] = useState("");
   const [lineUrl, setLineUrl] = useState("");
   const [workHours, setWorkHours] = useState("");
-  const [shopLoginId, setShopLoginId] = useState("");
-  const [shopLoginPassword, setShopLoginPassword] = useState("");
   const [confirmedPlan, setConfirmedPlan] = useState<JobPlan>("standard");
+  const [issuedCredentials, setIssuedCredentials] =
+    useState<IssuedCredentials | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,18 +103,20 @@ export default function ShopOnboardingPage() {
           title,
           lineUrl,
           workHours,
-          shopLoginId,
-          shopLoginPassword,
           confirmedPlan,
         }),
       });
-      const data = (await response.json()) as { message?: string };
+      const data = (await response.json()) as {
+        message?: string;
+        issuedCredentials?: IssuedCredentials;
+      };
       if (!response.ok) throw new Error(data.message ?? "登録に失敗しました。");
       setMessage(data.message ?? "登録が完了しました。");
-      setApp((current) =>
-        current
-          ? { ...current, onboardingCompleted: true }
-          : current,
+      if (data.issuedCredentials) {
+        setIssuedCredentials(data.issuedCredentials);
+      }
+      setApp((prev) =>
+        prev ? { ...prev, onboardingCompleted: true } : prev,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "登録に失敗しました。");
@@ -120,66 +127,95 @@ export default function ShopOnboardingPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-12 text-sm text-muted">
-        招待コードを確認しています...
+      <div className="mx-auto max-w-xl px-4 py-16 text-center text-muted">
+        確認中...
       </div>
     );
   }
 
   if (error && !app) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-12">
-        <div className="rounded-2xl border border-gold/30 bg-white p-6">
-          <h1 className="font-serif text-xl text-charcoal">登録手続きに進めません</h1>
-          <p className="mt-3 text-sm text-muted">{error}</p>
-          <Link href="/for-shops" className="mt-4 inline-block text-sm text-gold-dark underline">
-            掲載案内へ戻る
-          </Link>
-        </div>
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-10">
-      <p className="text-xs tracking-[0.2em] text-gold-dark">ONBOARDING</p>
-      <h1 className="mt-2 font-serif text-2xl font-semibold text-charcoal">
-        店舗・求人情報の登録
-      </h1>
-      <p className="mt-3 text-sm text-muted">
-        審査承認済み店舗専用の登録画面です。ここで作成される求人は未公開の下書きです。
-        公開・課金は管理者確認後に行います。
-      </p>
+    <div className="mx-auto max-w-xl px-4 py-10">
+      <h1 className="font-serif text-2xl text-gold-dark">店舗登録手続き</h1>
       {app && (
-        <p className="mt-2 text-sm text-charcoal">
-          {app.shopName}（申請番号 {app.applicationNumber}）
+        <p className="mt-2 text-sm text-muted">
+          {app.shopName}（申請番号: {app.applicationNumber}）／{app.planLabel}
         </p>
       )}
 
-      {(message || error) && (
-        <p className="mt-4 rounded-xl border border-gold/30 bg-white px-4 py-3 text-sm">
-          {message || error}
+      {message && (
+        <p className="mt-4 rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-sm text-charcoal">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </p>
       )}
 
-      {app?.onboardingCompleted ? (
-        <div className="mt-6 space-y-3 rounded-2xl border border-gold/25 bg-white p-5">
-          <p className="text-sm text-charcoal">登録手続きは完了しています。</p>
+      {issuedCredentials && (
+        <div className="mt-6 space-y-3 rounded-2xl border border-gold/40 bg-white p-5 shadow-gold">
+          <p className="text-sm font-semibold text-gold-dark">店舗ログイン情報</p>
+          <p className="text-xs text-muted">
+            この画面を閉じると再表示できません。必ず控えてください。管理者画面からも確認できます。
+          </p>
+          <div>
+            <p className="text-xs text-muted">ログインID</p>
+            <p className="mt-1 break-all font-mono text-base text-charcoal">
+              {issuedCredentials.shopLoginId}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted">パスワード</p>
+            <p className="mt-1 break-all font-mono text-base text-charcoal">
+              {issuedCredentials.shopLoginPassword}
+            </p>
+          </div>
           <Link
             href="/shop-login"
-            className="inline-flex rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white"
+            className="inline-flex rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-2.5 text-sm font-semibold text-white"
           >
             店舗ログインへ
           </Link>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4 rounded-2xl border border-gold/25 bg-white p-5">
+      )}
+
+      {app?.onboardingCompleted && !issuedCredentials ? (
+        <div className="mt-6 space-y-3">
+          <p className="text-sm text-muted">
+            すでに登録手続き済みです。店舗ログインからダッシュボードをご利用ください。
+          </p>
+          <Link
+            href="/shop-login"
+            className="inline-flex rounded-full border border-gold/40 px-5 py-2.5 text-sm font-semibold text-gold-dark"
+          >
+            店舗ログインへ
+          </Link>
+        </div>
+      ) : !issuedCredentials ? (
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">求人タイトル</label>
+            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">地区 *</label>
             <select className={inputClass} value={district} onChange={(e) => setDistrict(e.target.value)} required>
               <option value="">選択してください</option>
-              {districts.map((item) => (
-                <option key={item} value={item}>{item}</option>
+              {districts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
               ))}
             </select>
           </div>
@@ -187,14 +223,12 @@ export default function ShopOnboardingPage() {
             <label className="mb-1.5 block text-sm font-medium">職種 *</label>
             <select className={inputClass} value={jobType} onChange={(e) => setJobType(e.target.value)} required>
               <option value="">選択してください</option>
-              {jobTypes.map((item) => (
-                <option key={item} value={item}>{item}</option>
+              {jobTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">求人タイトル</label>
-            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium">時給 *</label>
@@ -223,14 +257,9 @@ export default function ShopOnboardingPage() {
               ))}
             </div>
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">店舗ログインID *</label>
-            <input className={inputClass} value={shopLoginId} onChange={(e) => setShopLoginId(e.target.value)} required minLength={4} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">店舗ログインパスワード *</label>
-            <input className={inputClass} type="password" value={shopLoginPassword} onChange={(e) => setShopLoginPassword(e.target.value)} required minLength={6} />
-          </div>
+          <p className="rounded-xl border border-gold/25 bg-ivory/80 px-3 py-2 text-xs text-muted">
+            店舗ログインID・パスワードは登録完了時に自動発行されます。
+          </p>
           <button
             type="submit"
             disabled={submitting}
@@ -239,7 +268,7 @@ export default function ShopOnboardingPage() {
             {submitting ? "登録中..." : "下書き求人を作成する"}
           </button>
         </form>
-      )}
+      ) : null}
     </div>
   );
 }

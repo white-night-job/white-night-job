@@ -6,6 +6,7 @@ import {
   planLabel,
 } from "@/lib/listing-application";
 import { parseJobPlan, type JobPlan } from "@/lib/job-plan";
+import { createEncryptedShopCredentials } from "@/lib/shop-credentials";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 type RouteContext = { params: Promise<{ code: string }> };
@@ -81,8 +82,6 @@ type OnboardingBody = {
   salary?: string;
   title?: string;
   lineUrl?: string;
-  shopLoginId?: string;
-  shopLoginPassword?: string;
   confirmedPlan?: string;
   workHours?: string;
 };
@@ -120,8 +119,6 @@ export async function POST(request: Request, context: RouteContext) {
     const jobType = body.jobType?.trim();
     const salary = body.salary?.trim();
     const lineUrl = body.lineUrl?.trim();
-    const shopLoginId = body.shopLoginId?.trim();
-    const shopLoginPassword = body.shopLoginPassword?.trim();
     const title = body.title?.trim() || `${application.shop_name}の求人`;
     const workHours =
       body.workHours?.trim() || application.business_hours || "20:00〜LAST";
@@ -154,32 +151,9 @@ export async function POST(request: Request, context: RouteContext) {
         { status: 400 },
       );
     }
-    if (!shopLoginId || shopLoginId.length < 4) {
-      return NextResponse.json(
-        { message: "店舗ログインIDは4文字以上で入力してください。" },
-        { status: 400 },
-      );
-    }
-    if (!shopLoginPassword || shopLoginPassword.length < 6) {
-      return NextResponse.json(
-        { message: "店舗ログインパスワードは6文字以上で入力してください。" },
-        { status: 400 },
-      );
-    }
 
     const supabase = createSupabaseAdmin();
-
-    const { data: existingLogin } = await supabase
-      .from("jobs")
-      .select("id")
-      .eq("shop_login_id", shopLoginId)
-      .maybeSingle();
-    if (existingLogin) {
-      return NextResponse.json(
-        { message: "この店舗ログインIDは既に使われています。" },
-        { status: 409 },
-      );
-    }
+    const credentials = await createEncryptedShopCredentials(supabase);
 
     // 未公開の下書き求人を作成（審査承認店舗のみ）。公開は管理者が行う。
     const jobInsert = {
@@ -202,8 +176,10 @@ export async function POST(request: Request, context: RouteContext) {
       published: false,
       listing_status: "draft",
       plan: plan as JobPlan,
-      shop_login_id: shopLoginId,
-      shop_login_password: shopLoginPassword,
+      shop_login_id: credentials.shop_login_id,
+      shop_login_password: credentials.shop_login_password,
+      shop_login_failed_attempts: 0,
+      shop_login_locked_until: null,
       open_date: application.open_date,
       is_verified: true,
       requirements: ["20歳以上"],
@@ -247,8 +223,12 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({
       ok: true,
       jobId: job.id,
+      issuedCredentials: {
+        shopLoginId: credentials.shopLoginId,
+        shopLoginPassword: credentials.shopLoginPasswordPlain,
+      },
       message:
-        "店舗・求人の下書きを作成しました。店舗ログイン後に内容を編集できます。公開は審査・管理者確認後に行われます。",
+        "店舗・求人の下書きを作成しました。下記のログイン情報を控えてから店舗ログインしてください。公開は審査・管理者確認後に行われます。",
     });
   } catch (error) {
     return NextResponse.json(

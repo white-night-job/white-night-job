@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { rowToJob } from "@/lib/job-db";
 import { fetchListingRanksForJob } from "@/lib/shop-boosts";
+import { migratePlaintextShopPasswordIfNeeded } from "@/lib/shop-credentials";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
     if (!data) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
+
+    await migratePlaintextShopPasswordIfNeeded(
+      supabase,
+      id,
+      (data as { shop_login_password?: string | null }).shop_login_password,
+    );
 
     const district = String((data as { district?: string }).district ?? "");
     let listingRanks = null;

@@ -4,13 +4,16 @@ import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
   normalizeJobPayload,
-  parseShopCredentialsFromBody,
   payloadToRow,
   rowToJob,
-  shopCredentialsToRow,
   validateDraftJobPayload,
   validatePublishJobPayload,
 } from "@/lib/job-db";
+import {
+  createEncryptedShopCredentials,
+  encryptPasswordForStorage,
+  generateShopLoginPassword,
+} from "@/lib/shop-credentials";
 import {
   isJobListingStatus,
   listingStatusToRow,
@@ -160,8 +163,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as Record<string, unknown>;
     const payload = normalizeJobPayload(body);
 
-    const shopCredentials = parseShopCredentialsFromBody(body);
-    const credentialRow = shopCredentialsToRow(shopCredentials);
+    // ログインID/PWの変更は通常更新では受け付けない（PWは再発行APIのみ）
     const chatRecommendRow = chatRecommendToRow(parseChatRecommendFromBody(body));
     const pickupRow = pickupToRow(parsePickupFromBody(body));
     const listingPriorityRow = listingPriorityToRow(
@@ -207,11 +209,43 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const statusRow = listingStatusToRow(targetStatus);
     const forDraft = targetStatus !== "published";
 
+    // 既存で未発行の場合のみ自動発行（移行起点）。PW変更は再発行APIを使う。
+    let credentialBackfill: Record<string, unknown> = {};
+    let issuedCredentials:
+      | { shopLoginId: string; shopLoginPassword: string }
+      | undefined;
+    if (!previous.shop_login_id?.trim() || !previous.shop_login_password) {
+      if (previous.shop_login_id?.trim() && !previous.shop_login_password) {
+        const plain = generateShopLoginPassword();
+        credentialBackfill = {
+          shop_login_password: encryptPasswordForStorage(plain),
+          shop_login_failed_attempts: 0,
+          shop_login_locked_until: null,
+        };
+        issuedCredentials = {
+          shopLoginId: String(previous.shop_login_id),
+          shopLoginPassword: plain,
+        };
+      } else {
+        const credentials = await createEncryptedShopCredentials(supabase);
+        credentialBackfill = {
+          shop_login_id: credentials.shop_login_id,
+          shop_login_password: credentials.shop_login_password,
+          shop_login_failed_attempts: 0,
+          shop_login_locked_until: null,
+        };
+        issuedCredentials = {
+          shopLoginId: credentials.shopLoginId,
+          shopLoginPassword: credentials.shopLoginPasswordPlain,
+        };
+      }
+    }
+
     const { data, error } = await supabase
       .from("jobs")
       .update({
         ...payloadToRow(payload, { forDraft }),
-        ...credentialRow,
+        ...credentialBackfill,
         ...chatRecommendRow,
         ...pickupRow,
         ...listingPriorityRow,
@@ -227,20 +261,27 @@ export async function PUT(request: Request, { params }: RouteContext) {
     if (error) {
       console.error("jobs update failed:", error.message, {
         jobId: id,
-        credentialKeys: Object.keys(credentialRow),
+        credentialKeys: Object.keys(credentialBackfill),
       });
       throw error;
     }
 
     const before = previous ? rowToJob(previous) : null;
     const after = rowToJob(data, { includeShopLoginPassword: true });
+    if (issuedCredentials) {
+      after.shopLoginId = issuedCredentials.shopLoginId;
+      after.shopLoginPassword = issuedCredentials.shopLoginPassword;
+    }
     if (targetStatus === "published") {
       void runAutoNotificationsAfterJobChange({ before, after });
     }
 
     invalidateAdminCacheByPrefix("admin:");
     revalidateTag(`job-detail:${id}`);
-    return NextResponse.json({ job: after });
+    return NextResponse.json({
+      job: after,
+      ...(issuedCredentials ? { issuedCredentials } : {}),
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "求人の更新に失敗しました。") },
