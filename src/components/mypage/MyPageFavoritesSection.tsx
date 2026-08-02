@@ -66,7 +66,6 @@ export function MyPageFavoritesSection({ open, onToggle }: MyPageAccordionProps)
       title="お気に入り店舗"
       open={open}
       onToggle={onToggle}
-      variant="plain"
       headerAside={
         <>
           <button

@@ -1,3 +1,4 @@
+import { NOTIFICATION_AREA_OPTIONS } from "@/lib/notification-areas";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -19,8 +20,51 @@ export type EnsureNotificationSettingsResult = {
 };
 
 /**
- * 通知設定レコードが無いときだけ、全通知ONの初期行をINSERTする。
- * - 既存ON/OFFは維持（UPDATEしない）
+ * 新規ユーザー向けに地域をすべて選択済みで保存する。
+ * 既存エリア行がある場合は何もしない。
+ */
+async function seedDefaultNotificationAreas(userId: string): Promise<void> {
+  const supabase = createSupabaseAdmin();
+  const { data: existingAreas, error: selectError } = await supabase
+    .from("user_notification_areas")
+    .select("area")
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (selectError) {
+    console.error("[notification-settings] default areas select failed", {
+      userId,
+      message: selectError.message,
+      code: selectError.code,
+    });
+    throw selectError;
+  }
+
+  if ((existingAreas ?? []).length > 0) return;
+
+  const { error: insertError } = await supabase
+    .from("user_notification_areas")
+    .upsert(
+      NOTIFICATION_AREA_OPTIONS.map((area) => ({
+        user_id: userId,
+        area,
+      })),
+      { onConflict: "user_id,area", ignoreDuplicates: true },
+    );
+
+  if (insertError) {
+    console.error("[notification-settings] default areas insert failed", {
+      userId,
+      message: insertError.message,
+      code: insertError.code,
+    });
+    throw insertError;
+  }
+}
+
+/**
+ * 通知設定レコードが無いときだけ、全通知ON＋地域全選択の初期行をINSERTする。
+ * - 既存ON/OFF・既存地域選択は維持（UPDATEしない）
  * - user_id 一意制約 + ignoreDuplicates で二重作成を防ぐ
  * - 友だち追加完了後のログイン完了時に呼ぶこと
  */
@@ -75,5 +119,13 @@ export async function ensureUserNotificationSettings(
     .eq("user_id", userId)
     .maybeSingle();
 
-  return { created: Boolean(after), userId };
+  if (!after) {
+    return { created: false, userId };
+  }
+
+  // このパスは「設定行が無かった新規ユーザー」専用。
+  // 既存ユーザーには来ないので、地域未設定なら全選択を入れる。
+  await seedDefaultNotificationAreas(userId);
+
+  return { created: true, userId };
 }

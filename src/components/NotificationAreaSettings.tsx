@@ -22,6 +22,7 @@ export const EMPTY_NOTIFICATION_SETTINGS: NotificationSettingsState = {
   notifyPickupJobs: true,
   notifyFavoriteUpdates: true,
   notifyDailyPickup: true,
+  // クライアント読み込み前の仮値。実データはAPIの初回作成（地域全選択）／保存済み設定を使う。
   notificationAreas: [],
   notificationJobTypes: [],
   minHourlyWage: 0,
