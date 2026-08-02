@@ -1,5 +1,5 @@
 const STORAGE_KEY = "white-night-compare-jobs";
-const MAX_COMPARE = 3;
+const MAX_COMPARE = 5;
 export const COMPARE_CHANGED_EVENT = "wnj-compare-changed";
 
 export const COMPARE_MAX = MAX_COMPARE;
@@ -77,7 +77,7 @@ export function toggleCompareJobId(jobId: string): {
   return { ok: true, action: "added", jobIds: next };
 }
 
-/** 診断おすすめなど、最大3件で比較リストを差し替える */
+/** 診断おすすめなど、最大件数までで比較リストを差し替える */
 export function replaceCompareJobIds(jobIds: string[]): string[] {
   const next = [...new Set(jobIds.filter(Boolean))].slice(0, MAX_COMPARE);
   saveCompareJobIds(next);

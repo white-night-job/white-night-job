@@ -4556,6 +4556,26 @@
   }
 }
 
+@keyframes favorite-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.favorite-heart-pop {
+  animation: favorite-heart-pop 0.4s ease-out;
+}
+
+body.compare-bar-visible {
+  padding-bottom: 5.5rem;
+}
+
 /* ── Header login modal ── */
 
 .header-login-modal-root {

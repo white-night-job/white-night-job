@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Bot, BookOpen, ClipboardList, Home, MapPin, ShieldAlert, Lock, Sparkles, Star, Store } from "lucide-react";
+import { Bot, BookOpen, ClipboardList, Columns2, Home, MapPin, ShieldAlert, Lock, Sparkles, Star, Store } from "lucide-react";
+import { useCompare } from "@/components/CompareProvider";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -18,6 +19,8 @@ type DrawerItem = {
   match?: "exact" | "prefix" | "hash";
   icon?: ReactNode;
   desktopIcon?: ReactNode;
+  /** 店舗比較など、動的ラベルを付けるキー */
+  dynamicLabel?: "compare";
 };
 
 const DRAWER_ICON_PROPS = {
@@ -37,6 +40,13 @@ const MAIN_ITEMS: DrawerItem[] = [
     label: "お店を探す",
     match: "hash",
     desktopIcon: <MapPin {...DRAWER_ICON_PROPS} />,
+  },
+  {
+    href: "/compare",
+    label: "店舗比較",
+    match: "exact",
+    dynamicLabel: "compare",
+    desktopIcon: <Columns2 {...DRAWER_ICON_PROPS} />,
   },
   {
     href: "/#new-shops",
@@ -128,6 +138,7 @@ export function HeaderDrawer() {
   const pathname = usePathname();
   const isDesktop = useIsDesktop();
   const { isLoggedIn, ready } = useUserSession();
+  const { count: compareCount } = useCompare();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [shopAuthenticated, setShopAuthenticated] = useState(false);
@@ -278,7 +289,12 @@ export function HeaderDrawer() {
     }
 
     const href = item.href === "/shop-login" ? shopLoginHref : item.href!;
-    const label = item.href === "/shop-login" ? shopLoginLabel : item.label;
+    const label =
+      item.href === "/shop-login"
+        ? shopLoginLabel
+        : item.dynamicLabel === "compare"
+          ? `店舗比較（${compareCount}）`
+          : item.label;
 
     return (
       <li key={key}>
@@ -335,7 +351,14 @@ export function HeaderDrawer() {
 
               <div className="header-drawer-body">
                 <ul className="header-drawer-list">
-                  {MAIN_ITEMS.map((item) => renderItem(item, item.label))}
+                  {MAIN_ITEMS.map((item) =>
+                    renderItem(
+                      item,
+                      item.dynamicLabel === "compare"
+                        ? `compare-${compareCount}`
+                        : item.label,
+                    ),
+                  )}
                 </ul>
 
                 {!hideShopSection && (

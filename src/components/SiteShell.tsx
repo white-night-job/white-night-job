@@ -20,13 +20,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <CompareProvider>
       <Header />
-      <main className="flex-1">
-        <CompareProvider>{children}</CompareProvider>
-      </main>
+      <main className="flex-1">{children}</main>
       <Footer />
       <ChatBot />
-    </>
+    </CompareProvider>
   );
 }

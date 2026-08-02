@@ -36,6 +36,7 @@ export function FavoriteButton({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [autoFavoriteHandled, setAutoFavoriteHandled] = useState(false);
+  const [pulse, setPulse] = useState(false);
 
   const redirectPath = useMemo(() => pathname || "/", [pathname]);
   const userId = currentUser?.id ?? null;
@@ -92,6 +93,8 @@ export function FavoriteButton({
     }
     favoriteCache.add(jobId);
     setIsFavorite(true);
+    setPulse(true);
+    window.setTimeout(() => setPulse(false), 420);
     return "ok";
   }
 
@@ -253,9 +256,18 @@ export function FavoriteButton({
           aria-label={isFavorite ? "お気に入り解除" : "お気に入り登録"}
           onClick={handleToggle}
           disabled={checking || !ready || (!isLoggedIn && !allowLineLoginRedirect)}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-gold/35 bg-white/92 text-lg shadow-gold transition disabled:opacity-60 ${className}`}
+          className={[
+            "inline-flex h-10 w-10 items-center justify-center rounded-full border text-lg shadow-gold transition disabled:opacity-60",
+            isFavorite
+              ? "border-gold bg-gradient-to-br from-gold via-gold-mid to-gold-dark text-white ring-2 ring-gold/40"
+              : "border-gold/35 bg-white/92 text-muted",
+            pulse ? "favorite-heart-pop" : "",
+            className,
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
-          <span className={isFavorite ? "text-gold-dark" : "text-muted"}>♥</span>
+          <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
         </button>
         {errorMessage && (
           <p className="max-w-[8rem] text-center text-[10px] leading-tight text-red-600">

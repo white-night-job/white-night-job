@@ -91,7 +91,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
       const result = toggleCompareJobId(jobId);
       setJobIds(result.jobIds);
       if (!result.ok && result.reason === "full") {
-        showToast("比較できるのは3店舗までです", "error");
+        showToast("比較できるのは5店舗までです", "error");
         return { ok: false as const };
       }
       if (result.action === "added") {
@@ -125,9 +125,16 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     pathname === "/compare" ||
     pathname.startsWith("/admin");
 
+  useEffect(() => {
+    document.body.classList.toggle("compare-bar-visible", !hideBar);
+    return () => {
+      document.body.classList.remove("compare-bar-visible");
+    };
+  }, [hideBar]);
+
   return (
     <CompareContext.Provider value={value}>
-      <div className={!hideBar ? "pb-24" : undefined}>{children}</div>
+      {children}
 
       {!hideBar && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
