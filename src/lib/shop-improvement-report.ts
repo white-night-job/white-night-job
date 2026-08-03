@@ -28,6 +28,14 @@ const PEER_MIN_SAMPLE = 3;
 const PEER_REFERENCE_THRESHOLD = 5;
 const PEER_FETCH_LIMIT = 40;
 
+/** 女の子の口コミ判定 */
+const GIRL_REVIEW_INTERVIEW_LOW = 2;
+const GIRL_REVIEW_CAST_LOW = 2;
+const GIRL_REVIEW_MANY = 5;
+const GIRL_REVIEW_HIGH_AVG = 4.5;
+const GIRL_REVIEW_LOW_AVG = 3.5;
+const GIRL_REVIEW_AVG_MIN_SAMPLES = 2;
+
 /** 率判定に使う最低母数 */
 const MIN_IMPRESSIONS_FOR_DETAIL_RATE = 50;
 const MIN_DETAIL_FOR_APPLY_RATE = 15;
@@ -346,7 +354,9 @@ type ContentSnapshot = {
   hasDescription: boolean;
   hasSalary: boolean;
   benefitCount: number;
+  /** @deprecated use girlReview.total — kept for clarity in missing-field checks */
   castVoiceCount: number;
+  girlReview: GirlReviewSnapshot;
   hasLineUrl: boolean;
   hasPhone: boolean;
   snsCount: number;
@@ -355,7 +365,49 @@ type ContentSnapshot = {
   hasAgeGroup: boolean;
 };
 
-function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
+type GirlReviewSnapshot = {
+  total: number;
+  interview: number;
+  cast: number;
+  averageRating: number | null;
+};
+
+const EMPTY_GIRL_REVIEW: GirlReviewSnapshot = {
+  total: 0,
+  interview: 0,
+  cast: 0,
+  averageRating: null,
+};
+
+function buildGirlReviewSnapshot(
+  rows: Array<{ category: string; rating: number }>,
+): GirlReviewSnapshot {
+  if (rows.length === 0) return { ...EMPTY_GIRL_REVIEW };
+
+  let interview = 0;
+  let cast = 0;
+  let ratingSum = 0;
+  for (const row of rows) {
+    const rating = Number(row.rating);
+    if (Number.isFinite(rating)) ratingSum += rating;
+    if (row.category === "interview") interview += 1;
+    else if (row.category === "cast") cast += 1;
+  }
+  const averageRating =
+    Math.round((ratingSum / rows.length) * 10) / 10;
+
+  return {
+    total: rows.length,
+    interview,
+    cast,
+    averageRating,
+  };
+}
+
+function buildContentSnapshot(
+  row: JobContentRow | null,
+  girlReview: GirlReviewSnapshot = EMPTY_GIRL_REVIEW,
+): ContentSnapshot {
   if (!row) {
     return {
       hasMainImage: false,
@@ -364,7 +416,8 @@ function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
       hasDescription: false,
       hasSalary: false,
       benefitCount: 0,
-      castVoiceCount: 0,
+      castVoiceCount: girlReview.total,
+      girlReview,
       hasLineUrl: false,
       hasPhone: false,
       snsCount: 0,
@@ -374,8 +427,23 @@ function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
     };
   }
 
-  const castVoices = parseCastVoices(row.cast_voices ?? []);
-  const castVoiceCount = Array.isArray(castVoices) ? castVoices.length : 0;
+  const legacyCastVoices = parseCastVoices(row.cast_voices ?? []);
+  const legacyCount = Array.isArray(legacyCastVoices)
+    ? legacyCastVoices.length
+    : 0;
+  // Prefer job_girl_reviews; fall back to legacy cast_voices only when table empty.
+  const resolvedReviews =
+    girlReview.total > 0
+      ? girlReview
+      : legacyCount > 0
+        ? {
+            total: legacyCount,
+            interview: 0,
+            cast: legacyCount,
+            averageRating: null,
+          }
+        : EMPTY_GIRL_REVIEW;
+
   const benefits = [...(row.benefits ?? []), ...(row.other_benefits ?? [])].filter(
     (item) => typeof item === "string" && item.trim().length > 0,
   );
@@ -394,7 +462,8 @@ function buildContentSnapshot(row: JobContentRow | null): ContentSnapshot {
     hasDescription: hasText(row.description_text),
     hasSalary: hasText(row.salary),
     benefitCount: benefits.length,
-    castVoiceCount,
+    castVoiceCount: resolvedReviews.total,
+    girlReview: resolvedReviews,
     hasLineUrl: hasText(row.line_url),
     hasPhone: hasText(row.phone),
     snsCount,
@@ -424,7 +493,7 @@ function buildMissingFields(content: ContentSnapshot): string[] {
       `待遇項目（現在${content.benefitCount}件 / 目安${BENEFIT_TARGET}件以上）`,
     );
   }
-  if (content.castVoiceCount === 0) missing.push("女の子の口コミ");
+  if (content.girlReview.total === 0) missing.push("女の子の口コミ");
   if (!content.hasLineUrl) missing.push("LINE応募URL");
   if (!content.hasPhone) missing.push("電話番号");
   if (content.snsCount === 0) missing.push("SNSリンク");
@@ -705,16 +774,53 @@ function buildAdvices(input: {
         expectedEffect: "応募率の向上・不安解消",
         reason: "詳細は見られているが応募率が低く、待遇情報が不足しているため",
       });
-    } else if (content.castVoiceCount === 0) {
-      push("cast_voice", {
-        id: "cast-voice-for-apply",
+    } else if (content.girlReview.total === 0) {
+      push("girl_reviews", {
+        id: "girl-reviews-zero-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミが未登録です。`,
+        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミがまだありません。`,
         action:
-          "女の子の口コミを1件以上追加し、「未経験だった感想」「1日の流れ」「サポートの有無」など具体的な一文を入れてください。",
+          "面接・体験入店後や在籍キャストへ口コミ投稿をお願いすると、応募前の安心感が伝わり応募率向上が期待できます。ダッシュボードの「女の子の口コミ管理」から登録できます。",
         expectedEffect: "応募率の向上・安心感の補強",
-        reason: "詳細閲覧後の応募率が低く、女の子の口コミがないため",
+        reason: "詳細閲覧後の応募率が低く、女の子の口コミが0件のため",
+      });
+    } else if (content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW) {
+      push("girl_reviews", {
+        id: "girl-reviews-interview-low-for-apply",
+        priority: 3,
+        priorityLevel: "high",
+        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。面接・体験入店の口コミは${content.girlReview.interview}件です。`,
+        action:
+          "面接・体験入店の口コミが少ないため、応募前の安心感が伝わりにくくなっています。体験入店後に口コミ投稿を案内し、「面接・体験入店」区分で登録してください。",
+        expectedEffect: "応募率の向上・応募前不安の解消",
+        reason: "詳細閲覧後の応募率が低く、面接・体験入店口コミが不足しているため",
+      });
+    } else if (
+      content.girlReview.averageRating != null &&
+      content.girlReview.total >= GIRL_REVIEW_AVG_MIN_SAMPLES &&
+      content.girlReview.averageRating < GIRL_REVIEW_LOW_AVG
+    ) {
+      push("girl_reviews", {
+        id: "girl-reviews-low-avg-for-apply",
+        priority: 3,
+        priorityLevel: "high",
+        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
+        action:
+          "評価が低めです。口コミ内容を確認し、接客・待機・ルール共有など改善できる点がないか見直しましょう。改善後は新しい口コミの収集も進めてください。",
+        expectedEffect: "応募率の回復・信頼感の改善",
+        reason: "詳細閲覧後の応募率が低く、口コミ平均評価が低めのため",
+      });
+    } else if (content.girlReview.cast < GIRL_REVIEW_CAST_LOW) {
+      push("girl_reviews", {
+        id: "girl-reviews-cast-low-for-apply",
+        priority: 3,
+        priorityLevel: "medium",
+        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。在籍キャストの口コミは${content.girlReview.cast}件です。`,
+        action:
+          "在籍キャストの口コミを増やすことで、お店の雰囲気や働きやすさが伝わりやすくなります。在籍中のキャストへ投稿協力をお願いしましょう。",
+        expectedEffect: "応募率の向上・雰囲気伝達",
+        reason: "詳細閲覧後の応募率が低く、在籍キャスト口コミが不足しているため",
       });
     } else if (!content.hasDescription) {
       push("description", {
@@ -838,6 +944,77 @@ function buildAdvices(input: {
         reason: `最終更新から${STALE_UPDATE_DAYS}日以上経過しているため`,
       });
     }
+
+    // 口コミ：応募ファネル以外でも不足時に提案（カテゴリ重複は push で除外）
+    if (content.girlReview.total === 0) {
+      push("girl_reviews", {
+        id: "girl-reviews-zero",
+        priority: 6,
+        priorityLevel: "medium",
+        issue: "女の子の口コミがまだありません。",
+        action:
+          "面接・体験入店後や在籍キャストへ口コミ投稿をお願いすると、応募率向上が期待できます。ダッシュボードの「女の子の口コミ管理」から区分別に登録してください。",
+        expectedEffect: "応募前の安心感・応募率の向上",
+        reason: "女の子の口コミが0件のため",
+      });
+    } else if (content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW) {
+      push("girl_reviews", {
+        id: "girl-reviews-interview-low",
+        priority: 7,
+        priorityLevel: "medium",
+        issue: `面接・体験入店の口コミが${content.girlReview.interview}件と少ないです（全体${content.girlReview.total}件）。`,
+        action:
+          "面接・体験入店の口コミが少ないため、応募前の安心感が伝わりにくくなっています。体験入店後に口コミ投稿を案内しましょう。",
+        expectedEffect: "応募前不安の解消",
+        reason: "面接・体験入店区分の口コミが不足しているため",
+      });
+    } else if (content.girlReview.cast < GIRL_REVIEW_CAST_LOW) {
+      push("girl_reviews", {
+        id: "girl-reviews-cast-low",
+        priority: 7,
+        priorityLevel: "medium",
+        issue: `在籍キャストの口コミが${content.girlReview.cast}件と少ないです（全体${content.girlReview.total}件）。`,
+        action:
+          "在籍キャストの口コミを増やすことで、お店の雰囲気や働きやすさが伝わりやすくなります。",
+        expectedEffect: "雰囲気・働きやすさの伝達",
+        reason: "在籍キャスト区分の口コミが不足しているため",
+      });
+    } else if (
+      content.girlReview.averageRating != null &&
+      content.girlReview.total >= GIRL_REVIEW_AVG_MIN_SAMPLES &&
+      content.girlReview.averageRating < GIRL_REVIEW_LOW_AVG
+    ) {
+      push("girl_reviews", {
+        id: "girl-reviews-low-avg",
+        priority: 6,
+        priorityLevel: "high",
+        issue: `口コミ平均評価が${content.girlReview.averageRating}と低めです（${content.girlReview.total}件）。`,
+        action:
+          "評価が低めです。口コミ内容を確認し、改善できる点がないか見直しましょう。",
+        expectedEffect: "信頼感・応募率の改善",
+        reason: "口コミ平均評価が基準を下回っているため",
+      });
+    }
+  }
+
+  // 好調時：高評価口コミを強みとしてさらに伸ばす提案
+  if (
+    funnel === "healthy" &&
+    content.girlReview.averageRating != null &&
+    content.girlReview.total >= GIRL_REVIEW_AVG_MIN_SAMPLES &&
+    content.girlReview.averageRating >= GIRL_REVIEW_HIGH_AVG &&
+    content.girlReview.total < GIRL_REVIEW_MANY
+  ) {
+    push("girl_reviews", {
+      id: "girl-reviews-high-avg-grow",
+      priority: 8,
+      priorityLevel: "low",
+      issue: `高評価の口コミが集まっています（平均${content.girlReview.averageRating} / ${content.girlReview.total}件）。`,
+      action:
+        "この評価は求人の強みなので、口コミ数をさらに増やして信頼性を高めましょう。体験入店後・在籍キャストへの投稿案内を続けてください。",
+      expectedEffect: "信頼性の更なる向上",
+      reason: "応募導線は良好で、口コミ平均評価が高いため",
+    });
   }
 
   // 前月比で表示減＋ブースト可のときのみ（順位条件は canSuggestBoost）
@@ -880,8 +1057,10 @@ function buildSituationSummary(input: {
   peer: PeerComparison | null;
   funnel: FunnelStage;
   monthLabel: string;
+  girlReview: GirlReviewSnapshot;
 }): string[] {
-  const { current, rates, listing, peer, funnel, monthLabel } = input;
+  const { current, rates, listing, peer, funnel, monthLabel, girlReview } =
+    input;
   const lines: string[] = [];
 
   lines.push(
@@ -911,6 +1090,18 @@ function buildSituationSummary(input: {
     const tag = peer.isReference ? "参考値" : "平均";
     lines.push(
       `同エリア・同業種（${peer.sampleSize}件）の詳細閲覧率${tag}${peer.detailClickRate}%、応募率${tag}${peer.applyClickRate}%`,
+    );
+  }
+
+  if (girlReview.total === 0) {
+    lines.push("女の子の口コミ：0件");
+  } else {
+    const avgText =
+      girlReview.averageRating != null
+        ? `平均${girlReview.averageRating}`
+        : "平均—";
+    lines.push(
+      `女の子の口コミ：${girlReview.total}件（面接・体験入店${girlReview.interview} / 在籍${girlReview.cast}・${avgText}）`,
     );
   }
 
@@ -998,6 +1189,24 @@ function buildGoodPoints(
 
   if (content.hasLineUrl && current.lineClicks > 0) {
     points.push(`LINE応募導線が機能し、今月${current.lineClicks}クリックあります`);
+  }
+
+  if (content.girlReview.total >= GIRL_REVIEW_MANY) {
+    points.push(
+      `口コミが充実しています（${content.girlReview.total}件）。応募を検討している女の子への安心材料になっています`,
+    );
+  } else if (
+    content.girlReview.averageRating != null &&
+    content.girlReview.total >= GIRL_REVIEW_AVG_MIN_SAMPLES &&
+    content.girlReview.averageRating >= GIRL_REVIEW_HIGH_AVG
+  ) {
+    points.push(
+      `口コミ平均評価が${content.girlReview.averageRating}と高評価です（${content.girlReview.total}件）`,
+    );
+  } else if (content.girlReview.total > 0) {
+    points.push(
+      `女の子の口コミが${content.girlReview.total}件登録されています（面接・体験入店${content.girlReview.interview}件 / 在籍${content.girlReview.cast}件）`,
+    );
   }
 
   if (points.length === 0) {
@@ -1340,21 +1549,23 @@ export async function buildShopImprovementReport(
   const previousRates = toRates(previous);
 
   const jobRow = (jobResult.data as unknown as JobContentRow | null) ?? null;
-  let content = buildContentSnapshot(jobRow);
+
+  let girlReview: GirlReviewSnapshot = EMPTY_GIRL_REVIEW;
   try {
-    const { count, error: reviewCountError } = await supabase
+    const { data: reviewRows, error: reviewError } = await supabase
       .from("job_girl_reviews")
-      .select("id", { count: "exact", head: true })
+      .select("category, rating")
       .eq("job_id", jobId);
-    if (!reviewCountError && typeof count === "number") {
-      content = {
-        ...content,
-        castVoiceCount: Math.max(content.castVoiceCount, count),
-      };
+    if (!reviewError) {
+      girlReview = buildGirlReviewSnapshot(
+        (reviewRows ?? []) as Array<{ category: string; rating: number }>,
+      );
     }
   } catch {
-    // job_girl_reviews 未作成時は cast_voices 件数のみで判定
+    // job_girl_reviews 未作成時は legacy cast_voices 件数のみで判定
   }
+
+  const content = buildContentSnapshot(jobRow, girlReview);
 
   const [listingContext, peerComparison] = await Promise.all([
     fetchListingContext(supabase, jobId, jobRow, plan),
@@ -1405,6 +1616,7 @@ export async function buildShopImprovementReport(
     peer: peerComparison,
     funnel,
     monthLabel: ranges.monthLabel,
+    girlReview: content.girlReview,
   });
 
   const isPremium = plan === "premium";
