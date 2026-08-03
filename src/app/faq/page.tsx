@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { InfoPageLayout } from "@/components/InfoPageLayout";
-import { buildPageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
+import { buildFaqPageJsonLd, buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "よくある質問",
-  `${SITE_FORMAL_NAME}に関するよくある質問（FAQ）です。体験入店・応募・掲載についての疑問にお答えします。`,
+  "よくある質問｜体入・応募・掲載について",
+  "体入ホワイトナイトに関するよくある質問（FAQ）です。体験入店・応募方法・掲載基準・ブラック店舗報告など、求職者と店舗様から寄せられる疑問にわかりやすくお答えしています。ご利用前の確認にお役立てください。解決しない場合は、お問い合わせやコラムもあわせてご活用ください。",
   "/faq",
 );
 
@@ -40,6 +41,11 @@ export default function FaqPage() {
       pathname="/faq"
       breadcrumbLabel="よくある質問"
     >
+      <JsonLd
+        data={buildFaqPageJsonLd(
+          FAQ_ITEMS.map((item) => ({ question: item.q, answer: item.a })),
+        )}
+      />
       <div className="space-y-4">
         {FAQ_ITEMS.map((item) => (
           <article

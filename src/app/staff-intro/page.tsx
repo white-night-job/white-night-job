@@ -5,8 +5,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "担当者紹介",
-  `${SITE_FORMAL_NAME}では、採用担当者の顔写真やメッセージを掲載。どんな人と話すのか事前に確認できます。`,
+  "担当者紹介｜採用担当の顔が見える求人",
+  "体入ホワイトナイトでは、採用担当者の顔写真やメッセージを掲載しています。面接前にどんな人と話すのか事前に確認でき、初めての夜職・体験入店でも安心しやすいお店選びをサポートします。応募前の確認にお役立てください。担当者の雰囲気を知ってから相談できると、応募のハードルが下がります。",
   "/staff-intro",
 );
 

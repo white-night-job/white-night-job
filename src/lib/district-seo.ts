@@ -78,6 +78,16 @@ function benefitLinks(district: District) {
   ] as const;
 }
 
+function ensureMetaDescription(description: string): string {
+  const chars = [...description];
+  if (chars.length >= 120) {
+    return chars.length > 160 ? chars.slice(0, 160).join("") : description;
+  }
+  const pad =
+    "体入ホワイトナイトでは掲載審査を通過した店舗のみを公開し、条件を比較しながら安心して探せます。";
+  return `${description}${pad}`;
+}
+
 function buildJobTypePages(
   area: Pick<DistrictAreaPage, "slug" | "district" | "displayName" | "path">,
   content: Record<
@@ -90,8 +100,8 @@ function buildJobTypePages(
     return {
       ...meta,
       path: `${area.path}/${meta.slug}`,
-      title: `${area.displayName}の${meta.displayName}求人｜${c.titleHint}｜White Night Job`,
-      description: c.desc,
+      title: `${area.displayName}の${meta.displayName}求人｜${c.titleHint}`,
+      description: ensureMetaDescription(c.desc),
       h1: `${area.displayName}の${meta.displayName}求人`,
       intro: c.intro,
       guide: c.guide,
@@ -660,9 +670,9 @@ export const DISTRICT_AREA_PAGES: DistrictAreaPage[] = [
     district: "琴似",
     displayName: "琴似",
     path: "/sapporo/kotoni",
-    title: "琴似の夜職求人・ガールズバー求人｜White Night Job",
+    title: "琴似の夜職求人・ガールズバー求人",
     description:
-      "札幌・琴似で安心して働ける夜職求人を掲載。ガールズバー、スナック、コンカフェなど、未経験歓迎・日払い・送迎ありなどの条件から求人を探せます。",
+      "札幌・琴似で安心して働ける夜職求人を掲載。ガールズバー、スナック、コンカフェなど、未経験歓迎・日払い・送迎ありの条件から、審査済み優良店を比較して探せます。体入ホワイトナイトは掲載審査通過店のみ公開しています。",
     h1: "琴似の夜職求人",
     intro: [
       "琴似の夜職求人を探している方へ。White Night Job（体入ホワイトナイト）は、掲載審査を通過した店舗だけを公開する札幌の夜職求人サイトです。琴似はすすきのより落ち着いたエリアで、地域密着型の店舗を比較しながら働き方を選びやすい傾向があります。",
@@ -714,9 +724,9 @@ export const DISTRICT_AREA_PAGES: DistrictAreaPage[] = [
     district: "24条",
     displayName: "北24条",
     path: "/sapporo/kita24jo",
-    title: "北24条の夜職求人・ガールズバー求人｜White Night Job",
+    title: "北24条の夜職求人・ガールズバー求人",
     description:
-      "札幌・北24条の夜職求人を掲載。ガールズバー、スナック、コンカフェなど、未経験歓迎や日払いなどの条件から求人を探せます。",
+      "札幌・北24条の夜職求人を掲載。ガールズバー、スナック、コンカフェなど、未経験歓迎や日払いの条件から審査済み優良店を比較できます。体入ホワイトナイトは掲載審査通過店のみ公開しています。",
     h1: "北24条の夜職求人",
     intro: [
       "北24条の夜職求人を探している方へ。当サイトでは地区名を「24条」として登録・検索しています。地下鉄南北線で通いやすい立地を活かし、学生やWワークの方がすすきの以外の選択肢として検討しやすいエリアです。",
@@ -765,9 +775,9 @@ export const DISTRICT_AREA_PAGES: DistrictAreaPage[] = [
     district: "手稲",
     displayName: "手稲",
     path: "/sapporo/teine",
-    title: "手稲の夜職求人・ガールズバー求人｜White Night Job",
+    title: "手稲の夜職求人・ガールズバー求人",
     description:
-      "札幌・手稲で働ける夜職求人を掲載。ガールズバー、スナック、コンカフェなど、地域密着型の求人を待遇や勤務条件から探せます。",
+      "札幌・手稲で働ける夜職求人を掲載。ガールズバー、スナック、コンカフェなど、地域密着型の店舗を待遇や勤務条件から比較できます。体入ホワイトナイトは掲載審査通過店のみ公開しています。",
     h1: "手稲の夜職求人",
     intro: [
       "手稲の夜職求人を探している方へ。地元で働きたい方や、すすきのまで通わずに夜職を始めたい方にとって、手稲は現実的な選択肢になり得ます。White Night Jobでは掲載審査を通過した店舗のみを公開しています。",

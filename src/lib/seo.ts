@@ -11,6 +11,7 @@ import {
   SITE_BRAND_JA,
   SITE_DESCRIPTION,
   SITE_FORMAL_NAME,
+  SITE_LOGO_PATH,
   SITE_LOGO_URL,
   SITE_NAME,
   SITE_OG_TITLE,
@@ -18,29 +19,103 @@ import {
   SITE_URL,
 } from "@/lib/site";
 
-export function buildRootMetadata(): Metadata {
+/** Document title suffix — fullwidth pipe, per Phase1 SEO. */
+export const SITE_TITLE_SUFFIX = `｜${SITE_NAME}`;
+
+type OgImageInput =
+  | string
+  | URL
+  | { url: string | URL; alt?: string }
+  | Array<string | URL | { url: string | URL; alt?: string }>;
+
+const DEFAULT_OG_IMAGES: Array<{ url: string; alt: string }> = [
+  {
+    url: SITE_LOGO_PATH,
+    alt: SITE_FORMAL_NAME,
+  },
+];
+
+/**
+ * Normalize a page title so the document title ends with exactly
+ * 「｜White Night Job」 (no halfwidth |, no double suffix).
+ */
+export function finalizeDocumentTitle(pageTitle: string): string {
+  let base = pageTitle.trim();
+  if (!base) return `${SITE_BRAND_JA}${SITE_TITLE_SUFFIX}`;
+
+  // Strip trailing brand segments repeatedly (halfwidth or fullwidth pipe).
+  let prev = "";
+  while (base !== prev) {
+    prev = base;
+    base = base
+      .replace(/\s*[|｜]\s*White Night Job\s*$/u, "")
+      .replace(/\s*[|｜]\s*体入ホワイトナイト\s*$/u, "")
+      .trim();
+  }
+
+  if (!base || base === SITE_NAME || base === SITE_BRAND_JA) {
+    return `${SITE_BRAND_JA}${SITE_TITLE_SUFFIX}`;
+  }
+
+  return `${base}${SITE_TITLE_SUFFIX}`;
+}
+
+function resolveOgImages(images?: OgImageInput): Array<{ url: string; alt?: string }> {
+  if (!images) return DEFAULT_OG_IMAGES.map((img) => ({ ...img }));
+  const list = Array.isArray(images) ? images : [images];
+  return list.map((img) => {
+    if (typeof img === "string") return { url: img };
+    if (img instanceof URL) return { url: img.toString() };
+    return {
+      url: typeof img.url === "string" ? img.url : img.url.toString(),
+      alt: img.alt,
+    };
+  });
+}
+
+function buildSocialMetadata(params: {
+  title: string;
+  description: string;
+  canonical: string;
+  type?: "website" | "article";
+  images?: OgImageInput;
+}): Pick<Metadata, "openGraph" | "twitter"> {
+  const images = resolveOgImages(params.images);
   return {
-    metadataBase: new URL(SITE_URL),
-    title: {
-      default: SITE_TITLE,
-      template: `%s | ${SITE_NAME}`,
-    },
-    description: SITE_DESCRIPTION,
     openGraph: {
-      type: "website",
+      type: params.type ?? "website",
       locale: "ja_JP",
-      url: SITE_URL,
+      title: params.title,
+      description: params.description,
+      url: params.canonical,
       siteName: SITE_NAME,
-      title: SITE_OG_TITLE,
-      description: SITE_DESCRIPTION,
+      images,
     },
     twitter: {
       card: "summary_large_image",
-      title: SITE_OG_TITLE,
-      description: SITE_DESCRIPTION,
+      title: params.title,
+      description: params.description,
+      images: images.map((img) => img.url),
     },
+  };
+}
+
+export function buildRootMetadata(): Metadata {
+  const title = finalizeDocumentTitle(SITE_TITLE);
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: title,
+      template: `%s${SITE_TITLE_SUFFIX}`,
+    },
+    description: SITE_DESCRIPTION,
+    ...buildSocialMetadata({
+      title: finalizeDocumentTitle(SITE_OG_TITLE),
+      description: SITE_DESCRIPTION,
+      canonical: `${SITE_URL}/`,
+    }),
     alternates: {
-      canonical: SITE_URL,
+      canonical: `${SITE_URL}/`,
     },
   };
 }
@@ -49,32 +124,26 @@ export function buildPageMetadata(
   pageTitle: string,
   description: string,
   pathname: string,
-  options?: { absoluteTitle?: boolean },
+  options?: { absoluteTitle?: boolean; noIndex?: boolean },
 ): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
-  const ogTitle = options?.absoluteTitle
-    ? pageTitle
-    : `${pageTitle} | ${SITE_OG_TITLE}`;
+  const title = finalizeDocumentTitle(pageTitle);
+  const social = buildSocialMetadata({
+    title,
+    description,
+    canonical,
+  });
 
   return {
-    title: options?.absoluteTitle
-      ? { absolute: pageTitle }
-      : pageTitle,
+    title: { absolute: title },
     description,
-    openGraph: {
-      title: ogTitle,
-      description,
-      url: canonical,
-      siteName: SITE_NAME,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: ogTitle,
-      description,
-    },
+    ...social,
     alternates: {
       canonical,
     },
+    ...(options?.noIndex
+      ? { robots: { index: false, follow: false } }
+      : {}),
   };
 }
 
@@ -111,7 +180,25 @@ export function buildWebSiteJsonLd() {
         url: SITE_LOGO_URL,
       },
     },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/jobs?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
+}
+
+function ensureArticleDescription(description: string, articleTitle: string): string {
+  const chars = [...description];
+  if (chars.length >= 120) {
+    return chars.length > 160 ? chars.slice(0, 160).join("") : description;
+  }
+  const next = `${description}${articleTitle}の要点を、応募前の判断材料としてまとめました。`;
+  const nextChars = [...next];
+  return nextChars.length > 160 ? nextChars.slice(0, 160).join("") : next;
 }
 
 export function buildArticleMetadata(
@@ -120,23 +207,19 @@ export function buildArticleMetadata(
   pathname: string,
 ): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
-  const ogTitle = `${articleTitle} | ${SITE_OG_TITLE}`;
+  const title = finalizeDocumentTitle(articleTitle);
+  const metaDescription = ensureArticleDescription(description, articleTitle);
+  const social = buildSocialMetadata({
+    title,
+    description: metaDescription,
+    canonical,
+    type: "article",
+  });
 
   return {
-    title: articleTitle,
-    description,
-    openGraph: {
-      type: "article",
-      title: ogTitle,
-      description,
-      url: canonical,
-      siteName: SITE_NAME,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: ogTitle,
-      description,
-    },
+    title: { absolute: title },
+    description: metaDescription,
+    ...social,
     alternates: {
       canonical,
     },
@@ -157,6 +240,7 @@ export function buildArticleJsonLd(params: {
     headline: params.title,
     description: params.description,
     url: `${SITE_URL}${params.pathname}`,
+    image: [SITE_LOGO_URL],
     ...(params.datePublished ? { datePublished: params.datePublished } : {}),
     dateModified: params.dateModified,
     author: {
@@ -334,27 +418,26 @@ export function buildJobPostingJsonLd(job: Job) {
 export function buildJobDetailMetadata(job: Job): Metadata {
   const pathname = `/jobs/${job.id}`;
   const canonical = `${SITE_URL}${pathname}`;
-  const title = `${job.shopName}の求人｜${job.district}・${job.jobType}｜${SITE_NAME}`;
+  const title = finalizeDocumentTitle(
+    `${job.shopName}の求人｜${job.district}・${job.jobType}`,
+  );
   const description =
-    `${job.shopName}の求人情報。時給、勤務時間、待遇、アクセス、体験入店、応募方法を掲載しています。` +
-    (job.salary ? `（${job.salary}）` : "");
+    `${job.shopName}（${job.district}・${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
+    (job.salary ? ` 給与：${job.salary}` : "");
+
+  const images = job.imageUrl
+    ? [{ url: job.imageUrl, alt: `${job.shopName}の求人` }]
+    : DEFAULT_OG_IMAGES;
 
   return {
     title: { absolute: title },
     description,
-    openGraph: {
+    ...buildSocialMetadata({
       title,
       description,
-      url: canonical,
-      siteName: SITE_NAME,
-      type: "website",
-      ...(job.imageUrl ? { images: [{ url: job.imageUrl }] } : {}),
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
+      canonical,
+      images,
+    }),
     alternates: {
       canonical,
     },

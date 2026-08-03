@@ -16,8 +16,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "会社概要",
-  `${SITE_FORMAL_NAME}の運営会社情報です。`,
+  "会社概要｜運営情報",
+  "体入ホワイトナイト（White Night Job）の運営会社情報です。事業者名・所在地・連絡先など、札幌の夜職求人サイトを安心してご利用いただくための基本情報をわかりやすく掲載しています。サイト運営方針の確認にもご活用ください。運営主体を明示し、求職者と店舗双方が安心して利用できる体制を整えています。",
   "/company",
 );
 

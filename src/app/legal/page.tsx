@@ -13,7 +13,7 @@ import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
   "特定商取引法に基づく表記",
-  `${SITE_FORMAL_NAME}の特定商取引法に基づく表記です。`,
+  "体入ホワイトナイト（White Night Job）の特定商取引法に基づく表記ページです。サービス名、運営者情報、お問い合わせ先、料金・提供時期など、法令で求められる事項をわかりやすく明記しています。ご契約前にご確認ください。取引条件の透明性を高めるため、必要な項目を漏れなく掲載しています。",
   "/legal",
 );
 

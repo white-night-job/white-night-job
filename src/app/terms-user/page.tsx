@@ -5,7 +5,7 @@ import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
   "求職者向け利用規約",
-  `${SITE_FORMAL_NAME}の求職者向け利用規約です。求人の閲覧・応募・相談に関する条件を定めています。`,
+  "体入ホワイトナイト（White Night Job）の求職者向け利用規約です。求人の閲覧・応募・相談機能の利用条件、禁止事項、免責など、サービスをご利用いただく際のルールをわかりやすく定めています。ご利用前にご確認ください。ご利用にあたっての責任範囲を、求職者目線で整理しています。",
   "/terms-user",
 );
 

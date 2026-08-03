@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata(
   "掲載審査状況の確認",
-  "申請番号とメールアドレスで掲載審査の状況を確認できます。",
+  "体入ホワイトナイトの掲載審査状況確認ページです。申請番号とメールアドレスを入力すると、申し込み済みの掲載審査がどの段階にあるかをいつでも確認できます。審査中の進捗確認や、追加のご連絡前の確認にご利用ください。申請内容の再確認や、審査待ちの状況把握に便利です。",
   "/for-shops/review-status",
 );
 

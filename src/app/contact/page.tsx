@@ -13,8 +13,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "お問い合わせ",
-  `${SITE_FORMAL_NAME}へのお問い合わせ方法をご案内します。`,
+  "お問い合わせ｜札幌の夜職求人サイト",
+  "体入ホワイトナイト（White Night Job）へのお問い合わせ方法をご案内します。求人掲載・応募・掲載内容に関するご質問は、必要事項をご記入のうえお送りください。内容確認後、順次ご返信いたしますのでお気軽にご連絡ください。お急ぎの内容も、確認後できるだけ早くご案内できるよう対応します。",
   "/contact",
 );
 

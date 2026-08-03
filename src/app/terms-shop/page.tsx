@@ -6,7 +6,7 @@ import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
   "掲載店舗向け利用規約",
-  `${SITE_FORMAL_NAME}の掲載店舗向け利用規約です。求人掲載・料金・店舗管理機能に関する条件を定めています。`,
+  "体入ホワイトナイト（White Night Job）の掲載店舗向け利用規約です。求人掲載・料金・店舗管理機能・禁止事項など、優良店として掲載いただく際にお守りいただく条件をわかりやすく定めています。ご掲載前に必ずご確認ください。掲載品質を守るためのルールを、店舗責任者向けに整理しています。",
   "/terms-shop",
 );
 

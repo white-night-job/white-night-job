@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata(
   "掲載審査の申し込み",
-  "White Night Jobへの掲載審査申請フォーム。店舗情報を入力して審査をお申し込みください。",
+  "体入ホワイトナイト（White Night Job）への掲載審査申請フォームです。店舗情報・連絡先を入力して、札幌エリアの優良店として求人を掲載するための審査をお申し込みください。必要項目を正確にご記入ください。入力内容は審査に利用され、虚偽のない情報のご記入をお願いします。",
   "/for-shops/apply",
 );
 

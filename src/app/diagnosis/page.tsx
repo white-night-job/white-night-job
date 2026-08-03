@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { MemberGatePage } from "@/components/MemberGatePage";
 import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { MEMBER_PATHS } from "@/lib/member-access";
+import { buildPageMetadata } from "@/lib/seo";
 import { getServerUserSession } from "@/lib/server-user-session";
 
-export const metadata: Metadata = {
-  title: "あなたに合う職種診断 | White Night Job",
-  description: "LINEログイン後、11の質問であなたに向いている夜職の職種を診断できます。",
-};
+export const metadata: Metadata = buildPageMetadata(
+  "あなたに合う職種診断｜札幌の夜職",
+  "11の質問であなたに向いている夜職の職種を診断できます。LINEログイン後、結果を保存しながらガールズバー・コンカフェなど札幌の働き方を比較検討できるサポート機能です。初めての職種選びにもご活用ください。診断結果は保存でき、あとから求人探しの参考にもできます。",
+  "/diagnosis",
+);
 
 export default async function DiagnosisPage() {
   const session = await getServerUserSession();

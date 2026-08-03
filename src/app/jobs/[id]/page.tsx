@@ -4,7 +4,6 @@ import { JobDetailClient } from "@/components/JobDetailClient";
 import { JsonLd } from "@/components/JsonLd";
 import { getPublishedJobDetail } from "@/lib/job-detail-data";
 import {
-  buildBreadcrumbJsonLd,
   buildJobDetailMetadata,
   buildJobPostingJsonLd,
 } from "@/lib/seo";
@@ -68,15 +67,6 @@ export default async function JobDetailPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={buildJobPostingJsonLd(job)} />
-      <JsonLd
-        data={buildBreadcrumbJsonLd([
-          { label: "求人一覧", href: "/jobs" },
-          ...(job.district === "すすきの"
-            ? [{ label: "すすきのの夜職求人", href: "/sapporo/susukino" }]
-            : []),
-          { label: `${job.shopName}の求人` },
-        ])}
-      />
       <JobDetailClient job={job} />
     </>
   );

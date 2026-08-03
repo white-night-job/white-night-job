@@ -6,8 +6,8 @@ import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO, SITE_TAGLINE } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "利用規約",
-  `${SITE_FORMAL_NAME}の利用規約ページです。求職者向け・掲載店舗向けの規約をご確認いただけます。`,
+  "利用規約｜求職者・掲載店舗",
+  "体入ホワイトナイト（White Night Job）の利用規約ページです。求職者向け・掲載店舗向けそれぞれの規約へ案内し、サービス利用前に確認していただきたい事項をわかりやすくまとめています。該当する規約をご覧ください。立場に応じた規約を選び、内容をご理解のうえご利用ください。",
   "/terms",
 );
 

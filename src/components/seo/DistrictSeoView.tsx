@@ -3,7 +3,6 @@ import { JobCard } from "@/components/JobCard";
 import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
-  buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
   buildWebPageJsonLd,
 } from "@/lib/seo";
@@ -54,25 +53,10 @@ export function DistrictSeoView({
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
-      <JsonLd
-        data={buildBreadcrumbJsonLd(
-          jobTypePage
-            ? [
-                { label: "トップ", href: "/" },
-                { label: area.h1, href: area.path },
-                { label: jobTypePage.h1 },
-              ]
-            : [
-                { label: "トップ", href: "/" },
-                { label: area.h1 },
-              ],
-        )}
-      />
       <JsonLd data={buildFaqPageJsonLd([...faqs])} />
 
       <Breadcrumbs
         items={[
-          { label: "トップ", href: "/" },
           {
             label: area.h1,
             href: jobTypePage ? area.path : undefined,

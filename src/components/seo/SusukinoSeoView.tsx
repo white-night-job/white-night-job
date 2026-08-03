@@ -3,7 +3,6 @@ import { JobCard } from "@/components/JobCard";
 import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
-  buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
   buildWebPageJsonLd,
 } from "@/lib/seo";
@@ -57,25 +56,10 @@ export function SusukinoSeoView({
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
-      <JsonLd
-        data={buildBreadcrumbJsonLd(
-          jobTypePage
-            ? [
-                { label: "トップ", href: "/" },
-                { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
-                { label: breadcrumbLabel },
-              ]
-            : [
-                { label: "トップ", href: "/" },
-                { label: breadcrumbLabel },
-              ],
-        )}
-      />
       <JsonLd data={buildFaqPageJsonLd([...faqs])} />
 
       <Breadcrumbs
         items={[
-          { label: "トップ", href: "/" },
           {
             label: "すすきのの夜職求人",
             href: jobTypePage ? "/sapporo/susukino" : undefined,

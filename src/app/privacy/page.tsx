@@ -5,7 +5,7 @@ import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
   "プライバシーポリシー",
-  `${SITE_FORMAL_NAME}のプライバシーポリシーです。個人情報の取得・利用・管理について定めています。`,
+  "体入ホワイトナイト（White Night Job）のプライバシーポリシーです。個人情報の取得目的、利用範囲、管理方法、開示・訂正・削除のご請求への対応について、利用者の皆さまに分かりやすく定めています。安心してお使いください。取得する情報の扱いを明確にし、不当な利用を防ぐ方針を示しています。",
   "/privacy",
 );
 

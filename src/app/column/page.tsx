@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/JsonLd";
 import {
   COLUMN_ARTICLES,
   COLUMN_LIST_DESCRIPTION,
+  COLUMN_LIST_H1,
   COLUMN_LIST_TITLE,
 } from "@/data/column-articles";
 import { buildPageMetadata, buildWebPageJsonLd } from "@/lib/seo";
@@ -29,7 +30,7 @@ export default function ColumnListPage() {
 
       <header className="mb-8">
         <h1 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
-          {COLUMN_LIST_TITLE}
+          {COLUMN_LIST_H1}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
           {COLUMN_LIST_DESCRIPTION}

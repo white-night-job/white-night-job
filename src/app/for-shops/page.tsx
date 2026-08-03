@@ -11,8 +11,8 @@ import { SITE_BRAND_JA, SITE_FORMAL_NAME } from "@/lib/site";
 import "./landing.css";
 
 export const metadata: Metadata = buildPageMetadata(
-  "店舗向け掲載案内",
-  `${SITE_FORMAL_NAME}への求人掲載をご検討の店舗様向けご案内。優良店のみ掲載、安心認証、AIチャット紹介など。`,
+  "店舗向け掲載案内｜優良店の求人掲載",
+  "体入ホワイトナイトへの求人掲載をご検討の店舗様向けご案内です。優良店のみ掲載する方針、安心認証、採用支援機能など、掲載メリットと審査申し込みの流れをわかりやすくご確認いただけます。採用強化のご相談にもご利用ください。採用課題に合わせて、掲載プランや運用の相談も進めやすい案内です。",
   "/for-shops",
 );
 

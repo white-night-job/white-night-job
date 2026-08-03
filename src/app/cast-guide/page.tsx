@@ -5,8 +5,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "キャスト向けガイド",
-  `${SITE_FORMAL_NAME}のキャスト向けガイド。体験入店・応募前の確認ポイントや安心して働くためのヒントをご紹介します。`,
+  "キャスト向けガイド｜夜職の安心なお店選び",
+  "体入ホワイトナイトのキャスト向けガイドです。体験入店・応募前の確認ポイント、ノルマや罰金への注意、札幌で安心して夜職を始めるためのヒントをわかりやすくまとめています。初めての方も順番に確認できます。不安な点を一つずつ潰しながら、納得できる応募先を選べます。",
   "/cast-guide",
 );
 

@@ -5,8 +5,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME, SITE_LEGAL_INTRO } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "初めての方へ",
-  `${SITE_FORMAL_NAME}を初めてご利用の方へ。夜職求人の探し方と当サイトの安心サポートをご案内します。`,
+  "初めての方へ｜夜職求人の探し方",
+  "体入ホワイトナイトを初めてご利用の方向けガイドです。札幌の夜職求人の探し方、体験入店の進め方、当サイトの安心サポートをステップでわかりやすくご案内します。失敗しにくいお店選びの順番が分かります。いきなり応募せず、比較と確認の順番で進めるのがおすすめです。",
   "/first-time-guide",
 );
 

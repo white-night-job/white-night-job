@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata(
   "掲載審査申し込み完了",
-  "掲載審査のお申し込み受付完了ページ。",
+  "体入ホワイトナイトへの掲載審査申し込みが完了しました。受付内容を確認のうえ、審査の進捗は申請番号から状況確認ページでいつでもご確認いただけます。登録メールもあわせてご確認のうえ、審査完了までお待ちください。このあと運営より確認のご連絡がある場合もございます。",
   "/for-shops/apply/complete",
 );
 

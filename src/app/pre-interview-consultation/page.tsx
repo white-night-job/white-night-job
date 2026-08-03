@@ -5,8 +5,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "面接前相談受付",
-  `${SITE_FORMAL_NAME}では、掲載店舗すべてで面接前の相談を受け付けています。無理な勧誘を避け、安心して話を聞けます。`,
+  "面接前相談受付｜安心して話を聞ける求人",
+  "体入ホワイトナイト掲載店舗では、面接前の相談を受け付けています。無理な勧誘を避けながら勤務条件を確認でき、体験入店や応募前の不安を解消しやすい仕組みです。疑問がある方も、まずは相談から始められます。条件の認識違いを減らすため、気になる点は事前に質問しておきましょう。",
   "/pre-interview-consultation",
 );
 

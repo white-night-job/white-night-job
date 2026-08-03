@@ -5,8 +5,8 @@ import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME } from "@/lib/site";
 
 export const metadata: Metadata = buildPageMetadata(
-  "店内動画",
-  `${SITE_FORMAL_NAME}では、店内の雰囲気が分かる動画を掲載している店舗があります。応募前にイメージを確認できます。`,
+  "店内動画で雰囲気を確認｜札幌の夜職求人",
+  "体入ホワイトナイトでは、店内の雰囲気が分かる動画を掲載している店舗があります。札幌の夜職・体験入店求人へ応募する前に、お店の空気感や接客のイメージを事前に確認でき、ミスマッチを減らしやすいのが特長です。写真だけでは伝わりにくい店内の空気感を、動画で補完できます。",
   "/shop-videos",
 );
 
