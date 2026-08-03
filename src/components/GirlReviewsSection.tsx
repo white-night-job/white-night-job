@@ -26,7 +26,7 @@ function GoldStarIcon({ filled }: { filled: boolean }) {
       viewBox="0 0 24 24"
       aria-hidden
       className={`h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5 ${
-        filled ? "text-gold-dark" : "text-gold/25"
+        filled ? "text-[#F4C542]" : "text-[#F4C542]/30"
       }`}
     >
       <path
