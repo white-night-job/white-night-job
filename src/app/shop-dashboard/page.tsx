@@ -17,10 +17,8 @@ import {
   type JobApplicationDetail,
 } from "@/lib/job-applications";
 import {
-  getDisplayCastVoices,
   getDisplayStoreImages,
   parseBenefits,
-  sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import { buildPreviewJobFromShopForm } from "@/lib/job-preview";
@@ -32,11 +30,11 @@ import {
 } from "@/lib/upload-temp-client";
 import {
   FIXED_AREA,
-  type CastVoiceEntry,
   type District,
   type Job,
   type JobType,
 } from "@/types/job";
+import { ShopGirlReviewsManager } from "@/components/ShopGirlReviewsManager";
 import {
   getPlanDefinition,
   getPlanFeatures,
@@ -78,7 +76,6 @@ type ShopForm = {
   ageGroup: string;
   introductionText: string;
   descriptionText: string;
-  castVoices: CastVoiceEntry[];
   recruiterName: string;
   recruiterTitle: string;
   recruiterImage: string;
@@ -95,12 +92,6 @@ type ShopForm = {
   websiteUrl: string;
   lineUrl: string;
 };
-
-const emptyCastVoiceEntry = (): CastVoiceEntry => ({
-  name: "",
-  age: "",
-  comment: "",
-});
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
@@ -122,11 +113,6 @@ function toForm(job: Job): ShopForm {
     ageGroup: job.ageGroup ?? "",
     introductionText: job.introductionText ?? "",
     descriptionText: job.descriptionText ?? "",
-    castVoices: getDisplayCastVoices(job).map((entry) => ({
-      name: entry.name,
-      age: entry.age,
-      comment: entry.comment,
-    })),
     recruiterName: job.recruiterName ?? "",
     recruiterTitle: job.recruiterTitle ?? "",
     recruiterImage: job.recruiterImage ?? "",
@@ -158,7 +144,6 @@ function toPayload(form: ShopForm) {
     ageGroup: form.ageGroup || undefined,
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
-    castVoices: sanitizeCastVoicesForSave(form.castVoices),
     recruiterName: form.recruiterName || undefined,
     recruiterTitle: form.recruiterTitle || undefined,
     recruiterImage: form.recruiterImage,
@@ -870,34 +855,9 @@ export default function ShopDashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <p className={labelClass}>入店・在籍キャストの声</p>
-            <button type="button" onClick={() => setField("castVoices", [...form.castVoices, emptyCastVoiceEntry()])} className="rounded-full border border-gold/35 px-3 py-1 text-xs font-medium text-gold-dark">
-              追加
-            </button>
-          </div>
-          {form.castVoices.length === 0 ? (
-            <p className="text-sm text-muted">まだ登録されていません。</p>
-          ) : (
-            <ul className="space-y-3">
-              {form.castVoices.map((entry, index) => (
-                <li key={index} className="rounded-xl border border-gold/20 bg-white p-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <input value={entry.name} onChange={(e) => setField("castVoices", form.castVoices.map((item, i) => i === index ? { ...item, name: e.target.value } : item))} placeholder="名前" className={inputClass} />
-                    <input value={entry.age} onChange={(e) => setField("castVoices", form.castVoices.map((item, i) => i === index ? { ...item, age: e.target.value } : item))} placeholder="年齢" className={inputClass} />
-                  </div>
-                  <textarea value={entry.comment} onChange={(e) => setField("castVoices", form.castVoices.map((item, i) => i === index ? { ...item, comment: e.target.value } : item))} rows={3} placeholder="コメント" className={`${inputClass} mt-3`} />
-                  <button type="button" onClick={() => setField("castVoices", form.castVoices.filter((_, i) => i !== index))} className="mt-2 text-xs text-muted hover:text-charcoal">削除</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>採用担当からのメッセージ</p>
           <p className="mb-4 text-xs text-muted">
-            求人詳細ページの「入店・在籍キャストの声」の下に表示されます。
+            求人詳細ページの「女の子の口コミ」の下に表示されます。
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -1128,6 +1088,10 @@ export default function ShopDashboardPage() {
         </button>
           </form>
         )}
+      </div>
+
+      <div className="mb-8">
+        <ShopGirlReviewsManager labelClass={labelClass} inputClass={inputClass} />
       </div>
 
       <section className="mb-8 space-y-3">

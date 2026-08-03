@@ -7,18 +7,18 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareButton } from "@/components/CompareButton";
 import { CompareRelatedShops } from "@/components/CompareRelatedShops";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { GirlReviewsSection } from "@/components/GirlReviewsSection";
 import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
 import {
-  formatCastVoiceAge,
-  getDisplayCastVoices,
   getDisplayStoreImages,
 } from "@/lib/job-db";
 import { formatLocation } from "@/lib/job-storage";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import type { Job } from "@/types/job";
+import type { GirlReview } from "@/types/girl-review";
 
 const StoreImagesGallery = dynamic(
   () =>
@@ -166,10 +166,12 @@ export function JobDetailView({
   job,
   preview = false,
   showBreadcrumbs = true,
+  girlReviews = [],
 }: {
   job: Job;
   preview?: boolean;
   showBreadcrumbs?: boolean;
+  girlReviews?: GirlReview[];
 }) {
   const [previewNotice, setPreviewNotice] = useState("");
   const [showExtras, setShowExtras] = useState(preview);
@@ -202,7 +204,6 @@ export function JobDetailView({
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
-  const displayCastVoices = getDisplayCastVoices(job);
   const displayStoreImages = getDisplayStoreImages(job);
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
@@ -467,44 +468,7 @@ export function JobDetailView({
                     shopName={job.shopName}
                   />
                 )}
-                {Array.isArray(displayCastVoices) &&
-                  displayCastVoices.length > 0 && (
-                    <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
-                      <h2 className="mb-4 text-base font-semibold text-charcoal">
-                        入店・在籍キャストの声
-                      </h2>
-                      <ul className="space-y-3">
-                        {displayCastVoices.map((entry, index) => {
-                          const ageLabel = formatCastVoiceAge(entry.age);
-                          const hasProfile = Boolean(entry.name || ageLabel);
-
-                          return (
-                            <li
-                              key={`cast-voice-${index}-${entry.name}`}
-                              className="rounded-xl border border-gold/25 bg-white px-4 py-4 shadow-gold"
-                            >
-                              {hasProfile && (
-                                <p className="text-sm font-semibold text-gold-dark sm:text-base">
-                                  {entry.name}
-                                  {entry.name && ageLabel ? " / " : ""}
-                                  {ageLabel}
-                                </p>
-                              )}
-                              {entry.comment && (
-                                <p
-                                  className={`whitespace-pre-wrap text-sm leading-relaxed text-charcoal sm:text-base ${
-                                    hasProfile ? "mt-2" : ""
-                                  }`}
-                                >
-                                  {entry.comment}
-                                </p>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </section>
-                  )}
+                <GirlReviewsSection reviews={girlReviews} />
                 <RecruiterMessageSection job={job} />
                 {socialLinks.length > 0 && (
                   <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">

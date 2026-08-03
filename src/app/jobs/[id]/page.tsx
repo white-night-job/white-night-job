@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JobDetailClient } from "@/components/JobDetailClient";
 import { JsonLd } from "@/components/JsonLd";
+import { listGirlReviewsForJob } from "@/lib/girl-reviews-db";
 import { getPublishedJobDetail } from "@/lib/job-detail-data";
 import {
   buildJobDetailMetadata,
   buildJobPostingJsonLd,
 } from "@/lib/seo";
+import type { GirlReview } from "@/types/girl-review";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -35,6 +37,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const startedAt = Date.now();
   let job = null;
+  let girlReviews: GirlReview[] = [];
   try {
     job = await getPublishedJobDetail(id);
   } catch (error) {
@@ -43,6 +46,17 @@ export default async function JobDetailPage({ params }: PageProps) {
       error,
       ms: Date.now() - startedAt,
     });
+  }
+
+  if (job) {
+    try {
+      girlReviews = await listGirlReviewsForJob(job.id);
+    } catch (error) {
+      console.error("[job-detail] girl reviews fetch failed", {
+        jobId: id,
+        error,
+      });
+    }
   }
 
   if (process.env.NODE_ENV === "development") {
@@ -67,7 +81,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={buildJobPostingJsonLd(job)} />
-      <JobDetailClient job={job} />
+      <JobDetailClient job={job} girlReviews={girlReviews} />
     </>
   );
 }

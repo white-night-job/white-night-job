@@ -424,7 +424,7 @@ function buildMissingFields(content: ContentSnapshot): string[] {
       `待遇項目（現在${content.benefitCount}件 / 目安${BENEFIT_TARGET}件以上）`,
     );
   }
-  if (content.castVoiceCount === 0) missing.push("在籍キャストの声");
+  if (content.castVoiceCount === 0) missing.push("女の子の口コミ");
   if (!content.hasLineUrl) missing.push("LINE応募URL");
   if (!content.hasPhone) missing.push("電話番号");
   if (content.snsCount === 0) missing.push("SNSリンク");
@@ -710,11 +710,11 @@ function buildAdvices(input: {
         id: "cast-voice-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。在籍キャストの声が未登録です。`,
+        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミが未登録です。`,
         action:
-          "在籍キャストの声を1件以上追加し、「未経験だった感想」「1日の流れ」「サポートの有無」など具体的な一文を入れてください。",
+          "女の子の口コミを1件以上追加し、「未経験だった感想」「1日の流れ」「サポートの有無」など具体的な一文を入れてください。",
         expectedEffect: "応募率の向上・安心感の補強",
-        reason: "詳細閲覧後の応募率が低く、キャストの声がないため",
+        reason: "詳細閲覧後の応募率が低く、女の子の口コミがないため",
       });
     } else if (!content.hasDescription) {
       push("description", {
@@ -1340,7 +1340,21 @@ export async function buildShopImprovementReport(
   const previousRates = toRates(previous);
 
   const jobRow = (jobResult.data as unknown as JobContentRow | null) ?? null;
-  const content = buildContentSnapshot(jobRow);
+  let content = buildContentSnapshot(jobRow);
+  try {
+    const { count, error: reviewCountError } = await supabase
+      .from("job_girl_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", jobId);
+    if (!reviewCountError && typeof count === "number") {
+      content = {
+        ...content,
+        castVoiceCount: Math.max(content.castVoiceCount, count),
+      };
+    }
+  } catch {
+    // job_girl_reviews 未作成時は cast_voices 件数のみで判定
+  }
 
   const [listingContext, peerComparison] = await Promise.all([
     fetchListingContext(supabase, jobId, jobRow, plan),

@@ -21,7 +21,7 @@ export type AdminPreviewForm = {
   otherBenefits: string;
   introductionText: string;
   descriptionText: string;
-  castVoices: CastVoiceEntry[];
+  castVoices?: CastVoiceEntry[];
   recruiterName: string;
   recruiterTitle: string;
   recruiterImage: string;
@@ -53,7 +53,7 @@ export type ShopPreviewForm = {
   ageGroup: string;
   introductionText: string;
   descriptionText: string;
-  castVoices: CastVoiceEntry[];
+  castVoices?: CastVoiceEntry[];
   recruiterName: string;
   recruiterTitle: string;
   recruiterImage: string;
@@ -102,7 +102,7 @@ export function buildPreviewJobFromAdminForm(
     customerRegularLevel: parseLevel(form.customerRegularLevel),
     introductionText: form.introductionText.trim() || undefined,
     descriptionText: form.descriptionText.trim() || undefined,
-    castVoices: sanitizeCastVoicesForSave(form.castVoices),
+    castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),
     requirements: [],
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
@@ -144,7 +144,7 @@ export function buildPreviewJobFromShopForm(
     ageGroup: form.ageGroup.trim() || undefined,
     introductionText: form.introductionText.trim() || undefined,
     descriptionText: form.descriptionText.trim() || undefined,
-    castVoices: sanitizeCastVoicesForSave(form.castVoices),
+    castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
     imageUrl: form.imageUrl.trim() || undefined,

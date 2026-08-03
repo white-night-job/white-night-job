@@ -1,9 +1,6 @@
-import { type CastVoiceEntry } from "@/types/job";
 import {
   parseBenefits,
-  parseCastVoices,
   parseStoreImages,
-  sanitizeCastVoicesForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 
@@ -15,7 +12,6 @@ export type ShopJobPayload = {
   ageGroup?: string;
   introductionText?: string;
   descriptionText?: string;
-  castVoices?: CastVoiceEntry[];
   storeImages?: string[];
   recruiterName?: string;
   recruiterTitle?: string;
@@ -58,9 +54,6 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
     descriptionText: data.descriptionText
       ? String(data.descriptionText)
       : undefined,
-    castVoices: parseCastVoices(
-      data.castVoices ?? (data as { cast_voices?: unknown }).cast_voices,
-    ),
     storeImages: sanitizeStoreImagesForSave(
       parseStoreImages(
         data.storeImages ?? (data as { store_images?: unknown }).store_images,
@@ -131,7 +124,6 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     introduction_text: payload.introductionText?.trim() || null,
     description_text: payload.descriptionText?.trim() || null,
     description: payload.descriptionText?.trim() || null,
-    cast_voices: sanitizeCastVoicesForSave(payload.castVoices ?? []),
     store_images: sanitizeStoreImagesForSave(payload.storeImages ?? []),
     recruiter_name: payload.recruiterName?.trim() || null,
     recruiter_title: payload.recruiterTitle?.trim() || null,

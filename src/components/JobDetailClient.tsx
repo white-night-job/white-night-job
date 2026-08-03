@@ -6,9 +6,11 @@ import { recordJobView } from "@/lib/job-view-storage";
 import { recordUserViewHistory } from "@/lib/view-history-client";
 import { cacheJobById } from "@/lib/job-storage";
 import type { Job } from "@/types/job";
+import type { GirlReview } from "@/types/girl-review";
 
 type JobDetailClientProps = {
   job: Job;
+  girlReviews?: GirlReview[];
 };
 
 function scheduleIdle(task: () => void) {
@@ -34,7 +36,10 @@ function scheduleIdle(task: () => void) {
  * - scroll detail to top on forward entry
  * - defer analytics / view-history so they never block first paint
  */
-export function JobDetailClient({ job }: JobDetailClientProps) {
+export function JobDetailClient({
+  job,
+  girlReviews = [],
+}: JobDetailClientProps) {
   useEffect(() => {
     cacheJobById(job);
   }, [job]);
@@ -65,5 +70,5 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
     });
   }, [job.id]);
 
-  return <JobDetailView job={job} />;
+  return <JobDetailView job={job} girlReviews={girlReviews} />;
 }
