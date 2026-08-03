@@ -1,13 +1,7 @@
 import type { MetadataRoute } from "next";
 import { COLUMN_ARTICLES } from "@/data/column-articles";
-import {
-  DISTRICT_AREA_PAGES,
-  jobTypeSlugFromJobType,
-} from "@/lib/district-seo";
-import {
-  listPublishedJobTypesForDistrict,
-  listPublishedJobsForSitemap,
-} from "@/lib/seo-area-jobs";
+import { DISTRICT_AREA_PAGES } from "@/lib/district-seo";
+import { listPublishedJobsForSitemap } from "@/lib/seo-area-jobs";
 import { SITE_URL } from "@/lib/site";
 import {
   SUSUKINO_AREA_PAGE,
@@ -32,6 +26,13 @@ const STATIC_PATHS: Array<{
     changeFrequency: "daily" as const,
     priority: 0.9,
   })),
+  ...DISTRICT_AREA_PAGES.flatMap((area) =>
+    area.jobTypePages.map((page) => ({
+      path: page.path,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    })),
+  ),
   { path: "/first-time-guide", changeFrequency: "monthly", priority: 0.7 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.6 },
   { path: "/column", changeFrequency: "weekly", priority: 0.7 },
@@ -47,7 +48,11 @@ const STATIC_PATHS: Array<{
   { path: "/cast-guide", changeFrequency: "monthly", priority: 0.5 },
   { path: "/staff-intro", changeFrequency: "monthly", priority: 0.4 },
   { path: "/shop-videos", changeFrequency: "monthly", priority: 0.4 },
-  { path: "/pre-interview-consultation", changeFrequency: "monthly", priority: 0.4 },
+  {
+    path: "/pre-interview-consultation",
+    changeFrequency: "monthly",
+    priority: 0.4,
+  },
   ...COLUMN_ARTICLES.map((article) => ({
     path: `/column/${article.slug}`,
     changeFrequency: "monthly" as const,
@@ -64,29 +69,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: item.priority,
   }));
 
-  const districtJobTypeEntries: MetadataRoute.Sitemap = [];
-  for (const area of DISTRICT_AREA_PAGES) {
-    try {
-      const types = await listPublishedJobTypesForDistrict(area.district);
-      for (const jobType of types) {
-        const slug = jobTypeSlugFromJobType(jobType);
-        if (!slug) continue;
-        if (!area.jobTypePages.some((page) => page.slug === slug)) continue;
-        districtJobTypeEntries.push({
-          url: `${SITE_URL}${area.path}/${slug}`,
-          lastModified: now,
-          changeFrequency: "daily",
-          priority: 0.8,
-        });
-      }
-    } catch (error) {
-      console.error("[sitemap] district job types failed", {
-        district: area.district,
-        error,
-      });
-    }
-  }
-
   let jobEntries: MetadataRoute.Sitemap = [];
   try {
     const jobs = await listPublishedJobsForSitemap();
@@ -100,5 +82,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] failed to load jobs", error);
   }
 
-  return [...staticEntries, ...districtJobTypeEntries, ...jobEntries];
+  return [...staticEntries, ...jobEntries];
 }

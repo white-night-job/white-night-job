@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
   buildFaqPageJsonLd,
+  buildJobPostingItemListJsonLd,
   buildWebPageJsonLd,
 } from "@/lib/seo";
 import type { SeoJobsPageResult } from "@/lib/seo-area-jobs";
@@ -13,6 +14,10 @@ import {
   SUSUKINO_JOB_TYPE_PAGES,
   type SusukinoJobTypePage,
 } from "@/lib/susukino-seo";
+import {
+  getAreaJobTypeColumnLinks,
+  type SeoColumnLink,
+} from "@/lib/seo-area-job-type-content";
 
 type FaqItem = { question: string; answer: string };
 
@@ -28,6 +33,7 @@ type SusukinoSeoViewProps = {
   breadcrumbLabel: string;
   jobTypePage?: SusukinoJobTypePage;
   showJobTypeLinks?: boolean;
+  columnLinks?: SeoColumnLink[];
 };
 
 function pageHref(basePath: string, page: number) {
@@ -47,16 +53,32 @@ export function SusukinoSeoView({
   breadcrumbLabel,
   jobTypePage,
   showJobTypeLinks = true,
+  columnLinks,
 }: SusukinoSeoViewProps) {
   const { jobs, page, total, totalPages } = jobsResult;
   const listHeading = jobTypePage
     ? `公開中の${jobTypePage.displayName}求人`
     : "公開中のすすきの求人";
+  const relatedColumns =
+    columnLinks ??
+    jobTypePage?.columnLinks ??
+    getAreaJobTypeColumnLinks({
+      areaKey: "すすきの",
+      jobTypeSlug: jobTypePage?.slug,
+    });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
       <JsonLd data={buildFaqPageJsonLd([...faqs])} />
+      {jobs.length > 0 && (
+        <JsonLd
+          data={buildJobPostingItemListJsonLd(jobs, {
+            name: listHeading,
+            pathname,
+          })}
+        />
+      )}
 
       <Breadcrumbs
         items={[
@@ -223,26 +245,35 @@ export function SusukinoSeoView({
             <p key={paragraph.slice(0, 24)}>{paragraph}</p>
           ))}
         </div>
-        <p className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+        <p className="mt-4">
           <Link
             href="/first-time-guide"
             className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
           >
             初めての方への案内を読む
           </Link>
-          <Link
-            href="/column/susukino-night-job-beginner"
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            すすきので未経験から夜職を始める方法
-          </Link>
-          <Link
-            href="/column/trial-work-checklist"
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            体験入店で確認するポイント
-          </Link>
         </p>
+      </section>
+
+      <section className="mt-10" aria-labelledby="susukino-columns">
+        <h2
+          id="susukino-columns"
+          className="font-serif text-xl font-semibold text-charcoal"
+        >
+          関連コラム
+        </h2>
+        <ul className="mt-4 space-y-2">
+          {relatedColumns.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="mt-10" aria-labelledby="susukino-faq">

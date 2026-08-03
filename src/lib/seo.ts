@@ -319,6 +319,29 @@ export function buildFaqPageJsonLd(
   };
 }
 
+/** ItemList wrapping JobPosting entries for area/job-type listing SEO pages. */
+export function buildJobPostingItemListJsonLd(
+  jobs: Job[],
+  params: { name: string; pathname: string },
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: params.name,
+    url: `${SITE_URL}${params.pathname}`,
+    numberOfItems: jobs.length,
+    itemListElement: jobs.map((job, index) => {
+      const posting = buildJobPostingJsonLd(job) as Record<string, unknown>;
+      const { ["@context"]: _ctx, ...item } = posting;
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item,
+      };
+    }),
+  };
+}
+
 /** Parse free-text salary only when numeric hourly values are clear. */
 export function parseHourlySalaryForJsonLd(salary: string): {
   minValue: number;

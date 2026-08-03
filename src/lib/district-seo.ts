@@ -1,4 +1,10 @@
 import type { District, JobType } from "@/types/job";
+import {
+  buildAreaJobTypeSeoBody,
+  getAreaJobTypeColumnLinks,
+  type AreaJobTypeSeoSlug,
+  type SeoColumnLink,
+} from "@/lib/seo-area-job-type-content";
 
 export type DistrictSeoSlug = "kotoni" | "kita24jo" | "teine";
 
@@ -22,6 +28,7 @@ export type DistrictJobTypePage = {
   intro: string[];
   guide: string[];
   faqs: DistrictFaq[];
+  columnLinks: SeoColumnLink[];
 };
 
 export type DistrictAreaPage = {
@@ -92,20 +99,48 @@ function buildJobTypePages(
   area: Pick<DistrictAreaPage, "slug" | "district" | "displayName" | "path">,
   content: Record<
     DistrictJobTypeSlug,
-    { intro: string[]; guide: string[]; faqs: DistrictFaq[]; titleHint: string; desc: string }
+    {
+      faqs: DistrictFaq[];
+      titleHint: string;
+      desc: string;
+      /** @deprecated Replaced by buildAreaJobTypeSeoBody */
+      intro?: string[];
+      /** @deprecated Replaced by buildAreaJobTypeSeoBody */
+      guide?: string[];
+    }
   >,
 ): DistrictJobTypePage[] {
+  const areaKey =
+    area.displayName === "北24条"
+      ? "北24条"
+      : area.displayName === "琴似"
+        ? "琴似"
+        : area.displayName === "手稲"
+          ? "手稲"
+          : null;
+  if (!areaKey) {
+    throw new Error(`Unsupported district SEO area: ${area.displayName}`);
+  }
+
   return JOB_TYPE_META.map((meta) => {
     const c = content[meta.slug];
+    const body = buildAreaJobTypeSeoBody({
+      areaKey,
+      jobTypeSlug: meta.slug as AreaJobTypeSeoSlug,
+    });
     return {
       ...meta,
       path: `${area.path}/${meta.slug}`,
       title: `${area.displayName}の${meta.displayName}求人｜${c.titleHint}`,
       description: ensureMetaDescription(c.desc),
       h1: `${area.displayName}の${meta.displayName}求人`,
-      intro: c.intro,
-      guide: c.guide,
+      intro: body.intro,
+      guide: body.guide,
       faqs: c.faqs,
+      columnLinks: getAreaJobTypeColumnLinks({
+        areaKey,
+        jobTypeSlug: meta.slug as AreaJobTypeSeoSlug,
+      }),
     };
   });
 }

@@ -1,4 +1,9 @@
 import type { JobType } from "@/types/job";
+import {
+  buildAreaJobTypeSeoBody,
+  getAreaJobTypeColumnLinks,
+  type SeoColumnLink,
+} from "@/lib/seo-area-job-type-content";
 
 export const SUSUKINO_DISTRICT = "すすきの" as const;
 export const SUSUKINO_BASE_PATH = "/sapporo/susukino";
@@ -22,9 +27,15 @@ export type SusukinoJobTypePage = {
   intro: string[];
   guide: string[];
   faqs: Array<{ question: string; answer: string }>;
+  columnLinks: SeoColumnLink[];
 };
 
-export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = [
+const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
+  Omit<SusukinoJobTypePage, "intro" | "guide" | "columnLinks"> & {
+    intro: string[];
+    guide: string[];
+  }
+> = [
   {
     slug: "girls-bar",
     jobType: "ガールズバー",
@@ -251,6 +262,23 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = [
     ],
   },
 ];
+
+export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] =
+  SUSUKINO_JOB_TYPE_PAGES_RAW.map((page) => {
+    const body = buildAreaJobTypeSeoBody({
+      areaKey: "すすきの",
+      jobTypeSlug: page.slug,
+    });
+    return {
+      ...page,
+      intro: body.intro,
+      guide: body.guide,
+      columnLinks: getAreaJobTypeColumnLinks({
+        areaKey: "すすきの",
+        jobTypeSlug: page.slug,
+      }),
+    };
+  });
 
 export const SUSUKINO_AREA_PAGE = {
   path: SUSUKINO_BASE_PATH,

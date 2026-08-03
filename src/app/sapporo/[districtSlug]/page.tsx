@@ -5,10 +5,7 @@ import {
   DISTRICT_AREA_PAGES,
   getDistrictAreaPage,
 } from "@/lib/district-seo";
-import {
-  getPublishedSeoJobsPage,
-  listPublishedJobTypesForDistrict,
-} from "@/lib/seo-area-jobs";
+import { getPublishedSeoJobsPage } from "@/lib/seo-area-jobs";
 import { buildPageMetadata } from "@/lib/seo";
 
 type PageProps = {
@@ -43,23 +40,16 @@ export default async function DistrictAreaPage({
 
   const query = await searchParams;
   const page = Math.max(1, Number(query.page) || 1);
-  const [jobsResult, publishedTypes] = await Promise.all([
-    getPublishedSeoJobsPage({
-      district: area.district,
-      page,
-    }),
-    listPublishedJobTypesForDistrict(area.district),
-  ]);
-
-  const availableJobTypePages = area.jobTypePages.filter((item) =>
-    publishedTypes.includes(item.jobType),
-  );
+  const jobsResult = await getPublishedSeoJobsPage({
+    district: area.district,
+    page,
+  });
 
   return (
     <DistrictSeoView
       area={area}
       jobsResult={jobsResult}
-      availableJobTypePages={availableJobTypePages}
+      availableJobTypePages={area.jobTypePages}
     />
   );
 }

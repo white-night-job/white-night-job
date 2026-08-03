@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
   buildFaqPageJsonLd,
+  buildJobPostingItemListJsonLd,
   buildWebPageJsonLd,
 } from "@/lib/seo";
 import type { SeoJobsPageResult } from "@/lib/seo-area-jobs";
@@ -13,6 +14,7 @@ import {
   type DistrictAreaPage,
   type DistrictJobTypePage,
 } from "@/lib/district-seo";
+import type { SeoColumnLink } from "@/lib/seo-area-job-type-content";
 
 type DistrictSeoViewProps = {
   area: DistrictAreaPage;
@@ -40,6 +42,8 @@ export function DistrictSeoView({
   const intro = jobTypePage?.intro ?? area.intro;
   const beginnerGuide = jobTypePage?.guide ?? area.beginnerGuide;
   const faqs = jobTypePage?.faqs ?? area.faqs;
+  const columnLinks: SeoColumnLink[] =
+    jobTypePage?.columnLinks ?? area.columnLinks;
   const { jobs, page, total, totalPages } = jobsResult;
   const benefitLinks = buildDistrictBenefitLinks(area.district);
   const listHeading = jobTypePage
@@ -54,6 +58,14 @@ export function DistrictSeoView({
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
       <JsonLd data={buildFaqPageJsonLd([...faqs])} />
+      {jobs.length > 0 && (
+        <JsonLd
+          data={buildJobPostingItemListJsonLd(jobs, {
+            name: listHeading,
+            pathname,
+          })}
+        />
+      )}
 
       <Breadcrumbs
         items={[
@@ -85,7 +97,7 @@ export function DistrictSeoView({
             職種別の{area.displayName}求人
           </h2>
           <p className="mt-2 text-sm text-muted">
-            現在公開中の求人がある職種だけを表示しています。
+            気になる職種から、{area.displayName}エリアの求人ページを探せます。
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
             {availableJobTypePages.map((item) => (
@@ -238,7 +250,7 @@ export function DistrictSeoView({
           関連コラム
         </h2>
         <ul className="mt-4 space-y-2">
-          {area.columnLinks.map((link) => (
+          {columnLinks.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
