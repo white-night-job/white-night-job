@@ -80,7 +80,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <JsonLd data={buildJobPostingJsonLd(job)} />
+      <JsonLd data={buildJobPostingJsonLd(job, girlReviews)} />
       <JobDetailClient job={job} girlReviews={girlReviews} />
     </>
   );

@@ -5,9 +5,11 @@ import { SITE_BRAND_JA } from "@/lib/site";
 
 type BreadcrumbsProps = {
   items: BreadcrumbItem[];
+  /** When false, only the visual trail is rendered (JSON-LD provided elsewhere). */
+  includeJsonLd?: boolean;
 };
 
-export function Breadcrumbs({ items }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, includeJsonLd = true }: BreadcrumbsProps) {
   const trail =
     items[0]?.label === SITE_BRAND_JA
       ? items
@@ -15,7 +17,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
 
   return (
     <nav aria-label="パンくずリスト" className="mb-4">
-      <JsonLd data={buildBreadcrumbJsonLd(trail)} />
+      {includeJsonLd ? <JsonLd data={buildBreadcrumbJsonLd(trail)} /> : null}
       <ol className="flex flex-wrap items-center gap-1 text-xs text-muted">
         {trail.map((item, index) => {
           const isLast = index === trail.length - 1;

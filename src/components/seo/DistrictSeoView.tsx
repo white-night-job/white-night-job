@@ -3,9 +3,11 @@ import { JobCard } from "@/components/JobCard";
 import { JsonLd } from "@/components/JsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import {
+  buildCollectionPageJsonLd,
   buildFaqPageJsonLd,
   buildJobPostingItemListJsonLd,
   buildWebPageJsonLd,
+  type BreadcrumbItem,
 } from "@/lib/seo";
 import type { SeoJobsPageResult } from "@/lib/seo-area-jobs";
 import {
@@ -54,27 +56,44 @@ export function DistrictSeoView({
     (link) => link.href !== area.path,
   );
 
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      label: area.h1,
+      href: jobTypePage ? area.path : undefined,
+    },
+    ...(jobTypePage ? [{ label: jobTypePage.h1 }] : []),
+  ];
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
-      <JsonLd data={buildFaqPageJsonLd([...faqs])} />
-      {jobs.length > 0 && (
+      {jobTypePage ? (
         <JsonLd
-          data={buildJobPostingItemListJsonLd(jobs, {
-            name: listHeading,
+          data={buildCollectionPageJsonLd({
+            name: title,
+            description,
             pathname,
+            jobs,
+            breadcrumbs: breadcrumbItems,
           })}
         />
+      ) : (
+        <>
+          <JsonLd data={buildWebPageJsonLd(title, description, pathname)} />
+          {jobs.length > 0 && (
+            <JsonLd
+              data={buildJobPostingItemListJsonLd(jobs, {
+                name: listHeading,
+                pathname,
+              })}
+            />
+          )}
+        </>
       )}
+      <JsonLd data={buildFaqPageJsonLd([...faqs])} />
 
       <Breadcrumbs
-        items={[
-          {
-            label: area.h1,
-            href: jobTypePage ? area.path : undefined,
-          },
-          ...(jobTypePage ? [{ label: jobTypePage.h1 }] : []),
-        ]}
+        items={breadcrumbItems}
+        includeJsonLd={!jobTypePage}
       />
 
       <header className="mt-4">

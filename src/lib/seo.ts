@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
 import {
   BUSINESS_EMAIL,
@@ -18,6 +19,11 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
+
+function stripJsonLdContext(data: Record<string, unknown>) {
+  const { ["@context"]: _ctx, ...rest } = data;
+  return rest;
+}
 
 /** Document title suffix — fullwidth pipe, per Phase1 SEO. */
 export const SITE_TITLE_SUFFIX = `｜${SITE_NAME}`;
@@ -233,19 +239,30 @@ export function buildArticleJsonLd(params: {
   datePublished?: string;
   dateModified: string;
   category: string;
+  image?: string;
 }) {
+  const url = `${SITE_URL}${params.pathname}`;
+  const dateModified = params.dateModified;
+  const datePublished = params.datePublished || dateModified;
+  const imageUrl = params.image?.trim() || SITE_LOGO_URL;
+
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: params.title,
     description: params.description,
-    url: `${SITE_URL}${params.pathname}`,
-    image: [SITE_LOGO_URL],
-    ...(params.datePublished ? { datePublished: params.datePublished } : {}),
-    dateModified: params.dateModified,
+    url,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    image: [imageUrl],
+    datePublished,
+    dateModified,
     author: {
       "@type": "Organization",
       name: SITE_FORMAL_NAME,
+      url: SITE_URL,
     },
     publisher: {
       "@type": "Organization",
@@ -289,11 +306,17 @@ export type BreadcrumbItem = {
   href?: string;
 };
 
+export function withHomeBreadcrumb(items: BreadcrumbItem[]): BreadcrumbItem[] {
+  if (items[0]?.label === SITE_BRAND_JA) return items;
+  return [{ label: SITE_BRAND_JA, href: "/" }, ...items];
+}
+
 export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
+  const trail = withHomeBreadcrumb(items);
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: items.map((item, index) => ({
+    itemListElement: trail.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: item.label,
@@ -319,7 +342,39 @@ export function buildFaqPageJsonLd(
   };
 }
 
-/** ItemList wrapping JobPosting entries for area/job-type listing SEO pages. */
+/** CollectionPage for エリア×職種 SEO listing pages. */
+export function buildCollectionPageJsonLd(params: {
+  name: string;
+  description: string;
+  pathname: string;
+  jobs: Job[];
+  breadcrumbs: BreadcrumbItem[];
+}) {
+  const url = `${SITE_URL}${params.pathname}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: params.name,
+    description: params.description,
+    url,
+    breadcrumb: stripJsonLdContext(
+      buildBreadcrumbJsonLd(params.breadcrumbs) as Record<string, unknown>,
+    ),
+    mainEntity: {
+      "@type": "ItemList",
+      name: params.name,
+      numberOfItems: params.jobs.length,
+      itemListElement: params.jobs.map((job, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}/jobs/${job.id}`,
+        name: `${job.shopName}の求人（${job.jobType}）`,
+      })),
+    },
+  };
+}
+
+/** ItemList wrapping JobPosting entries for area listing SEO pages. */
 export function buildJobPostingItemListJsonLd(
   jobs: Job[],
   params: { name: string; pathname: string },
@@ -332,11 +387,10 @@ export function buildJobPostingItemListJsonLd(
     numberOfItems: jobs.length,
     itemListElement: jobs.map((job, index) => {
       const posting = buildJobPostingJsonLd(job) as Record<string, unknown>;
-      const { ["@context"]: _ctx, ...item } = posting;
       return {
         "@type": "ListItem",
         position: index + 1,
-        item,
+        item: stripJsonLdContext(posting),
       };
     }),
   };
@@ -373,7 +427,10 @@ function buildJobDescriptionForJsonLd(job: Job): string {
   return parts.join("\n\n").slice(0, 5000);
 }
 
-export function buildJobPostingJsonLd(job: Job) {
+export function buildJobPostingJsonLd(
+  job: Job,
+  reviews: GirlReview[] = [],
+) {
   const url = `${SITE_URL}/jobs/${job.id}`;
   const description = buildJobDescriptionForJsonLd(job);
   const salary = parseHourlySalaryForJsonLd(job.salary);
@@ -433,6 +490,34 @@ export function buildJobPostingJsonLd(job: Job) {
 
   if (job.imageUrl) {
     data.image = job.imageUrl;
+  }
+
+  if (reviews.length > 0) {
+    const ratingSum = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const ratingValue = Math.round((ratingSum / reviews.length) * 10) / 10;
+    data.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue,
+      bestRating: 5,
+      worstRating: 1,
+      reviewCount: reviews.length,
+    };
+    data.review = reviews.map((review) => ({
+      "@type": "Review",
+      author: {
+        "@type": "Person",
+        name: review.nickname,
+      },
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: review.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      reviewBody:
+        review.comment.trim() ||
+        `${review.nickname}さんの口コミ`,
+    }));
   }
 
   return data;
