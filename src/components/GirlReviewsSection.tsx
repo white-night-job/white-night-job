@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import {
   GIRL_REVIEW_CATEGORY_LABELS,
   type GirlReview,
   type GirlReviewCategory,
 } from "@/types/girl-review";
 import { countGirlReviewsByCategory } from "@/lib/girl-reviews";
+
+export const GIRL_REVIEWS_SECTION_ID = "girl-reviews";
 
 type GirlReviewsSectionProps = {
   reviews: GirlReview[];
@@ -20,12 +22,24 @@ function formatRatingValue(rating: number) {
   return clampRating(rating).toFixed(1);
 }
 
-function GoldStarIcon({ filled }: { filled: boolean }) {
+function averageRating(reviews: GirlReview[]) {
+  if (reviews.length === 0) return 0;
+  const sum = reviews.reduce((total, review) => total + review.rating, 0);
+  return Math.round((sum / reviews.length) * 10) / 10;
+}
+
+function GoldStarIcon({
+  filled,
+  sizeClass = "h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5",
+}: {
+  filled: boolean;
+  sizeClass?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       aria-hidden
-      className={`h-[1.15rem] w-[1.15rem] sm:h-5 sm:w-5 ${
+      className={`${sizeClass} ${
         filled ? "text-[#F4C542]" : "text-[#F4C542]/30"
       }`}
     >
@@ -58,6 +72,86 @@ function ReviewStarRating({ rating }: { rating: number }) {
   );
 }
 
+type GirlReviewsJumpCardProps = {
+  reviews: GirlReview[];
+  onNavigate?: () => void;
+};
+
+/** Compact summary + in-page jump to the reviews section. */
+export function GirlReviewsJumpCard({
+  reviews,
+  onNavigate,
+}: GirlReviewsJumpCardProps) {
+  const counts = useMemo(() => countGirlReviewsByCategory(reviews), [reviews]);
+  const avg = averageRating(reviews);
+  const roundedStars = clampRating(avg);
+  const avgLabel = avg.toFixed(1);
+
+  if (counts.total === 0) return null;
+
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    onNavigate?.();
+    const scroll = () => {
+      const el = document.getElementById(GIRL_REVIEWS_SECTION_ID);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return true;
+      }
+      return false;
+    };
+    if (scroll()) return;
+    window.setTimeout(scroll, 50);
+    window.setTimeout(scroll, 150);
+  }
+
+  return (
+    <aside
+      className="mt-4 rounded-xl border border-gold/30 bg-gradient-to-br from-white via-ivory to-champagne/50 px-3.5 py-3 shadow-[0_4px_16px_rgba(201,169,98,0.12)]"
+      aria-label="女の子の口コミの概要"
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="inline-flex items-center gap-0.5" aria-hidden>
+          {Array.from({ length: 5 }, (_, index) => (
+            <GoldStarIcon
+              key={index}
+              filled={index < roundedStars}
+              sizeClass="h-3.5 w-3.5"
+            />
+          ))}
+        </span>
+        <span className="text-sm font-semibold tabular-nums text-charcoal">
+          {avgLabel}
+        </span>
+        <span className="text-xs text-muted">平均評価</span>
+        <span className="text-xs text-gold/50" aria-hidden>
+          /
+        </span>
+        <span className="text-xs font-medium text-charcoal">
+          {counts.total}件
+        </span>
+      </div>
+
+      <a
+        href={`#${GIRL_REVIEWS_SECTION_ID}`}
+        onClick={handleClick}
+        className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-gold-dark underline-offset-2 hover:underline"
+      >
+        💬 女の子の口コミを見る
+      </a>
+
+      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+        <span>
+          【{GIRL_REVIEW_CATEGORY_LABELS.interview}】{counts.interview}件
+        </span>
+        <span>
+          【{GIRL_REVIEW_CATEGORY_LABELS.cast}】{counts.cast}件
+        </span>
+      </div>
+    </aside>
+  );
+}
+
 export function GirlReviewsSection({ reviews }: GirlReviewsSectionProps) {
   const counts = useMemo(() => countGirlReviewsByCategory(reviews), [reviews]);
   const [activeCategory, setActiveCategory] =
@@ -71,7 +165,10 @@ export function GirlReviewsSection({ reviews }: GirlReviewsSectionProps) {
   if (counts.total === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5">
+    <section
+      id={GIRL_REVIEWS_SECTION_ID}
+      className="scroll-mt-24 rounded-2xl border border-gold/20 bg-ivory p-4 sm:p-5"
+    >
       <h2 className="mb-4 text-base font-semibold text-charcoal">
         女の子の口コミ
       </h2>

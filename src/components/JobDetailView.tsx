@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareButton } from "@/components/CompareButton";
 import { CompareRelatedShops } from "@/components/CompareRelatedShops";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { GirlReviewsSection } from "@/components/GirlReviewsSection";
+import { GirlReviewsJumpCard, GirlReviewsSection } from "@/components/GirlReviewsSection";
 import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
@@ -333,6 +333,10 @@ export function JobDetailView({
                 {job.introductionText}
               </p>
             )}
+            <GirlReviewsJumpCard
+              reviews={girlReviews}
+              onNavigate={() => setShowExtras(true)}
+            />
             {job.managerComment && (
               <div className="mt-4 rounded-2xl border border-gold/25 bg-gradient-to-br from-white to-champagne/40 p-4">
                 <p className="text-xs font-semibold tracking-wide text-gold-dark">
@@ -460,15 +464,17 @@ export function JobDetailView({
               />
             </div>
 
+            {showExtras && displayStoreImages.length > 0 ? (
+              <StoreImagesGallery
+                images={displayStoreImages}
+                shopName={job.shopName}
+              />
+            ) : null}
+
+            <GirlReviewsSection reviews={girlReviews} />
+
             {showExtras ? (
               <>
-                {displayStoreImages.length > 0 && (
-                  <StoreImagesGallery
-                    images={displayStoreImages}
-                    shopName={job.shopName}
-                  />
-                )}
-                <GirlReviewsSection reviews={girlReviews} />
                 <RecruiterMessageSection job={job} />
                 {socialLinks.length > 0 && (
                   <section className="rounded-2xl border border-gold/20 bg-gradient-to-br from-ivory to-white p-5">
