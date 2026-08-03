@@ -50,27 +50,41 @@ const POPULAR_AREA_JOB_LINKS = [
 /** Compact crawlable internal links for area × job-type SEO pages. */
 export function PopularAreaJobTypeLinks({
   className = "",
+  showHeading = true,
 }: {
   className?: string;
+  showHeading?: boolean;
 }) {
   return (
     <nav
-      aria-labelledby="popular-area-job-heading"
-      className={`text-xs leading-5 ${className}`}
+      aria-labelledby={showHeading ? "popular-area-job-heading" : undefined}
+      aria-label={showHeading ? undefined : "エリア・職種から探す"}
+      className={`text-xs leading-5 sm:text-sm sm:leading-6 ${className}`}
     >
-      <p id="popular-area-job-heading" className="font-medium tracking-wide opacity-80">
-        人気のエリア・職種
-      </p>
-      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+      {showHeading ? (
+        <p
+          id="popular-area-job-heading"
+          className="font-medium tracking-wide opacity-80"
+        >
+          人気のエリア・職種
+        </p>
+      ) : (
+        <p className="mb-2 text-xs font-semibold tracking-wide text-gold-dark">
+          職種から探す
+        </p>
+      )}
+      <div
+        className={`${showHeading ? "mt-2 " : ""}grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4`}
+      >
         {POPULAR_AREA_JOB_LINKS.map((group) => (
           <div key={group.basePath}>
-            <p className="font-semibold opacity-90">{group.area}</p>
-            <ul className="mt-1 space-y-0.5">
+            <p className="font-semibold text-charcoal opacity-90">{group.area}</p>
+            <ul className="mt-1.5 space-y-1">
               {group.jobs.map((job) => (
                 <li key={job.path}>
                   <Link
                     href={`${group.basePath}${job.path}`}
-                    className="underline-offset-2 hover:underline"
+                    className="text-gold-dark underline-offset-2 hover:underline"
                   >
                     {job.label}
                   </Link>

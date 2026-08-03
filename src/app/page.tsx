@@ -5,6 +5,7 @@ import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { NightJobDiagnosis } from "@/components/NightJobDiagnosis";
 import { RecentlyViewedCarousel } from "@/components/RecentlyViewedCarousel";
 import { ScrollReveal } from "@/components/ScrollReveal";
+import { TopAreaJobBrowseSection } from "@/components/TopAreaJobBrowseSection";
 import { TopColumnSection } from "@/components/TopColumnSection";
 import { TopHeroPanel } from "@/components/TopHeroPanel";
 import { TopJobDiscovery } from "@/components/TopJobDiscovery";
@@ -83,6 +84,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <ScrollReveal delayMs={140}>
           <FirstTimeGuide />
+        </ScrollReveal>
+
+        <ScrollReveal delayMs={160}>
+          <TopAreaJobBrowseSection />
         </ScrollReveal>
       </div>
     </TopPageShell>

@@ -2,8 +2,6 @@
 
 import { JobFilterSearch } from "@/components/JobFilterSearch";
 import { SafetyBadge } from "@/components/SafetyBadge";
-import { PopularAreaJobTypeLinks } from "@/components/seo/PopularAreaJobTypeLinks";
-import { SusukinoSeoLinks } from "@/components/seo/SusukinoSeoLinks";
 import type { JobFilters } from "@/types/job";
 
 type TopHeroPanelProps = {
@@ -61,10 +59,6 @@ export function TopHeroPanel({ initialFilters }: TopHeroPanelProps) {
               embedded
               inPlate
             />
-            <div className="mt-3 space-y-3 px-1">
-              <SusukinoSeoLinks className="text-white/80 [&_a]:text-gold-light" />
-              <PopularAreaJobTypeLinks className="text-white/75 [&_a]:text-gold-light" />
-            </div>
           </div>
         </div>
       </div>
