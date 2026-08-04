@@ -12,6 +12,7 @@ import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
 import { HomeHashScroll } from "@/components/HomeHashScroll";
+import { SampleListingsHomeNotice } from "@/components/SampleListingNotice";
 import { buildPageMetadata } from "@/lib/seo";
 import type { JobFilters } from "@/types/job";
 
@@ -52,7 +53,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <TopPageShell
       hero={<TopHeroPanel initialFilters={filters} />}
-      midBand={<TopMidBand />}
+      midBand={
+        <>
+          <SampleListingsHomeNotice />
+          <TopMidBand />
+        </>
+      }
     >
       <HomeHashScroll />
       <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-8">

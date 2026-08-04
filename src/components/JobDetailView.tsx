@@ -8,6 +8,7 @@ import { CompareButton } from "@/components/CompareButton";
 import { CompareRelatedShops } from "@/components/CompareRelatedShops";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { GirlReviewsJumpCard, GirlReviewsSection } from "@/components/GirlReviewsSection";
+import { SampleListingDetailNote } from "@/components/SampleListingNotice";
 import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
@@ -327,6 +328,7 @@ export function JobDetailView({
                 )}
               </div>
             </div>
+            <SampleListingDetailNote />
             <p className="mt-2 font-medium text-charcoal">{job.title}</p>
             {job.introductionText && (
               <p className="mt-2 text-sm leading-relaxed text-muted sm:text-base">

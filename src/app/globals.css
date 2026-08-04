@@ -2061,6 +2061,58 @@
       inset 0 1px 0 rgba(212, 188, 142, 0.15);
   }
 
+  .listing-card-badge.is-below-sample {
+    top: 1.85rem;
+  }
+
+  .sample-listing-badge {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    z-index: 11;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid rgba(196, 165, 116, 0.55);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.15rem 0.45rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #8b7355;
+    box-shadow: 0 1px 4px rgba(17, 17, 17, 0.08);
+    backdrop-filter: blur(4px);
+  }
+
+  .sample-listings-home-notice {
+    position: relative;
+    z-index: 2;
+    border-bottom: 1px solid rgba(196, 165, 116, 0.28);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 252, 246, 0.98) 0%,
+      rgba(248, 242, 230, 0.95) 100%
+    );
+  }
+
+  .sample-listings-home-notice-text {
+    margin: 0 auto;
+    max-width: 64rem;
+    padding: 0.65rem 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: #5c5346;
+  }
+
+  @media (min-width: 640px) {
+    .sample-listings-home-notice-text {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.8125rem;
+    }
+  }
+
   .listing-card-badge-pickup {
     letter-spacing: 0.1em;
     border-color: rgba(212, 188, 142, 0.8);

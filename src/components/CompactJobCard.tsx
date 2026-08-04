@@ -12,9 +12,10 @@ import {
 } from "@/lib/luxury-styles";
 import { formatLocation } from "@/lib/job-storage";
 import { shopCardDomId } from "@/lib/shop-card-id";
-import { IMAGE_ALT_BRAND } from "@/lib/site";
+import { IMAGE_ALT_BRAND, SHOW_SAMPLE_LISTINGS } from "@/lib/site";
 import type { Job } from "@/types/job";
 import { JobDetailPrefetch } from "@/components/JobDetailPrefetch";
+import { SampleListingBadge } from "@/components/SampleListingNotice";
 
 type CompactJobCardProps = {
   job: Job;
@@ -22,7 +23,13 @@ type CompactJobCardProps = {
   badge?: "new" | "pickup" | "new-open";
 };
 
-function ListingBadge({ badge }: { badge: "new" | "pickup" | "new-open" }) {
+function ListingBadge({
+  badge,
+  offsetForSample,
+}: {
+  badge: "new" | "pickup" | "new-open";
+  offsetForSample?: boolean;
+}) {
   const label =
     badge === "pickup" ? "PICK UP" : badge === "new-open" ? "NEW OPEN" : "NEW";
   const className =
@@ -33,7 +40,11 @@ function ListingBadge({ badge }: { badge: "new" | "pickup" | "new-open" }) {
         : "listing-card-badge-new";
 
   return (
-    <span className={`listing-card-badge ${className}`}>
+    <span
+      className={`listing-card-badge ${className}${
+        offsetForSample ? " is-below-sample" : ""
+      }`}
+    >
       {label}
     </span>
   );
@@ -47,6 +58,7 @@ export function CompactJobCard({
   const isPremium = isPremiumTheme(theme);
   const cardId = shopCardDomId(job.id, badge);
   const detailHref = `/jobs/${job.id}`;
+  const showSample = SHOW_SAMPLE_LISTINGS;
 
   if (isPremium) {
     return (
@@ -57,7 +69,10 @@ export function CompactJobCard({
           <CompareButton jobId={job.id} />
           <FavoriteButton jobId={job.id} />
         </div>
-        {badge && <ListingBadge badge={badge} />}
+        {showSample ? <SampleListingBadge /> : null}
+        {badge && (
+          <ListingBadge badge={badge} offsetForSample={showSample} />
+        )}
 
         <Link href={detailHref} scroll={false} prefetch className="block">
           {job.imageUrl ? (
@@ -113,7 +128,10 @@ export function CompactJobCard({
         <CompareButton jobId={job.id} />
         <FavoriteButton jobId={job.id} />
       </div>
-      {badge && <ListingBadge badge={badge} />}
+      {showSample ? <SampleListingBadge /> : null}
+      {badge && (
+        <ListingBadge badge={badge} offsetForSample={showSample} />
+      )}
 
       <Link href={detailHref} scroll={false} prefetch className="flex flex-1 flex-col">
         {job.imageUrl ? (
