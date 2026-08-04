@@ -14,15 +14,14 @@ import { TopPageShell } from "@/components/TopPageShell";
 import { HomeHashScroll } from "@/components/HomeHashScroll";
 import { SampleListingsHomeNotice } from "@/components/SampleListingNotice";
 import { buildPageMetadata } from "@/lib/seo";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 import type { JobFilters } from "@/types/job";
 
-const HOME_TITLE =
-  "【体入ホワイトナイト】札幌の安心な夜職・体験入店求人｜優良認定店専門";
-
 export const metadata: Metadata = buildPageMetadata(
-  HOME_TITLE,
-  "体入ホワイトナイト（White Night Job）は、札幌で安心して働ける夜職求人だけを掲載する求人サイトです。体験入店・ガールズバー・コンカフェなど審査済み優良店を比較し、自分に合うお店を探しやすい情報設計になっています。初めての方も、条件を見ながら安心してお店探しを始められます。",
+  SITE_TITLE,
+  SITE_DESCRIPTION,
   "/",
+  { absoluteTitle: true },
 );
 
 interface HomePageProps {

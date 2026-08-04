@@ -7,6 +7,7 @@ import { getPublishedJobDetail } from "@/lib/job-detail-data";
 import {
   buildJobDetailMetadata,
   buildJobPostingJsonLd,
+  buildJobReviewsJsonLd,
 } from "@/lib/seo";
 import type { GirlReview } from "@/types/girl-review";
 
@@ -78,9 +79,12 @@ export default async function JobDetailPage({ params }: PageProps) {
     );
   }
 
+  const reviewsJsonLd = buildJobReviewsJsonLd(job, girlReviews);
+
   return (
     <>
-      <JsonLd data={buildJobPostingJsonLd(job, girlReviews)} />
+      <JsonLd data={buildJobPostingJsonLd(job)} />
+      {reviewsJsonLd ? <JsonLd data={reviewsJsonLd} /> : null}
       <JobDetailClient job={job} girlReviews={girlReviews} />
     </>
   );

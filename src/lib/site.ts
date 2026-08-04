@@ -2,11 +2,12 @@ export const SITE_BRAND_JA = "体入ホワイトナイト";
 export const SITE_NAME = "White Night Job";
 export const SITE_FORMAL_NAME = "体入ホワイトナイト（White Night Job）";
 export const SITE_LEGAL_INTRO = `${SITE_FORMAL_NAME}（以下「当サイト」といいます。）`;
+/** Homepage / default document title (absolute — do not append brand suffix). */
 export const SITE_TITLE =
-  "体入ホワイトナイト｜安心・安全な札幌の夜職・体験入店求人サイト";
+  "【優良店専門】White Night Job | 安心して働ける札幌の夜職求人";
 export const SITE_DESCRIPTION =
-  "体入ホワイトナイト（White Night Job）は、札幌で安心して働ける夜職求人だけを掲載する求人サイトです。体験入店・ガールズバー・コンカフェ・ラウンジ・ニュークラブなど、審査済みの優良店舗を比較しながら探せます。初めての方も条件を確認しながら、自分に合うお店を探しやすい設計です。";
-export const SITE_OG_TITLE = "体入ホワイトナイト｜安心できる夜職求人";
+  "札幌の優良店だけを厳選掲載。独自審査を通過した店舗のみ掲載し、ブラック店を避けたい方のお店選びをサポート。面接前相談にも対応した安心の夜職求人サイトです。";
+export const SITE_OG_TITLE = SITE_TITLE;
 export const SITE_TAGLINE =
   "体入ホワイトナイト（White Night Job）は、安心して働ける夜職求人サイトです。";
 

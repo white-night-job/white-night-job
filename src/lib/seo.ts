@@ -107,7 +107,8 @@ function buildSocialMetadata(params: {
 }
 
 export function buildRootMetadata(): Metadata {
-  const title = finalizeDocumentTitle(SITE_TITLE);
+  // Home title is absolute (brand in the middle). Do not run finalizeDocumentTitle.
+  const title = SITE_TITLE;
   return {
     metadataBase: new URL(SITE_URL),
     title: {
@@ -116,7 +117,7 @@ export function buildRootMetadata(): Metadata {
     },
     description: SITE_DESCRIPTION,
     ...buildSocialMetadata({
-      title: finalizeDocumentTitle(SITE_OG_TITLE),
+      title: SITE_OG_TITLE,
       description: SITE_DESCRIPTION,
       canonical: `${SITE_URL}/`,
     }),
@@ -133,7 +134,9 @@ export function buildPageMetadata(
   options?: { absoluteTitle?: boolean; noIndex?: boolean },
 ): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
-  const title = finalizeDocumentTitle(pageTitle);
+  const title = options?.absoluteTitle
+    ? pageTitle.trim()
+    : finalizeDocumentTitle(pageTitle);
   const social = buildSocialMetadata({
     title,
     description,
@@ -399,7 +402,7 @@ export function buildJobPostingItemListJsonLd(
 /** Parse free-text salary only when numeric hourly values are clear. */
 export function parseHourlySalaryForJsonLd(salary: string): {
   minValue: number;
-  maxValue?: number;
+  maxValue: number;
 } | null {
   const normalized = salary.replace(/,/g, "").replace(/／/g, "/");
   if (!/時給|円/.test(normalized)) return null;
@@ -410,7 +413,164 @@ export function parseHourlySalaryForJsonLd(salary: string): {
   if (values.length === 0) return null;
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
-  return maxValue > minValue ? { minValue, maxValue } : { minValue };
+  // Google recommends maxValue alongside minValue for MonetaryAmount ranges.
+  return { minValue, maxValue };
+}
+
+/** ValidThrough window for evergreen night-job listings (renewed via updatedAt/postedAt). */
+const JOB_POSTING_VALID_THROUGH_DAYS = 60;
+
+type DistrictLocation = {
+  addressLocality: string;
+  postalCode: string;
+};
+
+/** Representative locality + postal for each published district (Sapporo). */
+const DISTRICT_JOB_LOCATIONS: Record<string, DistrictLocation> = {
+  すすきの: { addressLocality: "札幌市中央区", postalCode: "064-0804" },
+  琴似: { addressLocality: "札幌市西区", postalCode: "063-0811" },
+  "24条": { addressLocality: "札幌市北区", postalCode: "001-0024" },
+  手稲: { addressLocality: "札幌市手稲区", postalCode: "006-0811" },
+};
+
+function extractPostalCodeFromAddress(address?: string | null): string | null {
+  if (!address) return null;
+  const match = address.match(/〒?\s*(\d{3})-?(\d{4})/);
+  if (!match) return null;
+  return `${match[1]}-${match[2]}`;
+}
+
+function resolveJobLocationAddress(job: Job): Record<string, string> {
+  const districtMeta =
+    DISTRICT_JOB_LOCATIONS[job.district] ?? {
+      addressLocality: "札幌市",
+      postalCode: "060-0001",
+    };
+  const postalCode =
+    extractPostalCodeFromAddress(job.address) ?? districtMeta.postalCode;
+
+  const address: Record<string, string> = {
+    "@type": "PostalAddress",
+    addressCountry: "JP",
+    addressRegion: "北海道",
+    addressLocality: districtMeta.addressLocality,
+    postalCode,
+  };
+
+  if (job.address?.trim()) {
+    address.streetAddress = job.address.replace(/〒?\s*\d{3}-?\d{4}\s*/u, "").trim() ||
+      job.address.trim();
+  }
+
+  return address;
+}
+
+function toIsoDateOnly(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const dateOnly = trimmed.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return dateOnly;
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, "0");
+  const d = String(parsed.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function resolveDatePosted(job: Job): string {
+  return (
+    toIsoDateOnly(job.postedAt) ||
+    toIsoDateOnly(job.createdAt) ||
+    toIsoDateOnly(job.updatedAt) ||
+    new Date().toISOString().slice(0, 10)
+  );
+}
+
+/** ISO 8601 datetime in Asia/Tokyo for Google JobPosting.validThrough. */
+function resolveValidThrough(job: Job): string {
+  const baseDate =
+    toIsoDateOnly(job.updatedAt) ||
+    toIsoDateOnly(job.postedAt) ||
+    toIsoDateOnly(job.createdAt) ||
+    new Date().toISOString().slice(0, 10);
+  const [y, m, d] = baseDate.split("-").map(Number);
+  const end = new Date(Date.UTC(y, m - 1, d + JOB_POSTING_VALID_THROUGH_DAYS));
+  const yy = end.getUTCFullYear();
+  const mm = String(end.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(end.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}T23:59:59+09:00`;
+}
+
+function resolveEmploymentType(job: Job): string | string[] {
+  const haystack = [
+    job.title,
+    job.salary,
+    job.introductionText,
+    job.descriptionText,
+    ...job.benefits,
+    ...job.requirements,
+    ...(job.otherBenefits ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const types = new Set<string>();
+  if (/正社員|フルタイム|常勤/.test(haystack)) types.add("FULL_TIME");
+  if (/業務委託|委託契約/.test(haystack)) types.add("CONTRACTOR");
+  if (/期間限定|単発|臨時|短期/.test(haystack)) types.add("TEMPORARY");
+  if (
+    /パート|アルバイト|時給|掛け持ち|シフト|体入|体験入店/.test(haystack) ||
+    types.size === 0
+  ) {
+    types.add("PART_TIME");
+  }
+
+  const list = [...types];
+  return list.length === 1 ? list[0]! : list;
+}
+
+/**
+ * Google accepts either the literal "no requirements" or
+ * OccupationalExperienceRequirements.monthsOfExperience.
+ * Free-text Japanese strings are not valid for this property.
+ */
+function resolveExperienceRequirements(
+  job: Job,
+): string | Record<string, unknown> {
+  const reqText = job.requirements.join("、");
+  const haystack = [
+    reqText,
+    ...job.benefits,
+    job.introductionText ?? "",
+    job.descriptionText ?? "",
+  ].join(" ");
+
+  const yearMatch = haystack.match(/(?:経験|実務)\s*(\d+)\s*年/);
+  if (yearMatch) {
+    return {
+      "@type": "OccupationalExperienceRequirements",
+      monthsOfExperience: Number(yearMatch[1]) * 12,
+    };
+  }
+
+  const monthMatch = haystack.match(/(?:経験|実務)\s*(\d+)\s*(?:か[月ヶ]|ヶ月|カ月|か月)/);
+  if (monthMatch) {
+    return {
+      "@type": "OccupationalExperienceRequirements",
+      monthsOfExperience: Number(monthMatch[1]),
+    };
+  }
+
+  const beginner =
+    job.benefits.some((b) => /未経験/.test(b)) ||
+    /未経験|経験不問|経験不要|初心者歓迎/.test(haystack) ||
+    job.requirements.length === 0;
+
+  if (beginner) return "no requirements";
+
+  // Age / appearance only etc. — no measurable work experience required.
+  return "no requirements";
 }
 
 function buildJobDescriptionForJsonLd(job: Job): string {
@@ -419,6 +579,7 @@ function buildJobDescriptionForJsonLd(job: Job): string {
     job.descriptionText,
     job.salary ? `給与: ${job.salary}` : null,
     job.workHours ? `勤務時間: ${job.workHours}` : null,
+    job.businessHours ? `営業時間: ${job.businessHours}` : null,
     job.requirements.length > 0
       ? `応募条件: ${job.requirements.join("、")}`
       : null,
@@ -429,33 +590,30 @@ function buildJobDescriptionForJsonLd(job: Job): string {
 
 export function buildJobPostingJsonLd(
   job: Job,
-  reviews: GirlReview[] = [],
+  _reviews: GirlReview[] = [],
 ) {
   const url = `${SITE_URL}/jobs/${job.id}`;
   const description = buildJobDescriptionForJsonLd(job);
   const salary = parseHourlySalaryForJsonLd(job.salary);
+  const datePosted = resolveDatePosted(job);
+  const address = resolveJobLocationAddress(job);
+  const experienceRequirements = resolveExperienceRequirements(job);
 
-  const address: Record<string, string> = {
-    "@type": "PostalAddress",
-    addressCountry: "JP",
-    addressRegion: "北海道",
-    addressLocality: `札幌市（${job.district}）`,
+  const hiringOrganization: Record<string, unknown> = {
+    "@type": "Organization",
+    name: job.shopName,
+    sameAs: job.websiteUrl?.trim() || SITE_URL,
   };
-  if (job.address?.trim()) {
-    address.streetAddress = job.address.trim();
-  }
 
   const data: Record<string, unknown> = {
-    "@context": "https://schema.org",
+    "@context": "https://schema.org/",
     "@type": "JobPosting",
     title: `${job.shopName}の求人（${job.jobType}）`,
     description: description || `${job.shopName}の${job.jobType}求人情報。`,
-    datePosted: job.postedAt,
-    hiringOrganization: {
-      "@type": "Organization",
-      name: job.shopName,
-      sameAs: url,
-    },
+    datePosted,
+    validThrough: resolveValidThrough(job),
+    employmentType: resolveEmploymentType(job),
+    hiringOrganization,
     jobLocation: {
       "@type": "Place",
       address,
@@ -468,6 +626,8 @@ export function buildJobPostingJsonLd(
     url,
     directApply: true,
     occupationalCategory: job.jobType,
+    experienceRequirements,
+    educationRequirements: "no requirements",
   };
 
   if (salary) {
@@ -477,32 +637,62 @@ export function buildJobPostingJsonLd(
       value: {
         "@type": "QuantitativeValue",
         minValue: salary.minValue,
-        ...(salary.maxValue != null ? { maxValue: salary.maxValue } : {}),
+        maxValue: salary.maxValue,
         unitText: "HOUR",
       },
     };
   }
 
   if (job.requirements.length > 0) {
-    data.experienceRequirements = job.requirements.join("、");
     data.qualifications = job.requirements.join("、");
+  }
+
+  if (job.benefits.length > 0 || (job.otherBenefits?.length ?? 0) > 0) {
+    data.jobBenefits = [...job.benefits, ...(job.otherBenefits ?? [])].join(
+      "、",
+    );
+  }
+
+  const hours = job.workHours?.trim() || job.businessHours?.trim();
+  if (hours) {
+    data.workHours = hours;
   }
 
   if (job.imageUrl) {
     data.image = job.imageUrl;
   }
 
-  if (reviews.length > 0) {
-    const ratingSum = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const ratingValue = Math.round((ratingSum / reviews.length) * 10) / 10;
-    data.aggregateRating = {
+  return data;
+}
+
+/**
+ * Review / AggregateRating for girl reviews.
+ * Kept separate from JobPosting — Google JobPosting rich results do not
+ * recognize nested review fields and may emit warnings.
+ */
+export function buildJobReviewsJsonLd(job: Job, reviews: GirlReview[]) {
+  if (reviews.length === 0) return null;
+
+  const url = `${SITE_URL}/jobs/${job.id}`;
+  const address = resolveJobLocationAddress(job);
+  const ratingSum = reviews.reduce((sum, review) => sum + review.rating, 0);
+  const ratingValue = Math.round((ratingSum / reviews.length) * 10) / 10;
+
+  return {
+    "@context": "https://schema.org/",
+    "@type": "LocalBusiness",
+    name: job.shopName,
+    url,
+    image: job.imageUrl || SITE_LOGO_URL,
+    address,
+    aggregateRating: {
       "@type": "AggregateRating",
       ratingValue,
       bestRating: 5,
       worstRating: 1,
       reviewCount: reviews.length,
-    };
-    data.review = reviews.map((review) => ({
+    },
+    review: reviews.map((review) => ({
       "@type": "Review",
       author: {
         "@type": "Person",
@@ -515,12 +705,9 @@ export function buildJobPostingJsonLd(
         worstRating: 1,
       },
       reviewBody:
-        review.comment.trim() ||
-        `${review.nickname}さんの口コミ`,
-    }));
-  }
-
-  return data;
+        review.comment.trim() || `${review.nickname}さんの口コミ`,
+    })),
+  };
 }
 
 export function buildJobDetailMetadata(job: Job): Metadata {
