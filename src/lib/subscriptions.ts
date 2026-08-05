@@ -109,6 +109,33 @@ export async function getSubscriptionByStripeId(
   return mapSubscriptionRow(data as SubscriptionDbRow);
 }
 
+export async function getSubscriptionByCustomerId(
+  stripeCustomerId: string,
+): Promise<SubscriptionRecord | null> {
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("stripe_customer_id", stripeCustomerId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return mapSubscriptionRow(data as SubscriptionDbRow);
+}
+
+function customerIdFromSubscription(subscription: Stripe.Subscription): string | null {
+  if (typeof subscription.customer === "string") return subscription.customer;
+  if (
+    subscription.customer &&
+    !("deleted" in subscription.customer && subscription.customer.deleted)
+  ) {
+    return subscription.customer.id;
+  }
+  return null;
+}
+
 function derivePlanFromStripeSubscription(subscription: Stripe.Subscription): JobPlan {
   const priceId = subscription.items.data[0]?.price?.id ?? "";
   return stripePriceIdToPlan(priceId) ?? "light";
@@ -132,22 +159,34 @@ export async function upsertSubscriptionFromStripe(
   const supabase = createSupabaseAdmin();
   const metadataStoreId =
     typeof subscription.metadata?.store_id === "string"
-      ? subscription.metadata.store_id
+      ? subscription.metadata.store_id.trim()
       : null;
   const customerStoreId =
     subscription.customer &&
     typeof subscription.customer !== "string" &&
     !("deleted" in subscription.customer && subscription.customer.deleted) &&
     typeof subscription.customer.metadata?.store_id === "string"
-      ? subscription.customer.metadata.store_id
+      ? subscription.customer.metadata.store_id.trim()
       : null;
-  const storeId = metadataStoreId || customerStoreId || options?.fallbackStoreId;
+  const customerId = customerIdFromSubscription(subscription);
+  const byCustomer = customerId
+    ? await getSubscriptionByCustomerId(customerId)
+    : null;
+  const storeId =
+    metadataStoreId ||
+    customerStoreId ||
+    options?.fallbackStoreId?.trim() ||
+    byCustomer?.storeId ||
+    null;
   if (!storeId) {
-    throw new Error("store_id is missing on Stripe subscription metadata.");
+    throw new Error(
+      "store_id is missing. Payment Link / Checkout では client_reference_id または metadata.store_id に jobs.id を設定してください。",
+    );
   }
 
   const previous =
     (await getSubscriptionByStripeId(subscription.id)) ??
+    byCustomer ??
     (await getStoreSubscription(storeId));
   const priceId = subscription.items.data[0]?.price?.id ?? null;
   const plan = derivePlanFromStripeSubscription(subscription);

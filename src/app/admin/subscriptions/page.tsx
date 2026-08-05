@@ -38,6 +38,23 @@ function formatDate(value: string | null | undefined) {
   }).format(d);
 }
 
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case "active":
+    case "trialing":
+      return "border-green-500/40 bg-green-50 text-green-800";
+    case "past_due":
+      return "border-amber-500/40 bg-amber-50 text-amber-900";
+    case "unpaid":
+    case "canceled":
+      return "border-red-400/40 bg-red-50 text-red-800";
+    case "paused":
+      return "border-zinc-400/40 bg-zinc-100 text-zinc-700";
+    default:
+      return "border-gold/30 bg-ivory text-gold-dark";
+  }
+}
+
 export default function AdminSubscriptionsPage() {
   const [rows, setRows] = useState<AdminSubscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +123,11 @@ export default function AdminSubscriptionsPage() {
     <div>
       <header className="admin-page-header">
         <h1>Stripe契約管理</h1>
-        <p>契約状態・次回請求日・Stripe IDを確認し、管理者操作を実行します。</p>
+        <p>
+          店舗ごとの契約状況（active / past_due / unpaid / canceled /
+          paused）を確認し、管理者のみプラン変更・停止・再開・解約を行います。
+          契約リンクはサイト内には置かず、運営が Stripe で発行して個別送信してください。
+        </p>
       </header>
 
       {error ? (
@@ -134,7 +155,9 @@ export default function AdminSubscriptionsPage() {
                     {item.shopName ?? "店舗名未設定"}（
                     {item.billingLabel ?? item.plan}）
                   </h2>
-                  <span className="rounded-full border border-gold/30 bg-ivory px-2 py-1 text-xs text-gold-dark">
+                  <span
+                    className={`rounded-full border px-2 py-1 text-xs font-medium ${statusBadgeClass(item.status)}`}
+                  >
                     {item.status}
                   </span>
                 </div>
