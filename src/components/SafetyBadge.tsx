@@ -24,7 +24,7 @@ export function SafetyBadge({
         <span className="hero-safety-check inline-flex h-[18px] w-[18px] items-center justify-center rounded-[4px] text-[11px] font-bold sm:h-5 sm:w-5 sm:text-xs">
           ✓
         </span>
-        <span className="hero-safety-label text-[13px] font-semibold tracking-[0.06em] sm:text-sm">
+        <span className="hero-safety-label">
           安心認証
         </span>
       </span>

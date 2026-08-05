@@ -296,6 +296,19 @@
   .hero-safety-label {
     color: #1a1612;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    font-family: var(--font-serif), "Noto Serif JP", "Hiragino Mincho ProN",
+      "Yu Mincho", "YuMincho", serif;
+    font-size: 0.8125rem; /* 13px — keep badge scale */
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    line-height: 1.15;
+  }
+
+  @media (min-width: 640px) {
+    .hero-safety-label {
+      font-size: 0.875rem; /* 14px */
+      letter-spacing: 0.18em;
+    }
   }
 
   .hero-unified-plate {
@@ -4263,6 +4276,8 @@
 
   .hero-immersive-header .hero-safety-label {
     font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
   }
 
   .hero-immersive-header .hero-safety-check {
