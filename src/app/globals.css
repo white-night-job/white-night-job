@@ -4625,7 +4625,72 @@
 }
 
 body.compare-bar-visible {
-  padding-bottom: 5.5rem;
+  /* Reserve space so page content isn't hidden under the compare bar */
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  /* Compare bar stack height (pill + bottom padding incl. safe-area) */
+  --compare-bar-stack-height: calc(
+    3.75rem + max(0.75rem, env(safe-area-inset-bottom, 0px))
+  );
+  /* Gap between chatbot FAB and compare bar */
+  --chatbot-above-compare-gap: 1.5rem; /* 24px */
+}
+
+:root {
+  --compare-bar-stack-height: env(safe-area-inset-bottom, 0px);
+  --chatbot-above-compare-gap: 1rem;
+  --chatbot-fab-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 640px) {
+  :root {
+    --chatbot-above-compare-gap: 1.25rem;
+    --chatbot-fab-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
+
+  body.compare-bar-visible {
+    --chatbot-above-compare-gap: 1.75rem; /* 28px */
+  }
+}
+
+/* Floating compare CTA — pinned to the very bottom */
+.compare-fixed-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 70;
+  pointer-events: none;
+  padding-inline: 0.75rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+.compare-fixed-bar-inner {
+  pointer-events: auto;
+  margin-inline: auto;
+  max-width: 32rem;
+}
+
+/* Chatbot launcher — sits above the compare bar with a clear gap */
+.chatbot-fab-anchor {
+  position: fixed;
+  right: var(--chatbot-fab-right);
+  bottom: calc(
+    var(--compare-bar-stack-height) + var(--chatbot-above-compare-gap)
+  );
+  z-index: 72;
+  pointer-events: none;
+}
+
+.chatbot-fab-button {
+  pointer-events: auto;
+}
+
+/* Open chat panel clears the compare bar when present */
+.chatbot-panel-slot {
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+body.compare-bar-visible .chatbot-panel-slot {
+  bottom: calc(var(--compare-bar-stack-height) + 0.5rem);
 }
 
 /* ── Header login modal ── */

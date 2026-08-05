@@ -600,10 +600,9 @@ export function ChatBot() {
             aria-hidden
           />
           <div
-            className="pointer-events-none fixed inset-x-0 z-[85] flex justify-center"
+            className="chatbot-panel-slot pointer-events-none fixed inset-x-0 z-[85] flex justify-center"
             style={{
               top: "calc(3.5rem + 8px + env(safe-area-inset-top, 0px))",
-              bottom: "max(12px, env(safe-area-inset-bottom))",
             }}
           >
             <div
@@ -843,11 +842,11 @@ export function ChatBot() {
       ) : null}
 
       {!open ? (
-        <div className="pointer-events-none fixed bottom-4 right-4 z-[70] max-sm:left-auto sm:bottom-6 sm:right-6">
+        <div className="chatbot-fab-anchor">
           <button
             type="button"
             onClick={attemptOpenChat}
-            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
+            className="chatbot-fab-button flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark text-white shadow-lg transition hover:scale-105 sm:h-12 sm:w-12"
             aria-label="White Night相談Botを開く"
             aria-expanded={false}
           >

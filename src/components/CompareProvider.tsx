@@ -137,8 +137,8 @@ export function CompareProvider({ children }: { children: ReactNode }) {
       {children}
 
       {!hideBar && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="pointer-events-auto mx-auto max-w-lg">
+        <div className="compare-fixed-bar">
+          <div className="compare-fixed-bar-inner">
             {jobIds.length === 1 ? (
               <div className="rounded-full border border-gold/40 bg-charcoal/95 px-5 py-3.5 text-center text-sm font-semibold text-gold-light shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur">
                 あと1店舗選択してください
