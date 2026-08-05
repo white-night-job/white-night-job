@@ -18,7 +18,8 @@
     "openai": "^6.44.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "resend": "^6.12.4"
+    "resend": "^6.12.4",
+    "stripe": "^22.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

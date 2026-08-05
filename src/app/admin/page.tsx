@@ -12,6 +12,11 @@ const CARDS = [
     description: "掲載店舗の検索、求人の追加・編集、公開状態の管理。",
   },
   {
+    href: "/admin/subscriptions",
+    title: "Stripe契約管理",
+    description: "契約一覧、プラン変更、停止・再開・解約の管理。",
+  },
+  {
     href: "/admin/user-activity",
     title: "女の子利用状況",
     description: "求人閲覧・応募クリック・診断・報告などの匿名利用状況。",
