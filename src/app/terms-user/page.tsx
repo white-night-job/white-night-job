@@ -9,7 +9,7 @@ export const metadata: Metadata = buildPageMetadata(
   "/terms-user",
 );
 
-const UPDATED_AT = "2026年6月18日";
+const UPDATED_AT = "2026年8月7日";
 
 export default function TermsUserPage() {
   return (
@@ -105,8 +105,31 @@ export default function TermsUserPage() {
           ),
         },
         {
+          id: "ai-features",
+          title: "10. AI機能について",
+          content: (
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>
+                当サイトでは、求人検索の補助や求人情報の案内、質問への回答等を目的としてAI機能を提供しています。
+              </li>
+              <li>
+                AIによる回答・提案・診断結果・おすすめ店舗等は参考情報として提供するものであり、その正確性、完全性、有用性、最新性その他一切を保証するものではありません。
+              </li>
+              <li>
+                求人への応募、勤務先の選択その他の重要な判断は、利用者ご自身の責任と判断において行ってください。
+              </li>
+              <li>
+                当サイトは、AIによる回答または提案に起因して利用者に生じた損害について、当社に故意または重大な過失がある場合を除き、一切の責任を負いません。
+              </li>
+              <li>
+                AI機能は予告なく変更・停止・終了する場合があります。
+              </li>
+            </ol>
+          ),
+        },
+        {
           id: "disclaimer",
-          title: "10. 免責事項",
+          title: "11. 免責事項",
           content: (
             <p>
               当サイト利用により生じた損害について、当サイトの故意または重過失がある場合を除き、当サイトは責任を負いません。
@@ -115,7 +138,7 @@ export default function TermsUserPage() {
         },
         {
           id: "changes",
-          title: "11. 規約変更",
+          title: "12. 規約変更",
           content: (
             <p>
               当サイトは必要に応じて本規約を変更できます。変更後の規約は当サイト掲載時点で効力を生じます。
@@ -124,7 +147,7 @@ export default function TermsUserPage() {
         },
         {
           id: "law",
-          title: "12. 準拠法",
+          title: "13. 準拠法",
           content: (
             <p>
               本規約は日本法に準拠し、本規約に関する紛争は運営者所在地を管轄する裁判所を第一審の専属的合意管轄とします。
