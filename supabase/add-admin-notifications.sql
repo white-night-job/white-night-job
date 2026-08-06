@@ -36,6 +36,20 @@ using (false);
 comment on table public.admin_notifications is
   '運営向け通知センター（Stripe決済・契約イベントなど）';
 comment on column public.admin_notifications.type is
-  '例: stripe_new_contract / stripe_invoice_paid / stripe_payment_failed / stripe_canceled';
+  '例: stripe_new_contract / stripe_invoice_paid / stripe_payment_failed / stripe_canceled / system';
+
+-- Realtime（管理画面 SSE 経由で購読）
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'admin_notifications'
+  ) then
+    alter publication supabase_realtime add table public.admin_notifications;
+  end if;
+end $$;
 
 notify pgrst, 'reload schema';

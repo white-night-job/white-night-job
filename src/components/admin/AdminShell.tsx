@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "ダッシュボード", match: "exact" as const },
@@ -143,6 +144,7 @@ export function AdminShell({
           <span className="admin-topbar-kicker">Admin</span>
           <span className="admin-topbar-title">White Night Job 管理画面</span>
         </div>
+        <AdminNotificationBell />
         <Link href="/" className="admin-topbar-site" target="_blank" rel="noopener noreferrer">
           サイトを見る
         </Link>

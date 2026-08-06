@@ -216,6 +216,7 @@ export async function POST(request: Request) {
               notifyStripeInvoicePaid({
                 record,
                 billingReason: invoice.billing_reason ?? null,
+                amountPaid: invoice.amount_paid ?? null,
               }),
             );
           }

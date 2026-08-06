@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  formatRelativeTimeJa,
+  getNotificationShopName,
+  getNotificationSummary,
+  getNotificationTypeMeta,
+} from "@/lib/admin-notification-ui";
 
 type AdminNotification = {
   id: string;
@@ -25,21 +31,6 @@ function formatDateTime(value: string): string {
   }).format(d);
 }
 
-function typeLabel(type: string): string {
-  switch (type) {
-    case "stripe_new_contract":
-      return "新規契約";
-    case "stripe_invoice_paid":
-      return "定期決済";
-    case "stripe_payment_failed":
-      return "決済失敗";
-    case "stripe_canceled":
-      return "解約";
-    default:
-      return type;
-  }
-}
-
 export default function AdminNotificationsPage() {
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -47,6 +38,7 @@ export default function AdminNotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,6 +67,14 @@ export default function AdminNotificationsPage() {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  useEffect(() => {
+    const source = new EventSource("/api/admin/notifications/stream");
+    source.addEventListener("change", () => {
+      void load();
+    });
+    return () => source.close();
   }, [load]);
 
   async function markRead(id: string) {
@@ -115,10 +115,15 @@ export default function AdminNotificationsPage() {
     }
   }
 
+  async function openItem(item: AdminNotification) {
+    setExpandedId((current) => (current === item.id ? null : item.id));
+    if (!item.isRead) await markRead(item.id);
+  }
+
   return (
     <div>
       <header className="admin-page-header">
-        <h1>通知センター</h1>
+        <h1>通知履歴</h1>
         <p>Stripe決済・契約イベントなど、運営向け通知の履歴です。</p>
       </header>
 
@@ -168,40 +173,49 @@ export default function AdminNotificationsPage() {
           <p className="admin-muted">通知はまだありません。</p>
         ) : (
           <div className="space-y-3">
-            {items.map((item) => (
-              <article
-                key={item.id}
-                className={`rounded-xl border p-4 ${
-                  item.isRead
-                    ? "border-gold/15 bg-white"
-                    : "border-gold/35 bg-ivory/50"
-                }`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs text-muted">
-                      {typeLabel(item.type)} ／ {formatDateTime(item.createdAt)}
-                      {item.shopName ? ` ／ ${item.shopName}` : ""}
-                      {!item.isRead ? " ／ 未読" : ""}
+            {items.map((item) => {
+              const meta = getNotificationTypeMeta(item.type);
+              return (
+                <article
+                  key={item.id}
+                  className={`rounded-xl border p-4 ${
+                    item.isRead
+                      ? "border-gold/15 bg-white"
+                      : "border-red-200 bg-red-50/70"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() => void openItem(item)}
+                  >
+                    <p className="text-sm font-semibold text-charcoal">
+                      <span aria-hidden>{meta.emoji}</span> {meta.label}
+                      {!item.isRead ? (
+                        <span className="ml-2 text-xs font-medium text-red-700">
+                          未読
+                        </span>
+                      ) : null}
                     </p>
-                    <h2 className="mt-1 font-semibold text-charcoal">{item.title}</h2>
-                  </div>
-                  {!item.isRead ? (
-                    <button
-                      type="button"
-                      onClick={() => void markRead(item.id)}
-                      disabled={busyId === item.id}
-                      className="rounded-full border border-gold/35 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-50"
-                    >
-                      {busyId === item.id ? "処理中…" : "既読にする"}
-                    </button>
+                    <p className="mt-1 text-sm text-charcoal">
+                      {getNotificationShopName(item)}
+                    </p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {getNotificationSummary(item)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {formatRelativeTimeJa(item.createdAt)} ／{" "}
+                      {formatDateTime(item.createdAt)}
+                    </p>
+                  </button>
+                  {expandedId === item.id ? (
+                    <pre className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-gold/10 bg-white px-3 py-2 text-sm leading-relaxed text-charcoal">
+                      {item.message}
+                    </pre>
                   ) : null}
-                </div>
-                <pre className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-gold/10 bg-white px-3 py-2 text-sm leading-relaxed text-charcoal">
-                  {item.message}
-                </pre>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

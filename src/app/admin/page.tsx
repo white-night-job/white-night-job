@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminNotificationSummaryCard } from "@/components/admin/AdminNotificationSummaryCard";
 
 const CARDS = [
   {
@@ -50,6 +51,10 @@ export default function AdminDashboardPage() {
         <h1>管理ダッシュボード</h1>
         <p>管理者専用画面です。左の「管理項目」から各機能へ移動できます。</p>
       </header>
+
+      <div className="mb-4">
+        <AdminNotificationSummaryCard />
+      </div>
 
       <div className="admin-card-grid">
         {CARDS.map((card) => (

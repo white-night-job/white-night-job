@@ -124,6 +124,51 @@ export async function markAllAdminNotificationsRead(): Promise<number> {
   return data?.length ?? 0;
 }
 
+export async function getAdminNotificationSummary(): Promise<{
+  unreadCount: number;
+  newContract: number;
+  paymentFailed: number;
+  canceled: number;
+  invoicePaid: number;
+  system: number;
+}> {
+  const supabase = createSupabaseAdmin();
+
+  const { count: unreadCount, error: unreadError } = await supabase
+    .from("admin_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("is_read", false);
+  if (unreadError) throw unreadError;
+
+  async function countType(type: string): Promise<number> {
+    const { count, error } = await supabase
+      .from("admin_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("type", type)
+      .eq("is_read", false);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  const [newContract, paymentFailed, canceled, invoicePaid, system] =
+    await Promise.all([
+      countType("stripe_new_contract"),
+      countType("stripe_payment_failed"),
+      countType("stripe_canceled"),
+      countType("stripe_invoice_paid"),
+      countType("system"),
+    ]);
+
+  return {
+    unreadCount: unreadCount ?? 0,
+    newContract,
+    paymentFailed,
+    canceled,
+    invoicePaid,
+    system,
+  };
+}
+
 /** 同一 store + type + 参照キーの重複通知防止 */
 export async function hasRecentAdminNotification(input: {
   type: string;

@@ -61,6 +61,7 @@ async function persistAndSend(input: {
   title: string;
   message: string;
 }): Promise<void> {
+  // 通知保存を先に確定。メール失敗でも通知自体は成功扱い。
   await createAdminNotification({
     type: input.type,
     storeId: input.storeId,
@@ -68,13 +69,17 @@ async function persistAndSend(input: {
     message: input.message,
   });
 
-  const result = await notifyAdmin({
-    title: input.title,
-    message: input.message,
-    shortMessage: input.title,
-  });
-  if (!result.ok) {
-    console.warn("[stripe-admin-notify] channel send skipped/failed", result);
+  try {
+    const result = await notifyAdmin({
+      title: input.title,
+      message: input.message,
+      shortMessage: input.title,
+    });
+    if (!result.ok) {
+      console.warn("[stripe-admin-notify] channel send skipped/failed", result);
+    }
+  } catch (error) {
+    console.warn("[stripe-admin-notify] email failed after save", error);
   }
 }
 
@@ -94,7 +99,6 @@ export async function notifyStripeNewContract(input: {
   });
   if (already) return;
 
-  // subscription.created は checkout 完了通知と重複しやすいので、active 以外は送らない
   if (
     input.sourceEvent === "customer.subscription.created" &&
     record.status !== "active" &&
@@ -112,10 +116,9 @@ export async function notifyStripeNewContract(input: {
     plan,
   );
 
-  const title = "🎉 新規契約";
+  const title = "新規契約";
   const message = [
-    "🎉 新規契約",
-    "",
+    `要約：${planLabel}契約`,
     `店舗名：${shopName}`,
     `プラン：${planLabel}`,
     `月額料金：${monthly}`,
@@ -136,8 +139,8 @@ export async function notifyStripeNewContract(input: {
 export async function notifyStripeInvoicePaid(input: {
   record: SubscriptionRecord;
   billingReason?: string | null;
+  amountPaid?: number | null;
 }): Promise<void> {
-  // 初回契約の invoice は新規契約通知と重複するためスキップ
   if (
     input.billingReason === "subscription_create" ||
     input.billingReason === "subscription"
@@ -146,8 +149,21 @@ export async function notifyStripeInvoicePaid(input: {
   }
 
   const shopName = await getShopNameByStoreId(input.record.storeId);
-  const title = "定期決済完了";
-  const message = `${shopName}様の定期決済が完了しました\n\nプラン：${resolvePlanLabel(input.record)}\n次回請求日：${formatDateTimeJst(input.record.currentPeriodEnd)}\nSubscription ID：${input.record.stripeSubscriptionId ?? "—"}`;
+  const amountLabel =
+    typeof input.amountPaid === "number" && Number.isFinite(input.amountPaid)
+      ? formatJpyPrice(input.amountPaid)
+      : null;
+  const title = "定期決済成功";
+  const message = [
+    `要約：${amountLabel ?? "定期決済完了"}`,
+    `店舗名：${shopName}`,
+    amountLabel ? `金額：${amountLabel}` : null,
+    `プラン：${resolvePlanLabel(input.record)}`,
+    `次回請求日：${formatDateTimeJst(input.record.currentPeriodEnd)}`,
+    `Subscription ID：${input.record.stripeSubscriptionId ?? "—"}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   if (input.record.stripeSubscriptionId) {
     const already = await hasRecentAdminNotification({
@@ -172,7 +188,14 @@ export async function notifyStripePaymentFailed(input: {
 }): Promise<void> {
   const shopName = await getShopNameByStoreId(input.record.storeId);
   const title = "決済失敗";
-  const message = `${shopName}様の決済が失敗しました\n\nプラン：${resolvePlanLabel(input.record)}\n失敗回数：${input.record.paymentFailedCount}\n状態：${input.record.status}\nSubscription ID：${input.record.stripeSubscriptionId ?? "—"}`;
+  const message = [
+    "要約：カード決済失敗",
+    `店舗名：${shopName}`,
+    `プラン：${resolvePlanLabel(input.record)}`,
+    `失敗回数：${input.record.paymentFailedCount}`,
+    `状態：${input.record.status}`,
+    `Subscription ID：${input.record.stripeSubscriptionId ?? "—"}`,
+  ].join("\n");
 
   await persistAndSend({
     type: "stripe_payment_failed",
@@ -186,8 +209,14 @@ export async function notifyStripeCanceled(input: {
   record: SubscriptionRecord;
 }): Promise<void> {
   const shopName = await getShopNameByStoreId(input.record.storeId);
+  const planLabel = resolvePlanLabel(input.record);
   const title = "解約";
-  const message = `${shopName}様が解約しました\n\nプラン：${resolvePlanLabel(input.record)}\nSubscription ID：${input.record.stripeSubscriptionId ?? "—"}`;
+  const message = [
+    `要約：${planLabel}解約`,
+    `店舗名：${shopName}`,
+    `プラン：${planLabel}`,
+    `Subscription ID：${input.record.stripeSubscriptionId ?? "—"}`,
+  ].join("\n");
 
   if (input.record.stripeSubscriptionId) {
     const already = await hasRecentAdminNotification({
