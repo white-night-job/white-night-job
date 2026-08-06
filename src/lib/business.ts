@@ -18,21 +18,23 @@ export const BUSINESS_PHONE_DISPLAY = "011-600-1073";
 export const BUSINESS_PHONE_TEL = "0116001073";
 
 /** Official public contact email. */
-export const BUSINESS_EMAIL = "comsia.info@gmail.com";
+export const BUSINESS_EMAIL = "info@comsia.co.jp";
 
 /**
  * Operator contact hours (online inquiries).
- * Interpreted as Monday–Friday (平日). Weekend hours are not published.
+ * Inquiries are accepted around the clock.
  */
-export const BUSINESS_HOURS_DISPLAY = "平日 9:00〜17:00";
-export const BUSINESS_HOURS_OPENS = "09:00";
-export const BUSINESS_HOURS_CLOSES = "17:00";
+export const BUSINESS_HOURS_DISPLAY = "24時間受付";
+export const BUSINESS_HOURS_OPENS = "00:00";
+export const BUSINESS_HOURS_CLOSES = "23:59";
 export const BUSINESS_HOURS_DAYS = [
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
+  "Saturday",
+  "Sunday",
 ] as const;
 
 export const BUSINESS_DESCRIPTION =

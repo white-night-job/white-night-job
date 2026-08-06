@@ -98,7 +98,7 @@ export default function CompanyPage() {
             {BUSINESS_HOURS_DISPLAY}
           </p>
           <p className="mt-2 text-sm leading-7 text-muted">
-            お問い合わせの受付時間です。
+            24時間お問い合わせを受け付けています。
           </p>
         </section>
         <section>
