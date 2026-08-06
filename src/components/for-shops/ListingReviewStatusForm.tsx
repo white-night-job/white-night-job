@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import type { ListingApplicationPublicStatus } from "@/lib/listing-application";
-import { planLabel } from "@/lib/listing-application";
+import {
+  LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE,
+  planLabel,
+} from "@/lib/listing-application";
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
@@ -113,12 +116,14 @@ export function ListingReviewStatusForm() {
               )}
             </div>
           )}
-          {status.rejectionReason && (
+          {status.status === "rejected" ? (
             <div className="rounded-xl bg-ivory px-3 py-2">
               <p className="font-medium">結果について</p>
-              <p className="mt-1 whitespace-pre-wrap">{status.rejectionReason}</p>
+              <p className="mt-1 whitespace-pre-wrap">
+                {LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE}
+              </p>
             </div>
-          )}
+          ) : null}
           {status.status === "approved" && (
             <p className="text-muted">
               承認済みです。登録用URLはメールでご案内しています。

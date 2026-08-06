@@ -451,21 +451,15 @@ export async function notifyApplicantRejected(
   row: ListingApplicationRow,
 ): Promise<NotifyMailResult> {
   const name = row.contact_name?.trim() || "ご担当者";
-  const reason = row.rejection_reason?.trim() || "（理由の記載なし）";
   return safeSend({
     to: row.contact_email,
     subject: "【White Night Job】掲載審査結果のお知らせ",
     text: [
       `${name}様`,
       "",
-      "White Night Jobへの掲載審査にお申し込みいただき、ありがとうございます。",
-      "",
-      "審査の結果、今回は掲載を見送らせていただくこととなりました。",
-      "",
-      "理由：",
-      reason,
-      "",
-      "内容をご確認のうえ、必要に応じて再度お申し込みください。",
+      "この度は掲載申請をいただきありがとうございました。",
+      "慎重に審査を行いました結果、今回は掲載を見送らせていただくこととなりました。",
+      "なお、審査基準および審査内容に関する個別のお問い合わせにはお答えしておりませんので、あらかじめご了承ください。",
       "",
       "White Night Job運営事務局",
     ].join("\n"),

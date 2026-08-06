@@ -34,6 +34,10 @@ export const LISTING_APPLICATION_STATUS_LABELS: Record<
   withdrawn: "取り下げ",
 };
 
+/** Shop-facing rejection message (never includes admin rejection reason). */
+export const LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE =
+  "審査の結果、今回は掲載を見送らせていただきます。";
+
 export type ListingAttachment = {
   url: string;
   name: string;
@@ -635,7 +639,8 @@ export function rowToPublicStatus(
     requestedPlan: row.requested_plan,
     confirmedPlan: row.confirmed_plan,
     submittedAt: row.created_at,
-    rejectionReason: row.status === "rejected" ? row.rejection_reason : null,
+    // Rejection reasons are admin-only; never expose to shops.
+    rejectionReason: null,
     needsInfoMessage:
       row.status === "needs_info" ? row.needs_info_message : null,
     needsInfoDeadline:

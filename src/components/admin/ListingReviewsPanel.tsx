@@ -1051,11 +1051,11 @@ export function ListingReviewsPanel() {
                       setModalRejectionReason(e.target.value);
                       if (modalError) setModalError("");
                     }}
-                    placeholder="申請者へ送信する却下理由を入力してください"
+                    placeholder="運営内部用の却下理由を入力してください"
                   />
                 </div>
                 <p className="text-muted">
-                  却下理由は申請者へのメールに記載されます
+                  却下理由は運営のみが閲覧でき、申請者には送信されません
                 </p>
               </div>
             )}
