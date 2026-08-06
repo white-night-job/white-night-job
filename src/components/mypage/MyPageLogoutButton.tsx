@@ -5,7 +5,11 @@ import { useState } from "react";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { clearUserCache } from "@/lib/user-data-cache";
 
-export function MyPageLogoutButton() {
+export function MyPageLogoutButton({
+  className = "mt-6",
+}: {
+  className?: string;
+}) {
   const router = useRouter();
   const { refreshSession } = useUserSession();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -29,7 +33,7 @@ export function MyPageLogoutButton() {
       type="button"
       onClick={() => void handleLogout()}
       disabled={loggingOut}
-      className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-charcoal/20 bg-white px-4 text-sm font-semibold text-charcoal shadow-gold disabled:opacity-60"
+      className={`${className} inline-flex min-h-11 w-full items-center justify-center rounded-full border border-charcoal/20 bg-white px-4 text-sm font-semibold text-charcoal shadow-gold disabled:opacity-60`.trim()}
     >
       {loggingOut ? "ログアウト中..." : "ログアウト"}
     </button>

@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { HeaderLoginModal } from "@/components/HeaderLoginModal";
 import { useUserSession } from "@/components/UserSessionProvider";
-import { clearUserCache } from "@/lib/user-data-cache";
 
 function AccountIcon() {
   return (
@@ -18,53 +16,11 @@ function AccountIcon() {
 export function HeaderAccountMenu() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, ready, refreshSession } = useUserSession();
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { isLoggedIn, ready } = useUserSession();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const lineLoginRedirect = pathname || "/";
-
-  useEffect(() => {
-    setMenuOpen(false);
-    setLoginModalOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent | TouchEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-
-    if (!menuOpen) return;
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
-    };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setMenuOpen(false);
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [menuOpen]);
-
-  async function handleLogout() {
-    await fetch("/api/user/logout", { method: "POST", credentials: "include" });
-    clearUserCache();
-    await refreshSession();
-    setMenuOpen(false);
-    router.push("/");
-  }
+  const triggerLabel = isLoggedIn ? "マイページ" : "ログイン";
 
   function handleTriggerClick(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -74,97 +30,25 @@ export function HeaderAccountMenu() {
 
     if (!ready) return;
     if (isLoggedIn) {
-      setMenuOpen((current) => !current);
+      router.push("/mypage");
       return;
     }
     setLoginModalOpen(true);
   }
 
-  const triggerLabel = isLoggedIn ? "マイページ" : "ログイン";
-
   return (
     <>
-      <div ref={menuRef} className="relative shrink-0">
-        <button
-          type="button"
-          onClick={handleTriggerClick}
-          aria-expanded={isLoggedIn ? menuOpen : loginModalOpen}
-          aria-controls={isLoggedIn ? "header-account-menu" : "header-login-modal-title"}
-          aria-label={triggerLabel}
-          className={`header-icon-btn header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
-        >
-          <AccountIcon />
-          <span className="header-account-btn-label">{triggerLabel}</span>
-        </button>
-
-        {menuOpen && ready && isLoggedIn && (
-          <>
-            <button
-              type="button"
-              aria-label="アカウントメニューを閉じる"
-              className="fixed inset-0 z-40 bg-charcoal/15"
-              onClick={() => setMenuOpen(false)}
-            />
-            <nav id="header-account-menu" className="header-account-panel">
-              <ul className="header-account-list">
-                <li>
-                  <Link
-                    href="/mypage"
-                    prefetch
-                    onClick={() => {
-                      window.dispatchEvent(new CustomEvent("wn:close-chat"));
-                      setMenuOpen(false);
-                    }}
-                    className="header-account-item"
-                  >
-                    マイページ
-                  </Link>
-                </li>
-                <li className="header-account-divider" aria-hidden />
-                <li>
-                  <Link
-                    href="/mypage/favorites"
-                    onClick={() => setMenuOpen(false)}
-                    className="header-account-item"
-                  >
-                    お気に入り
-                  </Link>
-                </li>
-                <li className="header-account-divider" aria-hidden />
-                <li>
-                  <Link
-                    href="/mypage/history"
-                    onClick={() => setMenuOpen(false)}
-                    className="header-account-item"
-                  >
-                    閲覧履歴
-                  </Link>
-                </li>
-                <li className="header-account-divider" aria-hidden />
-                <li>
-                  <Link
-                    href="/notification-settings"
-                    onClick={() => setMenuOpen(false)}
-                    className="header-account-item"
-                  >
-                    通知設定
-                  </Link>
-                </li>
-                <li className="header-account-divider" aria-hidden />
-                <li>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="header-account-item w-full text-left"
-                  >
-                    ログアウト
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={handleTriggerClick}
+        aria-expanded={!isLoggedIn ? loginModalOpen : undefined}
+        aria-controls={!isLoggedIn ? "header-login-modal-title" : undefined}
+        aria-label={triggerLabel}
+        className={`header-icon-btn header-account-btn ${isLoggedIn ? "is-logged-in" : ""} ${!ready ? "opacity-80" : ""}`}
+      >
+        <AccountIcon />
+        <span className="header-account-btn-label">{triggerLabel}</span>
+      </button>
 
       {!isLoggedIn && (
         <HeaderLoginModal

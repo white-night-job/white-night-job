@@ -1,31 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useState } from "react";
 import { LineLoginButton } from "@/components/LineLoginButton";
-import { ViewHistoryList } from "@/components/ViewHistoryList";
 import { useUserSession } from "@/components/UserSessionProvider";
-import { MyPageAccordionSection } from "@/components/mypage/MyPageAccordionSection";
 import { MyPageDiagnosisSection } from "@/components/mypage/MyPageDiagnosisSection";
-import { MyPageFavoritesSection } from "@/components/mypage/MyPageFavoritesSection";
-import { MyPageLogoutButton } from "@/components/mypage/MyPageLogoutButton";
-import { MyPageNotificationSection } from "@/components/mypage/MyPageNotificationSection";
+import { MyPageMenu } from "@/components/mypage/MyPageMenu";
 import { MyPageProfileCard } from "@/components/mypage/MyPageProfileCard";
 import { MyPageSearchHistorySection } from "@/components/mypage/MyPageSearchHistorySection";
+import { useCallback, useState } from "react";
 
-type SectionKey =
-  | "search"
-  | "favorites"
-  | "history"
-  | "diagnosis"
-  | "notifications";
+type SectionKey = "search" | "diagnosis";
 
 const INITIAL_OPEN: Record<SectionKey, boolean> = {
   search: false,
-  favorites: false,
-  history: false,
   diagnosis: false,
-  notifications: false,
 };
 
 export default function MyPage() {
@@ -60,50 +47,22 @@ export default function MyPage() {
     );
   }
 
-  // The shell (title, profile frame, section frames, menu) renders right away;
-  // each section fills itself in as its own request resolves.
   return (
     <div className="mx-auto max-w-lg px-4 py-5 sm:max-w-2xl sm:px-6 sm:py-8">
       <MyPageProfileCard />
 
-      <MyPageSearchHistorySection
-        open={openSections.search}
-        onToggle={() => toggleSection("search")}
-      />
+      <MyPageMenu />
 
-      <MyPageFavoritesSection
-        open={openSections.favorites}
-        onToggle={() => toggleSection("favorites")}
-      />
-
-      <MyPageAccordionSection
-        title="最近見た店舗"
-        open={openSections.history}
-        onToggle={() => toggleSection("history")}
-        headerAside={
-          <Link
-            href="/mypage/history"
-            prefetch
-            className="text-xs font-medium text-gold-dark"
-          >
-            すべて見る
-          </Link>
-        }
-      >
-        <ViewHistoryList showTitle={false} limit={5} />
-      </MyPageAccordionSection>
-
-      <MyPageDiagnosisSection
-        open={openSections.diagnosis}
-        onToggle={() => toggleSection("diagnosis")}
-      />
-
-      <MyPageNotificationSection
-        open={openSections.notifications}
-        onToggle={() => toggleSection("notifications")}
-      />
-
-      <MyPageLogoutButton />
+      <div className="mt-6 space-y-0">
+        <MyPageSearchHistorySection
+          open={openSections.search}
+          onToggle={() => toggleSection("search")}
+        />
+        <MyPageDiagnosisSection
+          open={openSections.diagnosis}
+          onToggle={() => toggleSection("diagnosis")}
+        />
+      </div>
     </div>
   );
 }
