@@ -22,6 +22,11 @@ const CARDS = [
     description: "5種類の Checkout / Payment Link の登録・コピー・編集。",
   },
   {
+    href: "/admin/notifications",
+    title: "通知センター",
+    description: "Stripe決済・契約イベントなどの運営向け通知履歴。",
+  },
+  {
     href: "/admin/user-activity",
     title: "女の子利用状況",
     description: "求人閲覧・応募クリック・診断・報告などの匿名利用状況。",

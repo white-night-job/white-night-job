@@ -28,6 +28,11 @@ const NAV_ITEMS = [
     match: "prefix" as const,
   },
   {
+    href: "/admin/notifications",
+    label: "通知センター",
+    match: "prefix" as const,
+  },
+  {
     href: "/admin/user-activity",
     label: "女の子利用状況",
     match: "prefix" as const,

@@ -4,6 +4,12 @@ import type Stripe from "stripe";
 import { getErrorMessage } from "@/lib/api-error";
 import { getStripeServer, getStripeWebhookSecret } from "@/lib/stripe";
 import {
+  notifyStripeCanceled,
+  notifyStripeInvoicePaid,
+  notifyStripeNewContract,
+  notifyStripePaymentFailed,
+} from "@/lib/stripe-admin-notify";
+import {
   markInvoicePaid,
   markInvoicePaymentFailed,
   upsertSubscriptionFromStripe,
@@ -88,6 +94,14 @@ async function verifyEvent(request: Request): Promise<Stripe.Event> {
   return stripe.webhooks.constructEvent(payload, signature, getStripeWebhookSecret());
 }
 
+async function safeNotify(fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (error) {
+    console.error("[stripe-webhook] notify failed", error);
+  }
+}
+
 export async function POST(request: Request) {
   let event: Stripe.Event;
   try {
@@ -106,34 +120,80 @@ export async function POST(request: Request) {
         if (session.mode === "subscription" && session.subscription) {
           const stripe = getStripeServer();
           let sub = await stripe.subscriptions.retrieve(String(session.subscription), {
-            expand: ["customer", "latest_invoice"],
+            expand: ["customer", "latest_invoice", "items.data.price"],
           });
           const storeId = resolveStoreIdFromCheckout(session, sub);
           if (storeId && sub.metadata?.store_id !== storeId) {
             await attachStoreIdToStripeObjects(stripe, sub, storeId);
             sub = await stripe.subscriptions.retrieve(sub.id, {
-              expand: ["customer", "latest_invoice"],
+              expand: ["customer", "latest_invoice", "items.data.price"],
             });
           }
-          await upsertSubscriptionFromStripe(sub, {
+          const record = await upsertSubscriptionFromStripe(sub, {
             fallbackStoreId: storeId,
           });
+          await safeNotify(() =>
+            notifyStripeNewContract({
+              record,
+              stripeSubscription: sub,
+              sourceEvent: "checkout.session.completed",
+            }),
+          );
         }
         break;
       }
-      case "customer.subscription.created":
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
+      case "customer.subscription.created": {
+        const sub = event.data.object as Stripe.Subscription;
+        try {
+          const stripe = getStripeServer();
+          const full = await stripe.subscriptions.retrieve(sub.id, {
+            expand: ["customer", "latest_invoice", "items.data.price"],
+          });
+          const record = await upsertSubscriptionFromStripe(full);
+          await safeNotify(() =>
+            notifyStripeNewContract({
+              record,
+              stripeSubscription: full,
+              sourceEvent: "customer.subscription.created",
+            }),
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (message.includes("store_id is missing")) {
+            console.warn("[stripe-webhook] skip subscription.created without store_id", {
+              subscriptionId: sub.id,
+            });
+            break;
+          }
+          throw error;
+        }
+        break;
+      }
+      case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         try {
           await upsertSubscriptionFromStripe(sub);
         } catch (error) {
-          // Payment Link 直後は store_id 未付与のまま subscription.created が先に来る場合がある。
-          // checkout.session.completed 側で紐付けするため、ここでは再試行可能な一時失敗として握りつぶさない。
           const message = error instanceof Error ? error.message : String(error);
           if (message.includes("store_id is missing")) {
-            console.warn("[stripe-webhook] skip subscription event without store_id", {
-              type: event.type,
+            console.warn("[stripe-webhook] skip subscription.updated without store_id", {
+              subscriptionId: sub.id,
+            });
+            break;
+          }
+          throw error;
+        }
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        try {
+          const record = await upsertSubscriptionFromStripe(sub);
+          await safeNotify(() => notifyStripeCanceled({ record }));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (message.includes("store_id is missing")) {
+            console.warn("[stripe-webhook] skip subscription.deleted without store_id", {
               subscriptionId: sub.id,
             });
             break;
@@ -146,11 +206,19 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = getInvoiceSubscriptionId(invoice);
         if (subscriptionId) {
-          await markInvoicePaid(
+          const record = await markInvoicePaid(
             subscriptionId,
             invoice.period_start ?? null,
             invoice.period_end ?? null,
           );
+          if (record) {
+            await safeNotify(() =>
+              notifyStripeInvoicePaid({
+                record,
+                billingReason: invoice.billing_reason ?? null,
+              }),
+            );
+          }
         }
         break;
       }
@@ -158,7 +226,10 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = getInvoiceSubscriptionId(invoice);
         if (subscriptionId) {
-          await markInvoicePaymentFailed(subscriptionId);
+          const record = await markInvoicePaymentFailed(subscriptionId);
+          if (record) {
+            await safeNotify(() => notifyStripePaymentFailed({ record }));
+          }
         }
         break;
       }

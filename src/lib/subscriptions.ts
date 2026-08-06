@@ -233,10 +233,10 @@ export async function markInvoicePaid(
   stripeSubscriptionId: string,
   periodStartUnix?: number | null,
   periodEndUnix?: number | null,
-): Promise<void> {
+): Promise<SubscriptionRecord | null> {
   const supabase = createSupabaseAdmin();
   const record = await getSubscriptionByStripeId(stripeSubscriptionId);
-  if (!record) return;
+  if (!record) return null;
 
   const updates: Record<string, unknown> = {
     payment_status: "paid",
@@ -246,33 +246,38 @@ export async function markInvoicePaid(
       unixToIso(periodStartUnix) ?? record.currentPeriodStart,
     current_period_end: unixToIso(periodEndUnix) ?? record.currentPeriodEnd,
   };
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("subscriptions")
     .update(updates)
-    .eq("id", record.id);
+    .eq("id", record.id)
+    .select("*")
+    .single();
   if (error) throw error;
   await syncJobAccessFromSubscription(record.storeId, record.plan, "active");
+  return mapSubscriptionRow(data as SubscriptionDbRow);
 }
 
-export async function markInvoicePaymentFailed(stripeSubscriptionId: string): Promise<void> {
+export async function markInvoicePaymentFailed(
+  stripeSubscriptionId: string,
+): Promise<SubscriptionRecord | null> {
   const supabase = createSupabaseAdmin();
   const record = await getSubscriptionByStripeId(stripeSubscriptionId);
-  if (!record) return;
+  if (!record) return null;
   const failed = (record.paymentFailedCount ?? 0) + 1;
-  const { error } = await supabase
+  const nextStatus = failed >= 3 ? "unpaid" : "past_due";
+  const { data, error } = await supabase
     .from("subscriptions")
     .update({
       payment_status: "payment_failed",
-      status: failed >= 3 ? "unpaid" : "past_due",
+      status: nextStatus,
       payment_failed_count: failed,
     })
-    .eq("id", record.id);
+    .eq("id", record.id)
+    .select("*")
+    .single();
   if (error) throw error;
-  await syncJobAccessFromSubscription(
-    record.storeId,
-    record.plan,
-    failed >= 3 ? "unpaid" : "past_due",
-  );
+  await syncJobAccessFromSubscription(record.storeId, record.plan, nextStatus);
+  return mapSubscriptionRow(data as SubscriptionDbRow);
 }
 
 export async function syncJobAccessFromSubscription(
