@@ -66,7 +66,14 @@ export default function LegalPage() {
         {
           id: "price",
           title: "販売価格",
-          content: <p>掲載プランごとに表示</p>,
+          content: (
+            <>
+              <p>ライトプラン：月額12,000円（税込）</p>
+              <p>スタンダードプラン：月額33,000円（税込）</p>
+              <p>プレミアムプラン：月額55,000円（税込）</p>
+              <p>※キャンペーン価格が適用される場合があります。</p>
+            </>
+          ),
         },
         {
           id: "additional-fees",
@@ -76,12 +83,18 @@ export default function LegalPage() {
         {
           id: "payment-method",
           title: "支払方法",
-          content: <p>クレジットカード決済</p>,
+          content: (
+            <>
+              <p>・クレジットカード決済</p>
+              <p>・口座振替</p>
+              <p>・口座振込</p>
+            </>
+          ),
         },
         {
           id: "payment-timing",
           title: "支払時期",
-          content: <p>申込時</p>,
+          content: <p>契約時</p>,
         },
         {
           id: "delivery",
@@ -95,8 +108,8 @@ export default function LegalPage() {
         },
         {
           id: "cancellation",
-          title: "解約について",
-          content: <p>契約更新前までに申請</p>,
+          title: "解約方法について",
+          content: <p>次回更新前に解約依頼を申請。</p>,
         },
         {
           id: "refund",
