@@ -23,6 +23,11 @@ const NAV_ITEMS = [
     match: "prefix" as const,
   },
   {
+    href: "/admin/stripe-checkout-links",
+    label: "Stripe決済リンク管理",
+    match: "prefix" as const,
+  },
+  {
     href: "/admin/user-activity",
     label: "女の子利用状況",
     match: "prefix" as const,

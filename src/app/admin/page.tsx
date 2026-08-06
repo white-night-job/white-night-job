@@ -17,6 +17,11 @@ const CARDS = [
     description: "契約一覧、プラン変更、停止・再開・解約の管理。",
   },
   {
+    href: "/admin/stripe-checkout-links",
+    title: "Stripe決済リンク管理",
+    description: "5種類の Checkout / Payment Link の登録・コピー・編集。",
+  },
+  {
     href: "/admin/user-activity",
     title: "女の子利用状況",
     description: "求人閲覧・応募クリック・診断・報告などの匿名利用状況。",
