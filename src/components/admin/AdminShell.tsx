@@ -17,6 +17,11 @@ const NAV_ITEMS = [
     label: "掲載審査管理",
     match: "prefix" as const,
   },
+  {
+    href: "/admin/girl-reviews",
+    label: "口コミ評価管理",
+    match: "prefix" as const,
+  },
   { href: "/admin/jobs", label: "求人管理", match: "prefix" as const },
   {
     href: "/admin/subscriptions",

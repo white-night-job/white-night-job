@@ -5,13 +5,12 @@ import {
   GIRL_REVIEW_CATEGORY_LABELS,
   type GirlReview,
   type GirlReviewCategory,
-  type GirlReviewInput,
+  type GirlReviewContentInput,
 } from "@/types/girl-review";
 import { formatStarRating } from "@/lib/girl-reviews";
 
-const emptyForm = (): GirlReviewInput & { id?: string } => ({
+const emptyForm = (): GirlReviewContentInput => ({
   category: "interview",
-  rating: 5,
   nickname: "",
   age: 20,
   comment: "",
@@ -78,7 +77,6 @@ export function ShopGirlReviewsManager({
     setEditingId(review.id);
     setForm({
       category: review.category,
-      rating: review.rating,
       nickname: review.nickname,
       age: review.age,
       comment: review.comment,
@@ -105,7 +103,11 @@ export function ShopGirlReviewsManager({
       if (!response.ok) {
         throw new Error(data.message || "保存に失敗しました。");
       }
-      setMessage(editingId ? "口コミを更新しました。" : "口コミを公開しました。");
+      setMessage(
+        editingId
+          ? "口コミを更新しました。本文を変更した場合は星評価を再判定しています。"
+          : "口コミを公開しました。星評価はAIが自動判定しています。",
+      );
       startCreate();
       await load();
     } catch (err) {
@@ -154,7 +156,7 @@ export function ShopGirlReviewsManager({
       {open && (
         <div className="mt-4 space-y-5">
           <p className="text-sm leading-relaxed text-muted">
-            求人詳細の「女の子の口コミ」に即時公開されます。あだ名・年齢・星評価・感じたことを登録できます。
+            求人詳細の「女の子の口コミ」に即時公開されます。ニックネーム・年齢・口コミ内容を登録してください。星評価はAIが自動判定し、店舗側では変更できません。
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-gold/20 bg-ivory/60 p-4">
@@ -181,31 +183,9 @@ export function ShopGirlReviewsManager({
               </select>
             </label>
 
-            <fieldset>
-              <legend className={labelClass}>星評価</legend>
-              <div className="mt-1 flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() =>
-                      setForm((current) => ({ ...current, rating: value }))
-                    }
-                    className={`min-h-10 rounded-full border px-3 text-sm ${
-                      form.rating === value
-                        ? "border-gold bg-champagne/50 font-semibold text-gold-dark"
-                        : "border-gold/30 bg-white text-muted"
-                    }`}
-                  >
-                    {formatStarRating(value)}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className={labelClass}>あだ名</span>
+                <span className={labelClass}>ニックネーム</span>
                 <input
                   value={form.nickname}
                   onChange={(event) =>
@@ -239,7 +219,7 @@ export function ShopGirlReviewsManager({
             </div>
 
             <label className="block">
-              <span className={labelClass}>感じたこと（20〜500文字）</span>
+              <span className={labelClass}>口コミ内容（20〜500文字）</span>
               <textarea
                 value={form.comment}
                 onChange={(event) =>
@@ -255,6 +235,9 @@ export function ShopGirlReviewsManager({
               />
               <span className="mt-1 block text-xs text-muted">
                 {[...form.comment.trim()].length}文字
+                {[...form.comment.trim()].length >= 80
+                  ? "（★5付与の文字数条件を満たしています）"
+                  : "（★5には80文字以上が必要です）"}
               </span>
             </label>
 
@@ -303,6 +286,7 @@ export function ShopGirlReviewsManager({
                     </p>
                     <p className="mt-1 text-sm text-gold-dark">
                       {formatStarRating(review.rating)}
+                      <span className="ml-2 text-xs text-muted">（AI自動評価）</span>
                     </p>
                     <p className="mt-1 text-sm font-semibold text-charcoal">
                       {review.nickname}（{review.age}歳）

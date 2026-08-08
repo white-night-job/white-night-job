@@ -2257,7 +2257,7 @@ function AdminJobsPageInner() {
           <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
             <p className={labelClass}>採用担当からのメッセージ</p>
             <p className="mb-4 text-xs text-muted">
-              求人詳細ページの「女の子の口コミ」の下に表示されます。口コミは店舗ダッシュボードの「女の子の口コミ管理」から登録します。
+              求人詳細ページの「女の子の口コミ」の下に表示されます。口コミは店舗ダッシュボードの「女の子の口コミ管理」から登録します（星評価はAI自動判定。手動修正は管理画面の口コミ評価管理）。
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

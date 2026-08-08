@@ -4,7 +4,7 @@ import {
   createGirlReview,
   listGirlReviewsForJob,
 } from "@/lib/girl-reviews-db";
-import { validateGirlReviewInput } from "@/lib/girl-reviews";
+import { validateGirlReviewContentInput } from "@/lib/girl-reviews";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const validated = validateGirlReviewInput(body);
+    // 店舗・投稿者からの星評価は受け付けない（サーバ側でAI判定）
+    if (body && typeof body === "object" && "rating" in body) {
+      delete (body as { rating?: unknown }).rating;
+    }
+    const validated = validateGirlReviewContentInput(body);
     if (!validated.ok) {
       return NextResponse.json({ message: validated.message }, { status: 400 });
     }

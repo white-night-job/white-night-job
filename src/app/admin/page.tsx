@@ -8,6 +8,11 @@ const CARDS = [
     description: "店舗掲載申請の一覧確認、承認・保留・却下、管理メモ。",
   },
   {
+    href: "/admin/girl-reviews",
+    title: "口コミ評価管理",
+    description: "女の子の口コミのAI評価確認と、公開星評価の手動修正。",
+  },
+  {
     href: "/admin/jobs",
     title: "求人管理",
     description: "掲載店舗の検索、求人の追加・編集、公開状態の管理。",

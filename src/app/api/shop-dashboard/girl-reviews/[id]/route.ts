@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
-import { validateGirlReviewInput } from "@/lib/girl-reviews";
+import { validateGirlReviewContentInput } from "@/lib/girl-reviews";
 import {
   deleteGirlReview,
-  updateGirlReview,
+  updateGirlReviewContent,
 } from "@/lib/girl-reviews-db";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 
@@ -26,12 +26,15 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     const body = await request.json();
-    const validated = validateGirlReviewInput(body);
+    if (body && typeof body === "object" && "rating" in body) {
+      delete (body as { rating?: unknown }).rating;
+    }
+    const validated = validateGirlReviewContentInput(body);
     if (!validated.ok) {
       return NextResponse.json({ message: validated.message }, { status: 400 });
     }
 
-    const review = await updateGirlReview(jobId, id, validated.value);
+    const review = await updateGirlReviewContent(jobId, id, validated.value);
     if (!review) {
       return NextResponse.json({ message: "口コミが見つかりません。" }, { status: 404 });
     }

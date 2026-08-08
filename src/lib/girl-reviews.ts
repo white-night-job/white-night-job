@@ -1,8 +1,9 @@
 import type {
+  AdminGirlReview,
   GirlReview,
   GirlReviewCategory,
+  GirlReviewContentInput,
   GirlReviewCounts,
-  GirlReviewInput,
 } from "@/types/girl-review";
 import { GIRL_REVIEW_CATEGORIES } from "@/types/girl-review";
 
@@ -14,8 +15,11 @@ export type GirlReviewRow = {
   nickname: string;
   age: number;
   comment: string;
+  ai_rating?: number | null;
+  ai_rating_reason?: string | null;
   created_at: string;
   updated_at: string;
+  jobs?: { shop_name?: string | null } | null;
 };
 
 export function isGirlReviewCategory(value: unknown): value is GirlReviewCategory {
@@ -39,9 +43,21 @@ export function rowToGirlReview(row: GirlReviewRow): GirlReview {
   };
 }
 
-export function validateGirlReviewInput(
+export function rowToAdminGirlReview(row: GirlReviewRow): AdminGirlReview {
+  return {
+    ...rowToGirlReview(row),
+    jobShopName: row.jobs?.shop_name?.trim() || null,
+    aiRating:
+      row.ai_rating == null || Number.isNaN(Number(row.ai_rating))
+        ? null
+        : Number(row.ai_rating),
+    aiRatingReason: row.ai_rating_reason?.trim() || null,
+  };
+}
+
+export function validateGirlReviewContentInput(
   raw: unknown,
-): { ok: true; value: GirlReviewInput } | { ok: false; message: string } {
+): { ok: true; value: GirlReviewContentInput } | { ok: false; message: string } {
   if (!raw || typeof raw !== "object") {
     return { ok: false, message: "入力内容が不正です。" };
   }
@@ -54,17 +70,12 @@ export function validateGirlReviewInput(
     };
   }
 
-  const rating = Number(body.rating);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return { ok: false, message: "星評価は1〜5で選択してください。" };
-  }
-
   const nickname = String(body.nickname ?? "").trim();
   if (!nickname) {
-    return { ok: false, message: "あだ名は必須です。" };
+    return { ok: false, message: "ニックネームは必須です。" };
   }
   if (nickname.length > 40) {
-    return { ok: false, message: "あだ名は40文字以内にしてください。" };
+    return { ok: false, message: "ニックネームは40文字以内にしてください。" };
   }
 
   const age = Number(body.age);
@@ -77,7 +88,7 @@ export function validateGirlReviewInput(
   if (commentLen < 20 || commentLen > 500) {
     return {
       ok: false,
-      message: "感じたことは20〜500文字で入力してください。",
+      message: "口コミ内容は20〜500文字で入力してください。",
     };
   }
 
@@ -85,12 +96,16 @@ export function validateGirlReviewInput(
     ok: true,
     value: {
       category: body.category,
-      rating,
       nickname,
       age,
       comment,
     },
   };
+}
+
+/** @deprecated Use validateGirlReviewContentInput */
+export function validateGirlReviewInput(raw: unknown) {
+  return validateGirlReviewContentInput(raw);
 }
 
 export function countGirlReviewsByCategory(
