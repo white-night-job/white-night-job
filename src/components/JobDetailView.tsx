@@ -358,8 +358,6 @@ export function JobDetailView({
           <div className="space-y-6 px-5 py-6 sm:px-8">
             <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
 
-            <GirlReviewsSection reviews={girlReviews} />
-
             {showExtras && displayStoreImages.length > 0 ? (
               <StoreImagesGallery
                 images={displayStoreImages}
@@ -566,6 +564,8 @@ export function JobDetailView({
                 onPreviewNotice={() => showPreviewNotice()}
               />
             </div>
+
+            <GirlReviewsSection reviews={girlReviews} />
           </div>
         </article>
 
