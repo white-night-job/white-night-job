@@ -357,6 +357,16 @@ export function JobDetailView({
           </div>
           <div className="space-y-6 px-5 py-6 sm:px-8">
             <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
+
+            <GirlReviewsSection reviews={girlReviews} />
+
+            {showExtras && displayStoreImages.length > 0 ? (
+              <StoreImagesGallery
+                images={displayStoreImages}
+                shopName={job.shopName}
+              />
+            ) : null}
+
             <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
               <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal">
                 <span className="text-gold-dark">◆</span>
@@ -465,15 +475,6 @@ export function JobDetailView({
                 onPreviewNotice={() => showPreviewNotice()}
               />
             </div>
-
-            {showExtras && displayStoreImages.length > 0 ? (
-              <StoreImagesGallery
-                images={displayStoreImages}
-                shopName={job.shopName}
-              />
-            ) : null}
-
-            <GirlReviewsSection reviews={girlReviews} />
 
             {showExtras ? (
               <>
