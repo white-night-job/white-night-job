@@ -11,6 +11,7 @@ import {
   formatDiagnosisDate,
   type SavedDiagnosisResult,
 } from "@/lib/job-type-diagnosis";
+import { formatPreferredAreasLabel } from "@/lib/job-type-diagnosis-recommendations";
 
 function parseDiagnosis(raw: unknown): SavedDiagnosisResult[] {
   const payload = (raw ?? {}) as {
@@ -69,6 +70,14 @@ export function MyPageDiagnosisSection({ open, onToggle }: MyPageAccordionProps)
                   <p className="mt-1 text-sm text-muted">適性 {entry.secondPercent}%</p>
                 </div>
               </div>
+              {entry.preferredAreas && entry.preferredAreas.length > 0 ? (
+                <p className="mt-3 text-sm text-charcoal">
+                  <span className="text-xs font-semibold text-gold-dark">希望エリア</span>
+                  <span className="mt-1 block">
+                    {formatPreferredAreasLabel(entry.preferredAreas)}
+                  </span>
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>

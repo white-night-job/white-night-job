@@ -17,7 +17,9 @@ function scoreAnswers(answers: DiagnosisAnswers): ScoreMap {
   const scores = EMPTY_SCORES();
 
   for (const rule of JOB_TYPE_DIAGNOSIS_CONFIG.scoringRules) {
-    if (answers[rule.key] !== rule.value) continue;
+    const answered = answers[rule.key as keyof DiagnosisAnswers];
+    // 希望エリア（配列）は職種スコア対象外
+    if (Array.isArray(answered) || answered !== rule.value) continue;
     for (const type of DIAGNOSIS_JOB_TYPES) {
       scores[type] += rule.weights[type] ?? 0;
     }

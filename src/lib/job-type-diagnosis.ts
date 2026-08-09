@@ -12,6 +12,7 @@ export {
 export type {
   DiagnosisAnswers,
   DiagnosisJobType,
+  DiagnosisPreferredArea,
   DiagnosisQuestion,
   DiagnosisResult,
   DiagnosisResultItem,
@@ -19,4 +20,14 @@ export type {
   SavedDiagnosisResult,
 } from "@/lib/job-type-diagnosis-types";
 
-export { DIAGNOSIS_JOB_TYPES } from "@/lib/job-type-diagnosis-types";
+export {
+  DIAGNOSIS_JOB_TYPES,
+  DIAGNOSIS_PREFERRED_AREA_OPTIONS,
+} from "@/lib/job-type-diagnosis-types";
+
+export {
+  formatDiagnosisDistrictLabel,
+  formatPreferredAreasLabel,
+  parsePreferredAreasFromAnswers,
+  pickRecommendedDiagnosisShops,
+} from "@/lib/job-type-diagnosis-recommendations";

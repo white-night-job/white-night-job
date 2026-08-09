@@ -1,8 +1,23 @@
-import type { DiagnosisAnswers, DiagnosisJobType, DiagnosisQuestion } from "@/lib/job-type-diagnosis-types";
+import type {
+  DiagnosisJobType,
+  DiagnosisQuestion,
+  DiagnosisSingleAnswerKey,
+} from "@/lib/job-type-diagnosis-types";
+import { DIAGNOSIS_PREFERRED_AREA_OPTIONS } from "@/lib/job-type-diagnosis-types";
 
 /** 管理画面から差し替え可能な診断設定（質問・スコア・表示文言） */
 export const JOB_TYPE_DIAGNOSIS_CONFIG = {
   questions: [
+    {
+      key: "preferredAreas",
+      title: "働きたいエリアを選んでください",
+      hint: "※複数選択できます",
+      multiSelect: true,
+      options: DIAGNOSIS_PREFERRED_AREA_OPTIONS.map((option) => ({
+        label: option.label,
+        value: option.value,
+      })),
+    },
     {
       key: "priority",
       title: "夜職で一番重視することは？",
@@ -176,7 +191,7 @@ export const JOB_TYPE_DIAGNOSIS_CONFIG = {
     { key: "personality", value: "fashionable", weights: { "キャバクラ（ニュークラブ）": 5, クラブ: 4, ラウンジ: 4 } },
     { key: "personality", value: "competitive", weights: { クラブ: 5, "キャバクラ（ニュークラブ）": 4, ラウンジ: 3 } },
   ] as Array<{
-    key: keyof DiagnosisAnswers;
+    key: DiagnosisSingleAnswerKey;
     value: string;
     weights: Partial<Record<DiagnosisJobType, number>>;
   }>,
@@ -231,7 +246,7 @@ export const JOB_TYPE_DIAGNOSIS_CONFIG = {
   } satisfies Record<DiagnosisJobType, number>,
 
   shopReasonTemplates: [
-    "診断結果の第1位職種にマッチしています",
+    "希望エリア・診断結果の第1位職種にマッチしています",
     "未経験でも始めやすい雰囲気のお店です",
     "優良認定店舗で安心して応募できます",
     "あなたの重視ポイントに合う条件が揃っています",

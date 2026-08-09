@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { DiagnosisAnswers, DiagnosisJobType } from "@/lib/job-type-diagnosis";
 import { DIAGNOSIS_JOB_TYPES } from "@/lib/job-type-diagnosis";
+import { parsePreferredAreasFromAnswers } from "@/lib/job-type-diagnosis-recommendations";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
 
@@ -19,7 +20,9 @@ function mapHistoryRow(row: {
   first_percent: number;
   second_job_type: string;
   second_percent: number;
+  answers?: unknown;
 }) {
+  const preferredAreas = parsePreferredAreasFromAnswers(row.answers);
   return {
     id: row.id,
     diagnosedAt: row.diagnosed_at,
@@ -27,6 +30,7 @@ function mapHistoryRow(row: {
     firstPercent: row.first_percent,
     secondJobType: row.second_job_type,
     secondPercent: row.second_percent,
+    preferredAreas,
   };
 }
 
@@ -35,7 +39,7 @@ async function fetchUserHistory(userId: string) {
   const { data, error } = await supabase
     .from("user_job_type_diagnoses")
     .select(
-      "id, diagnosed_at, first_job_type, first_percent, second_job_type, second_percent",
+      "id, diagnosed_at, first_job_type, first_percent, second_job_type, second_percent, answers",
     )
     .eq("user_id", userId)
     .order("diagnosed_at", { ascending: false })

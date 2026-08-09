@@ -1,4 +1,5 @@
 import type { JobType } from "@/types/job";
+import type { District } from "@/types/job";
 
 export const DIAGNOSIS_JOB_TYPES = [
   "コンカフェ",
@@ -11,7 +12,19 @@ export const DIAGNOSIS_JOB_TYPES = [
 
 export type DiagnosisJobType = (typeof DIAGNOSIS_JOB_TYPES)[number];
 
+/** 診断で選択する希望エリア（DBの district 値と一致。表示は北24条） */
+export const DIAGNOSIS_PREFERRED_AREA_OPTIONS = [
+  { label: "すすきの", value: "すすきの" },
+  { label: "琴似", value: "琴似" },
+  { label: "北24条", value: "24条" },
+  { label: "手稲", value: "手稲" },
+] as const satisfies ReadonlyArray<{ label: string; value: District }>;
+
+export type DiagnosisPreferredArea =
+  (typeof DIAGNOSIS_PREFERRED_AREA_OPTIONS)[number]["value"];
+
 export type DiagnosisAnswers = {
+  preferredAreas: DiagnosisPreferredArea[] | null;
   priority: string | null;
   experience: string | null;
   age: string | null;
@@ -25,9 +38,17 @@ export type DiagnosisAnswers = {
   personality: string | null;
 };
 
+export type DiagnosisSingleAnswerKey = Exclude<
+  keyof DiagnosisAnswers,
+  "preferredAreas"
+>;
+
 export type DiagnosisQuestion = {
   key: keyof DiagnosisAnswers;
   title: string;
+  hint?: string;
+  /** true のとき複数選択（preferredAreas 用） */
+  multiSelect?: boolean;
   options: { label: string; value: string }[];
 };
 
@@ -63,6 +84,8 @@ export type SavedDiagnosisResult = {
   firstPercent: number;
   secondJobType: DiagnosisJobType | string;
   secondPercent: number;
+  /** 希望エリア（district 値）。旧データは空配列 */
+  preferredAreas?: DiagnosisPreferredArea[];
 };
 
 export type RecommendedDiagnosisShop = {

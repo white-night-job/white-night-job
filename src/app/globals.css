@@ -5006,10 +5006,61 @@ body.compare-bar-visible .chatbot-panel-slot {
   color: #1a1612;
 }
 
+.job-diagnosis-question-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  color: #8a8070;
+}
+
 .job-diagnosis-options {
   margin-top: 0.875rem;
   display: grid;
   gap: 0.625rem;
+}
+
+.job-diagnosis-option-check {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.job-diagnosis-option-check.is-selected {
+  border-color: rgba(196, 165, 116, 0.7);
+  background: rgba(196, 165, 116, 0.14);
+}
+
+.job-diagnosis-checkbox {
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.job-diagnosis-multi-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #b42318;
+}
+
+.job-diagnosis-multi-next {
+  margin-top: 0.875rem;
+  display: inline-flex;
+  min-height: 2.875rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: linear-gradient(90deg, #c4a574, #a8863d);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.job-diagnosis-preferred-areas {
+  margin: 0.25rem 0 1rem;
+  font-size: 0.875rem;
+  color: #8a8070;
 }
 
 .job-diagnosis-option {
@@ -5464,8 +5515,20 @@ body.compare-bar-visible .chatbot-panel-slot {
   color: #8b6f3e;
 }
 
+.job-diagnosis-shop-reason-block {
+  margin-top: 0.75rem;
+}
+
+.job-diagnosis-shop-reason-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #8b6f3e;
+}
+
 .job-diagnosis-shop-reason {
-  margin: 0.75rem 0 0;
+  margin: 0.35rem 0 0;
   font-size: 0.75rem;
   line-height: 1.65;
   color: rgba(42, 34, 24, 0.72);

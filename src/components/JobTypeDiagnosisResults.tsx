@@ -17,7 +17,10 @@ import {
   type RecommendedDiagnosisShop,
   type SavedDiagnosisResult,
 } from "@/lib/job-type-diagnosis";
-import { pickRecommendedDiagnosisShops } from "@/lib/job-type-diagnosis-recommendations";
+import {
+  formatPreferredAreasLabel,
+  pickRecommendedDiagnosisShops,
+} from "@/lib/job-type-diagnosis-recommendations";
 import { fetchJobs } from "@/lib/job-storage";
 import { startLiffLogin } from "@/lib/liff-auth-client";
 import { logLiffDebug, navigateToWebLineOAuth } from "@/lib/liff-login-intent";
@@ -130,7 +133,10 @@ function RecommendedShopCard({ shop }: { shop: RecommendedDiagnosisShop }) {
             <dd>{shop.jobType}</dd>
           </div>
         </dl>
-        <p className="job-diagnosis-shop-reason">{shop.reason}</p>
+        <div className="job-diagnosis-shop-reason-block">
+          <p className="job-diagnosis-shop-reason-label">診断とのマッチ理由</p>
+          <p className="job-diagnosis-shop-reason">{shop.reason}</p>
+        </div>
         <Link href={shop.detailUrl} className="job-diagnosis-shop-detail-btn">
           詳しく見る
         </Link>
@@ -162,6 +168,7 @@ export function JobTypeDiagnosisResults({
   const socialProof = getSocialProofApplyRate(result.topTwo[0].jobType);
   const primaryJobsUrl = buildDiagnosisJobsUrl(result.topTwo[0].jobType);
   const trialJobsUrl = buildDiagnosisTrialJobsUrl(result.topTwo[0].jobType);
+  const preferredAreasLabel = formatPreferredAreasLabel(answers.preferredAreas);
 
   function goCompareRecommended() {
     const ids = recommendedShops.map((shop) => shop.jobId).slice(0, 3);
@@ -180,7 +187,9 @@ export function JobTypeDiagnosisResults({
     fetchJobs()
       .then((jobs) => {
         if (cancelled) return;
-        setRecommendedShops(pickRecommendedDiagnosisShops(jobs, result, 3));
+        setRecommendedShops(
+          pickRecommendedDiagnosisShops(jobs, result, answers, 10),
+        );
       })
       .finally(() => {
         if (!cancelled) setLoadingShops(false);
@@ -189,7 +198,7 @@ export function JobTypeDiagnosisResults({
     return () => {
       cancelled = true;
     };
-  }, [result]);
+  }, [result, answers]);
 
   useEffect(() => {
     if (!isLoggedIn || !ready) {
@@ -277,6 +286,11 @@ export function JobTypeDiagnosisResults({
   return (
     <div className="job-diagnosis-results job-diagnosis-results-visible">
       <p className="job-diagnosis-results-heading font-serif">診断結果</p>
+      {preferredAreasLabel ? (
+        <p className="job-diagnosis-preferred-areas">
+          希望エリア：{preferredAreasLabel}
+        </p>
+      ) : null}
 
       <MedalCard rank={1} item={result.topTwo[0]} delayMs={80} />
       <MedalCard rank={2} item={result.topTwo[1]} delayMs={180} />
@@ -301,7 +315,7 @@ export function JobTypeDiagnosisResults({
           おすすめ店舗
         </h3>
         <p className="job-diagnosis-section-lead">
-          診断結果に合わせて、あなたに合いそうなお店をピックアップしました。
+          あなたの診断結果と希望エリアに合うお店をピックアップしました。
         </p>
 
         {loadingShops ? (
@@ -315,9 +329,7 @@ export function JobTypeDiagnosisResults({
         ) : (
           <div className="job-diagnosis-shops-empty">
             <p>
-              現在、診断結果に合う掲載店舗はありません。
-              <br />
-              店舗検索をご利用ください。
+              現在、診断結果と希望エリアの両方に一致するおすすめ店舗はありません。
             </p>
             <Link href="/#shop-search" className="job-diagnosis-shops-search-btn">
               店舗を検索する
@@ -368,6 +380,12 @@ export function JobTypeDiagnosisResults({
                   <p>
                     <span>第2位</span> {entry.secondJobType}（{entry.secondPercent}%）
                   </p>
+                  {entry.preferredAreas && entry.preferredAreas.length > 0 ? (
+                    <p>
+                      <span>希望エリア</span>{" "}
+                      {formatPreferredAreasLabel(entry.preferredAreas)}
+                    </p>
+                  ) : null}
                 </div>
               </li>
             ))}
@@ -409,7 +427,7 @@ export function JobTypeDiagnosisResults({
           disabled={loadingShops}
           className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-gold/40 bg-charcoal px-5 text-sm font-semibold text-gold-light disabled:opacity-60"
         >
-          あなたにおすすめの3店舗を比較する
+          あなたにおすすめの店舗を比較する
         </button>
       )}
     </div>
