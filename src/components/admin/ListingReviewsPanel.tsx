@@ -7,7 +7,6 @@ import {
   LISTING_APPLICANT_TYPE_LABELS,
   LISTING_APPLICATION_STATUS_LABELS,
   isListingApplicantType,
-  planLabel,
   type ListingApplicationStatus,
 } from "@/lib/listing-application";
 
@@ -614,7 +613,6 @@ export function ListingReviewsPanel() {
               <th className="px-3 py-2">担当者</th>
               <th className="px-3 py-2">エリア</th>
               <th className="px-3 py-2">業種</th>
-              <th className="px-3 py-2">選択プラン</th>
               <th className="px-3 py-2">審査ステータス</th>
               <th className="px-3 py-2">詳細</th>
             </tr>
@@ -622,13 +620,13 @@ export function ListingReviewsPanel() {
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-3 py-4 text-muted" colSpan={9}>
+                <td className="px-3 py-4 text-muted" colSpan={8}>
                   読み込み中...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-3 py-4 text-muted" colSpan={9}>
+                <td className="px-3 py-4 text-muted" colSpan={8}>
                   申請はまだありません。
                 </td>
               </tr>
@@ -650,7 +648,6 @@ export function ListingReviewsPanel() {
                   <td className="px-3 py-2">{item.contactName}</td>
                   <td className="px-3 py-2">{item.area || "—"}</td>
                   <td className="px-3 py-2">{item.businessType}</td>
-                  <td className="px-3 py-2">{item.requestedPlanLabel}</td>
                   <td className="px-3 py-2">
                     <span className="inline-flex rounded-full border border-gold/30 bg-ivory px-2 py-0.5 text-xs">
                       {statusBadgeLabel(item.status)}
@@ -739,13 +736,6 @@ export function ListingReviewsPanel() {
                   ["業種", detail.business_type],
                   ["営業時間", detail.business_hours],
                   ["オープン日", detail.open_date],
-                  [
-                    "選択プラン",
-                    detail.requestedPlanLabel ??
-                      (detail.requested_plan
-                        ? planLabel(detail.requested_plan)
-                        : null),
-                  ],
                 ] as Array<[string, unknown]>
               ).map(([label, value]) => (
                 <div key={label} className="rounded-lg bg-ivory/70 px-3 py-2">

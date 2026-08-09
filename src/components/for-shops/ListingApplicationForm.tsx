@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -9,14 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  formatJpyPrice,
-  JOB_PLAN_DEFINITIONS,
-  JOB_PLAN_MONTHLY_PRICES,
-  JOB_PLANS,
-  isJobPlan,
-  type JobPlan,
-} from "@/lib/job-plan";
 import {
   isListingApplicantType,
   type ListingApplicantType,
@@ -82,7 +74,6 @@ const STEPS = [
   { id: 5, title: FORM_I18N.steps[4] },
   { id: 6, title: FORM_I18N.steps[5] },
   { id: 7, title: FORM_I18N.steps[6] },
-  { id: 8, title: FORM_I18N.steps[7] },
 ] as const;
 
 const DOC_ACCEPT =
@@ -131,7 +122,6 @@ type FormState = {
   entertainmentLicenseDocument: ListingDocumentMeta | null;
   lateNightAlcoholNotificationDocument: ListingDocumentMeta | null;
   openDate: string;
-  requestedPlan: JobPlan | "";
   consentAccuracy: boolean;
   consentTerms: boolean;
   consentAntisocial: boolean;
@@ -172,7 +162,6 @@ const EMPTY: FormState = {
   entertainmentLicenseDocument: null,
   lateNightAlcoholNotificationDocument: null,
   openDate: "",
-  requestedPlan: "",
   consentAccuracy: false,
   consentTerms: false,
   consentAntisocial: false,
@@ -188,14 +177,6 @@ const EMPTY_LOCAL: LocalFilesState = {
   identityDocumentFront: null,
   identityDocumentBack: null,
 };
-
-export function planNameJa(plan: JobPlan): string {
-  return `${JOB_PLAN_DEFINITIONS[plan].label}${FORM_I18N.planSuffix}`;
-}
-
-export function planPriceJa(plan: JobPlan): string {
-  return `${FORM_I18N.planPricePrefix} ${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}${FORM_I18N.planPriceSuffix}`;
-}
 
 export function formatBytes(size: number): string {
   if (!Number.isFinite(size) || size < 0) return FORM_I18N.emDash;
@@ -228,7 +209,6 @@ function loadDraft(): FormState | null {
       shopInteriorImages: Array.isArray(parsed.shopInteriorImages)
         ? parsed.shopInteriorImages
         : [],
-      requestedPlan: isJobPlan(parsed.requestedPlan) ? parsed.requestedPlan : "",
       applicantType: isListingApplicantType(parsed.applicantType)
         ? parsed.applicantType
         : "",
@@ -399,11 +379,6 @@ function validateStep(
     if (!form.openDate.trim()) errors.openDate = FORM_I18N.errOpenDate;
   }
   if (step === 5) {
-    if (!isJobPlan(form.requestedPlan)) {
-      errors.requestedPlan = FORM_I18N.errPlan;
-    }
-  }
-  if (step === 6) {
     if (!form.consentAccuracy) {
       errors.consentAccuracy = FORM_I18N.errConsentAccuracy;
     }
@@ -414,7 +389,7 @@ function validateStep(
       errors.consentAntisocial = FORM_I18N.errConsentAntisocial;
     }
   }
-  if (step === 7) {
+  if (step === 6) {
     const exteriorEmpty = form.shopExteriorImages.length === 0;
     const interiorEmpty = form.shopInteriorImages.length === 0;
     if (exteriorEmpty && interiorEmpty) {
@@ -445,7 +420,6 @@ function Field({
 
 export function ListingApplicationForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [localFiles, setLocalFiles] = useState<LocalFilesState>(EMPTY_LOCAL);
@@ -546,8 +520,6 @@ export function ListingApplicationForm() {
       window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
       window.sessionStorage.removeItem(RETURN_FORM_KEY);
     }
-    const planParam = searchParams.get("plan");
-    const planFromUrl = isJobPlan(planParam) ? planParam : null;
     if (restoredForm) {
       const merged = {
         ...EMPTY,
@@ -562,7 +534,6 @@ export function ListingApplicationForm() {
         shopInteriorImages: Array.isArray(merged.shopInteriorImages)
           ? merged.shopInteriorImages
           : [],
-        requestedPlan: isJobPlan(merged.requestedPlan) ? merged.requestedPlan : "",
         applicantType: isListingApplicantType(merged.applicantType)
           ? merged.applicantType
           : "",
@@ -574,15 +545,13 @@ export function ListingApplicationForm() {
         identityDocumentBack: merged.identityDocumentBack ?? null,
       });
     } else if (draft) {
-      setForm({
-        ...draft,
-        requestedPlan: planFromUrl ?? draft.requestedPlan,
-      });
-    } else if (planFromUrl) {
-      setForm((c) => ({ ...c, requestedPlan: planFromUrl }));
+      setForm(draft);
     }
     if (restoredStep) {
-      setStep(restoredStep);
+      // 旧8ステップ（5=希望プラン）からの復帰を新7ステップへ寄せる
+      const mappedStep =
+        restoredStep >= 6 ? restoredStep - 1 : Math.min(restoredStep, STEPS.length);
+      setStep(Math.min(STEPS.length, Math.max(1, mappedStep)));
       restoredFromReturnRef.current = restoredFromReturn;
       restoreScrollYRef.current = restoredScrollY;
     }
@@ -601,7 +570,7 @@ export function ListingApplicationForm() {
       interior: initialInterior.length,
     };
     setHydrated(true);
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -1034,27 +1003,20 @@ export function ListingApplicationForm() {
       return;
     }
 
-    const consentErrors = validateStep(6, form, localFiles);
+    const consentErrors = validateStep(5, form, localFiles);
     if (Object.keys(consentErrors).length > 0) {
       setFieldErrors(consentErrors);
       setSubmitMessage(FORM_I18N.errGeneric);
       shouldScrollRef.current = true;
-      setStep(6);
-      return;
-    }
-    if (!isJobPlan(form.requestedPlan)) {
-      setFieldErrors({ requestedPlan: FORM_I18N.errPlan });
-      setSubmitMessage(FORM_I18N.errPlan);
-      shouldScrollRef.current = true;
       setStep(5);
       return;
     }
-    const imageErrors = validateStep(7, form, localFiles);
+    const imageErrors = validateStep(6, form, localFiles);
     if (Object.keys(imageErrors).length > 0) {
       setFieldErrors(imageErrors);
       setSubmitMessage(FORM_I18N.errGeneric);
       shouldScrollRef.current = true;
-      setStep(7);
+      setStep(6);
       return;
     }
 
@@ -1410,9 +1372,6 @@ export function ListingApplicationForm() {
   }
 
   const fe = fieldErrors;
-  const selectedPlan = isJobPlan(form.requestedPlan)
-    ? form.requestedPlan
-    : null;
 
   return (
     <div className="space-y-5">
@@ -1791,61 +1750,6 @@ export function ListingApplicationForm() {
         {step === 5 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">
-              {FORM_I18N.headingPlan}
-            </h2>
-            <p className="text-xs text-muted">{FORM_I18N.planHint}</p>
-            {fe.requestedPlan ? (
-              <p className={errTextClass}>{fe.requestedPlan}</p>
-            ) : null}
-            <div
-              className="space-y-3"
-              data-error-field={fe.requestedPlan ? "1" : undefined}
-            >
-              {JOB_PLANS.map((plan) => {
-                const selected = form.requestedPlan === plan;
-                return (
-                  <label
-                    key={plan}
-                    className={`flex min-h-[72px] cursor-pointer items-start gap-3 rounded-xl border px-4 py-4 transition ${
-                      selected
-                        ? "border-gold bg-ivory ring-2 ring-gold/30"
-                        : fe.requestedPlan
-                          ? "border-red-400 bg-white"
-                          : "border-gold/25 bg-white"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="requestedPlan"
-                      checked={selected}
-                      onChange={() => update("requestedPlan", plan)}
-                      className="mt-1.5 h-4 w-4"
-                    />
-                    <span className="flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="block text-base font-semibold text-charcoal">
-                          {planNameJa(plan)}
-                        </span>
-                        {selected ? (
-                          <span className="text-xs font-medium text-gold-dark">
-                            {FORM_I18N.selected}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="mt-1 block text-sm text-muted">
-                        {planPriceJa(plan)}
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        {step === 6 ? (
-          <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingConsent}
             </h2>
             <div data-error-field={fe.consentAccuracy ? "1" : undefined}>
@@ -1924,7 +1828,7 @@ export function ListingApplicationForm() {
           </section>
         ) : null}
 
-        {step === 7 ? (
+        {step === 6 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingImages}
@@ -1952,7 +1856,7 @@ export function ListingApplicationForm() {
           </section>
         ) : null}
 
-        {step === 8 ? (
+        {step === 7 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingConfirm}
@@ -2042,23 +1946,7 @@ export function ListingApplicationForm() {
                     <dd>{form.representativeName || FORM_I18N.emDash}</dd>
                   </div>
                 </>
-              ) : null}
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtPlan}</dt>
-                <dd>
-                  {selectedPlan
-                    ? planNameJa(selectedPlan)
-                    : FORM_I18N.notSelected}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtMonthly}</dt>
-                <dd>
-                  {selectedPlan
-                    ? `${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[selectedPlan])}${FORM_I18N.taxIncluded}`
-                    : FORM_I18N.emDash}
-                </dd>
-              </div>
+              ) : null}
               <div>
                 <dt className="text-muted">{FORM_I18N.dtBusinessLicense}</dt>
                 <dd>

@@ -5,7 +5,6 @@ import {
   JOB_PLAN_MONTHLY_PRICES,
   JOB_PLANS,
   isJobPlan,
-  parseJobPlan,
   type JobPlan,
 } from "@/lib/job-plan";
 import { SHOP_TERMS_VERSION } from "@/lib/shop-terms";
@@ -33,6 +32,12 @@ export const LISTING_APPLICATION_STATUS_LABELS: Record<
   rejected: "否認",
   withdrawn: "取り下げ",
 };
+
+/**
+ * DB の requested_plan は NOT NULL のため未使用プレースホルダを保存する。
+ * 掲載審査フォームではプランを収集しない（カラムは削除しない）。
+ */
+export const LISTING_APPLICATION_UNUSED_REQUESTED_PLAN: JobPlan = "standard";
 
 /** Shop-facing rejection message (never includes admin rejection reason). */
 export const LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE =
@@ -124,7 +129,8 @@ export type ListingApplicationInput = {
   youtubeUrl?: string;
   otherSns?: string;
   openDate: string;
-  requestedPlan: JobPlan;
+  /** @deprecated フォームでは未収集。DB保存時は未使用プレースホルダを入れる。 */
+  requestedPlan?: JobPlan;
   listingReason?: string;
   shopFeatures?: string;
   notes?: string;
@@ -327,10 +333,6 @@ export function validateListingApplicationInput(
     return "営業許可証をアップロードしてください。";
   }
 
-  if (!isJobPlan(input.requestedPlan)) {
-    return "料金プランを選択してください";
-  }
-
   if (!input.consentAccuracy) {
     return "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
   }
@@ -477,7 +479,7 @@ export function normalizeListingApplicationInput(
     otherSns: trim(input.otherSns) || undefined,
     businessLicenseInfo: trim(input.businessLicenseInfo),
     openDate: trim(input.openDate),
-    requestedPlan: parseJobPlan(input.requestedPlan),
+    requestedPlan: LISTING_APPLICATION_UNUSED_REQUESTED_PLAN,
     listingReason: "",
     shopFeatures: "",
     notes: undefined,
@@ -543,7 +545,8 @@ export function inputToDbRow(
     other_sns: input.otherSns ?? null,
     business_license_info: input.businessLicenseInfo ?? "",
     open_date: input.openDate,
-    requested_plan: input.requestedPlan,
+    requested_plan:
+      input.requestedPlan ?? LISTING_APPLICATION_UNUSED_REQUESTED_PLAN,
     listing_reason: input.listingReason ?? "",
     shop_features: input.shopFeatures ?? "",
     notes: null,

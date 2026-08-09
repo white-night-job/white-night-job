@@ -6,7 +6,6 @@ export const FORM_I18N = {
     "担当者情報",
     "SNS・Web情報",
     "営業・許可情報",
-    "希望プラン",
     "確認事項",
     "店舗画像",
     "内容確認",
@@ -39,7 +38,6 @@ export const FORM_I18N = {
   errWebsiteFormat: "正しいURLを入力してください。",
   errBusinessLicense: "営業許可証をアップロードしてください。",
   errOpenDate: "オープン日を入力してください。",
-  errPlan: "料金プランを選択してください",
   errConsentAccuracy:
     "求人内容と実際の勤務条件に相違がないことへの同意が必要です。",
   errConsentTerms: "利用規約・プライバシーポリシーへの同意が必要です。",
@@ -130,10 +128,10 @@ export const FORM_I18N = {
   docLateNight: "深夜酒類提供飲食店営業・開始届出（受領書）",
   labelOpenDate: "オープン日 *",
 
-  headingPlan: "5. 希望プラン",
-  planHint: "審査承認後に最終確定します。この時点では料金請求は確定しません。",
+  headingPlan: "（未使用）",
+  planHint: "",
 
-  headingConsent: "6. 確認事項",
+  headingConsent: "5. 確認事項",
   consentAccuracyText:
     "求人内容と実際の勤務条件に相違がないことに同意します。*",
   termsLink: "利用規約",
@@ -143,14 +141,14 @@ export const FORM_I18N = {
   consentAntisocialText:
     "申請者、代表者、役員および実質的経営者は、反社会的勢力に該当せず、関係も有していません。*",
 
-  headingImages: "7. 店舗画像",
+  headingImages: "6. 店舗画像",
   imagesHint: "店舗の外観と内観が分かる画像をアップロードしてください。",
   exteriorTitle: "店舗外観",
   exteriorDesc: "店舗の入口や建物外観が分かる画像をアップロードしてください。",
   interiorTitle: "店舗内観",
   interiorDesc: "店内の雰囲気や設備が分かる画像をアップロードしてください。",
 
-  headingConfirm: "8. 内容確認",
+  headingConfirm: "7. 内容確認",
   dtShopName: "店舗名",
   dtAddress: "所在地",
   dtBusinessType: "業種",

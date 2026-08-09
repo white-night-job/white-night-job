@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import type { ListingApplicationPublicStatus } from "@/lib/listing-application";
-import {
-  LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE,
-  planLabel,
-} from "@/lib/listing-application";
+import { LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE } from "@/lib/listing-application";
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
@@ -102,10 +99,6 @@ export function ListingReviewStatusForm() {
           <p>
             <span className="text-muted">ステータス：</span>
             <strong>{status.statusLabel}</strong>
-          </p>
-          <p>
-            <span className="text-muted">希望プラン：</span>
-            {planLabel(status.requestedPlan)}
           </p>
           {status.needsInfoMessage && (
             <div className="rounded-xl bg-ivory px-3 py-2">
