@@ -435,11 +435,26 @@ export async function markInvoicePaid(
 
 export async function markInvoicePaymentFailed(
   stripeSubscriptionId: string,
+  options?: {
+    /** Stripe Invoice.attempt_count（同一請求の再送で二重加算しない） */
+    attemptCount?: number | null;
+    invoiceId?: string | null;
+  },
 ): Promise<SubscriptionRecord | null> {
   const supabase = createSupabaseAdmin();
   const record = await getSubscriptionByStripeId(stripeSubscriptionId);
   if (!record) return null;
-  const failed = (record.paymentFailedCount ?? 0) + 1;
+
+  const attempt =
+    typeof options?.attemptCount === "number" &&
+    Number.isFinite(options.attemptCount) &&
+    options.attemptCount > 0
+      ? Math.floor(options.attemptCount)
+      : null;
+
+  // attempt_count があればそれを採用。無い場合のみ +1（ただし既に past_due/unpaid で
+  // 同じ invoice の再処理は呼び出し側で抑止する）
+  const failed = attempt ?? (record.paymentFailedCount ?? 0) + 1;
   const nextStatus = failed >= 3 ? "unpaid" : "past_due";
   const { data, error } = await supabase
     .from("subscriptions")

@@ -403,6 +403,10 @@
   color: inherit;
 }
 
+.admin-notify-summary-card a {
+  color: inherit;
+}
+
 .admin-notify-summary-card h2 {
   margin: 0;
   font-size: 1rem;

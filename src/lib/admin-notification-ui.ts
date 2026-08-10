@@ -73,6 +73,22 @@ export function getNotificationSummary(
   }
 }
 
+/** 決済失敗通知向けの一覧表示フィールド */
+export function getPaymentFailedDetailLines(
+  item: Pick<AdminNotificationRecord, "message">,
+): string[] {
+  const plan = extractTaggedLine(item.message, "プラン");
+  const failedAt = extractTaggedLine(item.message, "失敗日時");
+  const failCount = extractTaggedLine(item.message, "失敗回数");
+  const nextRetry = extractTaggedLine(item.message, "次回再試行予定");
+  return [
+    plan ? `プラン：${plan}` : null,
+    failedAt ? `失敗日時：${failedAt}` : null,
+    failCount ? `失敗回数：${failCount}` : null,
+    nextRetry ? `次回再試行予定：${nextRetry}` : null,
+  ].filter(Boolean) as string[];
+}
+
 export function formatRelativeTimeJa(iso: string, now = Date.now()): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";

@@ -19,16 +19,19 @@ export async function GET(request: Request) {
     const limit = Number(searchParams.get("limit") ?? 50);
     const offset = Number(searchParams.get("offset") ?? 0);
     const unreadOnly = searchParams.get("unreadOnly") === "1";
+    const type = searchParams.get("type")?.trim() || null;
 
     const result = await listAdminNotifications({
       limit: Number.isFinite(limit) ? limit : 50,
       offset: Number.isFinite(offset) ? offset : 0,
       unreadOnly,
+      type,
     });
 
     return NextResponse.json({
       notifications: result.items,
       unreadCount: result.unreadCount,
+      type,
     });
   } catch (error) {
     return NextResponse.json(

@@ -10,6 +10,7 @@ import {
   notifyStripeNewContract,
   notifyStripePaymentFailed,
 } from "@/lib/stripe-admin-notify";
+import { hasRecentAdminNotificationByKey } from "@/lib/admin-notifications";
 import { getStripeServer, getStripeWebhookSecret } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -26,6 +27,14 @@ function getSubscriptionIdFromInvoice(
     return typeof sub === "string" ? sub : sub.id;
   }
   return null;
+}
+
+function linePeriodStart(invoice: Stripe.Invoice): number | null {
+  return invoice.lines?.data?.[0]?.period?.start ?? null;
+}
+
+function linePeriodEnd(invoice: Stripe.Invoice): number | null {
+  return invoice.lines?.data?.[0]?.period?.end ?? null;
 }
 
 /**
@@ -163,11 +172,10 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = getSubscriptionIdFromInvoice(invoice);
         if (!subscriptionId) break;
-        const linePeriod = invoice.lines?.data?.[0]?.period;
         let record = await markInvoicePaid(
           subscriptionId,
-          linePeriod?.start ?? null,
-          linePeriod?.end ?? null,
+          linePeriodStart(invoice),
+          linePeriodEnd(invoice),
         );
         if (!record) {
           const full = await retrieveSubscriptionExpanded(subscriptionId);
@@ -188,14 +196,39 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = getSubscriptionIdFromInvoice(invoice);
         if (!subscriptionId) break;
-        let record = await markInvoicePaymentFailed(subscriptionId);
+
+        // 同一 Invoice の再送では失敗回数加算・通知をスキップ
+        const invoiceId = invoice.id;
+        if (invoiceId) {
+          const already = await hasRecentAdminNotificationByKey({
+            type: "stripe_payment_failed",
+            contains: invoiceId,
+            withinMinutes: 24 * 60,
+          });
+          if (already) {
+            // 契約状態だけ Stripe 最新に寄せる（失敗回数は増やさない）
+            const full = await retrieveSubscriptionExpanded(subscriptionId);
+            await upsertSubscriptionFromStripe(full, {
+              preserveFailureCount: true,
+            });
+            break;
+          }
+        }
+
+        let record = await markInvoicePaymentFailed(subscriptionId, {
+          attemptCount: invoice.attempt_count,
+          invoiceId,
+        });
         if (!record) {
           const full = await retrieveSubscriptionExpanded(subscriptionId);
           await upsertSubscriptionFromStripe(full);
-          record = await markInvoicePaymentFailed(subscriptionId);
+          record = await markInvoicePaymentFailed(subscriptionId, {
+            attemptCount: invoice.attempt_count,
+            invoiceId,
+          });
         }
         if (record) {
-          await notifyStripePaymentFailed({ record }).catch((error) => {
+          await notifyStripePaymentFailed({ record, invoice }).catch((error) => {
             console.error("[stripe webhook] admin notify payment_failed", error);
           });
         }

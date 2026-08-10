@@ -3,6 +3,8 @@ import { formatJpyPrice, JOB_PLAN_DEFINITIONS, type JobPlan } from "@/lib/job-pl
 import {
   createAdminNotification,
   hasRecentAdminNotification,
+  hasRecentAdminNotificationByKey,
+  resolveUnreadPaymentFailedNotifications,
 } from "@/lib/admin-notifications";
 import { notifyAdmin } from "@/lib/admin-notify";
 import {
@@ -24,6 +26,11 @@ function formatDateTimeJst(iso: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatUnixJst(unix: number | null | undefined): string {
+  if (unix == null || !Number.isFinite(unix)) return "—";
+  return formatDateTimeJst(new Date(unix * 1000).toISOString());
 }
 
 export async function getShopNameByStoreId(
@@ -144,6 +151,18 @@ export async function notifyStripeInvoicePaid(input: {
   billingReason?: string | null;
   amountPaid?: number | null;
 }): Promise<void> {
+  // 決済成功したら、同一契約の未読「決済失敗」は未対応一覧から外す
+  if (input.record.stripeSubscriptionId) {
+    await resolveUnreadPaymentFailedNotifications(
+      input.record.stripeSubscriptionId,
+    ).catch((error) => {
+      console.warn(
+        "[stripe-admin-notify] resolve payment_failed after paid failed",
+        error,
+      );
+    });
+  }
+
   if (
     input.billingReason === "subscription_create" ||
     input.billingReason === "subscription"
@@ -188,17 +207,57 @@ export async function notifyStripeInvoicePaid(input: {
 
 export async function notifyStripePaymentFailed(input: {
   record: SubscriptionRecord;
+  invoice?: Stripe.Invoice | null;
 }): Promise<void> {
+  const invoice = input.invoice ?? null;
+  const invoiceId = invoice?.id ?? null;
+  const subscriptionId = input.record.stripeSubscriptionId;
+
+  // 同一 Invoice の Webhook 再送で二重通知しない
+  if (invoiceId) {
+    const alreadyInvoice = await hasRecentAdminNotificationByKey({
+      type: "stripe_payment_failed",
+      contains: invoiceId,
+      withinMinutes: 24 * 60,
+    });
+    if (alreadyInvoice) return;
+  } else if (subscriptionId) {
+    const alreadySub = await hasRecentAdminNotificationByKey({
+      type: "stripe_payment_failed",
+      contains: subscriptionId,
+      withinMinutes: 30,
+    });
+    if (alreadySub) return;
+  }
+
   const shopName = await getShopNameByStoreId(input.record.storeId);
+  const failedAtUnix =
+    invoice?.status_transitions?.finalized_at ??
+    invoice?.created ??
+    Math.floor(Date.now() / 1000);
+  const nextRetry =
+    invoice?.next_payment_attempt != null
+      ? formatUnixJst(invoice.next_payment_attempt)
+      : "再試行予定なし（または手動対応待ち）";
+  const attemptCount =
+    typeof invoice?.attempt_count === "number" && invoice.attempt_count > 0
+      ? invoice.attempt_count
+      : input.record.paymentFailedCount;
+
   const title = "決済失敗";
   const message = [
     "要約：カード決済失敗",
     `店舗名：${shopName}`,
     `プラン：${resolvePlanLabel(input.record)}`,
-    `失敗回数：${input.record.paymentFailedCount}`,
+    `失敗日時：${formatUnixJst(failedAtUnix)}`,
+    `失敗回数：${attemptCount}`,
+    `次回再試行予定：${nextRetry}`,
     `状態：${input.record.status}`,
-    `Subscription ID：${input.record.stripeSubscriptionId ?? "—"}`,
-  ].join("\n");
+    `Subscription ID：${subscriptionId ?? "—"}`,
+    invoiceId ? `Invoice ID：${invoiceId}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   await persistAndSend({
     type: "stripe_payment_failed",

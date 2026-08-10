@@ -68,6 +68,7 @@ export async function listAdminNotifications(options?: {
   limit?: number;
   offset?: number;
   unreadOnly?: boolean;
+  type?: string | null;
 }): Promise<{ items: AdminNotificationRecord[]; unreadCount: number }> {
   const supabase = createSupabaseAdmin();
   const limit = Math.min(Math.max(options?.limit ?? 50, 1), 200);
@@ -85,14 +86,21 @@ export async function listAdminNotifications(options?: {
   if (options?.unreadOnly) {
     query = query.eq("is_read", false);
   }
+  if (options?.type?.trim()) {
+    query = query.eq("type", options.type.trim());
+  }
 
   const { data, error } = await query;
   if (error) throw error;
 
-  const { count: unreadCount, error: unreadError } = await supabase
+  let unreadQuery = supabase
     .from("admin_notifications")
     .select("id", { count: "exact", head: true })
     .eq("is_read", false);
+  if (options?.type?.trim()) {
+    unreadQuery = unreadQuery.eq("type", options.type.trim());
+  }
+  const { count: unreadCount, error: unreadError } = await unreadQuery;
   if (unreadError) throw unreadError;
 
   return {
@@ -184,7 +192,7 @@ export async function hasRecentAdminNotification(input: {
     .select("id, message")
     .eq("type", input.type)
     .gte("created_at", since)
-    .limit(20);
+    .limit(40);
   query = input.storeId
     ? query.eq("store_id", input.storeId)
     : query.is("store_id", null);
@@ -193,4 +201,63 @@ export async function hasRecentAdminNotification(input: {
   return (data ?? []).some((row) =>
     String((row as { message?: string }).message ?? "").includes(input.contains),
   );
+}
+
+/**
+ * store_id に依存せず、message 内キーで直近通知の有無を判定する。
+ * Webhook 再送・未紐付け契約向け。
+ */
+export async function hasRecentAdminNotificationByKey(input: {
+  type: string;
+  contains: string;
+  withinMinutes?: number;
+}): Promise<boolean> {
+  const supabase = createSupabaseAdmin();
+  const within = input.withinMinutes ?? 30;
+  const since = new Date(Date.now() - within * 60_000).toISOString();
+  const { data, error } = await supabase
+    .from("admin_notifications")
+    .select("id, message")
+    .eq("type", input.type)
+    .gte("created_at", since)
+    .ilike("message", `%${input.contains}%`)
+    .limit(5);
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}
+
+/**
+ * 決済成功後などに、同一 Subscription の未読「決済失敗」通知を既読化する。
+ * サマリーの「決済失敗 ○件」が成功後も残り続けないようにする。
+ */
+export async function resolveUnreadPaymentFailedNotifications(
+  stripeSubscriptionId: string,
+): Promise<number> {
+  const subId = stripeSubscriptionId.trim();
+  if (!subId) return 0;
+
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("admin_notifications")
+    .select("id, message")
+    .eq("type", "stripe_payment_failed")
+    .eq("is_read", false)
+    .ilike("message", `%${subId}%`)
+    .limit(100);
+  if (error) throw error;
+
+  const ids = (data ?? [])
+    .filter((row) =>
+      String((row as { message?: string }).message ?? "").includes(subId),
+    )
+    .map((row) => String((row as { id: string }).id));
+
+  if (ids.length === 0) return 0;
+
+  const { error: updateError } = await supabase
+    .from("admin_notifications")
+    .update({ is_read: true })
+    .in("id", ids);
+  if (updateError) throw updateError;
+  return ids.length;
 }
