@@ -31,6 +31,9 @@ export async function GET() {
           : null,
         billingKey: resolveBillingKeySafe(mapped.stripePriceId),
         billingLabel: resolveBillingLabel(mapped.stripePriceId),
+        pendingBillingKey: resolveBillingKeySafe(mapped.pendingStripePriceId),
+        pendingBillingLabel: resolveBillingLabel(mapped.pendingStripePriceId),
+        hasPendingPlanChange: Boolean(mapped.pendingStripePriceId),
       };
     });
 

@@ -19,6 +19,11 @@ type AdminSubscription = {
   plan: "light" | "standard" | "premium";
   billingKey: StripeBillingKey | null;
   billingLabel: string | null;
+  pendingStripePriceId: string | null;
+  pendingChangeAt: string | null;
+  pendingBillingKey: StripeBillingKey | null;
+  pendingBillingLabel: string | null;
+  hasPendingPlanChange: boolean;
   status: string;
   paymentStatus: string | null;
   paymentFailedCount: number;
@@ -139,7 +144,12 @@ export default function AdminSubscriptionsPage() {
 
   async function performAction(
     subscriptionId: string,
-    action: "change_plan" | "pause" | "resume" | "cancel",
+    action:
+      | "change_plan"
+      | "cancel_pending_plan_change"
+      | "pause"
+      | "resume"
+      | "cancel",
     plan?: StripeBillingKey,
   ) {
     setActionLoadingId(subscriptionId);
@@ -154,7 +164,7 @@ export default function AdminSubscriptionsPage() {
       if (!res.ok) {
         throw new Error(data.message ?? "操作に失敗しました。");
       }
-      setActionMessage("契約操作を反映しました。");
+      setActionMessage(data.message ?? "契約操作を反映しました。");
       await load();
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : "操作に失敗しました。");
@@ -170,8 +180,9 @@ export default function AdminSubscriptionsPage() {
           <div>
             <h1>Stripe契約管理</h1>
             <p>
-              Payment Link / Checkout 経由の契約を一覧表示します。Webhook
-              で自動反映されほか、既存契約は「Stripeから契約を同期」で取り込めます。
+              プラン変更は即時課金せず、当初の次回更新日に切り替わります（日割りなし）。
+              Payment Link / Checkout
+              経由の契約は Webhook で自動反映されほか、「Stripeから契約を同期」でも取り込めます。
             </p>
           </div>
           <button
@@ -207,6 +218,9 @@ export default function AdminSubscriptionsPage() {
           <div className="space-y-4">
             {sorted.map((item) => {
               const unlinked = !item.storeId;
+              const hasPending = Boolean(
+                item.hasPendingPlanChange || item.pendingStripePriceId,
+              );
               return (
                 <article
                   key={item.id}
@@ -225,21 +239,50 @@ export default function AdminSubscriptionsPage() {
                           店舗未紐付け
                         </span>
                       ) : null}
+                      {hasPending ? (
+                        <span className="rounded-full border border-amber-500/50 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
+                          プラン変更予約中
+                        </span>
+                      ) : null}
                     </div>
                     <span
                       className={`rounded-full border px-2 py-1 text-xs font-medium ${statusBadgeClass(item.status)}`}
                     >
-                      {subscriptionStatusLabelJa(item.status)}
+                      {hasPending
+                        ? "プラン変更予約中"
+                        : subscriptionStatusLabelJa(item.status)}
                     </span>
                   </div>
                   <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-muted">プラン名</dt>
+                      <dt className="text-xs text-muted">現在のプラン</dt>
                       <dd>{item.billingLabel ?? item.plan}</dd>
                     </div>
                     <div>
                       <dt className="text-xs text-muted">契約状態</dt>
                       <dd>{subscriptionStatusLabelJa(item.status)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">次回更新日</dt>
+                      <dd>{formatDate(item.currentPeriodEnd)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">変更予定</dt>
+                      <dd>
+                        {hasPending ? (
+                          <>
+                            {item.pendingBillingLabel ??
+                              item.pendingStripePriceId ??
+                              "—"}
+                            <br />
+                            <span className="text-xs text-amber-800">
+                              {formatDate(item.pendingChangeAt)}から適用
+                            </span>
+                          </>
+                        ) : (
+                          "なし"
+                        )}
+                      </dd>
                     </div>
                     <div>
                       <dt className="text-xs text-muted">顧客メール</dt>
@@ -250,15 +293,17 @@ export default function AdminSubscriptionsPage() {
                       <dd>{formatDateTime(item.createdAt)}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-muted">次回請求日</dt>
-                      <dd>{formatDate(item.currentPeriodEnd)}</dd>
-                    </div>
-                    <div>
                       <dt className="text-xs text-muted">解約予定</dt>
                       <dd>
                         {item.cancelAtPeriodEnd
                           ? "あり（期間終了時に解約）"
                           : "なし"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">決済状態 / 失敗回数</dt>
+                      <dd>
+                        {item.paymentStatus ?? "—"} / {item.paymentFailedCount}
                       </dd>
                     </div>
                     <div>
@@ -275,40 +320,64 @@ export default function AdminSubscriptionsPage() {
                         {item.stripeSubscriptionId ?? "—"}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted">Price ID</dt>
-                      <dd className="break-all">{item.stripePriceId ?? "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-muted">決済状態 / 失敗回数</dt>
-                      <dd>
-                        {item.paymentStatus ?? "—"} / {item.paymentFailedCount}
-                      </dd>
-                    </div>
                   </dl>
 
                   {item.stripeSubscriptionId ? (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {STRIPE_BILLING_KEYS.map((key) => (
+                      {STRIPE_BILLING_KEYS.map((key) => {
+                        const isCurrent = item.billingKey === key && !hasPending;
+                        const isPendingTarget = item.pendingBillingKey === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              void performAction(
+                                item.stripeSubscriptionId!,
+                                "change_plan",
+                                key,
+                              )
+                            }
+                            disabled={
+                              actionLoadingId === item.stripeSubscriptionId ||
+                              item.billingKey === key
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs disabled:opacity-50 ${
+                              isPendingTarget
+                                ? "border-amber-500/50 bg-amber-50 text-amber-900"
+                                : "border-gold/35 text-gold-dark"
+                            }`}
+                            title={
+                              item.billingKey === key
+                                ? "現在のプランです（期間中は維持）"
+                                : "次回更新日から適用（日割りなし）"
+                            }
+                          >
+                            {isPendingTarget
+                              ? `${STRIPE_BILLING_DEFINITIONS[key].label}（予約中）`
+                              : isCurrent
+                                ? `${STRIPE_BILLING_DEFINITIONS[key].label}（現在）`
+                                : `${STRIPE_BILLING_DEFINITIONS[key].label}へ変更`}
+                          </button>
+                        );
+                      })}
+                      {hasPending ? (
                         <button
-                          key={key}
                           type="button"
                           onClick={() =>
                             void performAction(
                               item.stripeSubscriptionId!,
-                              "change_plan",
-                              key,
+                              "cancel_pending_plan_change",
                             )
                           }
                           disabled={
-                            actionLoadingId === item.stripeSubscriptionId ||
-                            item.billingKey === key
+                            actionLoadingId === item.stripeSubscriptionId
                           }
-                          className="rounded-full border border-gold/35 px-3 py-1.5 text-xs text-gold-dark disabled:opacity-50"
+                          className="rounded-full border border-amber-600/40 px-3 py-1.5 text-xs text-amber-900"
                         >
-                          {STRIPE_BILLING_DEFINITIONS[key].label}へ変更
+                          プラン変更予約を取消
                         </button>
-                      ))}
+                      ) : null}
                       <button
                         type="button"
                         onClick={() =>

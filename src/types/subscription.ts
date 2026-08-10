@@ -1,4 +1,5 @@
 import type { JobPlan } from "@/lib/job-plan";
+import type { StripeBillingKey } from "@/lib/stripe-billing";
 
 export type SubscriptionStatus =
   | "incomplete"
@@ -9,6 +10,15 @@ export type SubscriptionStatus =
   | "canceled"
   | "unpaid"
   | "paused";
+
+export type PendingPlanChange = {
+  stripePriceId: string;
+  billingKey: StripeBillingKey | null;
+  billingLabel: string | null;
+  plan: JobPlan;
+  effectiveAt: string;
+  scheduleId: string;
+};
 
 export type SubscriptionRecord = {
   id: string;
@@ -26,6 +36,9 @@ export type SubscriptionRecord = {
   cancelAtPeriodEnd: boolean;
   canceledAt: string | null;
   customerEmail: string | null;
+  pendingStripePriceId: string | null;
+  pendingChangeAt: string | null;
+  stripeScheduleId: string | null;
   createdAt: string;
   updatedAt: string;
 };

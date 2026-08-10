@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import {
-  billingKeyToStripePriceId,
   getStripeServer,
   normalizeAdminPlanChangeInput,
 } from "@/lib/stripe";
+import {
+  cancelPendingPlanChange,
+  schedulePlanChangeAtPeriodEnd,
+} from "@/lib/stripe-subscription-schedule";
 import {
   getSubscriptionByStripeId,
   syncJobAccessFromSubscription,
@@ -13,7 +16,12 @@ import {
 } from "@/lib/subscriptions";
 
 type ActionBody = {
-  action?: "change_plan" | "pause" | "resume" | "cancel";
+  action?:
+    | "change_plan"
+    | "cancel_pending_plan_change"
+    | "pause"
+    | "resume"
+    | "cancel";
   /** StripeBillingKey（5種）または JobPlan（通常3種） */
   plan?: string;
 };
@@ -46,21 +54,25 @@ export async function PATCH(
       if (!billingKey) {
         return NextResponse.json({ message: "plan is invalid." }, { status: 400 });
       }
-      const current = await stripe.subscriptions.retrieve(subscriptionId);
-      const itemId = current.items.data[0]?.id;
-      if (!itemId) {
-        throw new Error("subscription item not found.");
-      }
-      const updated = await stripe.subscriptions.update(subscriptionId, {
-        items: [{ id: itemId, price: billingKeyToStripePriceId(billingKey) }],
-        proration_behavior: "create_prorations",
-        metadata: {
-          ...current.metadata,
-          billing_key: billingKey,
-        },
+      // 次回更新日から適用（Subscription Schedule / 日割りなし）
+      const { subscription: updated } = await schedulePlanChangeAtPeriodEnd({
+        subscriptionId,
+        billingKey,
       });
       const record = await upsertSubscriptionFromStripe(updated);
-      return NextResponse.json({ subscription: record });
+      return NextResponse.json({
+        subscription: record,
+        message: "プラン変更を次回更新日に予約しました。",
+      });
+    }
+
+    if (action === "cancel_pending_plan_change") {
+      const updated = await cancelPendingPlanChange(subscriptionId);
+      const record = await upsertSubscriptionFromStripe(updated);
+      return NextResponse.json({
+        subscription: record,
+        message: "プラン変更予約を取り消しました。",
+      });
     }
 
     if (action === "pause") {

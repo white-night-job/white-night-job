@@ -19,6 +19,9 @@ type SubscriptionDbRow = {
   cancel_at_period_end: boolean | null;
   canceled_at: string | null;
   customer_email?: string | null;
+  pending_stripe_price_id?: string | null;
+  pending_change_at?: string | null;
+  stripe_schedule_id?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -78,6 +81,9 @@ export function mapSubscriptionRow(row: SubscriptionDbRow): SubscriptionRecord {
     cancelAtPeriodEnd: Boolean(row.cancel_at_period_end),
     canceledAt: row.canceled_at,
     customerEmail: row.customer_email?.trim() || null,
+    pendingStripePriceId: row.pending_stripe_price_id ?? null,
+    pendingChangeAt: row.pending_change_at ?? null,
+    stripeScheduleId: row.stripe_schedule_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -279,6 +285,37 @@ export async function upsertSubscriptionFromStripe(
   // 既存行の store_id を誤って null で上書きしない
   const resolvedStoreId = storeId ?? previous?.storeId ?? null;
 
+  let pendingStripePriceId: string | null = null;
+  let pendingChangeAt: string | null = null;
+  let stripeScheduleId: string | null = null;
+  try {
+    const { getPendingPlanChangeForSubscription } = await import(
+      "@/lib/stripe-subscription-schedule"
+    );
+    const pending = await getPendingPlanChangeForSubscription(subscription);
+    if (pending) {
+      pendingStripePriceId = pending.stripePriceId;
+      pendingChangeAt = pending.effectiveAt;
+      stripeScheduleId = pending.scheduleId;
+    } else if (subscription.schedule) {
+      stripeScheduleId =
+        typeof subscription.schedule === "string"
+          ? subscription.schedule
+          : subscription.schedule.id;
+    }
+  } catch {
+    // schedule 取得失敗時は pending をクリアせず previous を維持しない（不明時は null）
+    const metaPending = subscription.metadata?.pending_price_id?.trim();
+    const metaAt = subscription.metadata?.pending_change_at?.trim();
+    if (metaPending) {
+      pendingStripePriceId = metaPending;
+      const asUnix = metaAt && /^\d+$/.test(metaAt) ? Number(metaAt) : null;
+      pendingChangeAt = asUnix
+        ? unixToIso(asUnix)
+        : metaAt || unixToIso(period.end);
+    }
+  }
+
   const payload = {
     store_id: resolvedStoreId,
     stripe_customer_id: customerId,
@@ -296,6 +333,9 @@ export async function upsertSubscriptionFromStripe(
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
     canceled_at: unixToIso(subscription.canceled_at),
     customer_email: customerEmail ?? previous?.customerEmail ?? null,
+    pending_stripe_price_id: pendingStripePriceId,
+    pending_change_at: pendingChangeAt,
+    stripe_schedule_id: stripeScheduleId,
   };
 
   let data: SubscriptionDbRow | null = null;
