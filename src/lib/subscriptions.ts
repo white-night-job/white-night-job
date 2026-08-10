@@ -174,9 +174,8 @@ function derivePaymentStatus(subscription: Stripe.Subscription): string | null {
 }
 
 /**
- * 顧客メールから店舗（jobs.id）を推定する補助フォールバック。
- * shops.contact_email → linked_job_id
- * listing_applications.contact_email → linked_job_id
+ * 顧客メールから店舗を推定する（参考用）。
+ * 自動紐付けの確定には使わないこと。
  */
 export async function resolveStoreIdByCustomerEmail(
   email: string | null | undefined,
@@ -209,9 +208,15 @@ export async function resolveStoreIdByCustomerEmail(
   return null;
 }
 
+/**
+ * 自動紐付け用の店舗解決。
+ * 確実な識別子のみ使用（メール一致では確定しない）。
+ * 優先: subscription.metadata.store_id → customer.metadata.store_id → fallbackStoreId
+ * （fallback は checkout の metadata / client_reference_id 経由）
+ */
 async function resolveStoreIdForSubscription(
   subscription: Stripe.Subscription,
-  options?: { fallbackStoreId?: string | null; customerEmail?: string | null },
+  options?: { fallbackStoreId?: string | null },
 ): Promise<string | null> {
   const metadataStoreId =
     typeof subscription.metadata?.store_id === "string"
@@ -231,15 +236,14 @@ async function resolveStoreIdForSubscription(
   const fallback = options?.fallbackStoreId?.trim() || null;
   if (fallback) return fallback;
 
+  // 同一 Stripe Customer に既に紐付け済みの契約があれば継承
   const customerId = customerIdFromSubscription(subscription);
   const byCustomer = customerId
     ? await getSubscriptionByCustomerId(customerId)
     : null;
   if (byCustomer?.storeId) return byCustomer.storeId;
 
-  const email =
-    options?.customerEmail ?? customerEmailFromSubscription(subscription);
-  return resolveStoreIdByCustomerEmail(email);
+  return null;
 }
 
 /**
@@ -267,7 +271,6 @@ export async function upsertSubscriptionFromStripe(
 
   const storeId = await resolveStoreIdForSubscription(subscription, {
     fallbackStoreId: options?.fallbackStoreId,
-    customerEmail,
   });
 
   const previousByStripe = await getSubscriptionByStripeId(subscription.id);
@@ -518,3 +521,129 @@ export async function syncAllSubscriptionsFromStripe(): Promise<{
 
   return { synced, unlinked, errors };
 }
+
+export type LinkSubscriptionResult = {
+  subscription: SubscriptionRecord;
+  shopName: string;
+  replacedPreviousSubscriptionId: string | null;
+};
+
+/**
+ * 管理画面からの手動店舗紐付け。
+ * Stripe の料金・期間・Schedule・解約予約は変更しない（DB の store_id のみ）。
+ * 必要なら Stripe metadata.store_id のみ更新（請求に影響なし）。
+ */
+export async function linkSubscriptionToStore(params: {
+  stripeSubscriptionId: string;
+  storeId: string;
+  /** 店舗に別契約がある場合、既存の store_id を外して付け替える */
+  confirmReplaceExisting?: boolean;
+}): Promise<LinkSubscriptionResult> {
+  const supabase = createSupabaseAdmin();
+  const storeId = params.storeId.trim();
+  const stripeSubscriptionId = params.stripeSubscriptionId.trim();
+  if (!storeId || !stripeSubscriptionId) {
+    throw new Error("storeId と stripeSubscriptionId は必須です。");
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .select("id, shop_name")
+    .eq("id", storeId)
+    .maybeSingle();
+  if (jobError) throw jobError;
+  if (!job) throw new Error("指定された店舗が見つかりません。");
+
+  const record = await getSubscriptionByStripeId(stripeSubscriptionId);
+  if (!record) throw new Error("指定された契約が見つかりません。");
+
+  if (record.storeId && record.storeId === storeId) {
+    return {
+      subscription: record,
+      shopName: (job.shop_name as string)?.trim() || "店舗名未設定",
+      replacedPreviousSubscriptionId: null,
+    };
+  }
+
+  if (record.storeId && record.storeId !== storeId) {
+    throw new Error(
+      "この契約はすでに別店舗に紐付いています。先に紐付けを見直してください。",
+    );
+  }
+
+  const existingOnStore = await getStoreSubscription(storeId);
+  let replacedPreviousSubscriptionId: string | null = null;
+
+  if (
+    existingOnStore &&
+    existingOnStore.stripeSubscriptionId &&
+    existingOnStore.stripeSubscriptionId !== stripeSubscriptionId
+  ) {
+    if (!params.confirmReplaceExisting) {
+      const err = new Error(
+        `この店舗にはすでに別契約（${existingOnStore.stripeSubscriptionId}）が紐付いています。付け替える場合は確認のうえ再実行してください。`,
+      ) as Error & { code?: string; existingSubscriptionId?: string };
+      err.code = "STORE_ALREADY_LINKED";
+      err.existingSubscriptionId = existingOnStore.stripeSubscriptionId;
+      throw err;
+    }
+
+    const { error: unlinkError } = await supabase
+      .from("subscriptions")
+      .update({ store_id: null })
+      .eq("id", existingOnStore.id);
+    if (unlinkError) throw unlinkError;
+    replacedPreviousSubscriptionId =
+      existingOnStore.stripeSubscriptionId ?? existingOnStore.id;
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("subscriptions")
+    .update({ store_id: storeId })
+    .eq("stripe_subscription_id", stripeSubscriptionId)
+    .select("*")
+    .single();
+  if (updateError) throw updateError;
+
+  // 請求に影響しない metadata のみ（今後の自動紐付け用）
+  try {
+    const { getStripeServer } = await import("@/lib/stripe");
+    const stripe = getStripeServer();
+    const sub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    await stripe.subscriptions.update(stripeSubscriptionId, {
+      metadata: {
+        ...sub.metadata,
+        store_id: storeId,
+      },
+    });
+    const customerId =
+      typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+    if (customerId) {
+      const customer = await stripe.customers.retrieve(customerId);
+      if (!("deleted" in customer && customer.deleted)) {
+        await stripe.customers.update(customerId, {
+          metadata: {
+            ...customer.metadata,
+            store_id: storeId,
+          },
+        });
+      }
+    }
+  } catch (error) {
+    console.warn(
+      "[linkSubscriptionToStore] Stripe metadata update skipped",
+      error,
+    );
+  }
+
+  // 紐付け後、掲載状態を契約に合わせて同期（Stripe 課金は変更しない）
+  const mapped = mapSubscriptionRow(updated as SubscriptionDbRow);
+  await syncJobAccessFromSubscription(storeId, mapped.plan, mapped.status);
+
+  return {
+    subscription: mapped,
+    shopName: (job.shop_name as string)?.trim() || "店舗名未設定",
+    replacedPreviousSubscriptionId,
+  };
+}
+

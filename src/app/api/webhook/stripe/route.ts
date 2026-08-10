@@ -2,7 +2,6 @@ import type Stripe from "stripe";
 import {
   markInvoicePaid,
   markInvoicePaymentFailed,
-  resolveStoreIdByCustomerEmail,
   upsertSubscriptionFromStripe,
 } from "@/lib/subscriptions";
 import {
@@ -31,7 +30,8 @@ function getSubscriptionIdFromInvoice(
 
 /**
  * Checkout Session から店舗 ID を解決。
- * 優先: metadata.store_id → client_reference_id → 顧客メール一致
+ * 確実な識別子のみ（メール一致では自動確定しない）。
+ * 優先: metadata.store_id → client_reference_id
  */
 async function resolveStoreIdFromCheckoutSession(
   session: Stripe.Checkout.Session,
@@ -48,11 +48,7 @@ async function resolveStoreIdFromCheckoutSession(
       : "";
   if (fromClientRef) return fromClientRef;
 
-  const email =
-    session.customer_details?.email?.trim().toLowerCase() ||
-    session.customer_email?.trim().toLowerCase() ||
-    null;
-  return resolveStoreIdByCustomerEmail(email);
+  return null;
 }
 
 async function attachStoreMetadataToStripeObjects(params: {

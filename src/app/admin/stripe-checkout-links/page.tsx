@@ -301,14 +301,13 @@ export default function AdminStripeCheckoutLinksPage() {
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-muted">
-        店舗紐付けの優先順位（Webhook）:{" "}
+        店舗紐付けの優先順位（Webhook・自動）:{" "}
         <code className="rounded bg-zinc-100 px-1">checkout.session.metadata.store_id</code>
         {" → "}
+        <code className="rounded bg-zinc-100 px-1">client_reference_id</code>
+        {" / "}
         <code className="rounded bg-zinc-100 px-1">subscription.metadata.store_id</code>
-        {" → "}
-        顧客メール一致。Payment Link では「店舗紐付けURLをコピー」で付与される{" "}
-        <code className="rounded bg-zinc-100 px-1">?client_reference_id=jobs.id</code>{" "}
-        を Session の店舗特定に使います。未紐付けの契約も保存され、Stripe契約管理で確認できます。
+        。メール一致だけでは自動確定しません。未紐付けの契約は Stripe契約管理から手動で紐付けできます。
       </p>
     </div>
   );

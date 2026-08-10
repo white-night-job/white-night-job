@@ -78,6 +78,14 @@ function statusBadgeClass(status: string, opts?: { cancelAtPeriodEnd?: boolean }
   }
 }
 
+type StoreOption = {
+  id: string;
+  shopName: string;
+  district: string | null;
+  listingStatus: string | null;
+  linkedStripeSubscriptionId: string | null;
+};
+
 export default function AdminSubscriptionsPage() {
   const [rows, setRows] = useState<AdminSubscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +93,15 @@ export default function AdminSubscriptionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const [linkTarget, setLinkTarget] = useState<AdminSubscription | null>(null);
+  const [storeQuery, setStoreQuery] = useState("");
+  const [stores, setStores] = useState<StoreOption[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<StoreOption | null>(null);
+  const [linkStep, setLinkStep] = useState<"pick" | "confirm">("pick");
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -175,6 +192,114 @@ export default function AdminSubscriptionsPage() {
     }
   }
 
+  function openLinkModal(item: AdminSubscription) {
+    setLinkTarget(item);
+    setStoreQuery("");
+    setStores([]);
+    setSelectedStore(null);
+    setLinkStep("pick");
+    setLinkError(null);
+  }
+
+  function closeLinkModal() {
+    if (linkSubmitting) return;
+    setLinkTarget(null);
+    setSelectedStore(null);
+    setLinkStep("pick");
+    setLinkError(null);
+  }
+
+  async function searchStores(query: string) {
+    setStoresLoading(true);
+    setLinkError(null);
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      const res = await fetch(
+        `/api/admin/subscriptions/stores?${params.toString()}`,
+        { cache: "no-store" },
+      );
+      const data = (await res.json()) as {
+        stores?: StoreOption[];
+        message?: string;
+      };
+      if (!res.ok) throw new Error(data.message ?? "店舗一覧の取得に失敗しました。");
+      setStores(data.stores ?? []);
+    } catch (err) {
+      setLinkError(
+        err instanceof Error ? err.message : "店舗一覧の取得に失敗しました。",
+      );
+      setStores([]);
+    } finally {
+      setStoresLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!linkTarget) return;
+    const timer = window.setTimeout(() => {
+      void searchStores(storeQuery);
+    }, 250);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce search on query/modal open
+  }, [linkTarget, storeQuery]);
+
+  async function submitLink(confirmReplaceExisting: boolean) {
+    if (!linkTarget?.stripeSubscriptionId || !selectedStore) return;
+    setLinkSubmitting(true);
+    setLinkError(null);
+    try {
+      let confirmReplace = confirmReplaceExisting;
+      for (;;) {
+        const res = await fetch(
+          `/api/admin/subscriptions/${linkTarget.stripeSubscriptionId}/link`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storeId: selectedStore.id,
+              confirmReplaceExisting: confirmReplace,
+            }),
+          },
+        );
+        const data = (await res.json()) as {
+          message?: string;
+          requiresConfirmReplace?: boolean;
+          existingSubscriptionId?: string | null;
+        };
+        if (res.status === 409 && data.requiresConfirmReplace && !confirmReplace) {
+          const ok = window.confirm(
+            [
+              `「${selectedStore.shopName}」にはすでに別契約が紐付いています。`,
+              data.existingSubscriptionId
+                ? `既存: ${data.existingSubscriptionId}`
+                : null,
+              "既存の紐付けを外し、この契約へ付け替えますか？",
+              "（Stripeの料金・次回更新日・予約内容は変更されません）",
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          );
+          if (!ok) return;
+          confirmReplace = true;
+          continue;
+        }
+        if (!res.ok) {
+          throw new Error(data.message ?? "紐付けに失敗しました。");
+        }
+        setActionMessage(data.message ?? "店舗に紐付けました。");
+        setLinkTarget(null);
+        setSelectedStore(null);
+        await load();
+        return;
+      }
+    } catch (err) {
+      setLinkError(err instanceof Error ? err.message : "紐付けに失敗しました。");
+    } finally {
+      setLinkSubmitting(false);
+    }
+  }
+
   return (
     <div>
       <header className="admin-page-header">
@@ -183,7 +308,7 @@ export default function AdminSubscriptionsPage() {
             <h1>Stripe契約管理</h1>
             <p>
               プラン変更・解約はいずれも即時ではなく、当初の次回更新日に反映されます。
-              日割り請求はありません。一時停止／再開操作はありません。
+              日割り請求はありません。未紐付け契約は「店舗を紐付け」から手動で店舗へ接続できます。
             </p>
           </div>
           <button
@@ -330,6 +455,18 @@ export default function AdminSubscriptionsPage() {
                     </div>
                   </dl>
 
+                  {unlinked && item.stripeSubscriptionId ? (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => openLinkModal(item)}
+                        className="rounded-full border border-charcoal/30 bg-ivory px-3 py-1.5 text-xs font-medium text-charcoal"
+                      >
+                        店舗を紐付け
+                      </button>
+                    </div>
+                  ) : null}
+
                   {canOperate ? (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {STRIPE_BILLING_KEYS.map((key) => {
@@ -428,6 +565,143 @@ export default function AdminSubscriptionsPage() {
           </div>
         )}
       </div>
+
+      {linkTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="link-store-title"
+        >
+          <div className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-xl border border-gold/30 bg-white p-5 shadow-lg">
+            <h2
+              id="link-store-title"
+              className="text-lg font-semibold text-charcoal"
+            >
+              店舗を紐付け
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              契約{" "}
+              <span className="break-all font-mono text-xs">
+                {linkTarget.stripeSubscriptionId}
+              </span>{" "}
+              を店舗へ紐付けます。Stripe
+              の料金・次回更新日・予約内容は変更されません。
+            </p>
+
+            {linkStep === "pick" ? (
+              <div className="mt-4 space-y-3">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-muted">
+                    店舗名で検索
+                  </span>
+                  <input
+                    type="search"
+                    value={storeQuery}
+                    onChange={(e) => setStoreQuery(e.target.value)}
+                    placeholder="例: すすきの"
+                    className="w-full rounded-lg border border-gold/30 bg-ivory px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20"
+                  />
+                </label>
+                <div className="max-h-64 space-y-2 overflow-auto rounded-lg border border-gold/15 p-2">
+                  {storesLoading ? (
+                    <p className="p-2 text-sm text-muted">検索中…</p>
+                  ) : stores.length === 0 ? (
+                    <p className="p-2 text-sm text-muted">該当する店舗がありません。</p>
+                  ) : (
+                    stores.map((store) => (
+                      <button
+                        key={store.id}
+                        type="button"
+                        onClick={() => setSelectedStore(store)}
+                        className={`flex w-full flex-col rounded-lg border px-3 py-2 text-left text-sm ${
+                          selectedStore?.id === store.id
+                            ? "border-gold bg-gold/10"
+                            : "border-transparent hover:bg-ivory"
+                        }`}
+                      >
+                        <span className="font-medium text-charcoal">
+                          {store.shopName}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {store.district ?? "エリア未設定"}
+                          {store.linkedStripeSubscriptionId
+                            ? " · 別契約が紐付き済み"
+                            : ""}
+                        </span>
+                        {store.linkedStripeSubscriptionId ? (
+                          <span className="mt-1 text-xs text-amber-800">
+                            注意: 既存 {store.linkedStripeSubscriptionId}
+                          </span>
+                        ) : null}
+                      </button>
+                    ))
+                  )}
+                </div>
+                {linkError ? (
+                  <p className="text-sm text-red-700">{linkError}</p>
+                ) : null}
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeLinkModal}
+                    disabled={linkSubmitting}
+                    className="rounded-full border border-charcoal/25 px-4 py-1.5 text-xs text-charcoal"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!selectedStore || linkSubmitting}
+                    onClick={() => setLinkStep("confirm")}
+                    className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    次へ（確認）
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                  この契約を「{selectedStore?.shopName}」に紐付けますか？
+                </p>
+                {selectedStore?.linkedStripeSubscriptionId ? (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    警告: この店舗にはすでに別契約（
+                    {selectedStore.linkedStripeSubscriptionId}
+                    ）が紐付いています。確定時に既存紐付けを外して付け替えます。
+                  </p>
+                ) : null}
+                {linkError ? (
+                  <p className="text-sm text-red-700">{linkError}</p>
+                ) : null}
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLinkStep("pick")}
+                    disabled={linkSubmitting}
+                    className="rounded-full border border-charcoal/25 px-4 py-1.5 text-xs text-charcoal"
+                  >
+                    戻る
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void submitLink(
+                        Boolean(selectedStore?.linkedStripeSubscriptionId),
+                      )
+                    }
+                    disabled={linkSubmitting || !selectedStore}
+                    className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    {linkSubmitting ? "紐付け中…" : "紐付けを確定"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
