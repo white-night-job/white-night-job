@@ -32,7 +32,7 @@ export function ShopGirlReviewsManager({
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -141,20 +141,23 @@ export function ShopGirlReviewsManager({
   }
 
   return (
-    <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
+    <section className="overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition hover:bg-ivory/60 sm:px-5"
+        aria-expanded={open}
       >
-        <h2 className="font-serif text-lg font-semibold text-charcoal">
+        <h2 className="min-w-0 font-serif text-base font-semibold text-charcoal sm:text-lg">
           女の子の口コミ管理
         </h2>
-        <span className="text-xs text-muted">{open ? "閉じる" : "開く"}</span>
+        <span className="shrink-0 text-sm text-gold-dark" aria-hidden="true">
+          {open ? "▲" : "▼"}
+        </span>
       </button>
 
       {open && (
-        <div className="mt-4 space-y-5">
+        <div className="space-y-5 border-t border-gold/15 px-4 py-4 sm:px-5 sm:py-5">
           <p className="text-sm leading-relaxed text-muted">
             求人詳細の「女の子の口コミ」に即時公開されます。ニックネーム・年齢・口コミ内容を登録してください。星評価はAIが自動判定し、店舗側では変更できません。
           </p>
