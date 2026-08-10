@@ -63,17 +63,45 @@
 }
 
 .admin-topbar-back {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(184, 149, 90, 0.7);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--admin-gold);
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--admin-sidebar-text);
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .admin-topbar-back:hover {
+  background: rgba(184, 149, 90, 0.12);
+  border-color: var(--admin-gold);
   color: #f3e6c8;
+}
+
+.admin-topbar-back:active {
+  background: var(--admin-gold);
+  border-color: var(--admin-gold);
+  color: #151515;
+  transform: scale(0.96);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 .admin-topbar-actions {
@@ -88,25 +116,60 @@
 .admin-topbar-logout {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
   font-size: 0.75rem;
-  color: var(--admin-sidebar-text);
+  font-weight: 600;
+  color: var(--admin-gold);
   text-decoration: none;
-  border: 1px solid rgba(184, 149, 90, 0.45);
+  border: 1px solid rgba(184, 149, 90, 0.7);
   border-radius: 999px;
-  padding: 0.35rem 0.75rem;
+  padding: 0.45rem 0.85rem;
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .admin-topbar-site:hover,
 .admin-topbar-logout:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(184, 149, 90, 0.12);
+  border-color: var(--admin-gold);
+  color: #f3e6c8;
+}
+
+.admin-topbar-site:active,
+.admin-topbar-logout:active {
+  background: var(--admin-gold);
+  border-color: var(--admin-gold);
+  color: #151515;
+  transform: scale(0.96);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 .admin-topbar-logout {
   color: #f0b4a8;
-  border-color: rgba(240, 180, 168, 0.45);
+  border-color: rgba(240, 180, 168, 0.55);
+}
+
+.admin-topbar-logout:hover {
+  color: #f8d0c8;
+  border-color: rgba(240, 180, 168, 0.75);
+  background: rgba(240, 180, 168, 0.1);
+}
+
+.admin-topbar-logout:active {
+  background: #f0b4a8;
+  border-color: #f0b4a8;
+  color: #151515;
 }
 
 .admin-body {
