@@ -7,7 +7,7 @@ import type { Job } from "@/types/job";
 type JobListingPreviewProps = {
   job: Job;
   mode: "create" | "edit";
-  /** publish = 公開前確認 / draft = 下書きプレビュー（公開しない） */
+  /** publish = 公開確認 / draft = 下書き保存確認（この時点では未保存） */
   variant?: "publish" | "draft";
   /** 下書き公開は「掲載する」、公開済みの修正は「更新する」 */
   listingStatus?: "draft" | "published" | "paused";
@@ -28,11 +28,13 @@ export function JobListingPreview({
   onConfirm,
 }: JobListingPreviewProps) {
   const isDraftPreview = variant === "draft";
-  const confirmLabel =
-    listingStatus === "published" ||
-    (listingStatus == null && mode === "edit")
+  const confirmLabel = isDraftPreview
+    ? "この内容で下書き保存"
+    : listingStatus === "published" ||
+        (listingStatus == null && mode === "edit")
       ? "この内容で更新する"
       : "この内容で掲載する";
+  const submittingLabel = isDraftPreview ? "保存中..." : "公開中...";
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] pb-28">
@@ -42,7 +44,7 @@ export function JobListingPreview({
         </p>
         <p className="mt-0.5 text-sm text-white/85">
           {isDraftPreview
-            ? "一般ユーザーには非公開です。公開時と同じ見た目で確認できます（操作は無効）"
+            ? "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効・まだ保存されていません）"
             : "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効）"}
         </p>
       </div>
@@ -62,16 +64,16 @@ export function JobListingPreview({
             disabled={submitting}
             className="rounded-full border border-gold/40 px-5 py-3 text-sm font-semibold text-charcoal hover:bg-ivory disabled:opacity-60"
           >
-            {isDraftPreview ? "編集に戻る" : "修正する"}
+            修正する
           </button>
-          {!isDraftPreview && onConfirm ? (
+          {onConfirm ? (
             <button
               type="button"
               onClick={onConfirm}
               disabled={submitting}
               className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60"
             >
-              {submitting ? "公開中..." : confirmLabel}
+              {submitting ? submittingLabel : confirmLabel}
             </button>
           ) : null}
         </div>

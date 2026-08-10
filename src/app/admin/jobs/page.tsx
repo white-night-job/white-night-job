@@ -977,6 +977,14 @@ function AdminJobsPageInner() {
     }
   }
 
+  async function handleConfirmDraftSave() {
+    try {
+      await saveJob("draft");
+    } catch {
+      /* message set in saveJob — keep preview/form so user can fix */
+    }
+  }
+
   async function handleDelete(job: Job) {
     if (resolveJobListingStatus(job) !== "draft") {
       setMessage("公開中・掲載停止の求人はこの画面から削除できません。");
@@ -1250,7 +1258,9 @@ function AdminJobsPageInner() {
             ? () => {
                 void handleConfirmPublish();
               }
-            : undefined
+            : () => {
+                void handleConfirmDraftSave();
+              }
         }
       />
     );
@@ -2838,23 +2848,13 @@ function AdminJobsPageInner() {
           <button
             type="button"
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
-            onClick={() => void saveJob("draft").catch(() => undefined)}
+            onClick={() => void openPreview("draft")}
             className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-gold-dark disabled:opacity-60"
           >
             {loading && pendingSaveIntent === "draft"
               ? "保存中..."
               : "下書き保存"}
           </button>
-          {editingId && editingListingStatus === "draft" ? (
-            <button
-              type="button"
-              disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
-              onClick={() => void openPreview("draft")}
-              className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-charcoal hover:bg-ivory disabled:opacity-60"
-            >
-              プレビュー
-            </button>
-          ) : null}
           <button
             type="button"
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
