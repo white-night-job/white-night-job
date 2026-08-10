@@ -140,7 +140,6 @@ function toPayload(form: ShopForm) {
     salary: form.salary,
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
-    openDate: form.openDate.trim() || null,
     ageGroup: form.ageGroup || undefined,
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
@@ -831,12 +830,10 @@ export default function ShopDashboardPage() {
               id="openDate"
               type="date"
               value={form.openDate}
-              onChange={(e) => setField("openDate", e.target.value)}
-              className={inputClass}
+              readOnly
+              className={readonlyInputClass}
+              aria-readonly="true"
             />
-            <p className="mt-1 text-xs text-muted">
-              入力するとオープン日から6か月間、トップの「新規オープン店舗」に表示されます。未入力の場合は対象外です。
-            </p>
           </div>
           <div>
             <label htmlFor="ageGroup" className={labelClass}>キャスト年齢</label>

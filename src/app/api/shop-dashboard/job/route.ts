@@ -50,6 +50,8 @@ const ADMIN_ONLY_BODY_KEYS = [
   "posted_at",
   "postedAt",
   "published",
+  "open_date",
+  "openDate",
 ] as const;
 
 function stripAdminOnlyFields(body: unknown): Record<string, unknown> {
