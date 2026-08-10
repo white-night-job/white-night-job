@@ -289,7 +289,7 @@ export function ShopImprovementReport({
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted">
             {isLightView
-              ? `${light?.monthLabel ?? "今月"}のアクセスと応募クリックの状況です。`
+              ? `${light?.monthLabel ?? "今月"}のアクセスと応募の状況です。`
               : report
                 ? `${report.monthLabel}の数値と求人内容から、応募を増やすための改善案をご提案します。`
                 : "今月の数値と求人内容から、応募を増やすための改善案をご提案します。"}
@@ -363,15 +363,15 @@ export function ShopImprovementReport({
                   value={report.current.detailClicks}
                 />
                 <MetricCard
-                  label="LINE応募クリック"
+                  label="LINE応募数"
                   value={report.current.lineClicks}
                 />
                 <MetricCard
-                  label="電話応募クリック"
+                  label="電話応募数"
                   value={report.current.phoneClicks}
                 />
                 <MetricCard
-                  label="応募クリック合計"
+                  label="応募数"
                   value={report.current.applyTotal}
                 />
               </div>
@@ -386,9 +386,9 @@ export function ShopImprovementReport({
                   description="店舗詳細クリック数 ÷ 表示回数"
                 />
                 <RateCard
-                  label="応募クリック率"
+                  label="応募率"
                   value={report.rates.applyClickRate}
-                  description="応募クリック合計 ÷ 店舗詳細クリック数"
+                  description="応募数 ÷ 店舗詳細クリック数"
                 />
               </div>
             </div>

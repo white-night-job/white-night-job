@@ -56,7 +56,7 @@ export type ImprovementMetrics = {
 export type ImprovementRates = {
   /** 店舗詳細クリック数 ÷ 表示回数 */
   detailClickRate: number;
-  /** 応募クリック合計 ÷ 店舗詳細クリック数 */
+  /** 応募数 ÷ 店舗詳細クリック数 */
   applyClickRate: number;
 };
 
@@ -622,7 +622,7 @@ function buildAdvices(input: {
       issue: "LINE応募URLが未登録のため、LINE応募ボタンが機能していません。",
       action:
         "求人編集の応募導線からLINE公式アカウントの友だち追加URLを登録し、保存後にプレビューでボタン遷移を確認してください。",
-      expectedEffect: "応募導線の復旧・LINE応募クリックの獲得",
+      expectedEffect: "応募導線の復旧・LINE応募の獲得",
       reason: "LINE応募URLが空のため、応募導線が成立していないため",
     });
   }
@@ -632,11 +632,11 @@ function buildAdvices(input: {
       id: "maintain-success",
       priority: 2,
       priorityLevel: "low",
-      issue: `応募クリック率は${rates.applyClickRate}%で、現状の導線と求人内容が機能しています。`,
+      issue: `応募率は${rates.applyClickRate}%で、現状の導線と求人内容が機能しています。`,
       action:
         "大きな変更はせず、時給・待遇・紹介文の事実関係だけを月1回点検し、数値の落ち込みがないか確認してください。",
       expectedEffect: "現状の応募率の維持",
-      reason: `詳細クリック${current.detailClicks}件に対する応募クリック率が${HIGH_APPLY_RATE}%以上のため`,
+      reason: `詳細クリック${current.detailClicks}件に対する応募率が${HIGH_APPLY_RATE}%以上のため`,
     });
   }
 
@@ -769,7 +769,7 @@ function buildAdvices(input: {
         id: "benefits-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `詳細クリックは${current.detailClicks}件ある一方、応募クリック率は${rates.applyClickRate}%です${applyPeerText}。待遇項目は${content.benefitCount}件です。`,
+        issue: `詳細クリックは${current.detailClicks}件ある一方、応募率は${rates.applyClickRate}%です${applyPeerText}。待遇項目は${content.benefitCount}件です。`,
         action: `待遇を${BENEFIT_TARGET}件以上選び、送迎・日払い・寮・服装自由・ノルマなしなど、当てはまる項目を追加してください。ページ上部で待遇が目に入る配置も確認してください。`,
         expectedEffect: "応募率の向上・不安解消",
         reason: "詳細は見られているが応募率が低く、待遇情報が不足しているため",
@@ -779,7 +779,7 @@ function buildAdvices(input: {
         id: "girl-reviews-zero-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミがまだありません。`,
+        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミがまだありません。`,
         action:
           "面接・体験入店後や在籍キャストへ口コミ投稿をお願いすると、応募前の安心感が伝わり応募率向上が期待できます。ダッシュボードの「女の子の口コミ管理」から登録できます。",
         expectedEffect: "応募率の向上・安心感の補強",
@@ -790,7 +790,7 @@ function buildAdvices(input: {
         id: "girl-reviews-interview-low-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。面接・体験入店の口コミは${content.girlReview.interview}件です。`,
+        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。面接・体験入店の口コミは${content.girlReview.interview}件です。`,
         action:
           "面接・体験入店の口コミが少ないため、応募前の安心感が伝わりにくくなっています。体験入店後に口コミ投稿を案内し、「面接・体験入店」区分で登録してください。",
         expectedEffect: "応募率の向上・応募前不安の解消",
@@ -805,7 +805,7 @@ function buildAdvices(input: {
         id: "girl-reviews-low-avg-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
+        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
         action:
           "評価が低めです。口コミ内容を確認し、接客・待機・ルール共有など改善できる点がないか見直しましょう。改善後は新しい口コミの収集も進めてください。",
         expectedEffect: "応募率の回復・信頼感の改善",
@@ -816,7 +816,7 @@ function buildAdvices(input: {
         id: "girl-reviews-cast-low-for-apply",
         priority: 3,
         priorityLevel: "medium",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。在籍キャストの口コミは${content.girlReview.cast}件です。`,
+        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。在籍キャストの口コミは${content.girlReview.cast}件です。`,
         action:
           "在籍キャストの口コミを増やすことで、お店の雰囲気や働きやすさが伝わりやすくなります。在籍中のキャストへ投稿協力をお願いしましょう。",
         expectedEffect: "応募率の向上・雰囲気伝達",
@@ -827,7 +827,7 @@ function buildAdvices(input: {
         id: "description-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募クリック率は${rates.applyClickRate}%です${applyPeerText}。「どんなお店？」が未入力です。`,
+        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。「どんなお店？」が未入力です。`,
         action:
           "「どんなお店？」に客層・席数・服装・未経験者への教育体制を具体的に書き、面接前に知りたい不安を先回りして解消してください。",
         expectedEffect: "応募率の向上・情報不足の解消",
@@ -842,11 +842,11 @@ function buildAdvices(input: {
         id: "line-cta-copy",
         priority: 3,
         priorityLevel: "high",
-        issue: `詳細クリック${current.detailClicks}件に対し、LINE応募クリックは${current.lineClicks}件です。`,
+        issue: `詳細クリック${current.detailClicks}件に対し、LINE応募数は${current.lineClicks}件です。`,
         action:
           "紹介文や応募欄に「面接前の相談OK」「○時間以内に返信」など安心材料を明記し、LINE応募を第一導線として案内してください。電話応募の無理な推奨は不要です。",
-        expectedEffect: "LINE応募クリックの向上",
-        reason: "詳細閲覧に対してLINE応募クリックが少ないため",
+        expectedEffect: "LINE応募の向上",
+        reason: "詳細閲覧に対してLINE応募が少ないため",
       });
     } else if (!content.hasAccess || !content.hasBusinessHours) {
       const missingBits = [
@@ -857,7 +857,7 @@ function buildAdvices(input: {
         id: "access-hours-for-apply",
         priority: 4,
         priorityLevel: "medium",
-        issue: `応募クリック率は${rates.applyClickRate}%です。${missingBits.join("・")}が未入力です。`,
+        issue: `応募率は${rates.applyClickRate}%です。${missingBits.join("・")}が未入力です。`,
         action: `${missingBits.join("と")}を入力し、通いやすさと勤務時間帯を明確にしてください。`,
         expectedEffect: "応募率の向上・情報不足の解消",
         reason: `詳細閲覧後の応募率が低く、${missingBits.join("・")}が未入力のため`,
@@ -867,13 +867,13 @@ function buildAdvices(input: {
         id: "apply-content-refine",
         priority: 4,
         priorityLevel: "medium",
-        issue: `詳細クリックは${current.detailClicks}件ある一方、応募クリック率は${rates.applyClickRate}%です${applyPeerText}。`,
+        issue: `詳細クリックは${current.detailClicks}件ある一方、応募率は${rates.applyClickRate}%です${applyPeerText}。`,
         action:
           "仕事内容・待遇・担当者情報（返信の目安）を見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。",
         expectedEffect: "応募率の向上",
         reason: peer
-          ? `応募クリック率が同業${peer.isReference ? "参考値" : "平均"}を下回っているため`
-          : `応募クリック率が${LOW_APPLY_RATE}%未満のため`,
+          ? `応募率が同業${peer.isReference ? "参考値" : "平均"}を下回っているため`
+          : `応募率が${LOW_APPLY_RATE}%未満のため`,
       });
     }
   }
@@ -1064,10 +1064,10 @@ function buildSituationSummary(input: {
   const lines: string[] = [];
 
   lines.push(
-    `${monthLabel}：表示${current.impressions}回 / 詳細クリック${current.detailClicks}回 / LINE${current.lineClicks}・電話${current.phoneClicks}（応募合計${current.applyTotal}）`,
+    `${monthLabel}：表示${current.impressions}回 / 詳細クリック${current.detailClicks}回 / LINE${current.lineClicks}・電話${current.phoneClicks}（応募数${current.applyTotal}）`,
   );
   lines.push(
-    `詳細閲覧率${rates.detailClickRate}%、応募クリック率${rates.applyClickRate}%（プラン：${listing.planLabel}）`,
+    `詳細閲覧率${rates.detailClickRate}%、応募率${rates.applyClickRate}%（プラン：${listing.planLabel}）`,
   );
 
   if (listing.districtRank != null && listing.districtTotal != null) {
@@ -1154,7 +1154,7 @@ function buildGoodPoints(
 
   const applyPercent = percentChangeOrNull(current.applyTotal, previous.applyTotal);
   if (applyPercent != null && applyPercent > 0) {
-    points.push(`応募クリックは${previousMonthLabel}より${applyPercent}%増えています`);
+    points.push(`応募数は${previousMonthLabel}より${applyPercent}%増えています`);
   }
 
   if (current.impressions >= MIN_IMPRESSIONS_FOR_DETAIL_RATE) {
@@ -1170,10 +1170,10 @@ function buildGoodPoints(
   if (current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE) {
     if (peer && rates.applyClickRate >= peer.applyClickRate) {
       points.push(
-        `応募クリック率${rates.applyClickRate}%は同業${peer.isReference ? "参考値" : "平均"}${peer.applyClickRate}%以上です`,
+        `応募率${rates.applyClickRate}%は同業${peer.isReference ? "参考値" : "平均"}${peer.applyClickRate}%以上です`,
       );
     } else if (rates.applyClickRate >= HIGH_APPLY_RATE) {
-      points.push(`応募クリック率が${rates.applyClickRate}%と高水準です`);
+      points.push(`応募率が${rates.applyClickRate}%と高水準です`);
     }
   }
 
@@ -1244,7 +1244,7 @@ function buildComparison(
       unit: "count",
     },
     {
-      label: "応募クリック合計",
+      label: "応募数",
       current: current.applyTotal,
       previous: previous.applyTotal,
       diff: current.applyTotal - previous.applyTotal,
@@ -1252,7 +1252,7 @@ function buildComparison(
       unit: "count",
     },
     {
-      label: "応募クリック率",
+      label: "応募率",
       current: rates.applyClickRate,
       previous: previousRates.applyClickRate,
       diff:
@@ -1287,7 +1287,7 @@ function buildPremiumAnalysis(input: {
   let mainChallenge: string | null = null;
   if (listing.districtRank === 1 && funnel === "low_apply_ctr") {
     mainChallenge =
-      "表示順位は1位で露出は十分です。課題は求人詳細の内容または応募導線（詳細閲覧後の応募クリック）です。";
+      "表示順位は1位で露出は十分です。課題は求人詳細の内容または応募導線（詳細閲覧後の応募）です。";
   } else if (listing.districtRank === 1 && funnel === "low_detail_ctr") {
     mainChallenge =
       "表示順位は1位で露出は十分です。課題は一覧からの詳細閲覧率（1枚目画像・タイトル・給与表示）です。";
@@ -1296,7 +1296,7 @@ function buildPremiumAnalysis(input: {
   } else if (funnel === "low_detail_ctr") {
     mainChallenge = `詳細閲覧率${rates.detailClickRate}%が伸び悩んでいます。一覧上の印象改善が最大の課題です。`;
   } else if (funnel === "low_apply_ctr") {
-    mainChallenge = `詳細は見られていますが応募クリック率${rates.applyClickRate}%が課題です。待遇・不安解消・応募導線を優先してください。`;
+    mainChallenge = `詳細は見られていますが応募率${rates.applyClickRate}%が課題です。待遇・不安解消・応募導線を優先してください。`;
   } else if (funnel === "healthy") {
     mainChallenge = "大きな課題は見当たらず、現状維持が妥当です。";
   } else {
@@ -1317,7 +1317,7 @@ function buildPremiumAnalysis(input: {
       `詳細閲覧率：店舗${rates.detailClickRate}%、同業${tag}${peer.detailClickRate}%（差${detailDiff > 0 ? "+" : ""}${detailDiff}pt / ${peer.sampleSize}件）`,
     );
     peerGaps.push(
-      `応募クリック率：店舗${rates.applyClickRate}%、同業${tag}${peer.applyClickRate}%（差${applyDiff > 0 ? "+" : ""}${applyDiff}pt / ${peer.sampleSize}件）`,
+      `応募率：店舗${rates.applyClickRate}%、同業${tag}${peer.applyClickRate}%（差${applyDiff > 0 ? "+" : ""}${applyDiff}pt / ${peer.sampleSize}件）`,
     );
     peerGaps.push(
       `表示回数：店舗${current.impressions}回、同業${tag}${peer.impressionsAvg}回`,
@@ -1332,10 +1332,10 @@ function buildPremiumAnalysis(input: {
     nextMetricsToWatch.push("詳細閲覧率", "店舗詳細クリック数");
   }
   if (funnel === "low_apply_ctr" || funnel === "healthy") {
-    nextMetricsToWatch.push("応募クリック率", "LINE応募クリック数");
+    nextMetricsToWatch.push("応募率", "LINE応募数");
   }
   if (nextMetricsToWatch.length === 0) {
-    nextMetricsToWatch.push("詳細閲覧率", "応募クリック率", "表示回数");
+    nextMetricsToWatch.push("詳細閲覧率", "応募率", "表示回数");
   }
 
   // 表示順位1位のときは上位表示利用を提案文に絶対含めない（二重チェック）
@@ -1657,7 +1657,7 @@ export async function buildShopImprovementReport(
 }
 
 /**
- * ライトプラン向けの簡易集計。当月の表示・応募クリックに加え、
+ * ライトプラン向けの簡易集計。当月の表示・応募に加え、
  * 表示回数の月別推移（直近12か月）のみ付与する。
  * 店舗詳細クリック数・改善レポート・詳細分析は返さない。
  */
