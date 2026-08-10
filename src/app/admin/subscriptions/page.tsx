@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   STRIPE_BILLING_DEFINITIONS,
   STRIPE_BILLING_KEYS,
@@ -86,6 +86,98 @@ type StoreOption = {
   linkedStripeSubscriptionId: string | null;
 };
 
+type ContractAction =
+  | "change_plan"
+  | "cancel_pending_plan_change"
+  | "cancel"
+  | "cancel_pending_cancellation";
+
+type ConfirmDialogState = {
+  subscriptionId: string;
+  action: ContractAction;
+  plan?: StripeBillingKey;
+  headline: string;
+  details: string[];
+};
+
+function contractSubjectLabel(item: AdminSubscription): string {
+  if (!item.storeId) return "店舗未紐付けの契約";
+  return item.shopName?.trim() || "店舗名未設定";
+}
+
+function buildConfirmDialog(
+  item: AdminSubscription,
+  action: ContractAction,
+  plan?: StripeBillingKey,
+): ConfirmDialogState | null {
+  const subscriptionId = item.stripeSubscriptionId;
+  if (!subscriptionId) return null;
+
+  const subject = contractSubjectLabel(item);
+  const currentPlan = item.billingLabel ?? item.plan;
+  const periodEnd = formatDate(item.currentPeriodEnd);
+
+  if (action === "change_plan") {
+    if (!plan) return null;
+    const nextLabel = STRIPE_BILLING_DEFINITIONS[plan].label;
+    return {
+      subscriptionId,
+      action,
+      plan,
+      headline: `この契約を『${nextLabel}』へ変更予約しますか？`,
+      details: [
+        `対象: ${subject}`,
+        `現在のプラン: ${currentPlan}`,
+        `変更後のプラン: ${nextLabel}`,
+        `適用日（次回更新日）: ${periodEnd}`,
+        "現在の契約期間中の料金は変更されません",
+      ],
+    };
+  }
+
+  if (action === "cancel") {
+    return {
+      subscriptionId,
+      action,
+      headline: `この契約を${periodEnd}で解約予約しますか？この操作を行うと、次回更新時の請求は行われません。`,
+      details: [
+        `対象: ${subject}`,
+        `現在のプラン: ${currentPlan}`,
+        `解約予定日: ${periodEnd}`,
+      ],
+    };
+  }
+
+  if (action === "cancel_pending_plan_change") {
+    const pendingLabel =
+      item.pendingBillingLabel ?? item.pendingStripePriceId ?? "変更予定プラン";
+    return {
+      subscriptionId,
+      action,
+      headline: "プラン変更予約を取り消しますか？",
+      details: [
+        `対象: ${subject}`,
+        `現在のプラン: ${currentPlan}`,
+        `取り消す変更予定: ${pendingLabel}`,
+        `予定していた適用日: ${formatDate(item.pendingChangeAt ?? item.currentPeriodEnd)}`,
+        "取消後は、現在のプランのまま継続されます",
+      ],
+    };
+  }
+
+  return {
+    subscriptionId,
+    action,
+    headline: "解約予約を取り消しますか？",
+    details: [
+      `対象: ${subject}`,
+      `現在のプラン: ${currentPlan}`,
+      `解約予定日だった日: ${periodEnd}`,
+      "取消後は、通常どおり次回更新時に請求されます",
+    ],
+  };
+}
+
 export default function AdminSubscriptionsPage() {
   const [rows, setRows] = useState<AdminSubscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +185,10 @@ export default function AdminSubscriptionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(
+    null,
+  );
+  const actionInFlightRef = useRef(false);
 
   const [linkTarget, setLinkTarget] = useState<AdminSubscription | null>(null);
   const [storeQuery, setStoreQuery] = useState("");
@@ -164,13 +260,11 @@ export default function AdminSubscriptionsPage() {
 
   async function performAction(
     subscriptionId: string,
-    action:
-      | "change_plan"
-      | "cancel_pending_plan_change"
-      | "cancel"
-      | "cancel_pending_cancellation",
+    action: ContractAction,
     plan?: StripeBillingKey,
   ) {
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
     setActionLoadingId(subscriptionId);
     setActionMessage(null);
     try {
@@ -184,12 +278,31 @@ export default function AdminSubscriptionsPage() {
         throw new Error(data.message ?? "操作に失敗しました。");
       }
       setActionMessage(data.message ?? "契約操作を反映しました。");
+      setConfirmDialog(null);
       await load();
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : "操作に失敗しました。");
     } finally {
+      actionInFlightRef.current = false;
       setActionLoadingId(null);
     }
+  }
+
+  function requestActionConfirm(
+    item: AdminSubscription,
+    action: ContractAction,
+    plan?: StripeBillingKey,
+  ) {
+    if (actionLoadingId) return;
+    const dialog = buildConfirmDialog(item, action, plan);
+    if (!dialog) return;
+    setActionMessage(null);
+    setConfirmDialog(dialog);
+  }
+
+  function closeConfirmDialog() {
+    if (actionLoadingId) return;
+    setConfirmDialog(null);
   }
 
   function openLinkModal(item: AdminSubscription) {
@@ -478,15 +591,12 @@ export default function AdminSubscriptionsPage() {
                             key={key}
                             type="button"
                             onClick={() =>
-                              void performAction(
-                                item.stripeSubscriptionId!,
-                                "change_plan",
-                                key,
-                              )
+                              requestActionConfirm(item, "change_plan", key)
                             }
                             disabled={
-                              actionLoadingId === item.stripeSubscriptionId ||
-                              item.billingKey === key
+                              Boolean(actionLoadingId) ||
+                              item.billingKey === key ||
+                              Boolean(confirmDialog)
                             }
                             className={`rounded-full border px-3 py-1.5 text-xs disabled:opacity-50 ${
                               isPendingTarget
@@ -511,15 +621,15 @@ export default function AdminSubscriptionsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            void performAction(
-                              item.stripeSubscriptionId!,
+                            requestActionConfirm(
+                              item,
                               "cancel_pending_plan_change",
                             )
                           }
                           disabled={
-                            actionLoadingId === item.stripeSubscriptionId
+                            Boolean(actionLoadingId) || Boolean(confirmDialog)
                           }
-                          className="rounded-full border border-amber-600/40 px-3 py-1.5 text-xs text-amber-900"
+                          className="rounded-full border border-amber-600/40 px-3 py-1.5 text-xs text-amber-900 disabled:opacity-50"
                         >
                           プラン変更予約を取消
                         </button>
@@ -528,33 +638,28 @@ export default function AdminSubscriptionsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            void performAction(
-                              item.stripeSubscriptionId!,
+                            requestActionConfirm(
+                              item,
                               "cancel_pending_cancellation",
                             )
                           }
                           disabled={
-                            actionLoadingId === item.stripeSubscriptionId
+                            Boolean(actionLoadingId) || Boolean(confirmDialog)
                           }
-                          className="rounded-full border border-red-500/40 px-3 py-1.5 text-xs text-red-800"
+                          className="rounded-full border border-red-500/40 px-3 py-1.5 text-xs text-red-800 disabled:opacity-50"
                         >
                           解約予約を取消
                         </button>
                       ) : (
                         <button
                           type="button"
-                          onClick={() =>
-                            void performAction(
-                              item.stripeSubscriptionId!,
-                              "cancel",
-                            )
-                          }
+                          onClick={() => requestActionConfirm(item, "cancel")}
                           disabled={
-                            actionLoadingId === item.stripeSubscriptionId
+                            Boolean(actionLoadingId) || Boolean(confirmDialog)
                           }
-                          className="rounded-full border border-red-400/40 px-3 py-1.5 text-xs text-red-700"
+                          className="rounded-full border border-red-400/40 px-3 py-1.5 text-xs text-red-700 disabled:opacity-50"
                         >
-                          解約（次回更新日）
+                          解約予約
                         </button>
                       )}
                     </div>
@@ -565,6 +670,56 @@ export default function AdminSubscriptionsPage() {
           </div>
         )}
       </div>
+
+      {confirmDialog ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contract-confirm-title"
+        >
+          <div className="w-full max-w-md rounded-xl border border-gold/30 bg-white p-5 shadow-lg">
+            <h2
+              id="contract-confirm-title"
+              className="text-lg font-semibold text-charcoal"
+            >
+              最終確認
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-charcoal">
+              {confirmDialog.headline}
+            </p>
+            <ul className="mt-3 space-y-1.5 rounded-lg border border-gold/20 bg-ivory/60 px-3 py-3 text-sm text-charcoal">
+              {confirmDialog.details.map((line) => (
+                <li key={line}>・{line}</li>
+              ))}
+            </ul>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeConfirmDialog}
+                disabled={Boolean(actionLoadingId)}
+                className="rounded-full border border-charcoal/25 px-4 py-1.5 text-xs text-charcoal disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void performAction(
+                    confirmDialog.subscriptionId,
+                    confirmDialog.action,
+                    confirmDialog.plan,
+                  )
+                }
+                disabled={Boolean(actionLoadingId)}
+                className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {actionLoadingId ? "実行中…" : "実行する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {linkTarget ? (
         <div
