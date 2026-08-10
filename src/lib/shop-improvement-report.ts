@@ -508,7 +508,13 @@ function detectFunnelStage(
   rates: ImprovementRates,
   peer: PeerComparison | null,
 ): FunnelStage {
+  // 応募が1件もないのに「好調」扱いにしない
+  const zeroApplyWithTraffic =
+    current.applyTotal === 0 && current.detailClicks > 0;
+
   if (
+    !zeroApplyWithTraffic &&
+    current.applyTotal > 0 &&
     current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE &&
     rates.applyClickRate >= HIGH_APPLY_RATE
   ) {
@@ -524,6 +530,10 @@ function detectFunnelStage(
     if (current.impressions === 0 && current.detailClicks === 0) {
       return "insufficient_data";
     }
+    // 表示は少ないが詳細はあるのに応募0 → 応募導線側の課題も優先
+    if (zeroApplyWithTraffic) {
+      return "low_apply_ctr";
+    }
     return "low_impressions";
   }
 
@@ -531,6 +541,10 @@ function detectFunnelStage(
     current.impressions >= MIN_IMPRESSIONS_FOR_DETAIL_RATE &&
     rates.detailClickRate < LOW_DETAIL_RATE
   ) {
+    // 詳細に到達していない場合は一覧訴求が先。詳細があるのに応募0なら応募側へ
+    if (zeroApplyWithTraffic) {
+      return "low_apply_ctr";
+    }
     return "low_detail_ctr";
   }
 
@@ -539,7 +553,15 @@ function detectFunnelStage(
     current.impressions >= MIN_IMPRESSIONS_FOR_DETAIL_RATE &&
     rates.detailClickRate + 3 < peer.detailClickRate
   ) {
+    if (zeroApplyWithTraffic) {
+      return "low_apply_ctr";
+    }
     return "low_detail_ctr";
+  }
+
+  // 応募率0%（詳細閲覧あり）または低応募率
+  if (zeroApplyWithTraffic) {
+    return "low_apply_ctr";
   }
 
   if (
@@ -559,6 +581,12 @@ function detectFunnelStage(
 
   if (current.impressions < MIN_IMPRESSIONS_FOR_DETAIL_RATE) {
     return "insufficient_data";
+  }
+
+  // 最終ガード: 応募0件を healthy に落とさない
+  if (current.applyTotal === 0 && current.impressions > 0) {
+    if (current.detailClicks > 0) return "low_apply_ctr";
+    return "low_detail_ctr";
   }
 
   return "healthy";
@@ -627,16 +655,20 @@ function buildAdvices(input: {
     });
   }
 
-  if (funnel === "healthy") {
+  if (
+    funnel === "healthy" &&
+    current.applyTotal > 0 &&
+    rates.applyClickRate >= HIGH_APPLY_RATE
+  ) {
     push("maintain", {
       id: "maintain-success",
       priority: 2,
       priorityLevel: "low",
-      issue: `応募率は${rates.applyClickRate}%で、現状の導線と求人内容が機能しています。`,
+      issue: `応募率は${rates.applyClickRate}%（応募数${current.applyTotal}件）で、現状の導線と求人内容が機能しています。`,
       action:
         "大きな変更はせず、時給・待遇・紹介文の事実関係だけを月1回点検し、数値の落ち込みがないか確認してください。",
       expectedEffect: "現状の応募率の維持",
-      reason: `詳細クリック${current.detailClicks}件に対する応募率が${HIGH_APPLY_RATE}%以上のため`,
+      reason: `詳細クリック${current.detailClicks}件に対する応募率が${HIGH_APPLY_RATE}%以上で、応募も発生しているため`,
     });
   }
 
@@ -755,46 +787,72 @@ function buildAdvices(input: {
   }
 
   if (funnel === "low_apply_ctr") {
+    const zeroApply = current.applyTotal === 0;
     const applyPeerText =
       peer && rates.applyClickRate < peer.applyClickRate
         ? `（店舗${rates.applyClickRate}% / ${peer.isReference ? "同業参考値" : "同業平均"}${peer.applyClickRate}%）`
         : `（現在${rates.applyClickRate}%）`;
+    const applyContext = zeroApply
+      ? `求人は見られていますが応募まで到達していません（詳細クリック${current.detailClicks}件 / 応募数0件・応募率0%）。`
+      : `詳細クリックは${current.detailClicks}件ある一方、応募率は${rates.applyClickRate}%です${applyPeerText}。`;
+    const applyEffect = zeroApply
+      ? "応募率の改善・応募数の増加"
+      : "応募率の向上";
 
     if (listing.districtRank === 1) {
       // 順位の話はせず内容・導線に寄せる（boost は canSuggestBoost で除外済み）
     }
 
-    if (content.benefitCount < BENEFIT_TARGET) {
+    // 応募0件かつ口コミ不足は最優先で口コミ充実を提案
+    if (zeroApply && content.girlReview.total === 0) {
+      push("girl_reviews", {
+        id: "girl-reviews-zero-for-zero-apply",
+        priority: 2,
+        priorityLevel: "high",
+        issue: `${applyContext}女の子の口コミがまだありません。`,
+        action:
+          "求人詳細は閲覧されていますが応募が発生していません。女の子の口コミを充実させ、実際の面接・体験入店・在籍キャストの声を増やすことで、応募前の不安を減らしましょう。ダッシュボードの「女の子の口コミ管理」から登録できます。",
+        expectedEffect: applyEffect,
+        reason:
+          "詳細は見られているが応募が0件で、女の子の口コミも0件のため",
+      });
+    } else if (content.benefitCount < BENEFIT_TARGET) {
       push("benefits", {
         id: "benefits-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `詳細クリックは${current.detailClicks}件ある一方、応募率は${rates.applyClickRate}%です${applyPeerText}。待遇項目は${content.benefitCount}件です。`,
+        issue: `${applyContext}待遇項目は${content.benefitCount}件です。`,
         action: `待遇を${BENEFIT_TARGET}件以上選び、送迎・日払い・寮・服装自由・ノルマなしなど、当てはまる項目を追加してください。ページ上部で待遇が目に入る配置も確認してください。`,
-        expectedEffect: "応募率の向上・不安解消",
-        reason: "詳細は見られているが応募率が低く、待遇情報が不足しているため",
+        expectedEffect: `${applyEffect}・不安解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、待遇情報が不足しているため"
+          : "詳細は見られているが応募率が低く、待遇情報が不足しているため",
       });
     } else if (content.girlReview.total === 0) {
       push("girl_reviews", {
         id: "girl-reviews-zero-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。女の子の口コミがまだありません。`,
+        issue: `${applyContext}女の子の口コミがまだありません。`,
         action:
           "面接・体験入店後や在籍キャストへ口コミ投稿をお願いすると、応募前の安心感が伝わり応募率向上が期待できます。ダッシュボードの「女の子の口コミ管理」から登録できます。",
-        expectedEffect: "応募率の向上・安心感の補強",
-        reason: "詳細閲覧後の応募率が低く、女の子の口コミが0件のため",
+        expectedEffect: `${applyEffect}・安心感の補強`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、女の子の口コミが0件のため"
+          : "詳細閲覧後の応募率が低く、女の子の口コミが0件のため",
       });
     } else if (content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW) {
       push("girl_reviews", {
         id: "girl-reviews-interview-low-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。面接・体験入店の口コミは${content.girlReview.interview}件です。`,
+        issue: `${applyContext}面接・体験入店の口コミは${content.girlReview.interview}件です。`,
         action:
           "面接・体験入店の口コミが少ないため、応募前の安心感が伝わりにくくなっています。体験入店後に口コミ投稿を案内し、「面接・体験入店」区分で登録してください。",
-        expectedEffect: "応募率の向上・応募前不安の解消",
-        reason: "詳細閲覧後の応募率が低く、面接・体験入店口コミが不足しているため",
+        expectedEffect: `${applyEffect}・応募前不安の解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、面接・体験入店口コミが不足しているため"
+          : "詳細閲覧後の応募率が低く、面接・体験入店口コミが不足しているため",
       });
     } else if (
       content.girlReview.averageRating != null &&
@@ -805,48 +863,79 @@ function buildAdvices(input: {
         id: "girl-reviews-low-avg-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
+        issue: `${applyContext}口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
         action:
           "評価が低めです。口コミ内容を確認し、接客・待機・ルール共有など改善できる点がないか見直しましょう。改善後は新しい口コミの収集も進めてください。",
-        expectedEffect: "応募率の回復・信頼感の改善",
-        reason: "詳細閲覧後の応募率が低く、口コミ平均評価が低めのため",
+        expectedEffect: `${applyEffect}・信頼感の改善`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、口コミ平均評価が低めのため"
+          : "詳細閲覧後の応募率が低く、口コミ平均評価が低めのため",
       });
     } else if (content.girlReview.cast < GIRL_REVIEW_CAST_LOW) {
       push("girl_reviews", {
         id: "girl-reviews-cast-low-for-apply",
         priority: 3,
         priorityLevel: "medium",
-        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。在籍キャストの口コミは${content.girlReview.cast}件です。`,
+        issue: `${applyContext}在籍キャストの口コミは${content.girlReview.cast}件です。`,
         action:
           "在籍キャストの口コミを増やすことで、お店の雰囲気や働きやすさが伝わりやすくなります。在籍中のキャストへ投稿協力をお願いしましょう。",
-        expectedEffect: "応募率の向上・雰囲気伝達",
-        reason: "詳細閲覧後の応募率が低く、在籍キャスト口コミが不足しているため",
+        expectedEffect: `${applyEffect}・雰囲気伝達`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、在籍キャスト口コミが不足しているため"
+          : "詳細閲覧後の応募率が低く、在籍キャスト口コミが不足しているため",
       });
     } else if (!content.hasDescription) {
       push("description", {
         id: "description-for-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `応募率は${rates.applyClickRate}%です${applyPeerText}。「どんなお店？」が未入力です。`,
+        issue: `${applyContext}「どんなお店？」が未入力です。`,
         action:
           "「どんなお店？」に客層・席数・服装・未経験者への教育体制を具体的に書き、面接前に知りたい不安を先回りして解消してください。",
-        expectedEffect: "応募率の向上・情報不足の解消",
-        reason: "詳細閲覧後の応募率が低く、お店説明が未入力のため",
+        expectedEffect: `${applyEffect}・情報不足の解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、お店説明が未入力のため"
+          : "詳細閲覧後の応募率が低く、お店説明が未入力のため",
+      });
+    } else if (
+      content.introductionLength < INTRO_LENGTH_TARGET ||
+      !content.hasSalary
+    ) {
+      const missingBits = [
+        content.introductionLength < INTRO_LENGTH_TARGET
+          ? `紹介文（現在${content.introductionLength}文字）`
+          : null,
+        !content.hasSalary ? "時給" : null,
+      ].filter(Boolean);
+      push("intro_salary", {
+        id: "intro-salary-for-apply",
+        priority: 3,
+        priorityLevel: "high",
+        issue: `${applyContext}${missingBits.join("・")}の見直しが必要です。`,
+        action: !content.hasSalary
+          ? "時給を具体的な金額で入力し、一覧・詳細の両方で条件が分かるようにしてください。"
+          : `紹介文を${INTRO_LENGTH_TARGET}文字以上にし、働き方・雰囲気・応募後の流れを具体的に書いてください。`,
+        expectedEffect: applyEffect,
+        reason: zeroApply
+          ? `詳細は見られているが応募が0件で、${missingBits.join("・")}が不足しているため`
+          : `詳細閲覧後の応募率が低く、${missingBits.join("・")}が不足しているため`,
       });
     } else if (
       content.hasLineUrl &&
-      current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE &&
-      current.lineClicks < Math.max(2, Math.ceil(current.detailClicks * 0.03))
+      current.detailClicks >= Math.min(MIN_DETAIL_FOR_APPLY_RATE, 5) &&
+      current.lineClicks < Math.max(1, Math.ceil(current.detailClicks * 0.03))
     ) {
       push("line_cta", {
         id: "line-cta-copy",
         priority: 3,
         priorityLevel: "high",
-        issue: `詳細クリック${current.detailClicks}件に対し、LINE応募数は${current.lineClicks}件です。`,
+        issue: `${applyContext}LINE応募数は${current.lineClicks}件です。`,
         action:
           "紹介文や応募欄に「面接前の相談OK」「○時間以内に返信」など安心材料を明記し、LINE応募を第一導線として案内してください。電話応募の無理な推奨は不要です。",
-        expectedEffect: "LINE応募の向上",
-        reason: "詳細閲覧に対してLINE応募が少ないため",
+        expectedEffect: `${applyEffect}・LINE応募の増加`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、LINE応募も少ないため"
+          : "詳細閲覧に対してLINE応募が少ないため",
       });
     } else if (!content.hasAccess || !content.hasBusinessHours) {
       const missingBits = [
@@ -857,23 +946,43 @@ function buildAdvices(input: {
         id: "access-hours-for-apply",
         priority: 4,
         priorityLevel: "medium",
-        issue: `応募率は${rates.applyClickRate}%です。${missingBits.join("・")}が未入力です。`,
+        issue: `${applyContext}${missingBits.join("・")}が未入力です。`,
         action: `${missingBits.join("と")}を入力し、通いやすさと勤務時間帯を明確にしてください。`,
-        expectedEffect: "応募率の向上・情報不足の解消",
-        reason: `詳細閲覧後の応募率が低く、${missingBits.join("・")}が未入力のため`,
+        expectedEffect: `${applyEffect}・情報不足の解消`,
+        reason: zeroApply
+          ? `詳細は見られているが応募が0件で、${missingBits.join("・")}が未入力のため`
+          : `詳細閲覧後の応募率が低く、${missingBits.join("・")}が未入力のため`,
+      });
+    } else if (
+      content.storeImageCount < STORE_IMAGE_TARGET ||
+      !content.hasMainImage
+    ) {
+      push("photos_for_apply", {
+        id: "photos-for-apply",
+        priority: 4,
+        priorityLevel: "medium",
+        issue: `${applyContext}写真・店内画像の充実度が不足しています（店内画像${content.storeImageCount}枚）。`,
+        action: `メイン画像と店内写真をあわせて見直し、店内全景・カウンター・雰囲気が分かる写真を${STORE_IMAGE_TARGET}枚以上そろえてください。`,
+        expectedEffect: applyEffect,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、写真情報が不足しているため"
+          : "詳細閲覧後の応募率が低く、写真情報が不足しているため",
       });
     } else {
       push("apply_content_general", {
         id: "apply-content-refine",
         priority: 4,
         priorityLevel: "medium",
-        issue: `詳細クリックは${current.detailClicks}件ある一方、応募率は${rates.applyClickRate}%です${applyPeerText}。`,
-        action:
-          "仕事内容・待遇・担当者情報（返信の目安）を見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。",
-        expectedEffect: "応募率の向上",
-        reason: peer
-          ? `応募率が同業${peer.isReference ? "参考値" : "平均"}を下回っているため`
-          : `応募率が${LOW_APPLY_RATE}%未満のため`,
+        issue: applyContext,
+        action: zeroApply
+          ? "時給・待遇・紹介文・写真・応募導線・女の子の口コミを見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。"
+          : "仕事内容・待遇・担当者情報（返信の目安）を見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。",
+        expectedEffect: applyEffect,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件のため"
+          : peer
+            ? `応募率が同業${peer.isReference ? "参考値" : "平均"}を下回っているため`
+            : `応募率が${LOW_APPLY_RATE}%未満のため`,
       });
     }
   }
@@ -997,9 +1106,11 @@ function buildAdvices(input: {
     }
   }
 
-  // 好調時：高評価口コミを強みとしてさらに伸ばす提案
+  // 好調時：高評価口コミを強みとしてさらに伸ばす提案（応募が発生している場合のみ）
   if (
     funnel === "healthy" &&
+    current.applyTotal > 0 &&
+    rates.applyClickRate >= HIGH_APPLY_RATE &&
     content.girlReview.averageRating != null &&
     content.girlReview.total >= GIRL_REVIEW_AVG_MIN_SAMPLES &&
     content.girlReview.averageRating >= GIRL_REVIEW_HIGH_AVG &&
@@ -1013,7 +1124,7 @@ function buildAdvices(input: {
       action:
         "この評価は求人の強みなので、口コミ数をさらに増やして信頼性を高めましょう。体験入店後・在籍キャストへの投稿案内を続けてください。",
       expectedEffect: "信頼性の更なる向上",
-      reason: "応募導線は良好で、口コミ平均評価が高いため",
+      reason: "応募が発生しており応募導線も良好で、口コミ平均評価が高いため",
     });
   }
 
@@ -1036,16 +1147,22 @@ function buildAdvices(input: {
   }
 
   // 電話は LINE が機能している場合は問題扱いしない（提案しない）
-  if (
-    !content.hasPhone &&
-    content.hasLineUrl &&
-    current.lineClicks === 0 &&
-    current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE
-  ) {
-    // LINE未クリックかつ電話未登録のみ低優先で案内（LINEが動いていれば出さない）
-  }
+  // LINE未クリックかつ電話未登録のみ、過去は低優先案内対象だったが、現状は出さない
 
-  return candidates
+  // 応募0件のときに「現状維持」「機能しています」系の提案が混入しないよう最終ガード
+  const sanitized =
+    current.applyTotal === 0
+      ? candidates.filter((a) => {
+          const blob = `${a.issue}${a.action}${a.expectedEffect}${a.reason}`;
+          if (a.id === "maintain-success") return false;
+          if (/現状の応募率の維持|現状維持|うまく機能しています|機能しています/.test(blob)) {
+            return false;
+          }
+          return true;
+        })
+      : candidates;
+
+  return sanitized
     .sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id))
     .slice(0, MAX_ADVICES);
 }
@@ -1167,7 +1284,7 @@ function buildGoodPoints(
     }
   }
 
-  if (current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE) {
+  if (current.detailClicks >= MIN_DETAIL_FOR_APPLY_RATE && current.applyTotal > 0) {
     if (peer && rates.applyClickRate >= peer.applyClickRate) {
       points.push(
         `応募率${rates.applyClickRate}%は同業${peer.isReference ? "参考値" : "平均"}${peer.applyClickRate}%以上です`,
@@ -1177,7 +1294,11 @@ function buildGoodPoints(
     }
   }
 
-  if (funnel === "healthy") {
+  if (
+    funnel === "healthy" &&
+    current.applyTotal > 0 &&
+    rates.applyClickRate >= HIGH_APPLY_RATE
+  ) {
     points.push("現状の求人内容と応募導線が数値上うまく機能しています");
   }
 
@@ -1191,7 +1312,15 @@ function buildGoodPoints(
     points.push(`LINE応募導線が機能し、今月${current.lineClicks}クリックあります`);
   }
 
-  if (content.girlReview.total >= GIRL_REVIEW_MANY) {
+  if (
+    content.girlReview.total >= GIRL_REVIEW_MANY &&
+    content.girlReview.averageRating != null &&
+    content.girlReview.averageRating >= GIRL_REVIEW_HIGH_AVG
+  ) {
+    points.push(
+      `口コミ評価が高く、応募前の安心材料として機能しています（平均${content.girlReview.averageRating} / ${content.girlReview.total}件）`,
+    );
+  } else if (content.girlReview.total >= GIRL_REVIEW_MANY) {
     points.push(
       `口コミが充実しています（${content.girlReview.total}件）。応募を検討している女の子への安心材料になっています`,
     );
@@ -1207,6 +1336,8 @@ function buildGoodPoints(
     points.push(
       `女の子の口コミが${content.girlReview.total}件登録されています（面接・体験入店${content.girlReview.interview}件 / 在籍${content.girlReview.cast}件）`,
     );
+  } else if (funnel === "low_apply_ctr" || current.applyTotal === 0) {
+    // 強みとしては触れず、改善側で口コミ追加を促す
   }
 
   if (points.length === 0) {
@@ -1296,9 +1427,15 @@ function buildPremiumAnalysis(input: {
   } else if (funnel === "low_detail_ctr") {
     mainChallenge = `詳細閲覧率${rates.detailClickRate}%が伸び悩んでいます。一覧上の印象改善が最大の課題です。`;
   } else if (funnel === "low_apply_ctr") {
-    mainChallenge = `詳細は見られていますが応募率${rates.applyClickRate}%が課題です。待遇・不安解消・応募導線を優先してください。`;
+    mainChallenge =
+      current.applyTotal === 0
+        ? `詳細クリック${current.detailClicks}件ある一方で応募は0件です。求人内容・待遇・口コミ・応募導線を優先して改善してください。`
+        : `詳細は見られていますが応募率${rates.applyClickRate}%が課題です。待遇・不安解消・応募導線を優先してください。`;
   } else if (funnel === "healthy") {
-    mainChallenge = "大きな課題は見当たらず、現状維持が妥当です。";
+    mainChallenge =
+      current.applyTotal > 0 && rates.applyClickRate >= HIGH_APPLY_RATE
+        ? "大きな課題は見当たらず、現状維持が妥当です。"
+        : "数値を確認しながら、応募につながる求人内容の改善を続けてください。";
   } else {
     mainChallenge =
       current.impressions === 0
@@ -1596,6 +1733,28 @@ export async function buildShopImprovementReport(
       (advice) =>
         !/上位表示/.test(advice.action) && !/上位表示/.test(advice.issue),
     );
+  }
+
+  // 応募0件なのに提案が空／維持系だけになった場合の最終フォールバック
+  if (current.applyTotal === 0 && current.detailClicks > 0) {
+    advices = advices.filter((a) => a.id !== "maintain-success");
+    if (advices.length === 0) {
+      const reviewHint =
+        content.girlReview.total === 0
+          ? "女の子の口コミを増やし、面接・体験入店・在籍キャストの声を充実させてください。"
+          : "時給・待遇・紹介文・写真・応募導線を見直し、応募前の不安を解消してください。";
+      advices = [
+        {
+          id: "zero-apply-fallback",
+          priority: 2,
+          priorityLevel: "high",
+          issue: `求人は見られていますが応募まで到達していません（詳細クリック${current.detailClicks}件 / 応募数0件・応募率0%）。`,
+          action: `求人詳細は閲覧されていますが応募が発生していません。${reviewHint}`,
+          expectedEffect: "応募率の改善・応募数の増加",
+          reason: "詳細は見られているが応募が0件のため",
+        },
+      ];
+    }
   }
 
   const goodPoints = buildGoodPoints(

@@ -164,11 +164,19 @@ function groupAdvicesByPriority(advices: ImprovementAdvice[]) {
   return groups;
 }
 
-function ConcreteAdviceList({ advices }: { advices: ImprovementAdvice[] }) {
+function ConcreteAdviceList({
+  advices,
+  applyTotal,
+}: {
+  advices: ImprovementAdvice[];
+  applyTotal: number;
+}) {
   if (advices.length === 0) {
     return (
       <p className="mt-2 text-sm text-muted">
-        大きな改善提案はありません。現状維持で問題ありません。
+        {applyTotal === 0
+          ? "応募が発生していません。求人内容・待遇・口コミ・応募導線の見直しを優先してください。"
+          : "大きな改善提案はありません。現状維持で問題ありません。"}
       </p>
     );
   }
@@ -469,7 +477,9 @@ export function ShopImprovementReport({
                 if (!hasAny) {
                   return (
                     <p className="mt-2 text-sm text-muted">
-                      優先して直す項目はありません（現状維持）。
+                      {report.current.applyTotal === 0
+                        ? "応募率が0%のため、応募につながる求人内容・口コミ・待遇・応募導線の改善を優先してください。"
+                        : "優先して直す項目はありません（現状維持）。"}
                     </p>
                   );
                 }
@@ -506,7 +516,10 @@ export function ShopImprovementReport({
               <p className="mt-1 text-xs text-muted">
                 影響が大きい順に最大3件まで表示します。
               </p>
-              <ConcreteAdviceList advices={report.advices ?? []} />
+              <ConcreteAdviceList
+                advices={report.advices ?? []}
+                applyTotal={report.current.applyTotal}
+              />
             </div>
 
             <div className="rounded-xl border border-[#047a3b]/20 bg-[#047a3b]/5 p-4">
@@ -515,7 +528,9 @@ export function ShopImprovementReport({
               </h3>
               {(report.advices ?? []).length === 0 ? (
                 <p className="mt-2 text-sm text-muted">
-                  現状維持により、既存の閲覧率・応募率を保てます。
+                  {report.current.applyTotal === 0
+                    ? "応募率の改善・応募数の増加が期待できます。"
+                    : "現状維持により、既存の閲覧率・応募率を保てます。"}
                 </p>
               ) : (
                 <ul className="mt-2 space-y-1.5">
