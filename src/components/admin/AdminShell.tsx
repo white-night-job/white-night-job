@@ -9,6 +9,103 @@ import {
   type ReactNode,
 } from "react";
 import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
+import {
+  AdminUnsavedChangesProvider,
+  useAdminUnsavedChanges,
+} from "@/components/admin/AdminUnsavedChanges";
+
+function AdminShellChrome({ children }: { children: ReactNode }) {
+  const pathname = usePathname() || "/admin";
+  const router = useRouter();
+  const { requestNavigation } = useAdminUnsavedChanges();
+  const isDashboard = pathname === "/admin";
+
+  async function handleLogout() {
+    const proceed = requestNavigation({
+      kind: "action",
+      run: () => {
+        void (async () => {
+          try {
+            await fetch("/api/admin/logout", {
+              method: "POST",
+              credentials: "include",
+            });
+          } catch {
+            /* ignore */
+          }
+          router.replace("/admin/login");
+        })();
+      },
+    });
+    if (!proceed) return;
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      /* ignore */
+    }
+    router.replace("/admin/login");
+  }
+
+  return (
+    <div className="admin-app">
+      <header className="admin-topbar">
+        {isDashboard ? (
+          <div className="admin-topbar-brand">
+            <span className="admin-topbar-kicker">Admin</span>
+            <span className="admin-topbar-title">White Night Job 管理画面</span>
+          </div>
+        ) : (
+          <Link
+            href="/admin"
+            className="admin-topbar-back"
+            onClick={(event) => {
+              const ok = requestNavigation({
+                kind: "href",
+                href: "/admin",
+              });
+              if (!ok) event.preventDefault();
+            }}
+          >
+            ← 管理画面
+          </Link>
+        )}
+        <div className="admin-topbar-actions">
+          <AdminNotificationBell />
+          <Link
+            href="/"
+            className="admin-topbar-site"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => {
+              const ok = requestNavigation({
+                kind: "href",
+                href: "/",
+                targetBlank: true,
+              });
+              if (!ok) event.preventDefault();
+            }}
+          >
+            サイトを見る
+          </Link>
+          <button
+            type="button"
+            className="admin-topbar-logout"
+            onClick={() => void handleLogout()}
+          >
+            ログアウト
+          </button>
+        </div>
+      </header>
+
+      <div className="admin-body">
+        <div className="admin-content">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminShell({
   children,
@@ -22,7 +119,6 @@ export function AdminShell({
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
   const [checking, setChecking] = useState(!initialAuthenticated);
   const isLoginPage = pathname === "/admin/login";
-  const isDashboard = pathname === "/admin";
 
   const refreshSession = useCallback(async () => {
     try {
@@ -53,19 +149,6 @@ export function AdminShell({
     }
   }, [authenticated, checking, isLoginPage, pathname, router]);
 
-  async function handleLogout() {
-    try {
-      await fetch("/api/admin/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {
-      /* ignore */
-    }
-    setAuthenticated(false);
-    router.replace("/admin/login");
-  }
-
   if (isLoginPage) {
     return <div className="admin-app">{children}</div>;
   }
@@ -79,41 +162,8 @@ export function AdminShell({
   }
 
   return (
-    <div className="admin-app">
-      <header className="admin-topbar">
-        {isDashboard ? (
-          <div className="admin-topbar-brand">
-            <span className="admin-topbar-kicker">Admin</span>
-            <span className="admin-topbar-title">White Night Job 管理画面</span>
-          </div>
-        ) : (
-          <Link href="/admin" className="admin-topbar-back">
-            ← 管理画面
-          </Link>
-        )}
-        <div className="admin-topbar-actions">
-          <AdminNotificationBell />
-          <Link
-            href="/"
-            className="admin-topbar-site"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            サイトを見る
-          </Link>
-          <button
-            type="button"
-            className="admin-topbar-logout"
-            onClick={() => void handleLogout()}
-          >
-            ログアウト
-          </button>
-        </div>
-      </header>
-
-      <div className="admin-body">
-        <div className="admin-content">{children}</div>
-      </div>
-    </div>
+    <AdminUnsavedChangesProvider>
+      <AdminShellChrome>{children}</AdminShellChrome>
+    </AdminUnsavedChangesProvider>
   );
 }

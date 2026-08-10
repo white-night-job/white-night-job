@@ -3,6 +3,7 @@
 import { JobListingPreview } from "@/components/JobListingPreview";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAdminUnsavedChanges } from "@/components/admin/AdminUnsavedChanges";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import {
@@ -320,6 +321,8 @@ export default function AdminJobsPage() {
 function AdminJobsPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setDirty: setUnsavedDirty, requestNavigation } =
+    useAdminUnsavedChanges();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [form, setForm] = useState<JobForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -603,6 +606,10 @@ function AdminJobsPageInner() {
     });
   }
 
+  function markFormDirty() {
+    setFormDirty(true);
+  }
+
   const showCopyToast = useCallback(
     (tone: "success" | "error", message: string) => {
       if (copyToastTimerRef.current) {
@@ -652,6 +659,7 @@ function AdminJobsPageInner() {
       ...current,
       ...planToFormPatch(plan),
     }));
+    markFormDirty();
   }
 
   function toggleBenefit(benefit: string) {
@@ -661,6 +669,7 @@ function AdminJobsPageInner() {
         ? current.benefits.filter((item) => item !== benefit)
         : [...current.benefits, benefit],
     }));
+    markFormDirty();
   }
 
   function addCastVoice() {
@@ -668,6 +677,7 @@ function AdminJobsPageInner() {
       ...current,
       castVoices: [...current.castVoices, emptyCastVoiceEntry()],
     }));
+    markFormDirty();
   }
 
   function removeCastVoice(index: number) {
@@ -675,6 +685,7 @@ function AdminJobsPageInner() {
       ...current,
       castVoices: current.castVoices.filter((_, itemIndex) => itemIndex !== index),
     }));
+    markFormDirty();
   }
 
   function updateCastVoice(
@@ -688,6 +699,7 @@ function AdminJobsPageInner() {
         itemIndex === index ? { ...entry, [key]: value } : entry,
       ),
     }));
+    markFormDirty();
   }
 
   function removeStoreImage(index: number) {
@@ -695,6 +707,7 @@ function AdminJobsPageInner() {
       ...current,
       storeImages: current.storeImages.filter((_, itemIndex) => itemIndex !== index),
     }));
+    markFormDirty();
   }
 
   function scrollWithHeaderOffset(element: HTMLElement | null) {
@@ -1020,6 +1033,7 @@ function AdminJobsPageInner() {
             ...uploadedUrls,
           ]),
         }));
+        markFormDirty();
       }
 
       if (uploadedUrls.length > 0 && failedFiles.length === 0) {
@@ -1070,6 +1084,19 @@ function AdminJobsPageInner() {
   }
 
   const isFormVisible = editingId !== null || isAddFormOpen;
+
+  useEffect(() => {
+    setUnsavedDirty(isFormVisible && formDirty);
+    return () => setUnsavedDirty(false);
+  }, [isFormVisible, formDirty, setUnsavedDirty]);
+
+  function requestDiscardForm(onDiscard: () => void) {
+    const ok = requestNavigation({
+      kind: "action",
+      run: onDiscard,
+    });
+    if (ok) onDiscard();
+  }
 
   useEffect(() => {
     if (!pendingScrollToEditorRef.current || !editingId) return;
@@ -1623,7 +1650,13 @@ function AdminJobsPageInner() {
       {!editingId && (
         <button
           type="button"
-          onClick={() => setIsAddFormOpen((open) => !open)}
+          onClick={() => {
+            if (isAddFormOpen && formDirty) {
+              requestDiscardForm(() => closeEditor({ scrollToList: false }));
+              return;
+            }
+            setIsAddFormOpen((open) => !open);
+          }}
           aria-expanded={isAddFormOpen}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-gradient-to-r from-gold to-gold-dark px-4 py-3.5 text-base font-semibold text-white shadow-gold transition hover:brightness-105 sm:py-4"
         >
@@ -2767,7 +2800,9 @@ function AdminJobsPageInner() {
           <button
             type="button"
             disabled={loading}
-            onClick={() => closeEditor({ scrollToList: true })}
+            onClick={() =>
+              requestDiscardForm(() => closeEditor({ scrollToList: true }))
+            }
             className="rounded-full border border-gold/40 px-6 py-3 text-sm font-medium text-muted hover:text-charcoal disabled:opacity-60"
           >
             キャンセル
