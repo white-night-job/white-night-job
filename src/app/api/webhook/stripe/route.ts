@@ -1,247 +1,217 @@
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getErrorMessage } from "@/lib/api-error";
-import { getStripeServer, getStripeWebhookSecret } from "@/lib/stripe";
+import {
+  markInvoicePaid,
+  markInvoicePaymentFailed,
+  resolveStoreIdByCustomerEmail,
+  upsertSubscriptionFromStripe,
+} from "@/lib/subscriptions";
 import {
   notifyStripeCanceled,
   notifyStripeInvoicePaid,
   notifyStripeNewContract,
   notifyStripePaymentFailed,
 } from "@/lib/stripe-admin-notify";
-import {
-  markInvoicePaid,
-  markInvoicePaymentFailed,
-  upsertSubscriptionFromStripe,
-} from "@/lib/subscriptions";
+import { getStripeServer, getStripeWebhookSecret } from "@/lib/stripe";
 
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
-  const fromParent =
-    invoice.parent &&
-    typeof invoice.parent !== "string" &&
-    invoice.parent.subscription_details?.subscription;
-  if (typeof fromParent === "string" && fromParent.length > 0) {
-    return fromParent;
-  }
-
-  const legacy = (invoice as unknown as { subscription?: string | null }).subscription;
-  if (typeof legacy === "string" && legacy.length > 0) {
-    return legacy;
+function getSubscriptionIdFromInvoice(
+  invoice: Stripe.Invoice,
+): string | null {
+  const parent = invoice.parent;
+  if (
+    parent?.type === "subscription_details" &&
+    parent.subscription_details?.subscription
+  ) {
+    const sub = parent.subscription_details.subscription;
+    return typeof sub === "string" ? sub : sub.id;
   }
   return null;
 }
 
 /**
- * 運営発行の Payment Link / Checkout から store_id を解決する。
- * 優先順位:
- * 1. session.metadata.store_id
- * 2. session.client_reference_id（Payment Link の ?client_reference_id=jobs.id）
- * 3. subscription.metadata.store_id
+ * Checkout Session から店舗 ID を解決。
+ * 優先: metadata.store_id → client_reference_id → 顧客メール一致
  */
-function resolveStoreIdFromCheckout(
+async function resolveStoreIdFromCheckoutSession(
   session: Stripe.Checkout.Session,
-  subscription: Stripe.Subscription,
-): string | undefined {
-  const fromSessionMeta = session.metadata?.store_id?.trim();
-  if (fromSessionMeta) return fromSessionMeta;
+): Promise<string | null> {
+  const fromMetadata =
+    typeof session.metadata?.store_id === "string"
+      ? session.metadata.store_id.trim()
+      : "";
+  if (fromMetadata) return fromMetadata;
 
-  const fromClientRef = session.client_reference_id?.trim();
+  const fromClientRef =
+    typeof session.client_reference_id === "string"
+      ? session.client_reference_id.trim()
+      : "";
   if (fromClientRef) return fromClientRef;
 
-  const fromSubMeta = subscription.metadata?.store_id?.trim();
-  if (fromSubMeta) return fromSubMeta;
-
-  return undefined;
+  const email =
+    session.customer_details?.email?.trim().toLowerCase() ||
+    session.customer_email?.trim().toLowerCase() ||
+    null;
+  return resolveStoreIdByCustomerEmail(email);
 }
 
-async function attachStoreIdToStripeObjects(
-  stripe: Stripe,
-  subscription: Stripe.Subscription,
-  storeId: string,
-): Promise<void> {
-  const customerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer &&
-          !("deleted" in subscription.customer && subscription.customer.deleted)
-        ? subscription.customer.id
-        : null;
-
-  if (customerId) {
-    await stripe.customers.update(customerId, {
-      metadata: {
-        store_id: storeId,
-        source: "white-night-job",
-      },
+async function attachStoreMetadataToStripeObjects(params: {
+  storeId: string;
+  subscriptionId: string;
+  customerId: string | null;
+}) {
+  const stripe = getStripeServer();
+  await stripe.subscriptions.update(params.subscriptionId, {
+    metadata: { store_id: params.storeId },
+  });
+  if (params.customerId) {
+    await stripe.customers.update(params.customerId, {
+      metadata: { store_id: params.storeId },
     });
   }
+}
 
-  await stripe.subscriptions.update(subscription.id, {
-    metadata: {
-      ...subscription.metadata,
-      store_id: storeId,
-    },
+async function retrieveSubscriptionExpanded(subscriptionId: string) {
+  const stripe = getStripeServer();
+  return stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price", "latest_invoice", "customer"],
   });
 }
 
-async function verifyEvent(request: Request): Promise<Stripe.Event> {
-  const signature = (await headers()).get("stripe-signature");
-  if (!signature) throw new Error("stripe-signature header is missing.");
-  const payload = await request.text();
-  const stripe = getStripeServer();
-  return stripe.webhooks.constructEvent(payload, signature, getStripeWebhookSecret());
-}
-
-async function safeNotify(fn: () => Promise<void>): Promise<void> {
-  try {
-    await fn();
-  } catch (error) {
-    console.error("[stripe-webhook] notify failed", error);
-  }
-}
-
 export async function POST(request: Request) {
+  const stripe = getStripeServer();
+  const webhookSecret = getStripeWebhookSecret();
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) {
+    return Response.json({ error: "Missing stripe-signature" }, { status: 400 });
+  }
+
+  const rawBody = await request.text();
   let event: Stripe.Event;
   try {
-    event = await verifyEvent(request);
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (error) {
-    return NextResponse.json(
-      { message: getErrorMessage(error, "署名検証に失敗しました。") },
-      { status: 400 },
-    );
+    const message = error instanceof Error ? error.message : "Invalid signature";
+    return Response.json({ error: message }, { status: 400 });
   }
 
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription" && session.subscription) {
-          const stripe = getStripeServer();
-          let sub = await stripe.subscriptions.retrieve(String(session.subscription), {
-            expand: ["customer", "latest_invoice", "items.data.price"],
+        if (session.mode !== "subscription") break;
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id;
+        if (!subscriptionId) break;
+
+        const storeId = await resolveStoreIdFromCheckoutSession(session);
+        const customerId =
+          typeof session.customer === "string"
+            ? session.customer
+            : session.customer?.id ?? null;
+
+        if (storeId) {
+          await attachStoreMetadataToStripeObjects({
+            storeId,
+            subscriptionId,
+            customerId,
           });
-          const storeId = resolveStoreIdFromCheckout(session, sub);
-          if (storeId && sub.metadata?.store_id !== storeId) {
-            await attachStoreIdToStripeObjects(stripe, sub, storeId);
-            sub = await stripe.subscriptions.retrieve(sub.id, {
-              expand: ["customer", "latest_invoice", "items.data.price"],
-            });
-          }
-          const record = await upsertSubscriptionFromStripe(sub, {
-            fallbackStoreId: storeId,
-          });
-          await safeNotify(() =>
-            notifyStripeNewContract({
-              record,
-              stripeSubscription: sub,
-              sourceEvent: "checkout.session.completed",
-            }),
-          );
         }
+
+        const subscription = await retrieveSubscriptionExpanded(subscriptionId);
+        const record = await upsertSubscriptionFromStripe(subscription, {
+          fallbackStoreId: storeId,
+        });
+        await notifyStripeNewContract({
+          record,
+          stripeSubscription: subscription,
+          sourceEvent: "checkout.session.completed",
+        }).catch((error) => {
+          console.error("[stripe webhook] admin notify checkout failed", error);
+        });
         break;
       }
       case "customer.subscription.created": {
-        const sub = event.data.object as Stripe.Subscription;
-        try {
-          const stripe = getStripeServer();
-          const full = await stripe.subscriptions.retrieve(sub.id, {
-            expand: ["customer", "latest_invoice", "items.data.price"],
-          });
-          const record = await upsertSubscriptionFromStripe(full);
-          await safeNotify(() =>
-            notifyStripeNewContract({
-              record,
-              stripeSubscription: full,
-              sourceEvent: "customer.subscription.created",
-            }),
-          );
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (message.includes("store_id is missing")) {
-            console.warn("[stripe-webhook] skip subscription.created without store_id", {
-              subscriptionId: sub.id,
-            });
-            break;
-          }
-          throw error;
-        }
+        const subscription = event.data.object as Stripe.Subscription;
+        const full = await retrieveSubscriptionExpanded(subscription.id);
+        const record = await upsertSubscriptionFromStripe(full, {
+          preserveFailureCount: true,
+        });
+        await notifyStripeNewContract({
+          record,
+          stripeSubscription: full,
+          sourceEvent: "customer.subscription.created",
+        }).catch((error) => {
+          console.error("[stripe webhook] admin notify created failed", error);
+        });
         break;
       }
       case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        try {
-          await upsertSubscriptionFromStripe(sub);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (message.includes("store_id is missing")) {
-            console.warn("[stripe-webhook] skip subscription.updated without store_id", {
-              subscriptionId: sub.id,
-            });
-            break;
-          }
-          throw error;
-        }
+        const subscription = event.data.object as Stripe.Subscription;
+        const full = await retrieveSubscriptionExpanded(subscription.id);
+        await upsertSubscriptionFromStripe(full, { preserveFailureCount: true });
         break;
       }
       case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
-        try {
-          const record = await upsertSubscriptionFromStripe(sub);
-          await safeNotify(() => notifyStripeCanceled({ record }));
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (message.includes("store_id is missing")) {
-            console.warn("[stripe-webhook] skip subscription.deleted without store_id", {
-              subscriptionId: sub.id,
-            });
-            break;
-          }
-          throw error;
-        }
+        const subscription = event.data.object as Stripe.Subscription;
+        const full = await retrieveSubscriptionExpanded(subscription.id);
+        const record = await upsertSubscriptionFromStripe(full);
+        await notifyStripeCanceled({ record }).catch((error) => {
+          console.error("[stripe webhook] admin notify cancel failed", error);
+        });
         break;
       }
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
-        const subscriptionId = getInvoiceSubscriptionId(invoice);
-        if (subscriptionId) {
-          const record = await markInvoicePaid(
-            subscriptionId,
-            invoice.period_start ?? null,
-            invoice.period_end ?? null,
-          );
-          if (record) {
-            await safeNotify(() =>
-              notifyStripeInvoicePaid({
-                record,
-                billingReason: invoice.billing_reason ?? null,
-                amountPaid: invoice.amount_paid ?? null,
-              }),
-            );
-          }
+        const subscriptionId = getSubscriptionIdFromInvoice(invoice);
+        if (!subscriptionId) break;
+        const linePeriod = invoice.lines?.data?.[0]?.period;
+        let record = await markInvoicePaid(
+          subscriptionId,
+          linePeriod?.start ?? null,
+          linePeriod?.end ?? null,
+        );
+        if (!record) {
+          const full = await retrieveSubscriptionExpanded(subscriptionId);
+          record = await upsertSubscriptionFromStripe(full);
+        }
+        if (record) {
+          await notifyStripeInvoicePaid({
+            record,
+            billingReason: invoice.billing_reason,
+            amountPaid: invoice.amount_paid,
+          }).catch((error) => {
+            console.error("[stripe webhook] admin notify invoice.paid", error);
+          });
         }
         break;
       }
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const subscriptionId = getInvoiceSubscriptionId(invoice);
-        if (subscriptionId) {
-          const record = await markInvoicePaymentFailed(subscriptionId);
-          if (record) {
-            await safeNotify(() => notifyStripePaymentFailed({ record }));
-          }
+        const subscriptionId = getSubscriptionIdFromInvoice(invoice);
+        if (!subscriptionId) break;
+        let record = await markInvoicePaymentFailed(subscriptionId);
+        if (!record) {
+          const full = await retrieveSubscriptionExpanded(subscriptionId);
+          await upsertSubscriptionFromStripe(full);
+          record = await markInvoicePaymentFailed(subscriptionId);
+        }
+        if (record) {
+          await notifyStripePaymentFailed({ record }).catch((error) => {
+            console.error("[stripe webhook] admin notify payment_failed", error);
+          });
         }
         break;
       }
       default:
         break;
     }
-    return NextResponse.json({ received: true });
   } catch (error) {
-    return NextResponse.json(
-      { message: getErrorMessage(error, "Webhook処理に失敗しました。") },
-      { status: 500 },
-    );
+    console.error("[stripe webhook]", event.type, error);
+    return Response.json({ error: "Webhook handler failed" }, { status: 500 });
   }
+
+  return Response.json({ received: true });
 }

@@ -6,7 +6,7 @@ import type { SubscriptionRecord, SubscriptionStatus } from "@/types/subscriptio
 
 type SubscriptionDbRow = {
   id: string;
-  store_id: string;
+  store_id: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
@@ -18,6 +18,7 @@ type SubscriptionDbRow = {
   current_period_end: string | null;
   cancel_at_period_end: boolean | null;
   canceled_at: string | null;
+  customer_email?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -76,12 +77,15 @@ export function mapSubscriptionRow(row: SubscriptionDbRow): SubscriptionRecord {
     currentPeriodEnd: row.current_period_end,
     cancelAtPeriodEnd: Boolean(row.cancel_at_period_end),
     canceledAt: row.canceled_at,
+    customerEmail: row.customer_email?.trim() || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-export async function getStoreSubscription(storeId: string): Promise<SubscriptionRecord | null> {
+export async function getStoreSubscription(
+  storeId: string,
+): Promise<SubscriptionRecord | null> {
   const supabase = createSupabaseAdmin();
   const { data, error } = await supabase
     .from("subscriptions")
@@ -136,6 +140,17 @@ function customerIdFromSubscription(subscription: Stripe.Subscription): string |
   return null;
 }
 
+export function customerEmailFromSubscription(
+  subscription: Stripe.Subscription,
+): string | null {
+  const customer = subscription.customer;
+  if (customer && typeof customer !== "string" && !("deleted" in customer && customer.deleted)) {
+    const email = customer.email?.trim().toLowerCase();
+    if (email) return email;
+  }
+  return null;
+}
+
 function derivePlanFromStripeSubscription(subscription: Stripe.Subscription): JobPlan {
   const priceId = subscription.items.data[0]?.price?.id ?? "";
   return stripePriceIdToPlan(priceId) ?? "light";
@@ -152,15 +167,52 @@ function derivePaymentStatus(subscription: Stripe.Subscription): string | null {
   return subscription.status;
 }
 
-export async function upsertSubscriptionFromStripe(
-  subscription: Stripe.Subscription,
-  options?: { fallbackStoreId?: string; preserveFailureCount?: boolean },
-): Promise<SubscriptionRecord> {
+/**
+ * 顧客メールから店舗（jobs.id）を推定する補助フォールバック。
+ * shops.contact_email → linked_job_id
+ * listing_applications.contact_email → linked_job_id
+ */
+export async function resolveStoreIdByCustomerEmail(
+  email: string | null | undefined,
+): Promise<string | null> {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized) return null;
+
   const supabase = createSupabaseAdmin();
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("linked_job_id")
+    .ilike("contact_email", normalized)
+    .not("linked_job_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (shop?.linked_job_id) return String(shop.linked_job_id);
+
+  const { data: application } = await supabase
+    .from("listing_applications")
+    .select("linked_job_id")
+    .ilike("contact_email", normalized)
+    .not("linked_job_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (application?.linked_job_id) return String(application.linked_job_id);
+
+  return null;
+}
+
+async function resolveStoreIdForSubscription(
+  subscription: Stripe.Subscription,
+  options?: { fallbackStoreId?: string | null; customerEmail?: string | null },
+): Promise<string | null> {
   const metadataStoreId =
     typeof subscription.metadata?.store_id === "string"
       ? subscription.metadata.store_id.trim()
       : null;
+  if (metadataStoreId) return metadataStoreId;
+
   const customerStoreId =
     subscription.customer &&
     typeof subscription.customer !== "string" &&
@@ -168,40 +220,68 @@ export async function upsertSubscriptionFromStripe(
     typeof subscription.customer.metadata?.store_id === "string"
       ? subscription.customer.metadata.store_id.trim()
       : null;
+  if (customerStoreId) return customerStoreId;
+
+  const fallback = options?.fallbackStoreId?.trim() || null;
+  if (fallback) return fallback;
+
   const customerId = customerIdFromSubscription(subscription);
   const byCustomer = customerId
     ? await getSubscriptionByCustomerId(customerId)
     : null;
-  const storeId =
-    metadataStoreId ||
-    customerStoreId ||
-    options?.fallbackStoreId?.trim() ||
-    byCustomer?.storeId ||
-    null;
-  if (!storeId) {
-    throw new Error(
-      "store_id is missing. Payment Link / Checkout では client_reference_id または metadata.store_id に jobs.id を設定してください。",
-    );
+  if (byCustomer?.storeId) return byCustomer.storeId;
+
+  const email =
+    options?.customerEmail ?? customerEmailFromSubscription(subscription);
+  return resolveStoreIdByCustomerEmail(email);
+}
+
+/**
+ * Stripe Subscription を subscriptions へ upsert。
+ * 一意キーは stripe_subscription_id。store_id が取れない場合は null で保存する。
+ */
+export async function upsertSubscriptionFromStripe(
+  subscription: Stripe.Subscription,
+  options?: { fallbackStoreId?: string | null; preserveFailureCount?: boolean },
+): Promise<SubscriptionRecord> {
+  const supabase = createSupabaseAdmin();
+  const customerId = customerIdFromSubscription(subscription);
+  let customerEmail = customerEmailFromSubscription(subscription);
+  if (!customerEmail && customerId) {
+    try {
+      const { getStripeServer } = await import("@/lib/stripe");
+      const customer = await getStripeServer().customers.retrieve(customerId);
+      if (!("deleted" in customer && customer.deleted)) {
+        customerEmail = customer.email?.trim().toLowerCase() || null;
+      }
+    } catch {
+      // メール取得失敗は upsert 自体を止めない
+    }
   }
 
-  const previous =
-    (await getSubscriptionByStripeId(subscription.id)) ??
-    byCustomer ??
-    (await getStoreSubscription(storeId));
+  const storeId = await resolveStoreIdForSubscription(subscription, {
+    fallbackStoreId: options?.fallbackStoreId,
+    customerEmail,
+  });
+
+  const previousByStripe = await getSubscriptionByStripeId(subscription.id);
+  const previousByStore = storeId ? await getStoreSubscription(storeId) : null;
+  const previousByCustomer = customerId
+    ? await getSubscriptionByCustomerId(customerId)
+    : null;
+  const previous = previousByStripe ?? previousByCustomer ?? previousByStore;
+
   const priceId = subscription.items.data[0]?.price?.id ?? null;
   const plan = derivePlanFromStripeSubscription(subscription);
   const status = deriveEffectiveStatus(subscription);
   const period = getSubscriptionPeriod(subscription);
 
+  // 既存行の store_id を誤って null で上書きしない
+  const resolvedStoreId = storeId ?? previous?.storeId ?? null;
+
   const payload = {
-    store_id: storeId,
-    stripe_customer_id:
-      typeof subscription.customer === "string"
-        ? subscription.customer
-        : subscription.customer &&
-            !("deleted" in subscription.customer && subscription.customer.deleted)
-          ? subscription.customer.id
-          : null,
+    store_id: resolvedStoreId,
+    stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
     stripe_price_id: priceId,
     plan,
@@ -210,23 +290,74 @@ export async function upsertSubscriptionFromStripe(
     payment_failed_count:
       options?.preserveFailureCount && previous
         ? previous.paymentFailedCount
-        : previous?.paymentFailedCount ?? 0,
+        : (previous?.paymentFailedCount ?? 0),
     current_period_start: unixToIso(period.start),
     current_period_end: unixToIso(period.end),
     cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
     canceled_at: unixToIso(subscription.canceled_at),
+    customer_email: customerEmail ?? previous?.customerEmail ?? null,
   };
 
-  // One row per store; re-subscribe after cancel overwrites the previous row.
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .upsert(payload, { onConflict: "store_id" })
-    .select("*")
-    .single();
-  if (error) throw error;
+  let data: SubscriptionDbRow | null = null;
 
-  await syncJobAccessFromSubscription(storeId, plan, status);
-  return mapSubscriptionRow(data as SubscriptionDbRow);
+  if (previousByStripe) {
+    const { data: updated, error } = await supabase
+      .from("subscriptions")
+      .update(payload)
+      .eq("id", previousByStripe.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    data = updated as SubscriptionDbRow;
+  } else if (
+    previousByStore &&
+    (!previousByStore.stripeSubscriptionId ||
+      previousByStore.stripeSubscriptionId === subscription.id ||
+      previousByStore.status === "canceled")
+  ) {
+    // 同一店舗の再契約・または未設定 Subscription ID の更新
+    const { data: updated, error } = await supabase
+      .from("subscriptions")
+      .update(payload)
+      .eq("id", previousByStore.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    data = updated as SubscriptionDbRow;
+  } else {
+    const { data: inserted, error } = await supabase
+      .from("subscriptions")
+      .upsert(payload, { onConflict: "stripe_subscription_id" })
+      .select("*")
+      .single();
+    if (error) {
+      // store_id UNIQUE 衝突時は当該店舗行を更新
+      if (
+        resolvedStoreId &&
+        (error.code === "23505" || String(error.message).includes("store_id"))
+      ) {
+        const { data: updated, error: updateError } = await supabase
+          .from("subscriptions")
+          .update(payload)
+          .eq("store_id", resolvedStoreId)
+          .select("*")
+          .single();
+        if (updateError) throw updateError;
+        data = updated as SubscriptionDbRow;
+      } else {
+        throw error;
+      }
+    } else {
+      data = inserted as SubscriptionDbRow;
+    }
+  }
+
+  if (!data) throw new Error("subscription upsert returned empty data");
+
+  if (resolvedStoreId) {
+    await syncJobAccessFromSubscription(resolvedStoreId, plan, status);
+  }
+  return mapSubscriptionRow(data);
 }
 
 export async function markInvoicePaid(
@@ -253,7 +384,9 @@ export async function markInvoicePaid(
     .select("*")
     .single();
   if (error) throw error;
-  await syncJobAccessFromSubscription(record.storeId, record.plan, "active");
+  if (record.storeId) {
+    await syncJobAccessFromSubscription(record.storeId, record.plan, "active");
+  }
   return mapSubscriptionRow(data as SubscriptionDbRow);
 }
 
@@ -276,15 +409,18 @@ export async function markInvoicePaymentFailed(
     .select("*")
     .single();
   if (error) throw error;
-  await syncJobAccessFromSubscription(record.storeId, record.plan, nextStatus);
+  if (record.storeId) {
+    await syncJobAccessFromSubscription(record.storeId, record.plan, nextStatus);
+  }
   return mapSubscriptionRow(data as SubscriptionDbRow);
 }
 
 export async function syncJobAccessFromSubscription(
-  storeId: string,
+  storeId: string | null | undefined,
   plan: JobPlan,
   status: SubscriptionStatus,
 ): Promise<void> {
+  if (!storeId) return;
   const supabase = createSupabaseAdmin();
   const shouldPublish = ACTIVE_STATUSES.includes(status);
   const listingStatus = shouldPublish ? "published" : "paused";
@@ -299,4 +435,46 @@ export async function syncJobAccessFromSubscription(
     })
     .eq("id", storeId);
   if (error) throw error;
+}
+
+/**
+ * Stripe API から全 Subscription を取得して upsert（管理画面の手動同期用）。
+ */
+export async function syncAllSubscriptionsFromStripe(): Promise<{
+  synced: number;
+  unlinked: number;
+  errors: string[];
+}> {
+  const { getStripeServer } = await import("@/lib/stripe");
+  const stripe = getStripeServer();
+  let startingAfter: string | undefined;
+  let synced = 0;
+  let unlinked = 0;
+  const errors: string[] = [];
+
+  for (;;) {
+    const page = await stripe.subscriptions.list({
+      limit: 100,
+      status: "all",
+      starting_after: startingAfter,
+      expand: ["data.customer", "data.latest_invoice", "data.items.data.price"],
+    });
+
+    for (const sub of page.data) {
+      try {
+        const record = await upsertSubscriptionFromStripe(sub);
+        synced += 1;
+        if (!record.storeId) unlinked += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(`${sub.id}: ${message}`);
+      }
+    }
+
+    if (!page.has_more || page.data.length === 0) break;
+    startingAfter = page.data[page.data.length - 1]?.id;
+    if (!startingAfter) break;
+  }
+
+  return { synced, unlinked, errors };
 }

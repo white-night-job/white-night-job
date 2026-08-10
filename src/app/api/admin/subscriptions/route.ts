@@ -23,10 +23,12 @@ export async function GET() {
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     const items = rows.map((row) => {
       const mapped = mapSubscriptionRow(row as never);
-      const job = row.jobs as { shop_name?: string } | null;
+      const job = row.jobs as { shop_name?: string } | null | undefined;
       return {
         ...mapped,
-        shopName: job?.shop_name ?? null,
+        shopName: mapped.storeId
+          ? (job?.shop_name ?? null)
+          : null,
         billingKey: resolveBillingKeySafe(mapped.stripePriceId),
         billingLabel: resolveBillingLabel(mapped.stripePriceId),
       };

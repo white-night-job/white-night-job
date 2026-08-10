@@ -172,20 +172,23 @@ export async function getAdminNotificationSummary(): Promise<{
 /** 同一 store + type + 参照キーの重複通知防止 */
 export async function hasRecentAdminNotification(input: {
   type: string;
-  storeId: string;
+  storeId: string | null;
   contains: string;
   withinMinutes?: number;
 }): Promise<boolean> {
   const supabase = createSupabaseAdmin();
   const within = input.withinMinutes ?? 30;
   const since = new Date(Date.now() - within * 60_000).toISOString();
-  const { data, error } = await supabase
+  let query = supabase
     .from("admin_notifications")
     .select("id, message")
     .eq("type", input.type)
-    .eq("store_id", input.storeId)
     .gte("created_at", since)
     .limit(20);
+  query = input.storeId
+    ? query.eq("store_id", input.storeId)
+    : query.is("store_id", null);
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).some((row) =>
     String((row as { message?: string }).message ?? "").includes(input.contains),

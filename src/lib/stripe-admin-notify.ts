@@ -1,3 +1,4 @@
+import type Stripe from "stripe";
 import { formatJpyPrice, JOB_PLAN_DEFINITIONS, type JobPlan } from "@/lib/job-plan";
 import {
   createAdminNotification,
@@ -11,7 +12,6 @@ import {
 } from "@/lib/stripe";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { SubscriptionRecord } from "@/types/subscription";
-import type Stripe from "stripe";
 
 function formatDateTimeJst(iso: string | null | undefined): string {
   const date = iso ? new Date(iso) : new Date();
@@ -26,7 +26,10 @@ function formatDateTimeJst(iso: string | null | undefined): string {
   }).format(date);
 }
 
-export async function getShopNameByStoreId(storeId: string): Promise<string> {
+export async function getShopNameByStoreId(
+  storeId: string | null | undefined,
+): Promise<string> {
+  if (!storeId) return "店舗未紐付け";
   const supabase = createSupabaseAdmin();
   const { data, error } = await supabase
     .from("jobs")
@@ -57,11 +60,10 @@ export function resolveMonthlyPriceLabel(
 
 async function persistAndSend(input: {
   type: string;
-  storeId: string;
+  storeId: string | null;
   title: string;
   message: string;
 }): Promise<void> {
-  // 通知保存を先に確定。メール失敗でも通知自体は成功扱い。
   await createAdminNotification({
     type: input.type,
     storeId: input.storeId,
@@ -122,6 +124,7 @@ export async function notifyStripeNewContract(input: {
     `店舗名：${shopName}`,
     `プラン：${planLabel}`,
     `月額料金：${monthly}`,
+    `顧客メール：${record.customerEmail ?? "—"}`,
     `契約日時：${formatDateTimeJst(record.currentPeriodStart ?? record.createdAt)}`,
     `Stripe Customer ID：${record.stripeCustomerId ?? "—"}`,
     `Stripe Subscription ID：${record.stripeSubscriptionId}`,

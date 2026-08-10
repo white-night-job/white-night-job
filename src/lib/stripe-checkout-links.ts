@@ -130,3 +130,22 @@ export async function updateStripeCheckoutLink(
     updatedAt: row.updated_at ?? null,
   };
 }
+
+/**
+ * Payment Link / Checkout URL に店舗 ID を付与する。
+ * Stripe Payment Link では `client_reference_id` クエリが Checkout Session に渡り、
+ * Webhook が店舗紐付け（および metadata.store_id の書き込み）に使用する。
+ */
+export function appendStoreIdToCheckoutUrl(
+  checkoutUrl: string,
+  storeId: string,
+): string {
+  const trimmedUrl = checkoutUrl.trim();
+  const trimmedStoreId = storeId.trim();
+  if (!trimmedUrl || !trimmedStoreId) return trimmedUrl;
+
+  const parsed = new URL(trimmedUrl);
+  parsed.searchParams.set("client_reference_id", trimmedStoreId);
+  return parsed.toString();
+}
+
