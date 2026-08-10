@@ -15,6 +15,10 @@ import {
   parseJobPlan,
   type JobPlan,
 } from "@/lib/job-plan";
+import {
+  evaluateShopMainImage,
+  type MainImageAssessment,
+} from "@/lib/shop-main-image-ai";
 
 /** 同一セッションの連続表示をまとめる間隔。既存グラフの集計には影響させない。 */
 const IMPRESSION_DEDUPE_MS = 60 * 1000;
@@ -624,8 +628,10 @@ function buildAdvices(input: {
   listing: ListingContext;
   peer: PeerComparison | null;
   funnel: FunnelStage;
+  mainImage: MainImageAssessment;
 }): ImprovementAdvice[] {
-  const { current, previous, rates, content, listing, peer, funnel } = input;
+  const { current, previous, rates, content, listing, peer, funnel, mainImage } =
+    input;
   const candidates: ImprovementAdvice[] = [];
   const usedCategories = new Set<string>();
 
@@ -724,18 +730,20 @@ function buildAdvices(input: {
         ? `（店舗${rates.detailClickRate}% / ${peer.isReference ? "同業参考値" : "同業平均"}${peer.detailClickRate}%）`
         : `（現在${rates.detailClickRate}%）`;
 
-    if (!content.hasMainImage) {
+    if (mainImage.needsHighPriorityFix) {
       push("main_image", {
-        id: "main-image-for-ctr",
+        id:
+          mainImage.quality === "missing"
+            ? "main-image-for-ctr"
+            : "main-image-quality-for-ctr",
         priority: 2,
         priorityLevel: "high",
-        issue: `詳細閲覧率は${rates.detailClickRate}%と低めです${gapText}。メイン画像が未登録です。`,
-        action:
-          "明るく店内が分かる写真をメイン（一覧1枚目）に設定してください。顔出し不要でも、カウンターや内装が分かる写真を優先します。",
-        expectedEffect: "詳細閲覧率の向上",
+        issue: `${mainImage.issue} 詳細閲覧率は${rates.detailClickRate}%と低めです${gapText}。`,
+        action: mainImage.action,
+        expectedEffect: "求人詳細の閲覧率・応募率の改善",
         reason: peerLabel
-          ? `詳細閲覧率が${peerLabel}を下回り、メイン画像も未登録のため`
-          : "詳細閲覧率が低く、メイン画像が未登録のため",
+          ? `詳細閲覧率が${peerLabel}を下回り、トップ画像の訴求に課題があるため`
+          : "詳細閲覧率が低く、トップ画像の訴求に課題があるため",
       });
     } else if (content.storeImageCount < STORE_IMAGE_TARGET) {
       push("store_images", {
@@ -798,61 +806,65 @@ function buildAdvices(input: {
     const applyEffect = zeroApply
       ? "応募率の改善・応募数の増加"
       : "応募率の向上";
+    const girlReviewsFew =
+      content.girlReview.total === 0 ||
+      content.girlReview.total < GIRL_REVIEW_MANY ||
+      content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW;
 
-    if (listing.districtRank === 1) {
-      // 順位の話はせず内容・導線に寄せる（boost は canSuggestBoost で除外済み）
+    // トップ画像は応募率課題時の重要項目。不適切・未登録なら紹介文より優先
+    if (mainImage.needsHighPriorityFix) {
+      push("main_image", {
+        id:
+          mainImage.quality === "missing"
+            ? "main-image-missing-for-apply"
+            : mainImage.quality === "poor"
+              ? "main-image-unrelated-for-apply"
+              : "main-image-weak-for-apply",
+        priority: zeroApply ? 2 : 3,
+        priorityLevel: "high",
+        issue: `${applyContext}${mainImage.issue}`,
+        action: mainImage.action,
+        expectedEffect: "求人詳細の閲覧率・応募率の改善",
+        reason: zeroApply
+          ? `${mainImage.reason}（詳細は見られているが応募0件のため優先）`
+          : mainImage.reason,
+      });
     }
 
-    // 応募0件かつ口コミ不足は最優先で口コミ充実を提案
+    // 女の子の口コミ（件数不足は応募0%で必ず提案）
     if (zeroApply && content.girlReview.total === 0) {
       push("girl_reviews", {
         id: "girl-reviews-zero-for-zero-apply",
-        priority: 2,
+        priority: 3,
         priorityLevel: "high",
         issue: `${applyContext}女の子の口コミがまだありません。`,
         action:
-          "求人詳細は閲覧されていますが応募が発生していません。女の子の口コミを充実させ、実際の面接・体験入店・在籍キャストの声を増やすことで、応募前の不安を減らしましょう。ダッシュボードの「女の子の口コミ管理」から登録できます。",
+          "女の子の口コミを増やし、面接・体験入店・実際の働きやすさなど、応募前の不安を解消できる情報を充実させてください。ダッシュボードの「女の子の口コミ管理」から登録できます。",
         expectedEffect: applyEffect,
         reason:
           "詳細は見られているが応募が0件で、女の子の口コミも0件のため",
       });
-    } else if (content.benefitCount < BENEFIT_TARGET) {
-      push("benefits", {
-        id: "benefits-for-apply",
+    } else if (zeroApply && girlReviewsFew) {
+      push("girl_reviews", {
+        id: "girl-reviews-few-for-zero-apply",
         priority: 3,
         priorityLevel: "high",
-        issue: `${applyContext}待遇項目は${content.benefitCount}件です。`,
-        action: `待遇を${BENEFIT_TARGET}件以上選び、送迎・日払い・寮・服装自由・ノルマなしなど、当てはまる項目を追加してください。ページ上部で待遇が目に入る配置も確認してください。`,
-        expectedEffect: `${applyEffect}・不安解消`,
-        reason: zeroApply
-          ? "詳細は見られているが応募が0件で、待遇情報が不足しているため"
-          : "詳細は見られているが応募率が低く、待遇情報が不足しているため",
+        issue: `${applyContext}女の子の口コミは${content.girlReview.total}件（面接・体験入店${content.girlReview.interview}件 / 在籍${content.girlReview.cast}件）です。`,
+        action:
+          "女の子の口コミを増やし、面接・体験入店・実際の働きやすさなど、応募前の不安を解消できる情報を充実させてください。体験入店後・在籍キャストへの投稿案内を進めましょう。",
+        expectedEffect: `${applyEffect}・応募前不安の解消`,
+        reason: "詳細は見られているが応募が0件で、女の子の口コミが少ないため",
       });
     } else if (content.girlReview.total === 0) {
       push("girl_reviews", {
         id: "girl-reviews-zero-for-apply",
-        priority: 3,
+        priority: 4,
         priorityLevel: "high",
         issue: `${applyContext}女の子の口コミがまだありません。`,
         action:
-          "面接・体験入店後や在籍キャストへ口コミ投稿をお願いすると、応募前の安心感が伝わり応募率向上が期待できます。ダッシュボードの「女の子の口コミ管理」から登録できます。",
+          "女の子の口コミを増やし、面接・体験入店・実際の働きやすさなど、応募前の不安を解消できる情報を充実させてください。ダッシュボードの「女の子の口コミ管理」から登録できます。",
         expectedEffect: `${applyEffect}・安心感の補強`,
-        reason: zeroApply
-          ? "詳細は見られているが応募が0件で、女の子の口コミが0件のため"
-          : "詳細閲覧後の応募率が低く、女の子の口コミが0件のため",
-      });
-    } else if (content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW) {
-      push("girl_reviews", {
-        id: "girl-reviews-interview-low-for-apply",
-        priority: 3,
-        priorityLevel: "high",
-        issue: `${applyContext}面接・体験入店の口コミは${content.girlReview.interview}件です。`,
-        action:
-          "面接・体験入店の口コミが少ないため、応募前の安心感が伝わりにくくなっています。体験入店後に口コミ投稿を案内し、「面接・体験入店」区分で登録してください。",
-        expectedEffect: `${applyEffect}・応募前不安の解消`,
-        reason: zeroApply
-          ? "詳細は見られているが応募が0件で、面接・体験入店口コミが不足しているため"
-          : "詳細閲覧後の応募率が低く、面接・体験入店口コミが不足しているため",
+        reason: "詳細閲覧後の応募率が低く、女の子の口コミが0件のため",
       });
     } else if (
       content.girlReview.averageRating != null &&
@@ -861,7 +873,7 @@ function buildAdvices(input: {
     ) {
       push("girl_reviews", {
         id: "girl-reviews-low-avg-for-apply",
-        priority: 3,
+        priority: 4,
         priorityLevel: "high",
         issue: `${applyContext}口コミ平均評価は${content.girlReview.averageRating}（${content.girlReview.total}件）です。`,
         action:
@@ -871,10 +883,23 @@ function buildAdvices(input: {
           ? "詳細は見られているが応募が0件で、口コミ平均評価が低めのため"
           : "詳細閲覧後の応募率が低く、口コミ平均評価が低めのため",
       });
+    } else if (content.girlReview.interview < GIRL_REVIEW_INTERVIEW_LOW) {
+      push("girl_reviews", {
+        id: "girl-reviews-interview-low-for-apply",
+        priority: 4,
+        priorityLevel: "high",
+        issue: `${applyContext}面接・体験入店の口コミは${content.girlReview.interview}件です。`,
+        action:
+          "女の子の口コミを増やし、面接・体験入店・実際の働きやすさなど、応募前の不安を解消できる情報を充実させてください。体験入店後に「面接・体験入店」区分で登録してください。",
+        expectedEffect: `${applyEffect}・応募前不安の解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、面接・体験入店口コミが不足しているため"
+          : "詳細閲覧後の応募率が低く、面接・体験入店口コミが不足しているため",
+      });
     } else if (content.girlReview.cast < GIRL_REVIEW_CAST_LOW) {
       push("girl_reviews", {
         id: "girl-reviews-cast-low-for-apply",
-        priority: 3,
+        priority: 5,
         priorityLevel: "medium",
         issue: `${applyContext}在籍キャストの口コミは${content.girlReview.cast}件です。`,
         action:
@@ -884,20 +909,10 @@ function buildAdvices(input: {
           ? "詳細は見られているが応募が0件で、在籍キャスト口コミが不足しているため"
           : "詳細閲覧後の応募率が低く、在籍キャスト口コミが不足しているため",
       });
-    } else if (!content.hasDescription) {
-      push("description", {
-        id: "description-for-apply",
-        priority: 3,
-        priorityLevel: "high",
-        issue: `${applyContext}「どんなお店？」が未入力です。`,
-        action:
-          "「どんなお店？」に客層・席数・服装・未経験者への教育体制を具体的に書き、面接前に知りたい不安を先回りして解消してください。",
-        expectedEffect: `${applyEffect}・情報不足の解消`,
-        reason: zeroApply
-          ? "詳細は見られているが応募が0件で、お店説明が未入力のため"
-          : "詳細閲覧後の応募率が低く、お店説明が未入力のため",
-      });
-    } else if (
+    }
+
+    // 紹介文・時給（テキスト）は画像・口コミの次点
+    if (
       content.introductionLength < INTRO_LENGTH_TARGET ||
       !content.hasSalary
     ) {
@@ -909,7 +924,7 @@ function buildAdvices(input: {
       ].filter(Boolean);
       push("intro_salary", {
         id: "intro-salary-for-apply",
-        priority: 3,
+        priority: zeroApply ? 4 : 5,
         priorityLevel: "high",
         issue: `${applyContext}${missingBits.join("・")}の見直しが必要です。`,
         action: !content.hasSalary
@@ -920,14 +935,45 @@ function buildAdvices(input: {
           ? `詳細は見られているが応募が0件で、${missingBits.join("・")}が不足しているため`
           : `詳細閲覧後の応募率が低く、${missingBits.join("・")}が不足しているため`,
       });
-    } else if (
+    }
+
+    if (content.benefitCount < BENEFIT_TARGET) {
+      push("benefits", {
+        id: "benefits-for-apply",
+        priority: 5,
+        priorityLevel: "high",
+        issue: `${applyContext}待遇項目は${content.benefitCount}件です。`,
+        action: `待遇を${BENEFIT_TARGET}件以上選び、送迎・日払い・寮・服装自由・ノルマなしなど、当てはまる項目を追加してください。ページ上部で待遇が目に入る配置も確認してください。`,
+        expectedEffect: `${applyEffect}・不安解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、待遇情報が不足しているため"
+          : "詳細は見られているが応募率が低く、待遇情報が不足しているため",
+      });
+    }
+
+    if (!content.hasDescription) {
+      push("description", {
+        id: "description-for-apply",
+        priority: 5,
+        priorityLevel: "medium",
+        issue: `${applyContext}「どんなお店？」が未入力です。`,
+        action:
+          "「どんなお店？」に客層・席数・服装・未経験者への教育体制を具体的に書き、面接前に知りたい不安を先回りして解消してください。",
+        expectedEffect: `${applyEffect}・情報不足の解消`,
+        reason: zeroApply
+          ? "詳細は見られているが応募が0件で、お店説明が未入力のため"
+          : "詳細閲覧後の応募率が低く、お店説明が未入力のため",
+      });
+    }
+
+    if (
       content.hasLineUrl &&
       current.detailClicks >= Math.min(MIN_DETAIL_FOR_APPLY_RATE, 5) &&
       current.lineClicks < Math.max(1, Math.ceil(current.detailClicks * 0.03))
     ) {
       push("line_cta", {
         id: "line-cta-copy",
-        priority: 3,
+        priority: 5,
         priorityLevel: "high",
         issue: `${applyContext}LINE応募数は${current.lineClicks}件です。`,
         action:
@@ -937,14 +983,16 @@ function buildAdvices(input: {
           ? "詳細は見られているが応募が0件で、LINE応募も少ないため"
           : "詳細閲覧に対してLINE応募が少ないため",
       });
-    } else if (!content.hasAccess || !content.hasBusinessHours) {
+    }
+
+    if (!content.hasAccess || !content.hasBusinessHours) {
       const missingBits = [
         !content.hasBusinessHours ? "営業時間" : null,
         !content.hasAccess ? "アクセス（最寄り駅からの行き方）" : null,
       ].filter(Boolean);
       push("access_hours", {
         id: "access-hours-for-apply",
-        priority: 4,
+        priority: 6,
         priorityLevel: "medium",
         issue: `${applyContext}${missingBits.join("・")}が未入力です。`,
         action: `${missingBits.join("と")}を入力し、通いやすさと勤務時間帯を明確にしてください。`,
@@ -953,29 +1001,41 @@ function buildAdvices(input: {
           ? `詳細は見られているが応募が0件で、${missingBits.join("・")}が未入力のため`
           : `詳細閲覧後の応募率が低く、${missingBits.join("・")}が未入力のため`,
       });
-    } else if (
-      content.storeImageCount < STORE_IMAGE_TARGET ||
-      !content.hasMainImage
+    }
+
+    if (
+      content.storeImageCount < STORE_IMAGE_TARGET &&
+      mainImage.quality === "good"
     ) {
       push("photos_for_apply", {
         id: "photos-for-apply",
-        priority: 4,
+        priority: 6,
         priorityLevel: "medium",
-        issue: `${applyContext}写真・店内画像の充実度が不足しています（店内画像${content.storeImageCount}枚）。`,
-        action: `メイン画像と店内写真をあわせて見直し、店内全景・カウンター・雰囲気が分かる写真を${STORE_IMAGE_TARGET}枚以上そろえてください。`,
+        issue: `${applyContext}店内画像の充実度が不足しています（店内画像${content.storeImageCount}枚）。`,
+        action: `店内全景・カウンター・雰囲気が分かる写真を${STORE_IMAGE_TARGET}枚以上そろえてください。`,
         expectedEffect: applyEffect,
         reason: zeroApply
-          ? "詳細は見られているが応募が0件で、写真情報が不足しているため"
-          : "詳細閲覧後の応募率が低く、写真情報が不足しているため",
+          ? "詳細は見られているが応募が0件で、店内写真が不足しているため"
+          : "詳細閲覧後の応募率が低く、店内写真が不足しているため",
       });
-    } else {
+    }
+
+    // 上記で十分な候補が無いときだけ一般提案
+    if (
+      !usedCategories.has("main_image") &&
+      !usedCategories.has("girl_reviews") &&
+      !usedCategories.has("intro_salary") &&
+      !usedCategories.has("benefits") &&
+      !usedCategories.has("description") &&
+      !usedCategories.has("line_cta")
+    ) {
       push("apply_content_general", {
         id: "apply-content-refine",
-        priority: 4,
+        priority: 6,
         priorityLevel: "medium",
         issue: applyContext,
         action: zeroApply
-          ? "時給・待遇・紹介文・写真・応募導線・女の子の口コミを見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。"
+          ? "トップ画像・時給・待遇・紹介文・応募導線・女の子の口コミを見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。"
           : "仕事内容・待遇・担当者情報（返信の目安）を見直し、応募ボタン直上に「未経験歓迎」「ノルマなし」など不安を消す一文を追加してください。",
         expectedEffect: applyEffect,
         reason: zeroApply
@@ -989,16 +1049,18 @@ function buildAdvices(input: {
 
   // ファネル横断のコンテンツ不足（重複カテゴリは push で弾く）
   if (funnel !== "healthy") {
-    if (!content.hasMainImage) {
+    if (mainImage.needsHighPriorityFix) {
       push("main_image", {
-        id: "main-image-missing",
+        id:
+          mainImage.quality === "missing"
+            ? "main-image-missing"
+            : "main-image-quality",
         priority: 5,
         priorityLevel: "high",
-        issue: "メイン画像が未登録のため、一覧でお店の印象が伝わりません。",
-        action:
-          "店内が分かる明るい写真をメイン画像に設定してください（顔出し必須ではありません）。",
-        expectedEffect: "詳細閲覧率の向上",
-        reason: "メイン画像が未登録のため",
+        issue: mainImage.issue,
+        action: mainImage.action,
+        expectedEffect: "求人詳細の閲覧率・応募率の改善",
+        reason: mainImage.reason,
       });
     }
 
@@ -1238,6 +1300,7 @@ function buildGoodPoints(
   listing: ListingContext,
   peer: PeerComparison | null,
   funnel: FunnelStage,
+  mainImage: MainImageAssessment,
 ): string[] {
   const points: string[] = [];
 
@@ -1302,7 +1365,15 @@ function buildGoodPoints(
     points.push("現状の求人内容と応募導線が数値上うまく機能しています");
   }
 
-  if (content.hasMainImage && content.storeImageCount >= STORE_IMAGE_TARGET) {
+  if (mainImage.quality === "good") {
+    points.push(
+      "トップ画像は店内・働くイメージが伝わりやすく、一覧での第一印象として機能しています",
+    );
+  } else if (
+    content.hasMainImage &&
+    !mainImage.needsHighPriorityFix &&
+    content.storeImageCount >= STORE_IMAGE_TARGET
+  ) {
     points.push(
       `画像はメイン＋店内${content.storeImageCount}枚で目安を満たしています`,
     );
@@ -1704,7 +1775,10 @@ export async function buildShopImprovementReport(
 
   const content = buildContentSnapshot(jobRow, girlReview);
 
-  const [listingContext, peerComparison] = await Promise.all([
+  const zeroApplyWithTraffic =
+    current.applyTotal === 0 && current.detailClicks > 0;
+
+  const [listingContext, peerComparison, mainImage] = await Promise.all([
     fetchListingContext(supabase, jobId, jobRow, plan),
     fetchPeerComparison(
       supabase,
@@ -1714,6 +1788,15 @@ export async function buildShopImprovementReport(
       ranges.currentStartIso,
       ranges.currentEndIso,
     ),
+    evaluateShopMainImage({
+      imageUrl: jobRow?.image_url,
+      jobType: jobRow?.job_type,
+      shopTitle: jobRow?.title,
+      forceReviewWhenUnevaluable:
+        zeroApplyWithTraffic ||
+        (current.impressions >= MIN_IMPRESSIONS_FOR_DETAIL_RATE &&
+          rates.detailClickRate < LOW_DETAIL_RATE),
+    }),
   ]);
 
   const funnel = detectFunnelStage(current, rates, peerComparison);
@@ -1725,6 +1808,7 @@ export async function buildShopImprovementReport(
     listing: listingContext,
     peer: peerComparison,
     funnel,
+    mainImage,
   });
 
   // 表示順位上位では上位表示提案を最終除去
@@ -1741,8 +1825,8 @@ export async function buildShopImprovementReport(
     if (advices.length === 0) {
       const reviewHint =
         content.girlReview.total === 0
-          ? "女の子の口コミを増やし、面接・体験入店・在籍キャストの声を充実させてください。"
-          : "時給・待遇・紹介文・写真・応募導線を見直し、応募前の不安を解消してください。";
+          ? "女の子の口コミを増やし、面接・体験入店・実際の働きやすさなど、応募前の不安を解消できる情報を充実させてください。"
+          : "トップ画像・時給・待遇・紹介文・応募導線を見直し、応募前の不安を解消してください。";
       advices = [
         {
           id: "zero-apply-fallback",
@@ -1766,6 +1850,7 @@ export async function buildShopImprovementReport(
     listingContext,
     peerComparison,
     funnel,
+    mainImage,
   );
 
   const situationSummary = buildSituationSummary({

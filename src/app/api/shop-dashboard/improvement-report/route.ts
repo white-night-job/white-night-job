@@ -87,8 +87,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ light, cache: "miss" });
     }
 
-    // v4: 女の子の口コミ（件数・区分・平均評価）を AI 改善アドバイスへ反映
-    const cacheKey = `shop-improvement-report:v4:${jobId}:${monthKey}:${plan}`;
+    // v5: トップ画像（Vision）評価＋口コミを応募改善の優先判定へ反映
+    const cacheKey = `shop-improvement-report:v5:${jobId}:${monthKey}:${plan}`;
     const cached = getShopScopedCache<ShopImprovementReport>(cacheKey, jobId);
     if (cached) {
       return NextResponse.json({ report: cached, cache: "hit" });
