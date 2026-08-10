@@ -1238,6 +1238,7 @@ function AdminJobsPageInner() {
         job={previewJob}
         mode={editingId ? "edit" : "create"}
         variant={previewKind}
+        listingStatus={editingListingStatus}
         submitting={loading}
         girlReviews={previewGirlReviews}
         onBack={() => {

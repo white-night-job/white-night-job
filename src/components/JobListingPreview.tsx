@@ -9,6 +9,8 @@ type JobListingPreviewProps = {
   mode: "create" | "edit";
   /** publish = 公開前確認 / draft = 下書きプレビュー（公開しない） */
   variant?: "publish" | "draft";
+  /** 下書き公開は「掲載する」、公開済みの修正は「更新する」 */
+  listingStatus?: "draft" | "published" | "paused";
   submitting?: boolean;
   girlReviews?: GirlReview[];
   onBack: () => void;
@@ -19,6 +21,7 @@ export function JobListingPreview({
   job,
   mode,
   variant = "publish",
+  listingStatus,
   submitting = false,
   girlReviews = [],
   onBack,
@@ -26,7 +29,10 @@ export function JobListingPreview({
 }: JobListingPreviewProps) {
   const isDraftPreview = variant === "draft";
   const confirmLabel =
-    mode === "create" ? "この内容で掲載する" : "この内容で更新する";
+    listingStatus === "published" ||
+    (listingStatus == null && mode === "edit")
+      ? "この内容で更新する"
+      : "この内容で掲載する";
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] pb-28">
