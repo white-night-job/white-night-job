@@ -238,9 +238,6 @@ export function ShopGirlReviewsManager({
               />
               <span className="mt-1 block text-xs text-muted">
                 {[...form.comment.trim()].length}文字
-                {[...form.comment.trim()].length >= 80
-                  ? "（★5付与の文字数条件を満たしています）"
-                  : "（★5には80文字以上が必要です）"}
               </span>
             </label>
 
