@@ -35,7 +35,6 @@ import {
   type JobType,
 } from "@/types/job";
 import { ShopGirlReviewsManager } from "@/components/ShopGirlReviewsManager";
-import { ShopSubscriptionPanel } from "@/components/ShopSubscriptionPanel";
 import {
   getPlanDefinition,
   getPlanFeatures,
@@ -748,8 +747,6 @@ export default function ShopDashboardPage() {
           {message}
         </p>
       )}
-
-      <ShopSubscriptionPanel />
 
       <div className="mb-8 overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold">
         <button
