@@ -1,27 +1,21 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
-import {
-  getStripeServer,
-  normalizeAdminPlanChangeInput,
-} from "@/lib/stripe";
+import { normalizeAdminPlanChangeInput } from "@/lib/stripe";
 import {
   cancelPendingPlanChange,
+  revokeCancelAtPeriodEnd,
+  scheduleCancelAtPeriodEnd,
   schedulePlanChangeAtPeriodEnd,
 } from "@/lib/stripe-subscription-schedule";
-import {
-  getSubscriptionByStripeId,
-  syncJobAccessFromSubscription,
-  upsertSubscriptionFromStripe,
-} from "@/lib/subscriptions";
+import { upsertSubscriptionFromStripe, getSubscriptionByStripeId } from "@/lib/subscriptions";
 
 type ActionBody = {
   action?:
     | "change_plan"
     | "cancel_pending_plan_change"
-    | "pause"
-    | "resume"
-    | "cancel";
+    | "cancel"
+    | "cancel_pending_cancellation";
   /** StripeBillingKey（5種）または JobPlan（通常3種） */
   plan?: string;
 };
@@ -42,7 +36,6 @@ export async function PATCH(
   }
 
   try {
-    const stripe = getStripeServer();
     const body = (await request.json()) as ActionBody;
     const action = body.action;
     if (!action) {
@@ -54,7 +47,6 @@ export async function PATCH(
       if (!billingKey) {
         return NextResponse.json({ message: "plan is invalid." }, { status: 400 });
       }
-      // 次回更新日から適用（Subscription Schedule / 日割りなし）
       const { subscription: updated } = await schedulePlanChangeAtPeriodEnd({
         subscriptionId,
         billingKey,
@@ -75,28 +67,25 @@ export async function PATCH(
       });
     }
 
-    if (action === "pause") {
-      const updated = await stripe.subscriptions.update(subscriptionId, {
-        pause_collection: { behavior: "void" },
-      });
-      const record = await upsertSubscriptionFromStripe(updated);
-      await syncJobAccessFromSubscription(record.storeId, record.plan, "paused");
-      return NextResponse.json({ subscription: { ...record, status: "paused" } });
-    }
-
-    if (action === "resume") {
-      const updated = await stripe.subscriptions.update(subscriptionId, {
-        pause_collection: null,
-      });
-      const record = await upsertSubscriptionFromStripe(updated);
-      return NextResponse.json({ subscription: record });
-    }
-
     if (action === "cancel") {
-      const canceled = await stripe.subscriptions.cancel(subscriptionId);
-      const record = await upsertSubscriptionFromStripe(canceled);
-      await syncJobAccessFromSubscription(record.storeId, record.plan, "canceled");
-      return NextResponse.json({ subscription: record });
+      // 即時 cancel ではなく、期間終了（当初の次回更新日）で解約予約
+      const { subscription: updated } = await scheduleCancelAtPeriodEnd(
+        subscriptionId,
+      );
+      const record = await upsertSubscriptionFromStripe(updated);
+      return NextResponse.json({
+        subscription: record,
+        message: "解約を次回更新日に予約しました。それまでは現在のプランが継続します。",
+      });
+    }
+
+    if (action === "cancel_pending_cancellation") {
+      const updated = await revokeCancelAtPeriodEnd(subscriptionId);
+      const record = await upsertSubscriptionFromStripe(updated);
+      return NextResponse.json({
+        subscription: record,
+        message: "解約予約を取り消しました。契約を継続します。",
+      });
     }
 
     return NextResponse.json({ message: "unsupported action" }, { status: 400 });

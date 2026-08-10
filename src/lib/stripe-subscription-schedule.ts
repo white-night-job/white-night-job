@@ -166,6 +166,17 @@ export async function schedulePlanChangeAtPeriodEnd(params: {
 
   // 請求サイクルを動かさない: 当初の current_period_end を切替日として固定
   const originalPeriodEnd = periodEndUnix(subscription);
+
+  // 解約予約中にプラン変更する場合は解約予約を解除（継続＋プラン変更の意図）
+  if (subscription.cancel_at_period_end) {
+    await stripe.subscriptions.update(params.subscriptionId, {
+      cancel_at_period_end: false,
+    });
+    subscription = await stripe.subscriptions.retrieve(params.subscriptionId, {
+      expand: ["items.data.price", "schedule"],
+    });
+  }
+
   let scheduleId = scheduleIdOf(subscription);
 
   if (!scheduleId) {
@@ -297,6 +308,116 @@ export async function cancelPendingPlanChange(
   }
   if (periodEndUnix(refreshed) !== periodEndBefore) {
     throw new Error("予約取消後に次回更新日が変化しました。");
+  }
+
+  return refreshed;
+}
+
+/**
+ * 期間終了解約を予約（即時 cancel しない）。
+ * 当初の次回更新日まで現在プランを継続し、その日に契約終了する。
+ * 既存のプラン変更予約がある場合は解除してから解約予約する。
+ * ※ pause_collection には触れない（既存の一時停止テスト契約を変更しない）。
+ */
+export async function scheduleCancelAtPeriodEnd(
+  subscriptionId: string,
+): Promise<{
+  subscription: Stripe.Subscription;
+  cancelAtUnix: number;
+}> {
+  const stripe = getStripeServer();
+  let subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price", "schedule"],
+  });
+
+  if (subscription.status === "canceled") {
+    throw new Error("すでに解約済みの契約です。");
+  }
+
+  const priceBefore = currentPriceId(subscription);
+  const originalPeriodEnd = periodEndUnix(subscription);
+
+  if (subscription.cancel_at_period_end) {
+    const refreshed = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["items.data.price", "latest_invoice", "customer", "schedule"],
+    });
+    return { subscription: refreshed, cancelAtUnix: originalPeriodEnd };
+  }
+
+  // プラン変更 Schedule があると期間終了解約と競合するため先に解除
+  const scheduleId = scheduleIdOf(subscription);
+  if (scheduleId) {
+    const schedule = await stripe.subscriptionSchedules.retrieve(scheduleId);
+    if (schedule.status === "active" || schedule.status === "not_started") {
+      await stripe.subscriptionSchedules.release(scheduleId);
+    }
+  }
+
+  subscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: true,
+    metadata: {
+      ...subscription.metadata,
+      pending_billing_key: "",
+      pending_price_id: "",
+      pending_change_at: "",
+    },
+  });
+
+  const refreshed = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price", "latest_invoice", "customer", "schedule"],
+  });
+
+  if (!refreshed.cancel_at_period_end) {
+    throw new Error("解約予約の設定に失敗しました。");
+  }
+  if (currentPriceId(refreshed) !== priceBefore) {
+    throw new Error("解約予約後に現在の Price が変化しました。");
+  }
+  if (periodEndUnix(refreshed) !== originalPeriodEnd) {
+    throw new Error("解約予約により次回更新日が変化しました。");
+  }
+
+  return { subscription: refreshed, cancelAtUnix: originalPeriodEnd };
+}
+
+/**
+ * 解約予約を取消し、現在の契約を継続する。
+ * ※ pause_collection には触れない。
+ */
+export async function revokeCancelAtPeriodEnd(
+  subscriptionId: string,
+): Promise<Stripe.Subscription> {
+  const stripe = getStripeServer();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price", "schedule"],
+  });
+
+  if (subscription.status === "canceled") {
+    throw new Error("すでに解約済みのため取消できません。");
+  }
+  if (!subscription.cancel_at_period_end) {
+    throw new Error("解約予約がありません。");
+  }
+
+  const priceBefore = currentPriceId(subscription);
+  const periodEndBefore = periodEndUnix(subscription);
+
+  await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: false,
+  });
+
+  const refreshed = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price", "latest_invoice", "customer", "schedule"],
+  });
+
+  if (refreshed.cancel_at_period_end) {
+    throw new Error("解約予約の取消に失敗しました。");
+  }
+  if (currentPriceId(refreshed) !== priceBefore) {
+    throw new Error("解約予約取消後に現在の Price が変化しました。");
+  }
+  if (periodEndUnix(refreshed) !== periodEndBefore) {
+    throw new Error("解約予約取消後に次回更新日が変化しました。");
   }
 
   return refreshed;
