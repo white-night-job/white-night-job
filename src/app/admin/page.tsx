@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
     <div>
       <header className="admin-page-header">
         <h1>管理ダッシュボード</h1>
-        <p>管理者専用画面です。左の「管理項目」から各機能へ移動できます。</p>
+        <p>管理者専用画面です。下のカードから各管理機能へ移動できます。</p>
       </header>
 
       <div className="mb-4">

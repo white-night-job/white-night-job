@@ -10,56 +10,6 @@ import {
 } from "react";
 import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
 
-const NAV_ITEMS = [
-  { href: "/admin", label: "ダッシュボード", match: "exact" as const },
-  {
-    href: "/admin/listing-reviews",
-    label: "掲載審査管理",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/girl-reviews",
-    label: "口コミ評価管理",
-    match: "prefix" as const,
-  },
-  { href: "/admin/jobs", label: "求人管理", match: "prefix" as const },
-  {
-    href: "/admin/subscriptions",
-    label: "Stripe契約管理",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/stripe-checkout-links",
-    label: "Stripe決済リンク管理",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/notifications",
-    label: "通知センター",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/user-activity",
-    label: "女の子利用状況",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/line-broadcast",
-    label: "LINE配信管理",
-    match: "prefix" as const,
-  },
-  {
-    href: "/admin/line-history",
-    label: "LINE通知履歴",
-    match: "prefix" as const,
-  },
-];
-
-function isActive(pathname: string, href: string, match: "exact" | "prefix") {
-  if (match === "exact") return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export function AdminShell({
   children,
   initialAuthenticated,
@@ -71,8 +21,8 @@ export function AdminShell({
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
   const [checking, setChecking] = useState(!initialAuthenticated);
-  const [menuOpen, setMenuOpen] = useState(false);
   const isLoginPage = pathname === "/admin/login";
+  const isDashboard = pathname === "/admin";
 
   const refreshSession = useCallback(async () => {
     try {
@@ -92,10 +42,6 @@ export function AdminShell({
   useEffect(() => {
     void refreshSession();
   }, [refreshSession, pathname]);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (checking) return;
@@ -135,71 +81,37 @@ export function AdminShell({
   return (
     <div className="admin-app">
       <header className="admin-topbar">
-        <button
-          type="button"
-          className="admin-menu-toggle"
-          aria-expanded={menuOpen}
-          aria-controls="admin-sidebar"
-          onClick={() => setMenuOpen((v) => !v)}
-        >
-          <span className="admin-menu-toggle-bars" aria-hidden />
-          メニュー
-        </button>
-        <div className="admin-topbar-brand">
-          <span className="admin-topbar-kicker">Admin</span>
-          <span className="admin-topbar-title">White Night Job 管理画面</span>
+        {isDashboard ? (
+          <div className="admin-topbar-brand">
+            <span className="admin-topbar-kicker">Admin</span>
+            <span className="admin-topbar-title">White Night Job 管理画面</span>
+          </div>
+        ) : (
+          <Link href="/admin" className="admin-topbar-back">
+            ← 管理画面
+          </Link>
+        )}
+        <div className="admin-topbar-actions">
+          <AdminNotificationBell />
+          <Link
+            href="/"
+            className="admin-topbar-site"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            サイトを見る
+          </Link>
+          <button
+            type="button"
+            className="admin-topbar-logout"
+            onClick={() => void handleLogout()}
+          >
+            ログアウト
+          </button>
         </div>
-        <AdminNotificationBell />
-        <Link href="/" className="admin-topbar-site" target="_blank" rel="noopener noreferrer">
-          サイトを見る
-        </Link>
       </header>
 
-      {menuOpen ? (
-        <button
-          type="button"
-          className="admin-sidebar-backdrop"
-          aria-label="メニューを閉じる"
-          onClick={() => setMenuOpen(false)}
-        />
-      ) : null}
-
       <div className="admin-body">
-        <aside
-          id="admin-sidebar"
-          className={`admin-nav ${menuOpen ? "is-open" : ""}`}
-          aria-label="管理メニュー"
-        >
-          <p className="admin-nav-section">管理項目</p>
-          <nav className="admin-nav-list">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(pathname, item.href, item.match);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`admin-nav-link${active ? " is-active" : ""}`}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="admin-nav-footer">
-            <Link href="/" className="admin-nav-link admin-nav-link--muted" target="_blank" rel="noopener noreferrer">
-              サイトを見る
-            </Link>
-            <button
-              type="button"
-              className="admin-nav-link admin-nav-logout"
-              onClick={() => void handleLogout()}
-            >
-              ログアウト
-            </button>
-          </div>
-        </aside>
-
         <div className="admin-content">{children}</div>
       </div>
     </div>

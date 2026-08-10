@@ -8,7 +8,6 @@
   --admin-line: rgba(20, 16, 12, 0.12);
   --admin-gold: #b8955a;
   --admin-gold-dark: #8f7344;
-  --admin-sidebar: #121212;
   --admin-sidebar-text: #e8d7b5;
   min-height: 100vh;
   background: var(--admin-bg);
@@ -63,146 +62,55 @@
   text-overflow: ellipsis;
 }
 
-.admin-topbar-site {
-  display: none;
+.admin-topbar-back {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-sidebar-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-topbar-back:hover {
+  color: #f3e6c8;
+}
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.admin-topbar-site,
+.admin-topbar-logout {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.75rem;
   color: var(--admin-sidebar-text);
   text-decoration: none;
   border: 1px solid rgba(184, 149, 90, 0.45);
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.admin-topbar-site:hover {
+.admin-topbar-site:hover,
+.admin-topbar-logout:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.admin-menu-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  border: 1px solid rgba(184, 149, 90, 0.45);
-  border-radius: 0.5rem;
-  background: transparent;
-  color: var(--admin-sidebar-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.4rem 0.65rem;
-  cursor: pointer;
-}
-
-.admin-menu-toggle-bars,
-.admin-menu-toggle-bars::before,
-.admin-menu-toggle-bars::after {
-  display: block;
-  width: 1rem;
-  height: 1.5px;
-  background: currentColor;
-  content: "";
-  position: relative;
-}
-
-.admin-menu-toggle-bars::before {
-  position: absolute;
-  top: -5px;
-}
-
-.admin-menu-toggle-bars::after {
-  position: absolute;
-  top: 5px;
-}
-
-.admin-sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  border: 0;
-  background: rgba(0, 0, 0, 0.45);
+.admin-topbar-logout {
+  color: #f0b4a8;
+  border-color: rgba(240, 180, 168, 0.45);
 }
 
 .admin-body {
   display: block;
-}
-
-.admin-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  width: min(17.5rem, 88vw);
-  height: 100vh;
-  padding: 1.25rem 0.85rem 1rem;
-  background: var(--admin-sidebar);
-  color: var(--admin-sidebar-text);
-  transform: translateX(-105%);
-  transition: transform 0.2s ease;
-}
-
-.admin-nav.is-open {
-  transform: translateX(0);
-}
-
-.admin-nav-section {
-  margin: 0.35rem 0.65rem 0.75rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--admin-gold);
-}
-
-.admin-nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.admin-nav-link {
-  display: block;
-  border-radius: 0.5rem;
-  padding: 0.7rem 0.75rem;
-  color: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  width: 100%;
-}
-
-.admin-nav-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.admin-nav-link.is-active {
-  background: rgba(184, 149, 90, 0.18);
-  color: #f3e6c8;
-  box-shadow: inset 3px 0 0 var(--admin-gold);
-}
-
-.admin-nav-link--muted {
-  color: rgba(232, 215, 181, 0.75);
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-
-.admin-nav-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.admin-nav-logout {
-  color: #f0b4a8;
 }
 
 .admin-content {
@@ -293,29 +201,6 @@
 }
 
 @media (min-width: 900px) {
-  .admin-menu-toggle,
-  .admin-sidebar-backdrop {
-    display: none;
-  }
-
-  .admin-topbar-site {
-    display: inline-flex;
-  }
-
-  .admin-body {
-    display: grid;
-    grid-template-columns: 15.5rem minmax(0, 1fr);
-    min-height: calc(100vh - 3.25rem);
-  }
-
-  .admin-nav {
-    position: sticky;
-    top: 3.25rem;
-    height: calc(100vh - 3.25rem);
-    width: auto;
-    transform: none;
-  }
-
   .admin-content {
     padding: 1.5rem 1.5rem 3rem;
   }
@@ -356,7 +241,6 @@
 /* ---- Notification center (bell + panel) ---- */
 .admin-notify {
   position: relative;
-  margin-left: auto;
 }
 
 .admin-notify-bell {
@@ -551,10 +435,6 @@
 }
 
 @media (min-width: 900px) {
-  .admin-notify {
-    margin-left: 0;
-  }
-
   .admin-notify-backdrop {
     background: transparent;
   }
@@ -568,4 +448,3 @@
     border-radius: 0.85rem;
   }
 }
-
