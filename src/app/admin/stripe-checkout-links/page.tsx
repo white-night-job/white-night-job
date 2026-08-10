@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StripeBillingKey } from "@/lib/stripe-billing";
-import { formatStripeCheckoutLinkMonthlyPrice, appendStoreIdToCheckoutUrl } from "@/lib/stripe-checkout-links";
+import {
+  appendStoreIdToCheckoutUrl,
+  formatStripeCheckoutLinkMonthlyPrice,
+} from "@/lib/stripe-checkout-links";
 
 type CheckoutLink = {
   billingKey: StripeBillingKey;
@@ -10,6 +13,12 @@ type CheckoutLink = {
   plan: "light" | "standard" | "premium";
   checkoutUrl: string;
   updatedAt: string | null;
+};
+
+type StoreOption = {
+  id: string;
+  shopName: string;
+  district: string | null;
 };
 
 function formatUpdatedAt(value: string | null): string {
@@ -25,6 +34,11 @@ function formatUpdatedAt(value: string | null): string {
   }).format(d);
 }
 
+function shortStoreId(id: string): string {
+  if (id.length <= 8) return id;
+  return `${id.slice(0, 8)}…`;
+}
+
 export default function AdminStripeCheckoutLinksPage() {
   const [links, setLinks] = useState<CheckoutLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +48,16 @@ export default function AdminStripeCheckoutLinksPage() {
   const [draftUrl, setDraftUrl] = useState("");
   const [savingKey, setSavingKey] = useState<StripeBillingKey | null>(null);
   const [copiedKey, setCopiedKey] = useState<StripeBillingKey | null>(null);
-  const [storeIdForLink, setStoreIdForLink] = useState("");
   const [copiedLinkedKey, setCopiedLinkedKey] = useState<StripeBillingKey | null>(
     null,
   );
+
+  const [stores, setStores] = useState<StoreOption[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<StoreOption | null>(null);
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeMenuOpen, setStoreMenuOpen] = useState(false);
+  const storePickerRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
     setLoading(true);
@@ -60,9 +80,68 @@ export default function AdminStripeCheckoutLinksPage() {
     }
   }
 
+  async function loadStores(query = "") {
+    setStoresLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("q", query.trim());
+      const res = await fetch(
+        `/api/admin/subscriptions/stores?${params.toString()}`,
+        {
+          cache: "no-store",
+          credentials: "include",
+        },
+      );
+      const data = (await res.json()) as {
+        stores?: Array<{
+          id: string;
+          shopName: string;
+          district: string | null;
+        }>;
+        message?: string;
+      };
+      if (!res.ok) throw new Error(data.message ?? "店舗一覧の取得に失敗しました。");
+      setStores(
+        (data.stores ?? []).map((s) => ({
+          id: s.id,
+          shopName: s.shopName,
+          district: s.district,
+        })),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "店舗一覧の取得に失敗しました。",
+      );
+    } finally {
+      setStoresLoading(false);
+    }
+  }
+
   useEffect(() => {
     void load();
+    void loadStores();
   }, []);
+
+  useEffect(() => {
+    if (!storeMenuOpen) return;
+    const timer = window.setTimeout(() => {
+      void loadStores(storeSearch);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [storeSearch, storeMenuOpen]);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      if (!storePickerRef.current) return;
+      if (!storePickerRef.current.contains(event.target as Node)) {
+        setStoreMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
+
+  const filteredStores = stores;
 
   function startEdit(link: CheckoutLink) {
     setEditingKey(link.billingKey);
@@ -130,17 +209,17 @@ export default function AdminStripeCheckoutLinksPage() {
       setError("先に決済リンクを登録してください。");
       return;
     }
-    const storeId = storeIdForLink.trim();
-    if (!storeId) {
-      setError("店舗 ID（jobs.id）を入力してから、紐付け付きリンクをコピーしてください。");
+    if (!selectedStore) {
+      setError("紐付け先店舗を選択してください");
+      setMessage(null);
       return;
     }
     try {
-      const url = appendStoreIdToCheckoutUrl(link.checkoutUrl, storeId);
+      const url = appendStoreIdToCheckoutUrl(link.checkoutUrl, selectedStore.id);
       await navigator.clipboard.writeText(url);
       setCopiedLinkedKey(link.billingKey);
       setMessage(
-        `${link.label}の店舗紐付けリンクをコピーしました（client_reference_id=${storeId}）。`,
+        `${link.label}の店舗紐付けリンクをコピーしました（${selectedStore.shopName} / client_reference_id=${selectedStore.id}）。`,
       );
       setError(null);
       window.setTimeout(() => {
@@ -158,8 +237,8 @@ export default function AdminStripeCheckoutLinksPage() {
       <header className="admin-page-header">
         <h1>Stripe決済リンク管理</h1>
         <p>
-          運営が店舗へ個別送信する Stripe Checkout / Payment Link を登録します。
-          店舗画面には契約ボタンは出ません。コピーしたリンクを LINE・メール等で送ってください。
+          紐付け先店舗を選んでから「店舗紐付けURLをコピー」し、LINE・メール等で店舗へ送ってください。
+          店舗が決済すると Webhook が選択した店舗へ契約を自動紐付けします。
         </p>
       </header>
 
@@ -175,25 +254,100 @@ export default function AdminStripeCheckoutLinksPage() {
       ) : null}
 
       <div className="mb-4 rounded-xl border border-gold/20 bg-white p-4">
-        <label className="block">
+        <div ref={storePickerRef} className="relative">
           <span className="mb-1.5 block text-sm font-medium text-charcoal">
-            店舗 ID（jobs.id）— 紐付け付きリンク用
+            紐付け先店舗
           </span>
-          <input
-            type="text"
-            value={storeIdForLink}
-            onChange={(e) => setStoreIdForLink(e.target.value)}
-            placeholder="例: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            className="w-full rounded-lg border border-gold/30 bg-ivory px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20"
-          />
-        </label>
+          <button
+            type="button"
+            onClick={() => setStoreMenuOpen((open) => !open)}
+            className="flex w-full items-center justify-between rounded-lg border border-gold/30 bg-ivory px-3 py-2.5 text-left outline-none focus:border-gold focus:ring-2 focus:ring-gold/20"
+          >
+            <span className="min-w-0">
+              {selectedStore ? (
+                <>
+                  <span className="block truncate font-semibold text-charcoal">
+                    {selectedStore.shopName}
+                  </span>
+                  <span className="mt-0.5 block truncate text-xs text-muted">
+                    {selectedStore.district ?? "エリア未設定"} · ID{" "}
+                    {shortStoreId(selectedStore.id)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted">
+                  {storesLoading ? "店舗を読み込み中…" : "店舗を選択してください"}
+                </span>
+              )}
+            </span>
+            <span className="ml-2 shrink-0 text-muted" aria-hidden>
+              ▼
+            </span>
+          </button>
+
+          {storeMenuOpen ? (
+            <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-gold/25 bg-white shadow-lg">
+              <div className="border-b border-gold/15 p-2">
+                <input
+                  type="search"
+                  value={storeSearch}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  placeholder="店舗名で検索"
+                  autoFocus
+                  className="w-full rounded-lg border border-gold/30 bg-ivory px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/20"
+                />
+              </div>
+              <div className="max-h-64 overflow-auto p-1">
+                {filteredStores.length === 0 ? (
+                  <p className="px-3 py-2 text-sm text-muted">該当する店舗がありません。</p>
+                ) : (
+                  filteredStores.map((store) => (
+                    <button
+                      key={store.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedStore(store);
+                        setStoreMenuOpen(false);
+                        setStoreSearch("");
+                        setError(null);
+                      }}
+                      className={`flex w-full flex-col rounded-lg px-3 py-2 text-left hover:bg-ivory ${
+                        selectedStore?.id === store.id ? "bg-gold/10" : ""
+                      }`}
+                    >
+                      <span className="font-semibold text-charcoal">
+                        {store.shopName}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {store.district ?? "エリア未設定"} · ID{" "}
+                        {shortStoreId(store.id)}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+              {selectedStore ? (
+                <div className="border-t border-gold/15 p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStore(null);
+                      setStoreMenuOpen(false);
+                    }}
+                    className="w-full rounded-lg px-3 py-1.5 text-left text-xs text-muted hover:bg-ivory"
+                  >
+                    選択をクリア
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
         <p className="mt-2 text-xs leading-relaxed text-muted">
-          入力した店舗 ID を{" "}
+          選択した店舗の{" "}
+          <code className="rounded bg-zinc-100 px-1">jobs.id</code> が{" "}
           <code className="rounded bg-zinc-100 px-1">client_reference_id</code>{" "}
-          として付与した URL をコピーできます。Webhook が Checkout Session /
-          Subscription の metadata に{" "}
-          <code className="rounded bg-zinc-100 px-1">store_id</code>{" "}
-          を書き込み、契約を店舗へ紐付けます。
+          として URL に付与されます。通常の「コピー」は店舗未指定の URL のままです。
         </p>
       </div>
 
@@ -301,13 +455,10 @@ export default function AdminStripeCheckoutLinksPage() {
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-muted">
-        店舗紐付けの優先順位（Webhook・自動）:{" "}
-        <code className="rounded bg-zinc-100 px-1">checkout.session.metadata.store_id</code>
-        {" → "}
-        <code className="rounded bg-zinc-100 px-1">client_reference_id</code>
-        {" / "}
-        <code className="rounded bg-zinc-100 px-1">subscription.metadata.store_id</code>
-        。メール一致だけでは自動確定しません。未紐付けの契約は Stripe契約管理から手動で紐付けできます。
+        運用: 紐付け先店舗を選択 →「店舗紐付けURLをコピー」→ 店舗へ送信 → 決済 →
+        Webhook が{" "}
+        <code className="rounded bg-zinc-100 px-1">client_reference_id</code>（=
+        jobs.id）で店舗へ自動紐付け。未紐付けの場合は Stripe契約管理から手動紐付けできます。
       </p>
     </div>
   );

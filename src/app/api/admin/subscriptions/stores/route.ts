@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       .from("jobs")
       .select("id, shop_name, district, listing_status")
       .order("shop_name", { ascending: true })
-      .limit(100);
+      .limit(q ? 100 : 500);
 
     if (q) {
       jobsQuery = jobsQuery.ilike("shop_name", `%${q}%`);
