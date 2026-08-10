@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { StripeBillingKey } from "@/lib/stripe-billing";
+import { formatStripeCheckoutLinkMonthlyPrice } from "@/lib/stripe-checkout-links";
 
 type CheckoutLink = {
   billingKey: StripeBillingKey;
@@ -148,15 +149,21 @@ export default function AdminStripeCheckoutLinksPage() {
           <div className="space-y-4">
             {links.map((link) => {
               const isEditing = editingKey === link.billingKey;
+              const monthlyPrice = formatStripeCheckoutLinkMonthlyPrice(
+                link.billingKey,
+              );
               return (
                 <article
                   key={link.billingKey}
                   className="rounded-xl border border-gold/25 bg-white p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h2 className="font-semibold text-charcoal">{link.label}</h2>
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1.5 text-base font-semibold tracking-wide text-gold-dark sm:text-lg">
+                        {monthlyPrice}
+                      </p>
+                      <p className="mt-1.5 text-xs text-muted">
                         最終更新: {formatUpdatedAt(link.updatedAt)}
                       </p>
                     </div>

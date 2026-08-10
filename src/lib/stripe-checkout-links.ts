@@ -15,6 +15,23 @@ export const STRIPE_CHECKOUT_LINK_LABELS: Record<StripeBillingKey, string> = {
   premium_special: "プレミアムプラン（特別価格）",
 };
 
+/** 管理画面表示用の月額（税込）。Stripe Price 本体とは別の表示金額 */
+export const STRIPE_CHECKOUT_LINK_MONTHLY_PRICES: Record<StripeBillingKey, number> =
+  {
+    light: 18000,
+    standard: 33000,
+    standard_special: 9800,
+    premium: 55000,
+    premium_special: 19800,
+  };
+
+export function formatStripeCheckoutLinkMonthlyPrice(
+  billingKey: StripeBillingKey,
+): string {
+  const amount = STRIPE_CHECKOUT_LINK_MONTHLY_PRICES[billingKey];
+  return `月額 ${new Intl.NumberFormat("ja-JP").format(amount)}円`;
+}
+
 export type StripeCheckoutLinkRecord = {
   billingKey: StripeBillingKey;
   label: string;
