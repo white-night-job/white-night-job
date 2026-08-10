@@ -42,6 +42,7 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
+import type { GirlReview } from "@/types/girl-review";
 import {
   formatNewListingEndDate,
   getNewListingDays,
@@ -357,6 +358,10 @@ function AdminJobsPageInner() {
   const [isShopSearchOpen, setIsShopSearchOpen] = useState(false);
   const [isDraftSearchOpen, setIsDraftSearchOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewKind, setPreviewKind] = useState<"publish" | "draft">("publish");
+  const [previewGirlReviews, setPreviewGirlReviews] = useState<GirlReview[]>(
+    [],
+  );
   const publishLockRef = useRef(false);
   const editorSectionRef = useRef<HTMLElement | null>(null);
   const jobsListAnchorRef = useRef<HTMLElement | null>(null);
@@ -740,6 +745,8 @@ function AdminJobsPageInner() {
     setEditingListingStatus("draft");
     setIsAddFormOpen(false);
     setShowPreview(false);
+    setPreviewKind("publish");
+    setPreviewGirlReviews([]);
     setFormDirty(false);
     setFieldErrors({});
     setPendingSaveIntent(null);
@@ -832,8 +839,15 @@ function AdminJobsPageInner() {
             ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
             : saveIntent === "pause"
               ? "求人を掲載停止にしました。"
-              : "下書きを保存しました。ログイン情報を店舗へ伝えてください。",
+              : "下書きを保存しました。プレビューで公開前の表示を確認できます。",
         );
+        if (
+          saveIntent === "draft" &&
+          resolveJobListingStatus(savedJob) === "draft"
+        ) {
+          pendingScrollToEditorRef.current = true;
+          router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
+        }
       } else if (saveIntent === "publish" || saveIntent === "republish") {
         closeEditor({
           message: "求人を公開しました",
@@ -848,10 +862,19 @@ function AdminJobsPageInner() {
         setDraftJobId(savedJob.id);
         setMessage("求人を掲載停止にしました。");
       } else {
-        closeEditor({
-          message: "下書きを保存しました",
-          scrollToList: true,
-        });
+        // 下書き保存後も編集画面を維持し、プレビュー可能にする
+        setEditingId(savedJob.id);
+        setForm(toForm(savedJob));
+        setEditingListingStatus(resolveJobListingStatus(savedJob));
+        setIsAddFormOpen(false);
+        setFormDirty(false);
+        setDraftJobId(savedJob.id);
+        setShowPreview(false);
+        router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
+        pendingScrollToEditorRef.current = true;
+        setMessage(
+          "下書きを保存しました。プレビューで公開前の表示を確認できます。",
+        );
       }
       return savedJob;
     } catch (error) {
@@ -888,15 +911,46 @@ function AdminJobsPageInner() {
     }
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-    if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
-      setMessage("公開前確認には店舗名・時給・LINE URLが必要です。不足がある場合は「下書き保存」を使ってください。");
+  async function loadPreviewGirlReviews(jobId: string | null) {
+    if (!jobId) {
+      setPreviewGirlReviews([]);
       return;
     }
+    try {
+      const res = await fetch(
+        `/api/admin/girl-reviews?jobId=${encodeURIComponent(jobId)}&limit=100`,
+      );
+      if (!res.ok) {
+        setPreviewGirlReviews([]);
+        return;
+      }
+      const data = (await res.json()) as { reviews?: GirlReview[] };
+      setPreviewGirlReviews(Array.isArray(data.reviews) ? data.reviews : []);
+    } catch {
+      setPreviewGirlReviews([]);
+    }
+  }
+
+  async function openPreview(kind: "publish" | "draft") {
+    setMessage("");
+    if (kind === "publish") {
+      if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
+        setMessage(
+          "公開前確認には店舗名・時給・LINE URLが必要です。不足がある場合は「下書き保存」を使ってください。",
+        );
+        return;
+      }
+    }
+    const jobId = editingId ?? draftJobId;
+    await loadPreviewGirlReviews(jobId);
+    setPreviewKind(kind);
     requestScrollToTop();
     setShowPreview(true);
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await openPreview("publish");
   }
 
   async function handleConfirmPublish() {
@@ -1147,14 +1201,20 @@ function AdminJobsPageInner() {
       <JobListingPreview
         job={previewJob}
         mode={editingId ? "edit" : "create"}
+        variant={previewKind}
         submitting={loading}
+        girlReviews={previewGirlReviews}
         onBack={() => {
           requestScrollToTop();
           setShowPreview(false);
         }}
-        onConfirm={() => {
-          void handleConfirmPublish();
-        }}
+        onConfirm={
+          previewKind === "publish"
+            ? () => {
+                void handleConfirmPublish();
+              }
+            : undefined
+        }
       />
     );
   }
@@ -2748,6 +2808,16 @@ function AdminJobsPageInner() {
               ? "保存中..."
               : "下書き保存"}
           </button>
+          {editingId && editingListingStatus === "draft" ? (
+            <button
+              type="button"
+              disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
+              onClick={() => void openPreview("draft")}
+              className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-charcoal hover:bg-ivory disabled:opacity-60"
+            >
+              プレビュー
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
@@ -2762,8 +2832,7 @@ function AdminJobsPageInner() {
                 setFieldErrors(next);
                 return;
               }
-              requestScrollToTop();
-              setShowPreview(true);
+              void openPreview("publish");
             }}
             className="rounded-full bg-[#8f7344] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
