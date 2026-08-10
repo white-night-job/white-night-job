@@ -367,6 +367,10 @@ function AdminJobsPageInner() {
   const jobsListAnchorRef = useRef<HTMLElement | null>(null);
   const pendingScrollToEditorRef = useRef(false);
   const pendingScrollToListRef = useRef(false);
+  const pendingScrollToTopRef = useRef(false);
+  const messageClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [pendingSaveIntent, setPendingSaveIntent] = useState<
     "draft" | "publish" | "pause" | "republish" | null
   >(null);
@@ -735,10 +739,23 @@ function AdminJobsPageInner() {
     scrollWithHeaderOffset(messageEl ?? jobsListAnchorRef.current);
   }
 
+  function scheduleMessageAutoClear(text: string, ms: number) {
+    if (messageClearTimerRef.current) {
+      clearTimeout(messageClearTimerRef.current);
+      messageClearTimerRef.current = null;
+    }
+    messageClearTimerRef.current = setTimeout(() => {
+      setMessage((current) => (current === text ? "" : current));
+      messageClearTimerRef.current = null;
+    }, ms);
+  }
+
   function closeEditor(options?: {
     keepMessage?: boolean;
     message?: string;
     scrollToList?: boolean;
+    scrollToTop?: boolean;
+    autoClearMessageMs?: number;
   }) {
     setForm(emptyForm);
     setEditingId(null);
@@ -753,12 +770,17 @@ function AdminJobsPageInner() {
     pendingScrollToEditorRef.current = false;
     if (options?.message != null) {
       setMessage(options.message);
+      if (options.autoClearMessageMs && options.autoClearMessageMs > 0) {
+        scheduleMessageAutoClear(options.message, options.autoClearMessageMs);
+      }
     } else if (!options?.keepMessage) {
       setMessage("");
     }
     setDraftJobId(crypto.randomUUID());
     router.replace("/admin/jobs", { scroll: false });
-    if (options?.scrollToList) {
+    if (options?.scrollToTop) {
+      pendingScrollToTopRef.current = true;
+    } else if (options?.scrollToList) {
       pendingScrollToListRef.current = true;
     }
   }
@@ -773,6 +795,10 @@ function AdminJobsPageInner() {
     if (!options?.silent) {
       setLoading(true);
       setPendingSaveIntent(saveIntent);
+      if (messageClearTimerRef.current) {
+        clearTimeout(messageClearTimerRef.current);
+        messageClearTimerRef.current = null;
+      }
       setMessage("");
       setFieldErrors({});
     }
@@ -827,7 +853,16 @@ function AdminJobsPageInner() {
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
       setShowPreview(false);
 
-      if (issued) {
+      if (saveIntent === "draft") {
+        // 下書き保存成功：フォームを閉じ、一覧を更新し、上部に成功メッセージ
+        closeEditor({
+          message: issued
+            ? "下書きを保存しました。ログイン情報を店舗へ伝えてください。"
+            : "下書きを保存しました",
+          scrollToTop: true,
+          autoClearMessageMs: 5000,
+        });
+      } else if (issued) {
         setEditingId(savedJob.id);
         setForm(toForm(savedJob));
         setEditingListingStatus(resolveJobListingStatus(savedJob));
@@ -837,17 +872,8 @@ function AdminJobsPageInner() {
         setMessage(
           saveIntent === "publish" || saveIntent === "republish"
             ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
-            : saveIntent === "pause"
-              ? "求人を掲載停止にしました。"
-              : "下書きを保存しました。プレビューで公開前の表示を確認できます。",
+            : "求人を掲載停止にしました。",
         );
-        if (
-          saveIntent === "draft" &&
-          resolveJobListingStatus(savedJob) === "draft"
-        ) {
-          pendingScrollToEditorRef.current = true;
-          router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
-        }
       } else if (saveIntent === "publish" || saveIntent === "republish") {
         closeEditor({
           message: "求人を公開しました",
@@ -861,20 +887,6 @@ function AdminJobsPageInner() {
         setFormDirty(false);
         setDraftJobId(savedJob.id);
         setMessage("求人を掲載停止にしました。");
-      } else {
-        // 下書き保存後も編集画面を維持し、プレビュー可能にする
-        setEditingId(savedJob.id);
-        setForm(toForm(savedJob));
-        setEditingListingStatus(resolveJobListingStatus(savedJob));
-        setIsAddFormOpen(false);
-        setFormDirty(false);
-        setDraftJobId(savedJob.id);
-        setShowPreview(false);
-        router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
-        pendingScrollToEditorRef.current = true;
-        setMessage(
-          "下書きを保存しました。プレビューで公開前の表示を確認できます。",
-        );
       }
       return savedJob;
     } catch (error) {
@@ -885,6 +897,10 @@ function AdminJobsPageInner() {
           ? String((error as { field?: string }).field ?? "")
           : "";
       if (!options?.silent) {
+        if (messageClearTimerRef.current) {
+          clearTimeout(messageClearTimerRef.current);
+          messageClearTimerRef.current = null;
+        }
         setMessage(message);
         if (field) {
           setFieldErrors({ [field]: message });
@@ -1165,6 +1181,18 @@ function AdminJobsPageInner() {
   }, [editingId, isFormVisible, form]);
 
   useEffect(() => {
+    if (!pendingScrollToTopRef.current) return;
+    if (isFormVisible) return;
+    pendingScrollToTopRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isFormVisible, message]);
+
+  useEffect(() => {
     if (!pendingScrollToListRef.current) return;
     if (isFormVisible) return;
     pendingScrollToListRef.current = false;
@@ -1175,6 +1203,14 @@ function AdminJobsPageInner() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [isFormVisible, message]);
+
+  useEffect(() => {
+    return () => {
+      if (messageClearTimerRef.current) {
+        clearTimeout(messageClearTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isFormVisible || !formDirty) return;
