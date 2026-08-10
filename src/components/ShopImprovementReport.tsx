@@ -659,10 +659,6 @@ export function ShopImprovementReport({
                 </div>
               </div>
             )}
-
-            <p className="text-[11px] leading-relaxed text-muted">
-              応募クリック数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの1分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。
-            </p>
           </div>
         )}
       </div>
