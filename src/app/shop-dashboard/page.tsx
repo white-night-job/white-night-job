@@ -536,6 +536,7 @@ export default function ShopDashboardPage() {
       await refreshAfterSave();
       requestScrollToTop();
       setShowPreview(false);
+      setIsFormOpen(false);
       setMessage("求人情報を更新しました。");
     } catch (error) {
       requestScrollToTop();
