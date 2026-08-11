@@ -862,6 +862,13 @@ function AdminJobsPageInner() {
           scrollToTop: true,
           autoClearMessageMs: 5000,
         });
+      } else if (saveIntent === "publish" || saveIntent === "republish") {
+        closeEditor({
+          message: issued
+            ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
+            : "求人を公開しました",
+          scrollToTop: true,
+        });
       } else if (issued) {
         setEditingId(savedJob.id);
         setForm(toForm(savedJob));
@@ -869,16 +876,7 @@ function AdminJobsPageInner() {
         setIsAddFormOpen(false);
         setFormDirty(false);
         setDraftJobId(savedJob.id);
-        setMessage(
-          saveIntent === "publish" || saveIntent === "republish"
-            ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
-            : "求人を掲載停止にしました。",
-        );
-      } else if (saveIntent === "publish" || saveIntent === "republish") {
-        closeEditor({
-          message: "求人を公開しました",
-          scrollToList: true,
-        });
+        setMessage("求人を掲載停止にしました。");
       } else if (saveIntent === "pause") {
         setEditingId(savedJob.id);
         setForm(toForm(savedJob));
