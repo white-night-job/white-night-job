@@ -14,9 +14,21 @@ import { Header } from "@/components/Header";
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "";
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isShopDashboardRoute =
+    pathname === "/shop-dashboard" || pathname.startsWith("/shop-dashboard/");
 
   if (isAdminRoute) {
     return <div className="flex min-h-screen flex-1 flex-col">{children}</div>;
+  }
+
+  if (isShopDashboardRoute) {
+    return (
+      <>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </>
+    );
   }
 
   return (
