@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { LineLoginButton } from "@/components/LineLoginButton";
 
 type FavoriteLoginBottomSheetProps = {
@@ -16,6 +17,12 @@ export function FavoriteLoginBottomSheet({
   redirectPath,
   favoriteJobId,
 }: FavoriteLoginBottomSheetProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
 
@@ -33,9 +40,9 @@ export function FavoriteLoginBottomSheet({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="favorite-login-sheet-root" role="presentation">
       <button
         type="button"
@@ -78,6 +85,7 @@ export function FavoriteLoginBottomSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
