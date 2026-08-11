@@ -67,7 +67,7 @@ export function CompactJobCard({
         <JobDetailPrefetch jobId={job.id} />
         <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
           <CompareButton jobId={job.id} />
-          <FavoriteButton jobId={job.id} />
+          <FavoriteButton jobId={job.id} allowLineLoginRedirect />
         </div>
         {showSample ? <SampleListingBadge /> : null}
         {badge && (
@@ -126,7 +126,7 @@ export function CompactJobCard({
       <JobDetailPrefetch jobId={job.id} />
       <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
         <CompareButton jobId={job.id} />
-        <FavoriteButton jobId={job.id} />
+        <FavoriteButton jobId={job.id} allowLineLoginRedirect />
       </div>
       {showSample ? <SampleListingBadge /> : null}
       {badge && (

@@ -24,7 +24,7 @@ export function JobCard({ job }: { job: Job }) {
       {SHOW_SAMPLE_LISTINGS ? <SampleListingBadge /> : null}
       <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
         <CompareButton jobId={job.id} />
-        <FavoriteButton jobId={job.id} />
+        <FavoriteButton jobId={job.id} allowLineLoginRedirect />
       </div>
       <Link href={`/jobs/${job.id}`} scroll={false} prefetch className="block">
         {job.imageUrl ? (
