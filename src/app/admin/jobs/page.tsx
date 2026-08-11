@@ -792,6 +792,10 @@ function AdminJobsPageInner() {
   async function saveJob(saveIntent: "draft" | "publish" | "pause" | "republish", options?: { silent?: boolean }) {
     if (publishLockRef.current || loading) return null;
     publishLockRef.current = true;
+    const isPublishedUpdate =
+      editingId != null &&
+      editingListingStatus === "published" &&
+      saveIntent === "publish";
     if (!options?.silent) {
       setLoading(true);
       setPendingSaveIntent(saveIntent);
@@ -864,9 +868,13 @@ function AdminJobsPageInner() {
         });
       } else if (saveIntent === "publish" || saveIntent === "republish") {
         closeEditor({
-          message: issued
-            ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
-            : "求人を公開しました",
+          message: isPublishedUpdate
+            ? issued
+              ? "更新しました。ログイン情報を店舗へ伝えてください。"
+              : "更新しました"
+            : issued
+              ? "求人を公開しました。ログイン情報を店舗へ伝えてください。"
+              : "求人を公開しました",
           scrollToTop: true,
         });
       } else if (issued) {
@@ -2843,16 +2851,18 @@ function AdminJobsPageInner() {
         </div>
 
         <div className="flex flex-wrap gap-3 border-t border-gold/15 pt-4">
-          <button
-            type="button"
-            disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
-            onClick={() => void openPreview("draft")}
-            className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-gold-dark disabled:opacity-60"
-          >
-            {loading && pendingSaveIntent === "draft"
-              ? "保存中..."
-              : "下書き保存"}
-          </button>
+          {!(editingId && editingListingStatus === "published") ? (
+            <button
+              type="button"
+              disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
+              onClick={() => void openPreview("draft")}
+              className="rounded-full border border-gold/40 px-6 py-3 text-sm font-semibold text-gold-dark disabled:opacity-60"
+            >
+              {loading && pendingSaveIntent === "draft"
+                ? "保存中..."
+                : "下書き保存"}
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
@@ -2875,7 +2885,9 @@ function AdminJobsPageInner() {
             (pendingSaveIntent === "publish" ||
               pendingSaveIntent === "republish")
               ? "公開中..."
-              : "公開する"}
+              : editingId && editingListingStatus === "published"
+                ? "更新する"
+                : "公開する"}
           </button>
           {editingId && editingListingStatus === "published" ? (
             <button
