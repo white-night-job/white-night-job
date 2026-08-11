@@ -61,10 +61,10 @@ export function FavoriteLoginBottomSheet({
           id="favorite-login-sheet-title"
           className="favorite-login-sheet-title font-serif"
         >
-          このお店を保存しますか？
+          お気に入り登録
         </h2>
         <p className="favorite-login-sheet-desc">
-          LINEログインすると、お気に入り店舗を保存して、次回もすぐ確認できます。
+          LINEログインすると、お気に入り店舗を保存して、いつでもすぐ確認できます。
         </p>
         <div className="favorite-login-sheet-actions">
           <LineLoginButton
