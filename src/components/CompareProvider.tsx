@@ -123,7 +123,9 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     !ready ||
     jobIds.length === 0 ||
     pathname === "/compare" ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    pathname === "/shop-dashboard" ||
+    pathname.startsWith("/shop-dashboard/");
 
   useEffect(() => {
     document.body.classList.toggle("compare-bar-visible", !hideBar);

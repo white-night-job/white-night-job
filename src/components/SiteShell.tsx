@@ -23,11 +23,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
   if (isShopDashboardRoute) {
     return (
-      <>
+      <CompareProvider>
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
-      </>
+      </CompareProvider>
     );
   }
 
