@@ -15,7 +15,7 @@ export const SITE_TAGLINE =
  * Pre-launch flag: published jobs are demo/sample listings.
  * Set to `false` at official release to remove sample badges and notices.
  */
-export const SHOW_SAMPLE_LISTINGS = true;
+export const SHOW_SAMPLE_LISTINGS = false;
 
 export const SAMPLE_LISTING_DETAIL_NOTE =
   "※この求人はデモ（サンプル）です。正式リリース時に実際の掲載店舗へ切り替わります。";
