@@ -4721,6 +4721,16 @@ body.compare-bar-visible .chatbot-panel-slot {
   bottom: calc(var(--compare-bar-stack-height) + 0.5rem);
 }
 
+/* Preview screens: hide compare bar so bottom action buttons stay tappable */
+body.job-listing-preview-open .compare-fixed-bar {
+  display: none;
+}
+
+body.job-listing-preview-open {
+  padding-bottom: 0 !important;
+  --compare-bar-stack-height: env(safe-area-inset-bottom, 0px);
+}
+
 /* ── Header login modal ── */
 
 .header-login-modal-root {

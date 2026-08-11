@@ -1,6 +1,7 @@
 "use client";
 
 import { JobDetailView } from "@/components/JobDetailView";
+import { useEffect } from "react";
 import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
 
@@ -35,6 +36,13 @@ export function JobListingPreview({
       ? "この内容で更新する"
       : "この内容で掲載する";
   const submittingLabel = isDraftPreview ? "保存中..." : "公開中...";
+
+  useEffect(() => {
+    document.body.classList.add("job-listing-preview-open");
+    return () => {
+      document.body.classList.remove("job-listing-preview-open");
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] pb-28">
