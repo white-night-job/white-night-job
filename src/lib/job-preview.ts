@@ -51,6 +51,9 @@ export type ShopPreviewForm = {
   access: string;
   businessHours: string;
   ageGroup: string;
+  customerPersonalityLevel: number;
+  customerAgeLevel: number;
+  customerRegularLevel: number;
   introductionText: string;
   descriptionText: string;
   castVoices?: CastVoiceEntry[];
@@ -142,6 +145,9 @@ export function buildPreviewJobFromShopForm(
     workHours: form.businessHours.trim() || baseJob.workHours,
     businessHours: form.businessHours.trim() || undefined,
     ageGroup: form.ageGroup.trim() || undefined,
+    customerPersonalityLevel: form.customerPersonalityLevel,
+    customerAgeLevel: form.customerAgeLevel,
+    customerRegularLevel: form.customerRegularLevel,
     introductionText: form.introductionText.trim() || undefined,
     descriptionText: form.descriptionText.trim() || undefined,
     castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),

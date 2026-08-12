@@ -74,6 +74,9 @@ type ShopForm = {
   businessHours: string;
   openDate: string;
   ageGroup: string;
+  customerPersonalityLevel: number;
+  customerAgeLevel: number;
+  customerRegularLevel: number;
   introductionText: string;
   descriptionText: string;
   recruiterName: string;
@@ -100,6 +103,42 @@ const readonlyInputClass = `${inputClass} cursor-not-allowed bg-zinc-100 text-ch
 
 const labelClass = "mb-1.5 block text-sm font-medium text-charcoal";
 
+function normalizeAtmosphereLevel(value: number | undefined | null): number {
+  if (!value || Number.isNaN(value)) return 3;
+  return Math.min(5, Math.max(1, Math.round(value)));
+}
+
+type AtmosphereSliderKey =
+  | "customerPersonalityLevel"
+  | "customerAgeLevel"
+  | "customerRegularLevel";
+
+const ATMOSPHERE_SLIDERS: Array<{
+  key: AtmosphereSliderKey;
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+}> = [
+  {
+    key: "customerPersonalityLevel",
+    label: "お店の雰囲気",
+    leftLabel: "にぎやか",
+    rightLabel: "落ち着いている",
+  },
+  {
+    key: "customerAgeLevel",
+    label: "お客様の年齢層",
+    leftLabel: "若い",
+    rightLabel: "年配",
+  },
+  {
+    key: "customerRegularLevel",
+    label: "来店傾向",
+    leftLabel: "新規",
+    rightLabel: "常連",
+  },
+];
+
 function toForm(job: Job): ShopForm {
   return {
     shopName: job.shopName,
@@ -111,6 +150,11 @@ function toForm(job: Job): ShopForm {
     businessHours: job.businessHours ?? "",
     openDate: toOpenDateInputValue(job.openDate),
     ageGroup: job.ageGroup ?? "",
+    customerPersonalityLevel: normalizeAtmosphereLevel(
+      job.customerPersonalityLevel,
+    ),
+    customerAgeLevel: normalizeAtmosphereLevel(job.customerAgeLevel),
+    customerRegularLevel: normalizeAtmosphereLevel(job.customerRegularLevel),
     introductionText: job.introductionText ?? "",
     descriptionText: job.descriptionText ?? "",
     recruiterName: job.recruiterName ?? "",
@@ -141,6 +185,9 @@ function toPayload(form: ShopForm) {
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
     ageGroup: form.ageGroup || undefined,
+    customerPersonalityLevel: form.customerPersonalityLevel,
+    customerAgeLevel: form.customerAgeLevel,
+    customerRegularLevel: form.customerRegularLevel,
     introductionText: form.introductionText || undefined,
     descriptionText: form.descriptionText || undefined,
     recruiterName: form.recruiterName || undefined,
@@ -840,6 +887,53 @@ export default function ShopDashboardPage() {
             <label htmlFor="ageGroup" className={labelClass}>キャスト年齢</label>
             <input id="ageGroup" value={form.ageGroup} onChange={(e) => setField("ageGroup", e.target.value)} className={inputClass} />
           </div>
+        </div>
+
+        <div className="space-y-5 rounded-2xl border border-gold/20 bg-ivory/50 p-4 sm:p-5">
+          <div>
+            <p className="text-sm font-semibold text-gold-dark">お店の雰囲気</p>
+            <p className="mt-1 text-xs text-muted">
+              求人詳細ページに表示されるスライダーです。未設定の場合は中央（3）から始められます。
+            </p>
+          </div>
+          {ATMOSPHERE_SLIDERS.map((item) => {
+            const value = form[item.key];
+            return (
+              <div key={item.key} className="rounded-2xl border border-gold/20 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <label
+                    htmlFor={item.key}
+                    className="text-sm font-semibold text-charcoal"
+                  >
+                    {item.label}
+                  </label>
+                  <span className="rounded-full border border-gold/30 bg-gradient-to-r from-gold/15 to-gold-light/20 px-2.5 py-0.5 text-xs font-semibold text-gold-dark">
+                    {value} / 5
+                  </span>
+                </div>
+                <input
+                  id={item.key}
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={value}
+                  onChange={(event) =>
+                    setField(item.key, Number(event.target.value))
+                  }
+                  className="h-10 w-full cursor-pointer accent-[#c9a962]"
+                  aria-valuemin={1}
+                  aria-valuemax={5}
+                  aria-valuenow={value}
+                  aria-label={item.label}
+                />
+                <div className="mt-1 flex justify-between text-xs font-semibold text-muted sm:text-sm">
+                  <span>{item.leftLabel}</span>
+                  <span>{item.rightLabel}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div>

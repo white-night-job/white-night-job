@@ -10,6 +10,9 @@ export type ShopJobPayload = {
   access?: string;
   businessHours?: string;
   ageGroup?: string;
+  customerPersonalityLevel?: number;
+  customerAgeLevel?: number;
+  customerRegularLevel?: number;
   introductionText?: string;
   descriptionText?: string;
   storeImages?: string[];
@@ -29,6 +32,12 @@ export type ShopJobPayload = {
   lineUrl: string;
 };
 
+function normalizeLevel(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 3;
+  return Math.min(5, Math.max(1, Math.round(n)));
+}
+
 export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
   const data = body as Partial<ShopJobPayload> & {
     image_url?: unknown;
@@ -43,6 +52,19 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
     access: data.access ? String(data.access) : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
+    customerPersonalityLevel: normalizeLevel(
+      data.customerPersonalityLevel ??
+        (data as { customer_personality_level?: unknown })
+          .customer_personality_level,
+    ),
+    customerAgeLevel: normalizeLevel(
+      data.customerAgeLevel ??
+        (data as { customer_age_level?: unknown }).customer_age_level,
+    ),
+    customerRegularLevel: normalizeLevel(
+      data.customerRegularLevel ??
+        (data as { customer_regular_level?: unknown }).customer_regular_level,
+    ),
     introductionText: data.introductionText
       ? String(data.introductionText)
       : undefined,
@@ -109,6 +131,11 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     access: payload.access?.trim() || null,
     business_hours: payload.businessHours?.trim() || null,
     age_group: payload.ageGroup?.trim() || null,
+    customer_personality_level: normalizeLevel(
+      payload.customerPersonalityLevel,
+    ),
+    customer_age_level: normalizeLevel(payload.customerAgeLevel),
+    customer_regular_level: normalizeLevel(payload.customerRegularLevel),
     introduction_text: payload.introductionText?.trim() || null,
     description_text: payload.descriptionText?.trim() || null,
     description: payload.descriptionText?.trim() || null,
