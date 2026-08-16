@@ -29,7 +29,7 @@ import {
   listingPriorityToRow,
   parseListingPriorityFromBody,
 } from "@/lib/listing-priority";
-import { parsePlanFromBody } from "@/lib/job-plan";
+import { parseJobPlan, parsePlanFromBody } from "@/lib/job-plan";
 import { parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
 import { PUBLIC_JOB_DETAIL_COLUMNS } from "@/lib/job-detail-data";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
@@ -188,7 +188,10 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const { intent, targetStatus } = resolveUpdateIntent(body, currentStatus);
 
     if (intent === "publish" || targetStatus === "published") {
-      const publishError = validatePublishJobPayload(payload);
+      const plan =
+        parsePlanFromBody(body) ??
+        (previous.plan ? parseJobPlan(previous.plan) : null);
+      const publishError = validatePublishJobPayload(payload, { plan });
       if (publishError) {
         return NextResponse.json(
           {
@@ -208,6 +211,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
     const statusRow = listingStatusToRow(targetStatus);
     const forDraft = targetStatus !== "published";
+    const resolvedPlan =
+      parsePlanFromBody(body) ??
+      (previous.plan ? parseJobPlan(previous.plan) : "light");
 
     // 既存で未発行の場合のみ自動発行（移行起点）。PW変更は再発行APIを使う。
     let credentialBackfill: Record<string, unknown> = {};
@@ -244,7 +250,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const { data, error } = await supabase
       .from("jobs")
       .update({
-        ...payloadToRow(payload, { forDraft }),
+        ...payloadToRow(payload, { forDraft, plan: resolvedPlan }),
         ...credentialBackfill,
         ...chatRecommendRow,
         ...pickupRow,

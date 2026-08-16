@@ -19,6 +19,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
+import { isUncontractedPlan, UNCONTRACTED_PUBLIC_LABEL } from "@/lib/job-plan";
 
 function stripJsonLdContext(data: Record<string, unknown>) {
   const { ["@context"]: _ctx, ...rest } = data;
@@ -592,6 +593,11 @@ export function buildJobPostingJsonLd(
   job: Job,
   _reviews: GirlReview[] = [],
 ) {
+  // Uncontracted store-info pages must not emit JobPosting.
+  if (isUncontractedPlan(job.plan)) {
+    return buildStoreInfoJsonLd(job);
+  }
+
   const url = `${SITE_URL}/jobs/${job.id}`;
   const description = buildJobDescriptionForJsonLd(job);
   const salary = parseHourlySalaryForJsonLd(job.salary);
@@ -665,6 +671,39 @@ export function buildJobPostingJsonLd(
   return data;
 }
 
+/** LocalBusiness JSON-LD for uncontracted store-info pages (not JobPosting). */
+export function buildStoreInfoJsonLd(job: Job) {
+  const url = `${SITE_URL}/jobs/${job.id}`;
+  const address = resolveJobLocationAddress(job);
+  const sameAs = [
+    job.websiteUrl,
+    job.instagramUrl,
+    job.xUrl,
+    job.tiktokUrl,
+    job.youtubeUrl,
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: job.shopName,
+    description: `${job.shopName}（${job.district}・${job.jobType}）の店舗情報。`,
+    url,
+    address,
+  };
+
+  if (sameAs.length > 0) {
+    data.sameAs = sameAs;
+  }
+  if (job.imageUrl) {
+    data.image = job.imageUrl;
+  }
+
+  return data;
+}
+
 /**
  * Review / AggregateRating for girl reviews.
  * Kept separate from JobPosting — Google JobPosting rich results do not
@@ -713,6 +752,31 @@ export function buildJobReviewsJsonLd(job: Job, reviews: GirlReview[]) {
 export function buildJobDetailMetadata(job: Job): Metadata {
   const pathname = `/jobs/${job.id}`;
   const canonical = `${SITE_URL}${pathname}`;
+
+  if (isUncontractedPlan(job.plan)) {
+    const title = finalizeDocumentTitle(
+      `${job.shopName}の${UNCONTRACTED_PUBLIC_LABEL}｜${job.district}・${job.jobType}`,
+    );
+    const description = `${job.shopName}（${job.district}・${job.jobType}）の店舗情報。住所・公式SNSなど公開情報をもとに掲載しています。`;
+    const images = job.imageUrl
+      ? [{ url: job.imageUrl, alt: `${job.shopName}の店舗情報` }]
+      : DEFAULT_OG_IMAGES;
+
+    return {
+      title: { absolute: title },
+      description,
+      ...buildSocialMetadata({
+        title,
+        description,
+        canonical,
+        images,
+      }),
+      alternates: {
+        canonical,
+      },
+    };
+  }
+
   const title = finalizeDocumentTitle(
     `${job.shopName}の求人｜${job.district}・${job.jobType}`,
   );

@@ -52,6 +52,7 @@ import {
 import {
   getEnabledFeatureLabels,
   getPlanFeatures,
+  isUncontractedPlan,
   JOB_PLAN_DEFINITIONS,
   JOB_PLANS,
   parseJobPlan,
@@ -956,9 +957,15 @@ function AdminJobsPageInner() {
   async function openPreview(kind: "publish" | "draft") {
     setMessage("");
     if (kind === "publish") {
-      if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
+      const uncontracted = isUncontractedPlan(form.plan);
+      if (
+        !form.shopName.trim() ||
+        (!uncontracted && (!form.salary.trim() || !form.lineUrl.trim()))
+      ) {
         setMessage(
-          "公開前確認には店舗名・時給・LINE URLが必要です。不足がある場合は「下書き保存」を使ってください。",
+          uncontracted
+            ? "公開前確認には店舗名が必要です。不足がある場合は「下書き保存」を使ってください。"
+            : "公開前確認には店舗名・時給・LINE URLが必要です。不足がある場合は「下書き保存」を使ってください。",
         );
         return;
       }
@@ -1168,6 +1175,7 @@ function AdminJobsPageInner() {
   }
 
   const isFormVisible = editingId !== null || isAddFormOpen;
+  const isUncontracted = isUncontractedPlan(form.plan);
 
   useEffect(() => {
     setUnsavedDirty(isFormVisible && formDirty);
@@ -1803,7 +1811,7 @@ function AdminJobsPageInner() {
           <p className="mt-1 text-xs text-muted sm:text-sm">
             プランを選ぶと表示順位・PickUp・AIおすすめ等が自動設定されます。店舗側では変更できません。
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {JOB_PLANS.map((planKey) => {
               const definition = JOB_PLAN_DEFINITIONS[planKey];
               const selected = form.plan === planKey;
@@ -1837,8 +1845,13 @@ function AdminJobsPageInner() {
                     </span>
                   </span>
                   <span className="mt-2 block text-sm text-gold-dark">
-                    {definition.priceLabel}
+                    {definition.cardSubtitle}
                   </span>
+                  {definition.cardNote ? (
+                    <span className="mt-1 block text-xs text-muted">
+                      {definition.cardNote}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -1861,6 +1874,7 @@ function AdminJobsPageInner() {
           </div>
         </div>
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
@@ -1915,7 +1929,9 @@ function AdminJobsPageInner() {
             </div>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
@@ -1944,7 +1960,9 @@ function AdminJobsPageInner() {
             </label>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
@@ -2028,7 +2046,9 @@ function AdminJobsPageInner() {
             </p>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
@@ -2059,7 +2079,9 @@ function AdminJobsPageInner() {
             </label>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
             <h3 className="text-base font-semibold text-gold-light sm:text-lg">
@@ -2119,6 +2141,7 @@ function AdminJobsPageInner() {
             </div>
           </div>
         </div>
+        )}
 
         <div className="space-y-4 rounded-2xl border border-gold/40 bg-charcoal p-4 shadow-lg sm:p-5">
           <div className="border-b border-gold/35 pb-3">
@@ -2190,6 +2213,7 @@ function AdminJobsPageInner() {
           </div>
         </div>
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="salary" className={labelClass}>
             時給
@@ -2203,7 +2227,9 @@ function AdminJobsPageInner() {
             required
           />
         </div>
+        )}
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="businessHours" className={labelClass}>
             営業時間
@@ -2216,7 +2242,9 @@ function AdminJobsPageInner() {
             placeholder="例：20:00〜LAST"
           />
         </div>
+        )}
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="access" className={labelClass}>
             アクセス
@@ -2229,7 +2257,9 @@ function AdminJobsPageInner() {
             placeholder="例：すすきの駅から徒歩3分"
           />
         </div>
+        )}
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="ageGroup" className={labelClass}>
             キャスト年齢
@@ -2242,7 +2272,9 @@ function AdminJobsPageInner() {
             placeholder="例：キャスト年齢 20代前半〜30代前半"
           />
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
           <div>
             <p className="text-sm font-semibold text-gold-dark">お店の基本情報</p>
@@ -2309,7 +2341,9 @@ function AdminJobsPageInner() {
             <p className="mt-1 text-xs text-muted">1: 新規 / 5: 常連</p>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div>
           <p className={labelClass}>待遇</p>
           <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
@@ -2360,7 +2394,9 @@ function AdminJobsPageInner() {
             </div>
           </div>
         </div>
+        )}
 
+        {!isUncontracted && (
         <div className="space-y-4">
           <div>
             <label htmlFor="introductionText" className={labelClass}>
@@ -2511,6 +2547,7 @@ function AdminJobsPageInner() {
             </div>
           </div>
         </div>
+        )}
 
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>店舗トップ画像</p>
@@ -2598,6 +2635,7 @@ function AdminJobsPageInner() {
           )}
         </div>
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="lineUrl" className={labelClass}>
             LINE URL
@@ -2612,6 +2650,7 @@ function AdminJobsPageInner() {
             required
           />
         </div>
+        )}
 
         <div className="space-y-4 rounded-2xl border border-gold/20 bg-ivory p-4">
           <div>
@@ -2689,6 +2728,7 @@ function AdminJobsPageInner() {
           </div>
         </div>
 
+        {!isUncontracted && (
         <div>
           <label htmlFor="phone" className={labelClass}>
             電話番号
@@ -2705,6 +2745,7 @@ function AdminJobsPageInner() {
             入力した場合のみ、求人詳細ページに電話応募ボタンが表示されます。
           </p>
         </div>
+        )}
 
         <div>
           <label htmlFor="address" className={labelClass}>
@@ -2868,12 +2909,22 @@ function AdminJobsPageInner() {
             disabled={loading || uploading || uploadingStoreImages || uploadingRecruiterImage}
             onClick={() => {
               setMessage("");
-              if (!form.shopName.trim() || !form.salary.trim() || !form.lineUrl.trim()) {
-                setMessage("公開には店舗名・時給・LINE URLが必要です。");
+              if (
+                !form.shopName.trim() ||
+                (!isUncontracted &&
+                  (!form.salary.trim() || !form.lineUrl.trim()))
+              ) {
+                setMessage(
+                  isUncontracted
+                    ? "公開には店舗名が必要です。"
+                    : "公開には店舗名・時給・LINE URLが必要です。",
+                );
                 const next: Record<string, string> = {};
                 if (!form.shopName.trim()) next.shopName = "店名を入力してください。";
-                if (!form.salary.trim()) next.salary = "時給を入力してください。";
-                if (!form.lineUrl.trim()) next.lineUrl = "LINE応募URLを入力してください。";
+                if (!isUncontracted && !form.salary.trim())
+                  next.salary = "時給を入力してください。";
+                if (!isUncontracted && !form.lineUrl.trim())
+                  next.lineUrl = "LINE応募URLを入力してください。";
                 setFieldErrors(next);
                 return;
               }

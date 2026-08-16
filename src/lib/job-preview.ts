@@ -89,13 +89,18 @@ export function buildPreviewJobFromAdminForm(
     ? postedAtRaw
     : new Date().toISOString().slice(0, 10);
 
+  const uncontracted = form.plan === "uncontracted";
+  const shopName = form.shopName.trim() || "店舗名未入力";
+
   return {
     id: options?.id ?? "preview-draft",
-    shopName: form.shopName.trim() || "店舗名未入力",
+    shopName,
     area: FIXED_AREA,
     district: form.district,
     jobType: form.jobType,
-    title: `${form.shopName.trim() || "店舗名未入力"}｜${form.jobType}募集`,
+    title: uncontracted
+      ? `${shopName}｜店舗情報`
+      : `${shopName}｜${form.jobType}募集`,
     salary: form.salary.trim() || "時給未設定",
     workHours: form.businessHours.trim(),
     businessHours: form.businessHours.trim() || undefined,
@@ -103,23 +108,39 @@ export function buildPreviewJobFromAdminForm(
     customerPersonalityLevel: parseLevel(form.customerPersonalityLevel),
     customerAgeLevel: parseLevel(form.customerAgeLevel),
     customerRegularLevel: parseLevel(form.customerRegularLevel),
-    introductionText: form.introductionText.trim() || undefined,
-    descriptionText: form.descriptionText.trim() || undefined,
-    castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),
+    introductionText: uncontracted
+      ? undefined
+      : form.introductionText.trim() || undefined,
+    descriptionText: uncontracted
+      ? undefined
+      : form.descriptionText.trim() || undefined,
+    castVoices: uncontracted
+      ? []
+      : sanitizeCastVoicesForSave(form.castVoices ?? []),
     requirements: [],
-    benefits: form.benefits,
-    otherBenefits: parseBenefits(form.otherBenefits),
-    isVerified: true,
+    benefits: uncontracted ? [] : form.benefits,
+    otherBenefits: uncontracted ? [] : parseBenefits(form.otherBenefits),
+    isVerified: uncontracted ? false : true,
     imageUrl: form.imageUrl.trim() || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
-    recruiterName: form.recruiterName.trim() || undefined,
-    recruiterTitle: form.recruiterTitle.trim() || undefined,
-    recruiterImage: form.recruiterImage.trim() || undefined,
-    recruiterMessage: form.recruiterMessage.trim() || undefined,
-    managerComment: form.managerComment.trim() || undefined,
-    phone: form.phone.trim() || undefined,
+    recruiterName: uncontracted
+      ? undefined
+      : form.recruiterName.trim() || undefined,
+    recruiterTitle: uncontracted
+      ? undefined
+      : form.recruiterTitle.trim() || undefined,
+    recruiterImage: uncontracted
+      ? undefined
+      : form.recruiterImage.trim() || undefined,
+    recruiterMessage: uncontracted
+      ? undefined
+      : form.recruiterMessage.trim() || undefined,
+    managerComment: uncontracted
+      ? undefined
+      : form.managerComment.trim() || undefined,
+    phone: uncontracted ? undefined : form.phone.trim() || undefined,
     address: form.address.trim() || undefined,
-    access: form.access.trim() || undefined,
+    access: uncontracted ? undefined : form.access.trim() || undefined,
     xUrl: form.xUrl.trim() || undefined,
     instagramUrl: form.instagramUrl.trim() || undefined,
     tiktokUrl: form.tiktokUrl.trim() || undefined,

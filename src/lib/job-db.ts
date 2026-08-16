@@ -1,5 +1,5 @@
 import { rowToChatRecommend } from "@/lib/chat-recommend-db";
-import { inferJobPlan, parseJobPlan } from "@/lib/job-plan";
+import { inferJobPlan, isUncontractedPlan, parseJobPlan } from "@/lib/job-plan";
 import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import { safeDecryptShopPassword } from "@/lib/shop-credentials";
 import {
@@ -44,6 +44,7 @@ export type JobPayload = {
   workHours?: string;
   requirements?: string[];
   isVerified?: boolean;
+  plan?: string;
 };
 
 type JobRow = {
@@ -261,21 +262,29 @@ export function hasRecruiterContent(
   );
 }
 
-export function payloadToRow(payload: JobPayload, options?: { forDraft?: boolean }) {
+export function payloadToRow(
+  payload: JobPayload,
+  options?: { forDraft?: boolean; plan?: string | null },
+) {
+  const uncontracted = isUncontractedPlan(options?.plan ?? payload.plan);
   const shopName =
     payload.shopName.trim() || (options?.forDraft ? "（下書き）" : "");
   const salary =
-    payload.salary.trim() || (options?.forDraft ? "未設定" : "");
+    payload.salary.trim() ||
+    (options?.forDraft || uncontracted ? "未設定" : "");
   const lineUrl =
     payload.lineUrl.trim() ||
-    (options?.forDraft ? "https://line.me/" : "");
+    (options?.forDraft || uncontracted ? "https://line.me/" : "");
+  const title = uncontracted
+    ? `${shopName}｜店舗情報`
+    : `${shopName}｜${payload.jobType}募集`;
 
   return {
     shop_name: shopName,
     area: FIXED_AREA,
     district: payload.district,
     job_type: payload.jobType,
-    title: `${shopName}｜${payload.jobType}募集`,
+    title,
     salary,
     work_hours: payload.workHours ?? "20:00〜LAST",
     business_hours: payload.businessHours?.trim() || null,
@@ -290,7 +299,8 @@ export function payloadToRow(payload: JobPayload, options?: { forDraft?: boolean
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
-    is_verified: payload.isVerified ?? false,
+    // Uncontracted listings must never show verified/優良認定.
+    is_verified: uncontracted ? false : payload.isVerified ?? false,
     image_url: payload.imageUrl?.trim() || null,
     store_images: sanitizeStoreImagesForSave(payload.storeImages ?? []),
     recruiter_name: payload.recruiterName?.trim() || null,
@@ -378,6 +388,10 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       ? data.requirements.map(String)
       : undefined,
     isVerified: Boolean(data.isVerified ?? false),
+    plan:
+      typeof (data as { plan?: unknown }).plan === "string"
+        ? String((data as { plan?: unknown }).plan)
+        : undefined,
   };
 }
 
@@ -457,6 +471,7 @@ export function validateDraftJobPayload(payload: JobPayload): string | null {
 
 export function validatePublishJobPayload(
   payload: JobPayload,
+  options?: { plan?: string | null },
 ): { field?: string; message: string } | null {
   if (!payload.shopName.trim()) {
     return { field: "shopName", message: "店名を入力してください。" };
@@ -467,6 +482,12 @@ export function validatePublishJobPayload(
   if (!payload.jobType) {
     return { field: "jobType", message: "職種を選択してください。" };
   }
+
+  // 未契約店舗: 店舗情報のみ必須（時給・LINE不要）
+  if (isUncontractedPlan(options?.plan ?? payload.plan)) {
+    return null;
+  }
+
   if (!payload.salary.trim()) {
     return { field: "salary", message: "時給を入力してください。" };
   }

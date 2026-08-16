@@ -1,7 +1,12 @@
 import type { ListingPriority } from "@/lib/listing-priority";
 
-export const JOB_PLANS = ["light", "standard", "premium"] as const;
+/** Display order in admin plan picker (uncontracted first). */
+export const JOB_PLANS = ["uncontracted", "light", "standard", "premium"] as const;
 export type JobPlan = (typeof JOB_PLANS)[number];
+
+/** Paid / Stripe-backed plans only (excludes uncontracted). */
+export const PAID_JOB_PLANS = ["light", "standard", "premium"] as const;
+export type PaidJobPlan = (typeof PAID_JOB_PLANS)[number];
 
 export type JobPlanFeatures = {
   listingPriority: ListingPriority;
@@ -22,14 +27,19 @@ export type JobPlanFeatures = {
 export type JobPlanDefinition = {
   key: JobPlan;
   label: string;
-  /** 月額（税込）。サイト内の料金表示はすべてここを参照する。 */
+  /** 月額（税込）。未契約は 0。サイト内の料金表示はここを参照する。 */
   monthlyPrice: number;
   priceLabel: string;
+  /** Short card subtitle under the plan name */
+  cardSubtitle: string;
+  /** Optional small note under subtitle (uncontracted) */
+  cardNote?: string;
   features: JobPlanFeatures;
 };
 
 /** Single source of truth for plan pricing (tax included, monthly). */
 export const JOB_PLAN_MONTHLY_PRICES: Record<JobPlan, number> = {
+  uncontracted: 0,
   light: 18000,
   standard: 33000,
   premium: 55000,
@@ -49,17 +59,41 @@ export function getPlanMonthlyPrice(plan: JobPlan): number {
   return JOB_PLAN_MONTHLY_PRICES[plan];
 }
 
-/** 例: "税込18,000円/月" */
+/** 例: "税込18,000円/月" — uncontracted has no fee */
 export function formatPlanPriceLabel(plan: JobPlan): string {
+  if (plan === "uncontracted") return "店舗情報のみ掲載";
   return `税込${formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan])}/月`;
 }
 
+const UNCONTRACTED_FEATURES: JobPlanFeatures = {
+  listingPriority: "normal",
+  newListing: false,
+  newListingDays: 0,
+  pickup: false,
+  aiRecommend: false,
+  aiPriority: 0,
+  lineRecommendNotify: false,
+  boost: false,
+  analytics: false,
+  diagnosisRecommend: false,
+};
+
 export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
+  uncontracted: {
+    key: "uncontracted",
+    label: "未契約店舗",
+    monthlyPrice: 0,
+    priceLabel: formatPlanPriceLabel("uncontracted"),
+    cardSubtitle: "店舗情報のみ掲載",
+    cardNote: "求人情報・応募機能は表示されません",
+    features: UNCONTRACTED_FEATURES,
+  },
   light: {
     key: "light",
     label: "ライト",
     monthlyPrice: JOB_PLAN_MONTHLY_PRICES.light,
     priceLabel: formatPlanPriceLabel("light"),
+    cardSubtitle: formatPlanPriceLabel("light"),
     features: {
       listingPriority: "normal",
       newListing: true,
@@ -78,6 +112,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
     label: "スタンダード",
     monthlyPrice: JOB_PLAN_MONTHLY_PRICES.standard,
     priceLabel: formatPlanPriceLabel("standard"),
+    cardSubtitle: formatPlanPriceLabel("standard"),
     features: {
       listingPriority: "priority",
       newListing: true,
@@ -96,6 +131,7 @@ export const JOB_PLAN_DEFINITIONS: Record<JobPlan, JobPlanDefinition> = {
     label: "プレミアム",
     monthlyPrice: JOB_PLAN_MONTHLY_PRICES.premium,
     priceLabel: formatPlanPriceLabel("premium"),
+    cardSubtitle: formatPlanPriceLabel("premium"),
     features: {
       listingPriority: "top",
       newListing: true,
@@ -129,6 +165,35 @@ export function isJobPlan(value: unknown): value is JobPlan {
   return typeof value === "string" && (JOB_PLANS as readonly string[]).includes(value);
 }
 
+export function isPaidJobPlan(value: unknown): value is PaidJobPlan {
+  return (
+    typeof value === "string" &&
+    (PAID_JOB_PLANS as readonly string[]).includes(value)
+  );
+}
+
+export function isUncontractedPlan(
+  plan: JobPlan | string | null | undefined,
+): boolean {
+  if (plan == null || plan === "") return false;
+  if (typeof plan !== "string") return false;
+  const trimmed = plan.trim().toLowerCase().replace(/\s+/g, "");
+  return (
+    trimmed === "uncontracted" ||
+    trimmed === "未契約" ||
+    trimmed === "未契約店舗"
+  );
+}
+
+/** Public-facing label for uncontracted listings (never show「未契約店舗」to visitors). */
+export const UNCONTRACTED_PUBLIC_LABEL = "店舗情報";
+
+export const UNCONTRACTED_DISCLAIMER =
+  "こちらの店舗情報はWhiteNightJobでの求人・優良認定は行われていません。公開情報をもとに掲載しています。";
+
+export const UNCONTRACTED_OWNER_NOTE =
+  "こちらの店舗関係者様は、店舗情報の修正・削除・正式な求人掲載のお申込みが可能です。";
+
 /** DB・フォーム・表記ゆれ（premium / プレミアム / PREMIUM 等）を正規化する。 */
 export function parseJobPlan(value: unknown): JobPlan {
   if (typeof value !== "string") return "light";
@@ -136,6 +201,13 @@ export function parseJobPlan(value: unknown): JobPlan {
   if (isJobPlan(trimmed)) return trimmed;
 
   const normalized = trimmed.toLowerCase().replace(/\s+/g, "");
+  if (
+    normalized === "uncontracted" ||
+    normalized === "未契約" ||
+    normalized === "未契約店舗"
+  ) {
+    return "uncontracted";
+  }
   if (
     normalized === "premium" ||
     normalized === "プレミアム" ||
@@ -232,6 +304,10 @@ export function planToFormPatch(plan: JobPlan): {
 }
 
 export function getEnabledFeatureLabels(plan: JobPlan): string[] {
+  if (plan === "uncontracted") {
+    return ["店舗情報のみ掲載", "求人情報・応募機能は表示されません"];
+  }
+
   const features = getPlanFeatures(plan);
   const labels: string[] = [];
   labels.push(

@@ -16,6 +16,10 @@ import { IMAGE_ALT_BRAND, SHOW_SAMPLE_LISTINGS } from "@/lib/site";
 import type { Job } from "@/types/job";
 import { JobDetailPrefetch } from "@/components/JobDetailPrefetch";
 import { SampleListingBadge } from "@/components/SampleListingNotice";
+import {
+  isUncontractedPlan,
+  UNCONTRACTED_PUBLIC_LABEL,
+} from "@/lib/job-plan";
 
 type CompactJobCardProps = {
   job: Job;
@@ -59,6 +63,7 @@ export function CompactJobCard({
   const cardId = shopCardDomId(job.id, badge);
   const detailHref = `/jobs/${job.id}`;
   const showSample = SHOW_SAMPLE_LISTINGS;
+  const storeInfoOnly = isUncontractedPlan(job.plan);
 
   if (isPremium) {
     return (
@@ -66,11 +71,16 @@ export function CompactJobCard({
       <article id={cardId} className="listing-job-card relative">
         <JobDetailPrefetch jobId={job.id} />
         <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
-          <CompareButton jobId={job.id} />
+          {!storeInfoOnly ? <CompareButton jobId={job.id} /> : null}
           <FavoriteButton jobId={job.id} allowLineLoginRedirect />
         </div>
+        {storeInfoOnly ? (
+          <span className="absolute left-2 top-2 z-10 rounded-full border border-[#c4a574]/70 bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-[#8b6f3e]">
+            {UNCONTRACTED_PUBLIC_LABEL}
+          </span>
+        ) : null}
         {showSample ? <SampleListingBadge /> : null}
-        {badge && (
+        {!storeInfoOnly && badge && (
           <ListingBadge badge={badge} offsetForSample={showSample} />
         )}
 
@@ -79,7 +89,7 @@ export function CompactJobCard({
             <div className="listing-card-image">
               <img
                 src={job.imageUrl}
-                alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
+                alt={`${job.shopName}の${storeInfoOnly ? "店舗情報" : "求人"}｜${IMAGE_ALT_BRAND}`}
                 className="h-28 w-full object-cover sm:h-32"
               />
             </div>
@@ -102,14 +112,23 @@ export function CompactJobCard({
                 <dt className="shrink-0 font-semibold text-[#111111]/45">職種</dt>
                 <dd className="line-clamp-1 text-[#111111]/70">{job.jobType}</dd>
               </div>
-              <div className="flex items-center gap-1.5">
-                <dt className="shrink-0 font-semibold text-[#8b6f3e]">時給</dt>
-                <dd>
-                  <span className="listing-card-salary">{job.salary}</span>
-                </dd>
-              </div>
+              {!storeInfoOnly ? (
+                <div className="flex items-center gap-1.5">
+                  <dt className="shrink-0 font-semibold text-[#8b6f3e]">時給</dt>
+                  <dd>
+                    <span className="listing-card-salary">{job.salary}</span>
+                  </dd>
+                </div>
+              ) : (
+                <div className="flex gap-1.5">
+                  <dt className="shrink-0 font-semibold text-[#8b6f3e]">掲載</dt>
+                  <dd className="line-clamp-1 text-[#111111]/70">店舗情報のみ</dd>
+                </div>
+              )}
             </dl>
-            <span className="listing-card-link">求人詳細を見る</span>
+            <span className="listing-card-link">
+              {storeInfoOnly ? "店舗情報を見る" : "求人詳細を見る"}
+            </span>
           </div>
         </Link>
       </article>
@@ -125,11 +144,16 @@ export function CompactJobCard({
     >
       <JobDetailPrefetch jobId={job.id} />
       <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
-        <CompareButton jobId={job.id} />
+        {!storeInfoOnly ? <CompareButton jobId={job.id} /> : null}
         <FavoriteButton jobId={job.id} allowLineLoginRedirect />
       </div>
+      {storeInfoOnly ? (
+        <span className="absolute left-2 top-2 z-10 rounded-full border border-gold/40 bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-gold-dark">
+          {UNCONTRACTED_PUBLIC_LABEL}
+        </span>
+      ) : null}
       {showSample ? <SampleListingBadge /> : null}
-      {badge && (
+      {!storeInfoOnly && badge && (
         <ListingBadge badge={badge} offsetForSample={showSample} />
       )}
 
@@ -138,7 +162,7 @@ export function CompactJobCard({
           <div className="overflow-hidden ring-1 ring-gold/40 ring-inset">
             <img
               src={job.imageUrl}
-              alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
+              alt={`${job.shopName}の${storeInfoOnly ? "店舗情報" : "求人"}｜${IMAGE_ALT_BRAND}`}
               className="h-28 w-full rounded-xl object-cover sm:h-32"
             />
           </div>
@@ -163,17 +187,24 @@ export function CompactJobCard({
               <dt className="shrink-0 font-semibold text-muted">職種</dt>
               <dd className="line-clamp-1 text-muted">{job.jobType}</dd>
             </div>
-            <div className="flex items-center gap-1.5">
-              <dt className="shrink-0 font-semibold text-gold-dark">時給</dt>
-              <dd>
-                <span className={luxurySalaryBadge}>{job.salary}</span>
-              </dd>
-            </div>
+            {!storeInfoOnly ? (
+              <div className="flex items-center gap-1.5">
+                <dt className="shrink-0 font-semibold text-gold-dark">時給</dt>
+                <dd>
+                  <span className={luxurySalaryBadge}>{job.salary}</span>
+                </dd>
+              </div>
+            ) : (
+              <div className="flex gap-1.5">
+                <dt className="shrink-0 font-semibold text-gold-dark">掲載</dt>
+                <dd className="line-clamp-1 text-muted">店舗情報のみ</dd>
+              </div>
+            )}
           </dl>
           <span
             className={`mt-auto inline-flex min-h-9 items-center justify-center rounded-full px-3 pt-3 text-center text-xs ${luxuryMetalBtn}`}
           >
-            求人詳細を見る
+            {storeInfoOnly ? "店舗情報を見る" : "求人詳細を見る"}
           </span>
         </div>
       </Link>

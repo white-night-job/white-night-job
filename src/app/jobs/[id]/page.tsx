@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JobDetailClient } from "@/components/JobDetailClient";
 import { JsonLd } from "@/components/JsonLd";
+import { StoreInfoView } from "@/components/StoreInfoView";
 import { listGirlReviewsForJob } from "@/lib/girl-reviews-db";
 import { getPublishedJobDetail } from "@/lib/job-detail-data";
+import { isUncontractedPlan } from "@/lib/job-plan";
 import {
   buildJobDetailMetadata,
   buildJobPostingJsonLd,
@@ -49,7 +51,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     });
   }
 
-  if (job) {
+  if (job && !isUncontractedPlan(job.plan)) {
     try {
       girlReviews = await listGirlReviewsForJob(job.id);
     } catch (error) {
@@ -76,6 +78,15 @@ export default async function JobDetailPage({ params }: PageProps) {
           ← 求人一覧へ
         </Link>
       </div>
+    );
+  }
+
+  if (isUncontractedPlan(job.plan)) {
+    return (
+      <>
+        <JsonLd data={buildJobPostingJsonLd(job)} />
+        <StoreInfoView job={job} />
+      </>
     );
   }
 

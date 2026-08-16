@@ -329,7 +329,8 @@ export async function POST(request: Request) {
     const status: JobListingStatus = targetStatus ?? "draft";
 
     if (intent === "publish") {
-      const publishError = validatePublishJobPayload(payload);
+      const plan = parsePlanFromBody(body);
+      const publishError = validatePublishJobPayload(payload, { plan });
       if (publishError) {
         return NextResponse.json(
           {
@@ -360,10 +361,16 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdmin();
     // 店舗作成時にログインID・PWを自動発行し、PWは暗号化して保存
     const credentials = await createEncryptedShopCredentials(supabase);
+    const resolvedPlan =
+      parsePlanFromBody(body) ??
+      (typeof payload.plan === "string" ? parseJobPlan(payload.plan) : "light");
     const { data, error } = await supabase
       .from("jobs")
       .insert({
-        ...payloadToRow(payload, { forDraft: status !== "published" }),
+        ...payloadToRow(payload, {
+          forDraft: status !== "published",
+          plan: resolvedPlan,
+        }),
         shop_login_id: credentials.shop_login_id,
         shop_login_password: credentials.shop_login_password,
         shop_login_failed_attempts: 0,

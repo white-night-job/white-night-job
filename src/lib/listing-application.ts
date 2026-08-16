@@ -3,9 +3,9 @@ import {
   formatJpyPrice,
   JOB_PLAN_DEFINITIONS,
   JOB_PLAN_MONTHLY_PRICES,
-  JOB_PLANS,
-  isJobPlan,
-  type JobPlan,
+  PAID_JOB_PLANS,
+  isPaidJobPlan,
+  type PaidJobPlan,
 } from "@/lib/job-plan";
 import { SHOP_TERMS_VERSION } from "@/lib/shop-terms";
 
@@ -37,7 +37,7 @@ export const LISTING_APPLICATION_STATUS_LABELS: Record<
  * DB の requested_plan は NOT NULL のため未使用プレースホルダを保存する。
  * 掲載審査フォームではプランを収集しない（カラムは削除しない）。
  */
-export const LISTING_APPLICATION_UNUSED_REQUESTED_PLAN: JobPlan = "standard";
+export const LISTING_APPLICATION_UNUSED_REQUESTED_PLAN: PaidJobPlan = "standard";
 
 /** Shop-facing rejection message (never includes admin rejection reason). */
 export const LISTING_APPLICATION_REJECTION_PUBLIC_MESSAGE =
@@ -130,7 +130,7 @@ export type ListingApplicationInput = {
   otherSns?: string;
   openDate: string;
   /** @deprecated フォームでは未収集。DB保存時は未使用プレースホルダを入れる。 */
-  requestedPlan?: JobPlan;
+  requestedPlan?: PaidJobPlan;
   listingReason?: string;
   shopFeatures?: string;
   notes?: string;
@@ -156,8 +156,8 @@ export type ListingApplicationPublicStatus = {
   status: ListingApplicationStatus;
   statusLabel: string;
   shopName: string;
-  requestedPlan: JobPlan;
-  confirmedPlan: JobPlan | null;
+  requestedPlan: PaidJobPlan;
+  confirmedPlan: PaidJobPlan | null;
   submittedAt: string;
   rejectionReason: string | null;
   needsInfoMessage: string | null;
@@ -601,8 +601,8 @@ export type ListingApplicationRow = {
   entertainment_license_document: ListingDocumentMeta | null;
   late_night_alcohol_notification_document: ListingDocumentMeta | null;
   open_date: string;
-  requested_plan: JobPlan;
-  confirmed_plan: JobPlan | null;
+  requested_plan: PaidJobPlan;
+  confirmed_plan: PaidJobPlan | null;
   listing_reason: string;
   shop_features: string;
   notes: string | null;
@@ -654,11 +654,13 @@ export function rowToPublicStatus(
   };
 }
 
-export function planLabel(plan: JobPlan | null | undefined): string {
-  if (!plan || !isJobPlan(plan)) return "—";
+export function planLabel(plan: PaidJobPlan | null | undefined): string {
+  if (!plan || !isPaidJobPlan(plan)) return "—";
   const name = JOB_PLAN_DEFINITIONS[plan].label;
   const price = formatJpyPrice(JOB_PLAN_MONTHLY_PRICES[plan]);
   return `${name}プラン（月額${price}）`;
 }
 
-export { JOB_PLANS };
+/** Paid plans only for listing applications / shop onboarding. */
+export { PAID_JOB_PLANS as JOB_PLANS };
+export type { PaidJobPlan as JobPlan };

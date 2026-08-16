@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { isJobPlan, type JobPlan } from "@/lib/job-plan";
+import { isPaidJobPlan, type PaidJobPlan } from "@/lib/job-plan";
 import {
   STRIPE_BILLING_DEFINITIONS,
   STRIPE_BILLING_KEYS,
@@ -58,8 +58,8 @@ export function billingKeyToStripePriceId(key: StripeBillingKey): string {
   return getStripePriceIdMap()[key];
 }
 
-/** 店舗 Checkout 用: JobPlan → 通常価格 Price ID */
-export function planToStripePriceId(plan: JobPlan): string {
+/** 店舗 Checkout 用: JobPlan → 通常価格 Price ID（未契約は対象外） */
+export function planToStripePriceId(plan: PaidJobPlan): string {
   return billingKeyToStripePriceId(jobPlanToRegularBillingKey(plan));
 }
 
@@ -73,7 +73,7 @@ export function stripePriceIdToBillingKey(
   return null;
 }
 
-export function stripePriceIdToPlan(priceId: string): JobPlan | null {
+export function stripePriceIdToPlan(priceId: string): PaidJobPlan | null {
   const billingKey = stripePriceIdToBillingKey(priceId);
   if (!billingKey) return null;
   return billingKeyToJobPlan(billingKey);
@@ -108,8 +108,8 @@ export function normalizeBillingKeyInput(
 }
 
 /** 店舗 Checkout 用: light / standard / premium のみ */
-export function normalizePlanInput(value: unknown): JobPlan | null {
-  if (!isJobPlan(value)) return null;
+export function normalizePlanInput(value: unknown): PaidJobPlan | null {
+  if (!isPaidJobPlan(value)) return null;
   return value;
 }
 
@@ -121,7 +121,7 @@ export function normalizeAdminPlanChangeInput(
   value: unknown,
 ): StripeBillingKey | null {
   if (isStripeBillingKey(value)) return value;
-  if (isJobPlan(value)) return jobPlanToRegularBillingKey(value);
+  if (isPaidJobPlan(value)) return jobPlanToRegularBillingKey(value);
   return null;
 }
 

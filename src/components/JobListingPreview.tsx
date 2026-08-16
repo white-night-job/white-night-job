@@ -1,6 +1,8 @@
 "use client";
 
 import { JobDetailView } from "@/components/JobDetailView";
+import { StoreInfoView } from "@/components/StoreInfoView";
+import { isUncontractedPlan } from "@/lib/job-plan";
 import { useEffect } from "react";
 import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
@@ -29,6 +31,7 @@ export function JobListingPreview({
   onConfirm,
 }: JobListingPreviewProps) {
   const isDraftPreview = variant === "draft";
+  const isStoreInfo = isUncontractedPlan(job.plan);
   const confirmLabel = isDraftPreview
     ? "この内容で下書き保存"
     : listingStatus === "published" ||
@@ -51,18 +54,24 @@ export function JobListingPreview({
           {isDraftPreview ? "下書きプレビュー" : "掲載前プレビュー"}
         </p>
         <p className="mt-0.5 text-sm text-white/85">
-          {isDraftPreview
-            ? "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効・まだ保存されていません）"
-            : "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効）"}
+          {isStoreInfo
+            ? "一般ユーザーに表示される店舗情報ページと同じ見た目です（操作は無効）"
+            : isDraftPreview
+              ? "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効・まだ保存されていません）"
+              : "一般ユーザーに表示される求人詳細と同じ見た目です（操作は無効）"}
         </p>
       </div>
 
-      <JobDetailView
-        job={job}
-        preview
-        showBreadcrumbs={false}
-        girlReviews={girlReviews}
-      />
+      {isStoreInfo ? (
+        <StoreInfoView job={job} preview />
+      ) : (
+        <JobDetailView
+          job={job}
+          preview
+          showBreadcrumbs={false}
+          girlReviews={girlReviews}
+        />
+      )}
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gold/30 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row sm:justify-end">

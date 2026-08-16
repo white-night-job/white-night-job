@@ -72,6 +72,8 @@ export function listingDisplayGroupRank(
   boosted: boolean,
 ): number {
   const normalized = parseJobPlan(plan);
+  // Uncontracted store-info listings always sort below paid plans.
+  if (normalized === "uncontracted") return 0;
   if (normalized === "premium") return boosted ? 6 : 5;
   if (normalized === "standard") return boosted ? 4 : 2;
   return boosted ? 3 : 1;

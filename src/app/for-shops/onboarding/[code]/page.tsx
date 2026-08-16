@@ -5,8 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   formatPlanPriceLabel,
-  JOB_PLANS,
-  type JobPlan,
+  PAID_JOB_PLANS,
+  type PaidJobPlan,
 } from "@/lib/job-plan";
 
 const inputClass =
@@ -18,8 +18,8 @@ type AppInfo = {
   planLabel: string;
   onboardingCompleted: boolean;
   linkedJobId: string | null;
-  confirmedPlan: JobPlan | null;
-  requestedPlan: JobPlan;
+  confirmedPlan: PaidJobPlan | null;
+  requestedPlan: PaidJobPlan;
 };
 
 type IssuedCredentials = {
@@ -43,7 +43,7 @@ export default function ShopOnboardingPage() {
   const [title, setTitle] = useState("");
   const [lineUrl, setLineUrl] = useState("");
   const [workHours, setWorkHours] = useState("");
-  const [confirmedPlan, setConfirmedPlan] = useState<JobPlan>("standard");
+  const [confirmedPlan, setConfirmedPlan] = useState<PaidJobPlan>("standard");
   const [issuedCredentials, setIssuedCredentials] =
     useState<IssuedCredentials | null>(null);
 
@@ -245,7 +245,7 @@ export default function ShopOnboardingPage() {
           <div>
             <label className="mb-1.5 block text-sm font-medium">最終プラン（仮確定）</label>
             <div className="space-y-2">
-              {JOB_PLANS.map((plan) => (
+              {PAID_JOB_PLANS.map((plan) => (
                 <label key={plan} className="flex items-center gap-2 text-sm">
                   <input
                     type="radio"

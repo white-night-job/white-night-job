@@ -1,4 +1,4 @@
-import type { JobPlan } from "@/lib/job-plan";
+import type { PaidJobPlan } from "@/lib/job-plan";
 
 /**
  * Stripe Billing Price keys（金額は Stripe Dashboard 側で管理。
@@ -26,8 +26,8 @@ export const STRIPE_BILLING_DEFINITIONS: Record<
   {
     key: StripeBillingKey;
     label: string;
-    /** 掲載機能プラン（jobs.plan / subscriptions.plan） */
-    plan: JobPlan;
+    /** 掲載機能プラン（jobs.plan / subscriptions.plan）— paid only */
+    plan: PaidJobPlan;
     /** 店舗 Checkout で選択可能か（特別価格は管理者のみ） */
     shopSelectable: boolean;
     envName: string;
@@ -77,8 +77,8 @@ export function isStripeBillingKey(value: unknown): value is StripeBillingKey {
   );
 }
 
-/** JobPlan（店舗選択）→ 通常価格の BillingKey */
-export function jobPlanToRegularBillingKey(plan: JobPlan): StripeBillingKey {
+/** Paid JobPlan（店舗選択）→ 通常価格の BillingKey。未契約は Stripe 対象外。 */
+export function jobPlanToRegularBillingKey(plan: PaidJobPlan): StripeBillingKey {
   switch (plan) {
     case "light":
       return "light";
@@ -89,6 +89,6 @@ export function jobPlanToRegularBillingKey(plan: JobPlan): StripeBillingKey {
   }
 }
 
-export function billingKeyToJobPlan(key: StripeBillingKey): JobPlan {
+export function billingKeyToJobPlan(key: StripeBillingKey): PaidJobPlan {
   return STRIPE_BILLING_DEFINITIONS[key].plan;
 }
