@@ -86,8 +86,10 @@ export function JobCard({ job }: { job: Job }) {
               </div>
             ) : (
               <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                <dt className="text-xs font-semibold text-muted">掲載内容</dt>
-                <dd className="mt-0.5 text-muted">店舗情報のみ</dd>
+                <dt className="text-xs font-semibold text-muted">営業時間</dt>
+                <dd className="mt-0.5 line-clamp-1 text-muted">
+                  {job.businessHours?.trim() || "情報なし"}
+                </dd>
               </div>
             )}
             {!storeInfoOnly ? (

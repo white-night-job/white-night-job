@@ -121,8 +121,10 @@ export function CompactJobCard({
                 </div>
               ) : (
                 <div className="flex gap-1.5">
-                  <dt className="shrink-0 font-semibold text-[#8b6f3e]">掲載</dt>
-                  <dd className="line-clamp-1 text-[#111111]/70">店舗情報のみ</dd>
+                  <dt className="shrink-0 font-semibold text-[#8b6f3e]">営業時間</dt>
+                  <dd className="line-clamp-1 text-[#111111]/70">
+                    {job.businessHours?.trim() || "情報なし"}
+                  </dd>
                 </div>
               )}
             </dl>
@@ -196,8 +198,10 @@ export function CompactJobCard({
               </div>
             ) : (
               <div className="flex gap-1.5">
-                <dt className="shrink-0 font-semibold text-gold-dark">掲載</dt>
-                <dd className="line-clamp-1 text-muted">店舗情報のみ</dd>
+                <dt className="shrink-0 font-semibold text-gold-dark">営業時間</dt>
+                <dd className="line-clamp-1 text-muted">
+                  {job.businessHours?.trim() || "情報なし"}
+                </dd>
               </div>
             )}
           </dl>
