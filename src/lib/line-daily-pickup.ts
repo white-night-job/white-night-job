@@ -7,6 +7,11 @@ import { buildDailyPickupFlexMessage } from "@/lib/line-flex-messages";
 import { rowToJob } from "@/lib/job-db";
 import { isUncontractedPlan } from "@/lib/job-plan";
 import {
+  filterJobsOutsideShopDeliveryCooldown,
+  fetchShopKeysInLineDeliveryCooldown,
+  isShopKeyInDeliveryCooldown,
+} from "@/lib/line-shop-cooldown";
+import {
   jobMatchesBroadcastArea,
   type NotificationArea,
 } from "@/lib/notification-areas";
@@ -15,7 +20,6 @@ import type { Job } from "@/types/job";
 
 export const DAILY_PICKUP_TYPE = "daily_pickup" as const;
 const TOKYO_TZ = "Asia/Tokyo";
-const RECENT_DAYS = 7;
 const SEND_GAP_MS = 80;
 
 export type DailyPickupFunnel = {
@@ -133,15 +137,17 @@ function weightedRandomPick<T>(items: T[], weights: number[]): T {
 
 export function selectDailyPickupJob(params: {
   candidates: Job[];
-  recentJobIds: Set<string>;
+  /** 直近120時間以内に配信成功した店舗キー（正規化済み） */
+  cooldownShopKeys: ReadonlySet<string>;
   sendCounts30d: Map<string, number>;
 }): Job | null {
   if (params.candidates.length === 0) return null;
 
-  let pool = params.candidates.filter((job) => !params.recentJobIds.has(job.id));
-  if (pool.length === 0) {
-    pool = [...params.candidates];
-  }
+  // 5日未満の同一店舗は除外。候補が空なら無理に再配信せずスキップ。
+  const pool = params.candidates.filter(
+    (job) => !isShopKeyInDeliveryCooldown(job.shopName, params.cooldownShopKeys),
+  );
+  if (pool.length === 0) return null;
 
   const weights = pool.map((job) => {
     const count = params.sendCounts30d.get(job.id) ?? 0;
@@ -255,30 +261,6 @@ async function fetchTopPickupJobs(): Promise<Job[]> {
 function jobsForUserAreas(jobs: Job[], areas: NotificationArea[]): Job[] {
   return jobs.filter((job) =>
     areas.some((area) => jobMatchesBroadcastArea(job.district, area)),
-  );
-}
-
-async function fetchRecentJobIdsForUser(
-  userId: string,
-  sinceIso: string,
-): Promise<Set<string>> {
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("line_notification_logs")
-    .select("job_id")
-    .eq("user_id", userId)
-    .eq("notification_type", DAILY_PICKUP_TYPE)
-    .eq("status", "sent")
-    .gte("sent_at", sinceIso)
-    .not("job_id", "is", null);
-  if (error) {
-    console.error("[daily-pickup] recent fetch failed", error);
-    return new Set();
-  }
-  return new Set(
-    (data ?? [])
-      .map((row) => row.job_id as string | null)
-      .filter((id): id is string => Boolean(id)),
   );
 }
 
@@ -613,9 +595,17 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
       .maybeSingle(),
   ]);
 
-  const topJobs = await fetchTopPickupJobs();
+  const [topJobsRaw, cooldownShopKeys] = await Promise.all([
+    fetchTopPickupJobs(),
+    fetchShopKeysInLineDeliveryCooldown(),
+  ]);
+  const topJobs = filterJobsOutsideShopDeliveryCooldown(
+    topJobsRaw,
+    cooldownShopKeys,
+  );
   const userAreas = (areas ?? []).map((row) => row.area as NotificationArea);
   const matching = jobsForUserAreas(topJobs, userAreas);
+  const matchingBeforeCooldown = jobsForUserAreas(topJobsRaw, userAreas);
   const reasons: string[] = [];
 
   const notifyDailyPickup = Boolean(settings?.notify_daily_pickup);
@@ -632,9 +622,15 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
   if (linePushBlocked) reasons.push("LINEブロック／配信不可フラグが立っています");
   if (userAreas.length === 0) reasons.push("通知地域が未設定です");
   if (matching.length === 0) {
-    reasons.push(
-      "設定地域に一致する最優先（listing_priority=top）の公開店舗がありません",
-    );
+    if (matchingBeforeCooldown.length > 0) {
+      reasons.push(
+        "設定地域の最優先店舗はすべて直近5日（120時間）以内に配信済みのため候補がありません",
+      );
+    } else {
+      reasons.push(
+        "設定地域に一致する最優先（listing_priority=top）の公開店舗がありません",
+      );
+    }
   }
   if (alreadySentToday) {
     reasons.push(`本日（${scheduledDate}）は既に配信済みです（二重送信防止）`);
@@ -681,17 +677,24 @@ export async function runDailyPickupDelivery(options?: {
   const onlyUserId = options?.onlyUserId?.trim() || null;
   const now = options?.now ?? new Date();
   const scheduledDate = getTokyoDateKey(now);
-  const recentSince = daysAgoTokyoIso(RECENT_DAYS, now);
   const executedAtUtc = now.toISOString();
   const executedAtJst = formatTokyoDateTime(now);
   const messagingToken = getMessagingAccessToken();
   const messagingTokenConfigured = Boolean(messagingToken);
 
-  const [{ users, funnel }, allTopJobs, sendCounts30d] = await Promise.all([
-    fetchEligibleUsers({ onlyUserId }),
-    fetchTopPickupJobs(),
-    fetchSendCounts30d(),
-  ]);
+  const [{ users, funnel }, allTopJobsRaw, sendCounts30d, cooldownShopKeys] =
+    await Promise.all([
+      fetchEligibleUsers({ onlyUserId }),
+      fetchTopPickupJobs(),
+      fetchSendCounts30d(),
+      fetchShopKeysInLineDeliveryCooldown(now),
+    ]);
+
+  // バッチ開始時点のクールダウンで候補を固定（同日内の成功送信で候補が減らない）
+  const allTopJobs = filterJobsOutsideShopDeliveryCooldown(
+    allTopJobsRaw,
+    cooldownShopKeys,
+  );
   funnel.topPriorityShops = allTopJobs.length;
 
   const result: DailyPickupResult = {
@@ -734,6 +737,8 @@ export async function runDailyPickupDelivery(options?: {
     funnel,
     targetUsers: users.length,
     topPriorityShops: allTopJobs.length,
+    topPriorityShopsBeforeCooldown: allTopJobsRaw.length,
+    cooldownShopCount: cooldownShopKeys.size,
   });
 
   if (!dryRun) {
@@ -824,21 +829,23 @@ export async function runDailyPickupDelivery(options?: {
           userId: user.userId,
           areaCount: user.areas.length,
           topPriorityShops: allTopJobs.length,
+          cooldownShopCount: cooldownShopKeys.size,
         });
         continue;
       }
 
-      const recentJobIds = await fetchRecentJobIdsForUser(
-        user.userId,
-        recentSince,
-      );
       const selected = selectDailyPickupJob({
         candidates,
-        recentJobIds,
+        cooldownShopKeys,
         sendCounts30d,
       });
       if (!selected) {
         result.skippedNoShop += 1;
+        console.info("[daily-pickup] skip: all matching shops in 5-day cooldown", {
+          userId: user.userId,
+          candidateCount: candidates.length,
+          cooldownShopCount: cooldownShopKeys.size,
+        });
         continue;
       }
 
