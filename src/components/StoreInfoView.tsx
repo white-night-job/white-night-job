@@ -319,7 +319,7 @@ export function StoreInfoView({
               </span>
             ) : (
               <Link
-                href="/for-shops/apply"
+                href="/for-shops"
                 className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 text-sm font-semibold text-white shadow-gold"
               >
                 店舗情報を確認・修正する
