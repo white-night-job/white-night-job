@@ -5,6 +5,7 @@ import {
 } from "@/lib/line-auth";
 import { buildDailyPickupFlexMessage } from "@/lib/line-flex-messages";
 import { rowToJob } from "@/lib/job-db";
+import { isUncontractedPlan } from "@/lib/job-plan";
 import {
   jobMatchesBroadcastArea,
   type NotificationArea,
@@ -246,7 +247,9 @@ async function fetchTopPickupJobs(): Promise<Job[]> {
     .eq("published", true)
     .eq("listing_priority", "top");
   if (error) throw error;
-  return (data ?? []).map((row) => rowToJob(row));
+  return (data ?? [])
+    .map((row) => rowToJob(row))
+    .filter((job) => !isUncontractedPlan(job.plan));
 }
 
 function jobsForUserAreas(jobs: Job[], areas: NotificationArea[]): Job[] {

@@ -1,4 +1,5 @@
 import { sendLinePushMessages } from "@/lib/line-auth";
+import { isUncontractedPlan } from "@/lib/job-plan";
 import {
   LISTING_PRIORITY_LABELS,
   type ListingPriority,
@@ -365,6 +366,7 @@ async function pushToUsers(params: {
 }
 
 export async function countMatchingNewJobRecipients(job: Job): Promise<number> {
+  if (isUncontractedPlan(job.plan)) return 0;
   const prefs = await loadAllUserPrefs();
   return prefs.filter(
     (user) => user.notifyNewJobs && jobMatchesNotifyPrefs(job, user),
@@ -372,6 +374,7 @@ export async function countMatchingNewJobRecipients(job: Job): Promise<number> {
 }
 
 export async function countMatchingPickupRecipients(job: Job): Promise<number> {
+  if (isUncontractedPlan(job.plan)) return 0;
   const prefs = await loadAllUserPrefs();
   return prefs.filter(
     (user) => user.notifyPickupJobs && jobMatchesNotifyPrefs(job, user),
@@ -383,6 +386,9 @@ export async function countMatchingNotifyRecipients(job: Job): Promise<{
   newJobNotifyCount: number;
   pickupNotifyCount: number;
 }> {
+  if (isUncontractedPlan(job.plan)) {
+    return { newJobNotifyCount: 0, pickupNotifyCount: 0 };
+  }
   const prefs = await loadAllUserPrefs();
   let newJobNotifyCount = 0;
   let pickupNotifyCount = 0;
@@ -395,6 +401,12 @@ export async function countMatchingNotifyRecipients(job: Job): Promise<{
 }
 
 export async function notifyNewJobListed(job: Job): Promise<SendBatchResult | null> {
+  if (isUncontractedPlan(job.plan)) {
+    console.info("[line-auto-notify] skip new job: uncontracted plan", {
+      jobId: job.id,
+    });
+    return null;
+  }
   if (!process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim()) {
     console.warn("[line-auto-notify] skip new job: token missing");
     return null;
@@ -418,6 +430,12 @@ export async function notifyFavoriteJobUpdates(params: {
   before: Job;
   after: Job;
 }): Promise<SendBatchResult | null> {
+  if (isUncontractedPlan(params.after.plan)) {
+    console.info("[line-auto-notify] skip favorite update: uncontracted plan", {
+      jobId: params.after.id,
+    });
+    return null;
+  }
   if (!process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim()) {
     return null;
   }
@@ -457,6 +475,12 @@ export async function notifyListingPriorityBecameTop(params: {
   before: Job;
   after: Job;
 }): Promise<SendBatchResult | null> {
+  if (isUncontractedPlan(params.after.plan)) {
+    console.info("[line-auto-notify] skip pickup top: uncontracted plan", {
+      jobId: params.after.id,
+    });
+    return null;
+  }
   if (!process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN?.trim()) {
     return null;
   }
@@ -490,6 +514,14 @@ export async function runAutoNotificationsAfterJobChange(params: {
   try {
     const { before, after, wasCreate } = params;
 
+    // 未契約店舗（店舗情報のみ）は LINE 自動配信の対象外
+    if (isUncontractedPlan(after.plan)) {
+      console.info("[line-auto-notify] skip all auto notify for uncontracted plan", {
+        jobId: after.id,
+      });
+      return;
+    }
+
     if (wasCreate || (!before && after)) {
       await notifyNewJobListed(after);
       const priority = parseListingPriority(after.listingPriority);
@@ -504,6 +536,11 @@ export async function runAutoNotificationsAfterJobChange(params: {
     }
 
     if (!before) return;
+
+    // 未契約 → 有料プランへ正式掲載したタイミングは、既存の新着求人配信条件で送る
+    if (isUncontractedPlan(before.plan) && after.published === true) {
+      await notifyNewJobListed(after);
+    }
 
     await notifyFavoriteJobUpdates({ before, after });
     await notifyListingPriorityBecameTop({ before, after });
