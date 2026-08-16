@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompactJobCard } from "@/components/CompactJobCard";
@@ -47,6 +48,15 @@ export function StoreInfoView({
     district: job.district,
     jobType: job.jobType,
   });
+
+  // Listing Links use scroll={false}; reset to top on store-info detail entry.
+  // Keep intentional hash / anchor navigation intact.
+  useEffect(() => {
+    if (preview) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash) return;
+    window.scrollTo(0, 0);
+  }, [job.id, preview]);
 
   const socialLinks = [
     {
