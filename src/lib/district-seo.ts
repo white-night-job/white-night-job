@@ -6,6 +6,8 @@ import {
   type SeoColumnLink,
 } from "@/lib/seo-area-job-type-content";
 
+export { resolveDistrictSeoPaths } from "@/lib/district-seo-paths";
+
 export type DistrictSeoSlug = "kotoni" | "kita24jo" | "teine";
 
 export type DistrictJobTypeSlug =

@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { rowToJob } from "@/lib/job-db";
+import { listingDisplayGroupRank } from "@/lib/shop-boosts";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job, JobType } from "@/types/job";
 
@@ -64,23 +65,19 @@ async function fetchPublishedJobsPageUncached(params: {
     return empty;
   }
 
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
   const supabase = createSupabaseAdmin();
   let query = supabase
     .from("jobs")
-    .select(SEO_JOB_CARD_COLUMNS, { count: "exact" })
+    .select(SEO_JOB_CARD_COLUMNS)
     .eq("published", true)
     .eq("district", params.district)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    .order("created_at", { ascending: false });
 
   if (params.jobType) {
     query = query.eq("job_type", params.jobType);
   }
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
   if (error) {
     console.error("[seo-area-jobs] select failed", {
       district: params.district,
@@ -90,10 +87,20 @@ async function fetchPublishedJobsPageUncached(params: {
     return empty;
   }
 
-  const total = count ?? 0;
-  const jobs = (data ?? []).map((row) =>
-    rowToJob(row as unknown as Parameters<typeof rowToJob>[0]),
-  );
+  // Paid job listings first, then store-info (uncontracted); newest within group.
+  const sorted = (data ?? [])
+    .map((row) => rowToJob(row as unknown as Parameters<typeof rowToJob>[0]))
+    .sort((a, b) => {
+      const rankDiff =
+        listingDisplayGroupRank(b.plan, false) -
+        listingDisplayGroupRank(a.plan, false);
+      if (rankDiff !== 0) return rankDiff;
+      return String(b.postedAt).localeCompare(String(a.postedAt));
+    });
+
+  const total = sorted.length;
+  const from = (page - 1) * pageSize;
+  const jobs = sorted.slice(from, from + pageSize);
 
   return {
     jobs,
@@ -125,6 +132,26 @@ export async function getPublishedSeoJobsPage(params: {
     ["seo-area-jobs", params.district, jobTypeKey, String(page), String(pageSize)],
     { revalidate: 120 },
   )();
+}
+
+/** Related published stores for internal linking (paid listings preferred). */
+export async function listRelatedPublishedJobs(params: {
+  district: string;
+  jobType: JobType;
+  excludeId: string;
+  limit?: number;
+}): Promise<Job[]> {
+  const limit = Math.min(Math.max(params.limit ?? 6, 1), 12);
+  const result = await getPublishedSeoJobsPage({
+    district: params.district,
+    jobType: params.jobType,
+    page: 1,
+    pageSize: limit + 4,
+  });
+
+  return result.jobs
+    .filter((job) => job.id !== params.excludeId)
+    .slice(0, limit);
 }
 
 export async function countPublishedJobs(params: {
@@ -184,6 +211,7 @@ export async function listPublishedJobTypesForDistrict(
 export type SitemapJobEntry = {
   id: string;
   updatedAt: string | null;
+  plan: string | null;
 };
 
 async function listPublishedJobIdsUncached(): Promise<SitemapJobEntry[]> {
@@ -197,7 +225,7 @@ async function listPublishedJobIdsUncached(): Promise<SitemapJobEntry[]> {
   const supabase = createSupabaseAdmin();
   const { data, error } = await supabase
     .from("jobs")
-    .select("id, updated_at, posted_at")
+    .select("id, updated_at, posted_at, plan")
     .eq("published", true)
     .order("updated_at", { ascending: false });
 
@@ -209,6 +237,7 @@ async function listPublishedJobIdsUncached(): Promise<SitemapJobEntry[]> {
   return (data ?? []).map((row) => ({
     id: String(row.id),
     updatedAt: (row.updated_at as string | null) ?? (row.posted_at as string | null),
+    plan: (row.plan as string | null) ?? null,
   }));
 }
 

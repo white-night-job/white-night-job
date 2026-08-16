@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { COLUMN_ARTICLES } from "@/data/column-articles";
 import { DISTRICT_AREA_PAGES } from "@/lib/district-seo";
+import { isUncontractedPlan } from "@/lib/job-plan";
 import { listPublishedJobsForSitemap } from "@/lib/seo-area-jobs";
 import { SITE_URL } from "@/lib/site";
 import {
@@ -72,12 +73,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let jobEntries: MetadataRoute.Sitemap = [];
   try {
     const jobs = await listPublishedJobsForSitemap();
-    jobEntries = jobs.map((job) => ({
-      url: `${SITE_URL}/jobs/${job.id}`,
-      lastModified: job.updatedAt ? new Date(job.updatedAt) : now,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    }));
+    jobEntries = jobs.map((job) => {
+      const storeInfoOnly = isUncontractedPlan(job.plan);
+      return {
+        url: `${SITE_URL}/jobs/${job.id}`,
+        lastModified: job.updatedAt ? new Date(job.updatedAt) : now,
+        changeFrequency: "weekly" as const,
+        // Paid job listings stay higher priority than store-info pages.
+        priority: storeInfoOnly ? 0.55 : 0.8,
+      };
+    });
   } catch (error) {
     console.error("[sitemap] failed to load jobs", error);
   }

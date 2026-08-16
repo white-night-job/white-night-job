@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { CompactJobCard } from "@/components/CompactJobCard";
 import { StoreImagesGallery } from "@/components/StoreImagesGallery";
+import { resolveDistrictSeoPaths } from "@/lib/district-seo-paths";
 import { formatLocation } from "@/lib/job-storage";
 import { getDisplayStoreImages } from "@/lib/job-db";
 import {
@@ -21,6 +24,8 @@ function sanitizeExternalHref(value: string | undefined): string | null {
 
 type StoreInfoViewProps = {
   job: Job;
+  /** Same area / job-type stores for internal linking (paid preferred upstream). */
+  relatedJobs?: Job[];
   /** Admin/shop preview: disable outbound actions */
   preview?: boolean;
 };
@@ -29,11 +34,19 @@ type StoreInfoViewProps = {
  * Public store-info page for uncontracted listings.
  * Never shows job apply CTAs, salary, verified badge, or girl reviews.
  */
-export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
+export function StoreInfoView({
+  job,
+  relatedJobs = [],
+  preview = false,
+}: StoreInfoViewProps) {
   const storeImages = getDisplayStoreImages(job);
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
+  const seoPaths = resolveDistrictSeoPaths({
+    district: job.district,
+    jobType: job.jobType,
+  });
 
   const socialLinks = [
     {
@@ -71,6 +84,22 @@ export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
       : [];
   });
 
+  const breadcrumbItems = [
+    { label: "店舗一覧", href: preview ? undefined : "/jobs" },
+    ...(!preview && seoPaths.areaPath
+      ? [{ label: `${seoPaths.areaLabel}の夜職求人`, href: seoPaths.areaPath }]
+      : []),
+    ...(!preview && seoPaths.jobTypePath
+      ? [
+          {
+            label: `${seoPaths.areaLabel}の${seoPaths.jobTypeLabel}`,
+            href: seoPaths.jobTypePath,
+          },
+        ]
+      : []),
+    { label: `${job.shopName}の店舗情報` },
+  ];
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       {!preview && (
@@ -84,6 +113,8 @@ export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
           </Link>
         </div>
       )}
+
+      <Breadcrumbs items={breadcrumbItems} />
 
       <article className="overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold">
         {job.imageUrl ? (
@@ -143,15 +174,33 @@ export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
             <div className="space-y-3">
               <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
                 <p className="text-xs font-medium text-muted">業種</p>
-                <p className="mt-1 text-sm font-medium text-charcoal">
-                  {job.jobType}
-                </p>
+                {preview || !seoPaths.jobTypePath ? (
+                  <p className="mt-1 text-sm font-medium text-charcoal">
+                    {job.jobType}
+                  </p>
+                ) : (
+                  <Link
+                    href={seoPaths.jobTypePath}
+                    className="mt-1 inline-flex text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+                  >
+                    {job.jobType}
+                  </Link>
+                )}
               </div>
               <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
                 <p className="text-xs font-medium text-muted">エリア</p>
-                <p className="mt-1 text-sm font-medium text-charcoal">
-                  {formatLocation(job)}
-                </p>
+                {preview || !seoPaths.areaPath ? (
+                  <p className="mt-1 text-sm font-medium text-charcoal">
+                    {formatLocation(job)}
+                  </p>
+                ) : (
+                  <Link
+                    href={seoPaths.areaPath}
+                    className="mt-1 inline-flex text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+                  >
+                    {formatLocation(job)}
+                  </Link>
+                )}
               </div>
               {job.address ? (
                 <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
@@ -208,6 +257,44 @@ export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
             </section>
           ) : null}
 
+          {!preview ? (
+            <section className="rounded-2xl border border-gold/20 bg-white p-5">
+              <h2 className="mb-3 text-base font-semibold text-charcoal">
+                関連ページ
+              </h2>
+              <ul className="flex flex-wrap gap-2 text-sm">
+                <li>
+                  <Link
+                    href="/jobs"
+                    className="inline-flex rounded-full border border-gold/30 bg-ivory px-3 py-1.5 font-medium text-gold-dark hover:bg-gold-light/30"
+                  >
+                    店舗一覧
+                  </Link>
+                </li>
+                {seoPaths.areaPath ? (
+                  <li>
+                    <Link
+                      href={seoPaths.areaPath}
+                      className="inline-flex rounded-full border border-gold/30 bg-ivory px-3 py-1.5 font-medium text-gold-dark hover:bg-gold-light/30"
+                    >
+                      {seoPaths.areaLabel}の夜職求人
+                    </Link>
+                  </li>
+                ) : null}
+                {seoPaths.jobTypePath ? (
+                  <li>
+                    <Link
+                      href={seoPaths.jobTypePath}
+                      className="inline-flex rounded-full border border-gold/30 bg-ivory px-3 py-1.5 font-medium text-gold-dark hover:bg-gold-light/30"
+                    >
+                      {seoPaths.areaLabel}の{seoPaths.jobTypeLabel}
+                    </Link>
+                  </li>
+                ) : null}
+              </ul>
+            </section>
+          ) : null}
+
           <section className="rounded-2xl border border-gold/30 bg-ivory/70 p-5">
             <h2 className="font-serif text-lg font-semibold text-charcoal">
               店舗関係者の方へ
@@ -230,6 +317,22 @@ export function StoreInfoView({ job, preview = false }: StoreInfoViewProps) {
           </section>
         </div>
       </article>
+
+      {!preview && relatedJobs.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="font-serif text-lg font-semibold text-charcoal">
+            同じエリア・業種の店舗
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            求人掲載店舗を優先して表示しています。
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {relatedJobs.map((related) => (
+              <CompactJobCard key={related.id} job={related} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

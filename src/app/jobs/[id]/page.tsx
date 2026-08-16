@@ -6,12 +6,15 @@ import { StoreInfoView } from "@/components/StoreInfoView";
 import { listGirlReviewsForJob } from "@/lib/girl-reviews-db";
 import { getPublishedJobDetail } from "@/lib/job-detail-data";
 import { isUncontractedPlan } from "@/lib/job-plan";
+import { listRelatedPublishedJobs } from "@/lib/seo-area-jobs";
 import {
   buildJobDetailMetadata,
   buildJobPostingJsonLd,
   buildJobReviewsJsonLd,
+  buildStoreInfoJsonLd,
 } from "@/lib/seo";
 import type { GirlReview } from "@/types/girl-review";
+import type { Job } from "@/types/job";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -41,6 +44,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   const startedAt = Date.now();
   let job = null;
   let girlReviews: GirlReview[] = [];
+  let relatedJobs: Job[] = [];
   try {
     job = await getPublishedJobDetail(id);
   } catch (error) {
@@ -56,6 +60,22 @@ export default async function JobDetailPage({ params }: PageProps) {
       girlReviews = await listGirlReviewsForJob(job.id);
     } catch (error) {
       console.error("[job-detail] girl reviews fetch failed", {
+        jobId: id,
+        error,
+      });
+    }
+  }
+
+  if (job && isUncontractedPlan(job.plan)) {
+    try {
+      relatedJobs = await listRelatedPublishedJobs({
+        district: job.district,
+        jobType: job.jobType,
+        excludeId: job.id,
+        limit: 6,
+      });
+    } catch (error) {
+      console.error("[job-detail] related stores fetch failed", {
         jobId: id,
         error,
       });
@@ -84,8 +104,8 @@ export default async function JobDetailPage({ params }: PageProps) {
   if (isUncontractedPlan(job.plan)) {
     return (
       <>
-        <JsonLd data={buildJobPostingJsonLd(job)} />
-        <StoreInfoView job={job} />
+        <JsonLd data={buildStoreInfoJsonLd(job)} />
+        <StoreInfoView job={job} relatedJobs={relatedJobs} />
       </>
     );
   }
