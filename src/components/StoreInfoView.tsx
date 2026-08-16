@@ -4,10 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompactJobCard } from "@/components/CompactJobCard";
-import { StoreImagesGallery } from "@/components/StoreImagesGallery";
 import { resolveDistrictSeoPaths } from "@/lib/district-seo-paths";
 import { formatLocation } from "@/lib/job-storage";
-import { getDisplayStoreImages } from "@/lib/job-db";
 import {
   UNCONTRACTED_DISCLAIMER,
   UNCONTRACTED_OWNER_NOTE,
@@ -40,7 +38,6 @@ export function StoreInfoView({
   relatedJobs = [],
   preview = false,
 }: StoreInfoViewProps) {
-  const storeImages = getDisplayStoreImages(job);
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
@@ -172,10 +169,6 @@ export function StoreInfoView({
         </div>
 
         <div className="space-y-6 px-5 py-6 sm:px-8">
-          {storeImages.length > 0 ? (
-            <StoreImagesGallery images={storeImages} shopName={job.shopName} />
-          ) : null}
-
           <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
             <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal">
               <span className="text-gold-dark">◆</span>
@@ -212,6 +205,14 @@ export function StoreInfoView({
                   </Link>
                 )}
               </div>
+              {job.businessHours?.trim() ? (
+                <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
+                  <p className="text-xs font-medium text-muted">営業時間</p>
+                  <p className="mt-1 text-sm font-medium text-charcoal">
+                    {job.businessHours.trim()}
+                  </p>
+                </div>
+              ) : null}
               {job.address ? (
                 <div className="rounded-2xl border border-gold/20 bg-white px-4 py-3">
                   <p className="text-xs font-medium text-muted">住所</p>

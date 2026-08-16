@@ -688,6 +688,9 @@ export function buildStoreInfoJsonLd(job: Job) {
   const descriptionParts = [
     `${job.district}にある${job.jobType}${job.shopName}の店舗情報。`,
     job.address?.trim() ? `所在地：${job.address.trim()}。` : null,
+    job.businessHours?.trim()
+      ? `営業時間：${job.businessHours.trim()}。`
+      : null,
     sameAs.length > 0 ? "公式SNS・Webの案内を掲載しています。" : null,
   ].filter(Boolean);
 
@@ -705,6 +708,9 @@ export function buildStoreInfoJsonLd(job: Job) {
   }
   if (job.imageUrl?.trim()) {
     data.image = job.imageUrl.trim();
+  }
+  if (job.businessHours?.trim()) {
+    data.openingHours = job.businessHours.trim();
   }
 
   return data;

@@ -2229,7 +2229,6 @@ function AdminJobsPageInner() {
         </div>
         )}
 
-        {!isUncontracted && (
         <div>
           <label htmlFor="businessHours" className={labelClass}>
             営業時間
@@ -2242,7 +2241,6 @@ function AdminJobsPageInner() {
             placeholder="例：20:00〜LAST"
           />
         </div>
-        )}
 
         {!isUncontracted && (
         <div>
@@ -2576,6 +2574,7 @@ function AdminJobsPageInner() {
           )}
         </div>
 
+        {!isUncontracted && (
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>店舗ギャラリー</p>
           <p className="mb-3 text-xs text-muted">
@@ -2634,6 +2633,7 @@ function AdminJobsPageInner() {
             </ul>
           )}
         </div>
+        )}
 
         {!isUncontracted && (
         <div>
