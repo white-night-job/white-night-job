@@ -1,7 +1,12 @@
 import type { BoostStatsMap } from "@/lib/shop-boosts";
 import { compareJobsForListing } from "@/lib/shop-boosts";
+import { isChatBotEligiblePlan } from "@/lib/job-plan";
 import { jobMatchesSelectedAreas } from "./area-options";
 import type { ChatJob, ChatPreferences, ChatRecommendation } from "./types";
+
+function filterChatBotEligibleJobs(jobs: ChatJob[]): ChatJob[] {
+  return jobs.filter((job) => isChatBotEligiblePlan(job.plan));
+}
 
 export function getHourlySalary(salary: string): number | null {
   if (/日給|月給|年収/.test(salary)) return null;
@@ -97,7 +102,7 @@ export function matchPriorityRecommendations(
   limit = 5,
   boostMap: BoostStatsMap = {},
 ): ChatRecommendation[] {
-  return jobs
+  return filterChatBotEligibleJobs(jobs)
     .filter((job) => job.chatRecommend.enabled)
     .sort((a, b) => {
       const listingDiff = compareChatJobsByListingOrder(a, b, boostMap);
@@ -280,10 +285,11 @@ export function matchRecommendations(
   limit = 5,
   boostMap: BoostStatsMap = {},
 ): ChatRecommendation[] {
+  const eligibleJobs = filterChatBotEligibleJobs(jobs);
   const messageKeywords = extractMessageKeywords(message);
   const hasPreferences = Object.keys(prefs).length > 0 || messageKeywords.length > 0;
 
-  const scored = jobs
+  const scored = eligibleJobs
     .map((job) => {
       const { score, details } = scoreJob(job, prefs, messageKeywords);
       return { job, score, details };
@@ -293,7 +299,7 @@ export function matchRecommendations(
 
   const results = hasPreferences
     ? scored
-    : jobs
+    : eligibleJobs
         .filter((job) => job.chatRecommend.enabled)
         .map((job) => ({
           job,
@@ -322,7 +328,7 @@ export function matchRecommendationsForAreas(
     districts: selectedAreas.filter((area) => area !== "札幌全域"),
   };
   const messageKeywords = extractMessageKeywords(message);
-  const areaJobs = jobs.filter((job) =>
+  const areaJobs = filterChatBotEligibleJobs(jobs).filter((job) =>
     jobMatchesSelectedAreas(job.district, selectedAreas),
   );
 

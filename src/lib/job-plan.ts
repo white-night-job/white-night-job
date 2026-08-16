@@ -233,6 +233,18 @@ export function parseJobPlan(value: unknown): JobPlan {
   return "light";
 }
 
+/** AIチャットボットで紹介可能な掲載プラン（スタンダード・プレミアムのみ） */
+export const CHAT_BOT_ELIGIBLE_PLANS = ["standard", "premium"] as const;
+
+export type ChatBotEligiblePlan = (typeof CHAT_BOT_ELIGIBLE_PLANS)[number];
+
+export function isChatBotEligiblePlan(
+  plan: JobPlan | string | null | undefined,
+): plan is ChatBotEligiblePlan {
+  const normalized = parseJobPlan(plan);
+  return normalized === "standard" || normalized === "premium";
+}
+
 export function getPlanFeatures(plan: JobPlan | null | undefined): JobPlanFeatures {
   return JOB_PLAN_DEFINITIONS[parseJobPlan(plan)].features;
 }

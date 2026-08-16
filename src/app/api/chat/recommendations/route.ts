@@ -9,6 +9,7 @@ import {
 import { jobToChatJob } from "@/lib/chat-recommend-db";
 import type { ChatApiMessage } from "@/lib/chat/types";
 import { rowToJob } from "@/lib/job-db";
+import { CHAT_BOT_ELIGIBLE_PLANS } from "@/lib/job-plan";
 import { fetchBoostStatsForJobs } from "@/lib/shop-boosts";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
@@ -25,7 +26,9 @@ async function fetchPublishedChatJobs() {
   const { data, error } = await supabase
     .from("jobs")
     .select("*")
-    .eq("published", true);
+    .eq("published", true)
+    // AIチャット紹介はスタンダード・プレミアムのみ（未契約・ライトは対象外）
+    .in("plan", [...CHAT_BOT_ELIGIBLE_PLANS]);
 
   if (error) throw error;
   return (data ?? []).map((row) => jobToChatJob(rowToJob(row)));
