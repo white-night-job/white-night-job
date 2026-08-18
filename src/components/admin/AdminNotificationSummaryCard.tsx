@@ -21,6 +21,29 @@ const EMPTY: Summary = {
   system: 0,
 };
 
+const SUMMARY_CACHE_TTL_MS = 45_000;
+
+type SummaryCache = { summary: Summary; savedAt: number };
+
+let memoryCache: SummaryCache | null = null;
+
+function readSummaryCache(): Summary | null {
+  if (!memoryCache) return null;
+  if (Date.now() - memoryCache.savedAt > SUMMARY_CACHE_TTL_MS) {
+    memoryCache = null;
+    return null;
+  }
+  return memoryCache.summary;
+}
+
+function writeSummaryCache(summary: Summary) {
+  memoryCache = { summary, savedAt: Date.now() };
+}
+
+function clearSummaryCache() {
+  memoryCache = null;
+}
+
 const ROWS: Array<{
   key: keyof Pick<
     Summary,
@@ -63,7 +86,7 @@ const ROWS: Array<{
 export function AdminNotificationSummaryCard() {
   const [summary, setSummary] = useState<Summary>(EMPTY);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const [hasData, setHasData] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -74,28 +97,47 @@ export function AdminNotificationSummaryCard() {
       const data = (await res.json()) as { summary?: Summary };
       if (res.ok && data.summary) {
         setSummary(data.summary);
-        setLoadError(false);
-      } else {
-        setLoadError(true);
+        writeSummaryCache(data.summary);
+        setHasData(true);
       }
     } catch {
-      setLoadError(true);
+      // Keep the reserved layout; counts stay pending until a successful fetch.
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void load();
+    const cached = readSummaryCache();
+    if (cached) {
+      setSummary(cached);
+      setHasData(true);
+      setLoading(false);
+      void load();
+    } else {
+      void load();
+    }
+
     const source = new EventSource("/api/admin/notifications/stream");
     source.addEventListener("change", () => {
+      clearSummaryCache();
       void load();
     });
     return () => source.close();
   }, [load]);
 
+  const countsPending = !hasData;
+  const visibleRows = ROWS.filter((row) => {
+    if (row.alwaysShow) return true;
+    if (countsPending) return false;
+    return summary[row.key] > 0;
+  });
+
   return (
-    <div className="admin-notify-summary-card">
+    <div
+      className="admin-notify-summary-card"
+      aria-busy={countsPending || loading}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2>通知サマリー</h2>
         <Link
@@ -105,32 +147,31 @@ export function AdminNotificationSummaryCard() {
           すべて見る
         </Link>
       </div>
-      {loading ? (
-        <p className="admin-muted">読み込み中...</p>
-      ) : loadError ? (
-        <p className="admin-muted">サマリーを取得できませんでした。再読み込みしてください。</p>
-      ) : (
-        <ul className="admin-notify-summary-list">
-          {ROWS.map((row) => {
-            const count = summary[row.key];
-            if (!row.alwaysShow && count <= 0) return null;
-            const href = `/admin/notifications?type=${encodeURIComponent(row.type)}&unreadOnly=1`;
-            return (
-              <li key={row.type}>
-                <Link
-                  href={href}
-                  className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5 text-inherit no-underline hover:bg-gold/10"
+      <ul className="admin-notify-summary-list">
+        {visibleRows.map((row) => {
+          const count = summary[row.key];
+          const href = `/admin/notifications?type=${encodeURIComponent(row.type)}&unreadOnly=1`;
+          return (
+            <li key={row.type}>
+              <Link
+                href={href}
+                className="flex items-center justify-between gap-2 rounded-md px-1 py-0.5 text-inherit no-underline hover:bg-gold/10"
+              >
+                <span>
+                  <span aria-hidden>{row.emoji}</span> {row.label}
+                </span>
+                <span
+                  className={`admin-notify-summary-count${
+                    countsPending ? " is-pending" : ""
+                  }`}
                 >
-                  <span>
-                    <span aria-hidden>{row.emoji}</span> {row.label}
-                  </span>
-                  <span className="font-semibold tabular-nums">{count}件</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  {countsPending ? "…" : `${count}件`}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
       <p className="admin-notify-summary-note">
         各行をクリックすると、該当する未読通知一覧へ移動します
       </p>

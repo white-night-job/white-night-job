@@ -464,6 +464,9 @@
   padding: 1rem 1.1rem;
   text-decoration: none;
   color: inherit;
+  /* 3行（新規契約・決済失敗・解約）＋説明文の完成時高さを基準。読み込み前後で下のカードが動かないようにする */
+  min-height: 12.25rem;
+  box-sizing: border-box;
 }
 
 .admin-notify-summary-card a {
@@ -483,6 +486,19 @@
   display: grid;
   gap: 0.4rem;
   font-size: 0.875rem;
+}
+
+.admin-notify-summary-count {
+  display: inline-block;
+  min-width: 2.75em;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-notify-summary-count.is-pending {
+  color: var(--admin-muted);
+  font-weight: 500;
 }
 
 .admin-notify-summary-note {
