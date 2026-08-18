@@ -9,6 +9,7 @@ import {
   matchesShopSearch,
 } from "@/lib/job-applications";
 import { rowToJob } from "@/lib/job-db";
+import { isJobPlan, type JobPlan } from "@/lib/job-plan";
 import { aggregateViewCounts } from "@/lib/job-views";
 import { migratePlaintextShopPasswordsInRows } from "@/lib/shop-credentials";
 import { FIXED_AREA, type District } from "@/types/job";
@@ -21,6 +22,20 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 const SEARCH_CACHE_TTL_MS = 15_000;
 
+function parsePlanFilters(searchParams: URLSearchParams): JobPlan[] {
+  const raw = [
+    ...searchParams.getAll("plan"),
+    ...(searchParams.get("plans")?.split(",") ?? []),
+  ];
+  const unique: JobPlan[] = [];
+  for (const value of raw) {
+    const trimmed = value.trim();
+    if (!isJobPlan(trimmed) || unique.includes(trimmed)) continue;
+    unique.push(trimmed);
+  }
+  return unique;
+}
+
 export async function GET(request: Request) {
   const startedAt = Date.now();
   if (!(await isAdminAuthenticated())) {
@@ -32,13 +47,14 @@ export async function GET(request: Request) {
     const q = searchParams.get("q")?.trim() ?? "";
     const region = searchParams.get("region")?.trim() || "all";
     const statusFilter = searchParams.get("status")?.trim() || "all";
+    const planFilters = parsePlanFilters(searchParams);
     const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
     const limit = Math.min(
       MAX_LIMIT,
       Math.max(1, Number(searchParams.get("limit") ?? DEFAULT_LIMIT) || DEFAULT_LIMIT),
     );
 
-    if (!q && region === "all" && statusFilter === "all") {
+    if (!q && region === "all" && statusFilter === "all" && planFilters.length === 0) {
       return NextResponse.json({
         jobs: [],
         total: 0,
@@ -48,11 +64,13 @@ export async function GET(request: Request) {
         details: {},
         viewCounts: {},
         searched: false,
-        message: "店舗名・エリア・公開状態のいずれかで絞り込んでください",
+        message: "店舗名・エリア・公開状態・掲載プランのいずれかで絞り込んでください",
       });
     }
 
-    const cacheKey = `admin:jobs-search:listed:${region}:${statusFilter}:${q}:${page}:${limit}`;
+    const planCacheKey =
+      planFilters.length > 0 ? [...planFilters].sort().join(",") : "all";
+    const cacheKey = `admin:jobs-search:listed:${region}:${statusFilter}:${planCacheKey}:${q}:${page}:${limit}`;
     const cached = getAdminCache<Record<string, unknown>>(cacheKey);
     if (cached) {
       console.info("[admin/jobs/search] cache-hit", {
@@ -66,7 +84,7 @@ export async function GET(request: Request) {
     // Listed search: published / paused only (drafts use /api/admin/jobs/drafts).
     let slimQuery = supabase
       .from("jobs")
-      .select("id, shop_name, district, area, created_at, published, listing_status")
+      .select("id, shop_name, district, area, created_at, published, listing_status, plan")
       .order("created_at", { ascending: false });
 
     if (statusFilter === "published") {
@@ -76,6 +94,10 @@ export async function GET(request: Request) {
     } else {
       // all (and any unknown value): exclude drafts
       slimQuery = slimQuery.in("listing_status", ["published", "paused"]);
+    }
+
+    if (planFilters.length > 0) {
+      slimQuery = slimQuery.in("plan", planFilters);
     }
 
     if (region !== "all" && region !== FIXED_AREA) {

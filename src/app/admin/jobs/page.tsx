@@ -158,6 +158,13 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-sm font-medium text-charcoal";
 
+const SEARCH_PLAN_FILTER_OPTIONS: Array<{ value: JobPlan; label: string }> = [
+  { value: "uncontracted", label: "未契約店舗" },
+  { value: "light", label: "ライトプラン" },
+  { value: "standard", label: "スタンダードプラン" },
+  { value: "premium", label: "プレミアムプラン" },
+];
+
 const levelOptions = [
   { value: "", label: "未設定" },
   { value: "1", label: "1（左寄り）" },
@@ -348,6 +355,7 @@ function AdminJobsPageInner() {
   const [shopSearchQuery, setShopSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [planFilters, setPlanFilters] = useState<JobPlan[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formDirty, setFormDirty] = useState(false);
   const [editingListingStatus, setEditingListingStatus] =
@@ -412,9 +420,17 @@ function AdminJobsPageInner() {
   const [draftUpdatedFrom, setDraftUpdatedFrom] = useState("");
   const [draftUpdatedTo, setDraftUpdatedTo] = useState("");
 
+  function togglePlanFilter(plan: JobPlan) {
+    setPlanFilters((current) =>
+      current.includes(plan)
+        ? current.filter((item) => item !== plan)
+        : [...current, plan],
+    );
+  }
+
   async function runShopSearch(page = 1, append = false) {
     const q = shopSearchQuery.trim();
-    if (!q && regionFilter === "all") {
+    if (!q && regionFilter === "all" && planFilters.length === 0) {
       setSearchPerformed(false);
       setJobs([]);
       setSearchTotal(0);
@@ -422,7 +438,7 @@ function AdminJobsPageInner() {
       setSearchPage(1);
       setApplicationDetails({});
       setListingRanksByJobId({});
-      setMessage("店舗名やエリアを入力して検索してください");
+      setMessage("店舗名、エリア、または掲載プランを指定して検索してください");
       return;
     }
 
@@ -437,6 +453,9 @@ function AdminJobsPageInner() {
         page: String(page),
         limit: String(SEARCH_LIMIT),
       });
+      for (const plan of planFilters) {
+        params.append("plan", plan);
+      }
       const data = await readJson<{
         jobs: Job[];
         total: number;
@@ -543,7 +562,12 @@ function AdminJobsPageInner() {
 
   async function refreshAfterMutation() {
     await loadDraftTotal();
-    if (shopSearchQuery.trim() || regionFilter !== "all" || statusFilter !== "all") {
+    if (
+      shopSearchQuery.trim() ||
+      regionFilter !== "all" ||
+      statusFilter !== "all" ||
+      planFilters.length > 0
+    ) {
       await runShopSearch(1, false);
     }
     if (draftSearchPerformed || isDraftSearchOpen) {
@@ -1370,6 +1394,31 @@ function AdminJobsPageInner() {
                     />
                   </div>
                 </div>
+                <fieldset>
+                  <legend className={labelClass}>掲載プラン</legend>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {SEARCH_PLAN_FILTER_OPTIONS.map((option) => {
+                      const checked = planFilters.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-gold/30 bg-ivory px-3 py-2.5 text-sm text-charcoal"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => togglePlanFilter(option.value)}
+                            className="h-4 w-4 shrink-0 accent-gold-dark"
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted">
+                    複数選択できます。未選択の場合はすべてのプランが対象です。
+                  </p>
+                </fieldset>
                 <button
                   type="submit"
                   disabled={searchLoading}
@@ -1382,7 +1431,7 @@ function AdminJobsPageInner() {
 
             {!searchPerformed ? (
               <div className="rounded-2xl border border-dashed border-gold/30 bg-white px-4 py-10 text-center text-sm text-muted">
-                店舗名・エリア・公開状態のいずれかで絞り込んで検索してください
+                店舗名・エリア・公開状態・掲載プランのいずれかで絞り込んで検索してください
               </div>
             ) : searchLoading && jobs.length === 0 ? (
               <div className="h-32 animate-pulse rounded-2xl border border-gold/20 bg-white" />
