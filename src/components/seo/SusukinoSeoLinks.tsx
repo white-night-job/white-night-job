@@ -17,7 +17,7 @@ export function SusukinoSeoLinks({
 }) {
   if (showPrefix) {
     return (
-      <p className={`text-sm leading-6 text-muted ${className}`}>
+      <p className={`max-w-full break-words text-sm leading-6 text-muted ${className}`}>
         エリア特集：
         {AREA_LINKS.map((link, index) => (
           <span key={link.href}>

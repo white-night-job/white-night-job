@@ -25,7 +25,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     return (
       <CompareProvider>
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
         <Footer />
       </CompareProvider>
     );
@@ -34,7 +34,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <CompareProvider>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
       <Footer />
       <ChatBot />
     </CompareProvider>

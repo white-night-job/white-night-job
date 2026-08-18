@@ -21,10 +21,10 @@ export function JobCard({ job }: { job: Job }) {
   const storeInfoOnly = isUncontractedPlan(job.plan);
   return (
     <JobImpressionTracker jobId={job.id}>
-    <article
-      id={shopCardDomId(job.id)}
-      className={`relative overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
-    >
+      <article
+        id={shopCardDomId(job.id)}
+        className={`relative box-border w-full max-w-full overflow-hidden rounded-3xl transition-all hover:-translate-y-0.5 hover:border-gold/55 hover:shadow-luxury ${luxuryCardSurface}`}
+      >
       <JobDetailPrefetch jobId={job.id} />
       {SHOW_SAMPLE_LISTINGS ? <SampleListingBadge /> : null}
       {storeInfoOnly ? (
@@ -32,7 +32,7 @@ export function JobCard({ job }: { job: Job }) {
           {UNCONTRACTED_PUBLIC_LABEL}
         </span>
       ) : null}
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
+      <div className="absolute right-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center justify-end gap-1.5">
         {!storeInfoOnly ? <CompareButton jobId={job.id} /> : null}
         <FavoriteButton jobId={job.id} allowLineLoginRedirect />
       </div>
@@ -42,7 +42,7 @@ export function JobCard({ job }: { job: Job }) {
             <img
               src={job.imageUrl}
               alt={`${job.shopName}の${storeInfoOnly ? "店舗情報" : "求人"}｜${IMAGE_ALT_BRAND}`}
-              className="h-52 w-full object-cover sm:h-56"
+              className="block h-52 w-full max-w-full object-cover sm:h-56"
             />
           </div>
         ) : (
@@ -80,7 +80,7 @@ export function JobCard({ job }: { job: Job }) {
             {!storeInfoOnly ? (
               <div className="rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-2">
                 <dt className="text-xs font-semibold text-gold-dark">時給</dt>
-                <dd className="mt-0.5 bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
+                <dd className="mt-0.5 min-w-0 break-words bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
                   {job.salary}
                 </dd>
               </div>
@@ -121,7 +121,7 @@ export function JobCard({ job }: { job: Job }) {
           </p>
         </div>
       </Link>
-    </article>
+      </article>
     </JobImpressionTracker>
   );
 }

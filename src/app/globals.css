@@ -246,9 +246,21 @@
   }
 
   @media (max-width: 639px) {
-    main {
-      min-width: 0;
+    html,
+    body {
+      width: 100%;
       max-width: 100%;
+      min-width: 0;
+    }
+
+    .site-header,
+    .site-header-inner,
+    main,
+    footer {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .top-page-shell,
@@ -263,6 +275,18 @@
 
     .hero-plate-header::before,
     .hero-plate-header::after {
+      max-width: 100%;
+    }
+
+    .jobs-list-grid {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .jobs-list-grid > * {
+      min-width: 0;
       max-width: 100%;
     }
   }
@@ -2160,6 +2184,8 @@
 
   .listing-card-image img {
     display: block;
+    width: 100%;
+    max-width: 100%;
   }
 
   .listing-card-image-placeholder {

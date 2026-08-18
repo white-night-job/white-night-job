@@ -16,7 +16,7 @@ export function Breadcrumbs({ items, includeJsonLd = true }: BreadcrumbsProps) {
       : [{ label: SITE_BRAND_JA, href: "/" }, ...items];
 
   return (
-    <nav aria-label="パンくずリスト" className="mb-4">
+    <nav aria-label="パンくずリスト" className="mb-4 min-w-0 max-w-full">
       {includeJsonLd ? <JsonLd data={buildBreadcrumbJsonLd(trail)} /> : null}
       <ol className="flex flex-wrap items-center gap-1 text-xs text-muted">
         {trail.map((item, index) => {

@@ -40,7 +40,7 @@ export function JobSearchSection({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6">
       <JobFilterSearch
         appliedFilters={appliedFilters}
         onApply={setAppliedFilters}
@@ -49,12 +49,12 @@ export function JobSearchSection({
       <SusukinoSeoLinks />
 
       {showJobList && (
-      <section id="jobs-section" className={`scroll-mt-20 ${luxurySectionDivider} pt-6`}>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className={luxurySectionHeading}>
+      <section id="jobs-section" className={`min-w-0 max-w-full scroll-mt-20 ${luxurySectionDivider} pt-6`}>
+        <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
+          <h2 className={`${luxurySectionHeading} min-w-0 flex-1 flex-wrap`}>
             {title}
             {filterLabel && (
-              <span className="ml-2 text-base font-normal text-gold-dark">
+              <span className="ml-2 break-words text-base font-normal text-gold-dark">
                 （{filterLabel}）
               </span>
             )}

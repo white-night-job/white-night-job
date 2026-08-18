@@ -46,7 +46,7 @@ export function JobImpressionTracker({
   }, [jobId]);
 
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} className={["min-w-0 w-full max-w-full", className].filter(Boolean).join(" ")}>
       {children}
     </div>
   );

@@ -47,9 +47,9 @@ export function JobList({ filters }: { filters: JobFilters }) {
 
   if (!ready) {
     return (
-      <div className="jobs-list-grid grid gap-4 sm:grid-cols-2">
+      <div className="jobs-list-grid grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[1, 2].map((i) => (
-          <div key={i} className="h-40 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+          <div key={i} className="h-40 min-w-0 animate-pulse rounded-2xl border border-gold/20 bg-white" />
         ))}
       </div>
     );
@@ -74,7 +74,7 @@ export function JobList({ filters }: { filters: JobFilters }) {
   }
 
   return (
-    <div className="jobs-list-grid grid gap-4 sm:grid-cols-2">
+    <div className="jobs-list-grid grid grid-cols-1 gap-4 sm:grid-cols-2">
       {jobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}

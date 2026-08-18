@@ -37,10 +37,10 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto box-border w-full min-w-0 max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
       <Breadcrumbs items={[{ label: "求人一覧" }]} />
 
-      <div className="mb-6">
+      <div className="mb-6 min-w-0 max-w-full">
         <h1 className="font-serif text-2xl font-semibold text-charcoal sm:text-3xl">
           掲載中の求人を探す
         </h1>
