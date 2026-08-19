@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { ImageUploadSizeHint } from "@/components/ImageUploadSizeHint";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -982,6 +983,7 @@ export default function ShopDashboardPage() {
           </div>
           <div className="mt-4">
             <p className={labelClass}>顔写真</p>
+            <ImageUploadSizeHint className="mb-2 text-xs leading-relaxed text-muted" />
             <input
               ref={recruiterImageInputRef}
               type="file"
@@ -1048,6 +1050,7 @@ export default function ShopDashboardPage() {
           <p className="mb-3 text-xs text-muted">
             求人一覧カードと求人詳細ページ最上部に表示するメイン画像です。1枚のみ設定でき、差し替えも可能です。
           </p>
+          <ImageUploadSizeHint className="mb-3 text-xs leading-relaxed text-muted" />
           <input
             ref={topImageInputRef}
             type="file"
@@ -1095,6 +1098,7 @@ export default function ShopDashboardPage() {
           <p className="mb-3 text-xs text-muted">
             求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。
           </p>
+          <ImageUploadSizeHint className="mb-3 text-xs leading-relaxed text-muted" />
           <input ref={storeImageInputRef} type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple className="hidden" onChange={handleStoreImagesUpload} />
           <button type="button" onClick={() => storeImageInputRef.current?.click()} disabled={uploadingStoreImages} className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-medium text-gold-dark">
             {uploadingStoreImages ? "追加中..." : "画像追加"}

@@ -97,7 +97,7 @@ export const FORM_I18N = {
   identityHeading: "顔写真付き身分証明書",
   identityUploadTitle: "顔写真付き身分証明書をアップロードしてください",
   identityUploadHint:
-    "運転免許証・マイナンバーカード・パスポート・在留カードなど（JPEG / PNG / PDF、1ファイル10MBまで）",
+    "運転免許証・マイナンバーカード・パスポート・在留カードなど（JPEG / PNG / PDF、1枚あたり最大10MB）",
   identityFrontLabel: "表面",
   identityBackLabel: "裏面",
   identityBackHint: "裏面がある場合はアップロードしてください。",

@@ -1,5 +1,7 @@
 "use client";
 
+import { validateImageUploadFileSize } from "@/lib/image-upload-limits";
+
 async function readJson<T>(response: Response): Promise<T> {
   const data = (await response.json()) as T & { message?: string };
   if (!response.ok) throw new Error(data.message ?? "通信に失敗しました。");
@@ -12,6 +14,9 @@ export async function uploadTempImage(options: {
   uploadType: "top-image" | "store-image" | "recruiter-image" | "shop";
   ownerId: string;
 }): Promise<string> {
+  const sizeError = validateImageUploadFileSize(options.file);
+  if (sizeError) throw new Error(sizeError);
+
   const formData = new FormData();
   formData.append("file", options.file);
   formData.append("uploadType", options.uploadType);

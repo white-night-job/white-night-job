@@ -2,6 +2,9 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
 import {
+  validateUploadFileSize,
+} from "@/lib/image-upload-limits";
+import {
   createSupabaseAdmin,
   LISTING_APPLICATION_DOCUMENT_BUCKET,
   LISTING_APPLICATION_IDENTITY_BUCKET,
@@ -45,8 +48,6 @@ const IMAGE_ALLOWED_EXT = new Set([
   "heic",
   "heif",
 ]);
-
-const MAX_BYTES = 10 * 1024 * 1024;
 
 const DOC_TYPE_TO_FOLDER: Record<string, string> = {
   "business-license": "business-license",
@@ -120,11 +121,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (file.size <= 0 || file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { message: "ファイルサイズは10MB以下にしてください。" },
-        { status: 400 },
-      );
+    const sizeError = validateUploadFileSize(file, {
+      label:
+        file.type === "application/pdf" || /\.pdf$/i.test(file.name)
+          ? "file"
+          : "image",
+    });
+    if (sizeError) {
+      return NextResponse.json({ message: sizeError }, { status: 400 });
     }
 
     const imageKind = IMAGE_TYPE_TO_KIND[docType];

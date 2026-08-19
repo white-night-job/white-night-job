@@ -1,6 +1,7 @@
 "use client";
 
 import { JobListingPreview } from "@/components/JobListingPreview";
+import { ImageUploadSizeHint } from "@/components/ImageUploadSizeHint";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminUnsavedChanges } from "@/components/admin/AdminUnsavedChanges";
@@ -2529,6 +2530,7 @@ function AdminJobsPageInner() {
             </div>
             <div className="mt-4">
               <p className={labelClass}>顔写真</p>
+              <ImageUploadSizeHint className="mb-2 text-xs leading-relaxed text-muted" />
               <input
                 ref={recruiterImageInputRef}
                 type="file"
@@ -2601,6 +2603,7 @@ function AdminJobsPageInner() {
           <p className="mb-3 text-xs text-muted">
             求人一覧カードと求人詳細ページ最上部に表示するメイン画像です。1枚のみ設定でき、差し替えも可能です。
           </p>
+          <ImageUploadSizeHint className="mb-3 text-xs leading-relaxed text-muted" />
           <input
             id="imageFile"
             type="file"
@@ -2627,8 +2630,9 @@ function AdminJobsPageInner() {
         <div className="rounded-2xl border border-gold/20 bg-ivory/40 p-4">
           <p className={labelClass}>店舗ギャラリー</p>
           <p className="mb-3 text-xs text-muted">
-            求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。JPG / PNG / WebP に対応しています。
+            求人詳細ページで店舗の雰囲気が分かる写真を複数枚表示します。
           </p>
+          <ImageUploadSizeHint className="mb-3 text-xs leading-relaxed text-muted" />
           <input
             ref={storeImageInputRef}
             type="file"

@@ -25,6 +25,7 @@ import {
   compressListingImage,
   uploadWithProgress,
 } from "@/lib/listing-image-compress";
+import { validateUploadFileSize } from "@/lib/image-upload-limits";
 
 void (null as ListingAttachment | null);
 
@@ -550,6 +551,19 @@ export function ListingApplicationForm() {
 
   async function uploadDocument(file: File, key: DocKey) {
     if (docUploadLockRef.current[key]) return;
+
+    const sizeError = validateUploadFileSize(file, {
+      label:
+        file.type === "application/pdf" || /\.pdf$/i.test(file.name)
+          ? "file"
+          : "image",
+    });
+    if (sizeError) {
+      setSubmitMessage(sizeError);
+      scrollToStepHeader();
+      return;
+    }
+
     docUploadLockRef.current[key] = true;
 
     const docType =

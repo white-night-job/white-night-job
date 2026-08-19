@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import { getErrorMessage } from "@/lib/api-error";
+import {
+  validateImageUploadFileSize,
+} from "@/lib/image-upload-limits";
 import { createSupabaseAdmin, SHOP_IMAGE_BUCKET } from "@/lib/supabase";
 
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -97,6 +100,11 @@ export async function POST(request: Request) {
         { message: "画像ファイルを選択してください。" },
         { status: 400 },
       );
+    }
+
+    const sizeError = validateImageUploadFileSize(file);
+    if (sizeError) {
+      return NextResponse.json({ message: sizeError }, { status: 400 });
     }
 
     const validationError = validateImageFile(file);
