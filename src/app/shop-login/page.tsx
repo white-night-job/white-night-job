@@ -1,21 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
 
 const SHOP_BOOTSTRAP_KEY = "wnj-shop-bootstrap";
 
-export default function ShopLoginPage() {
+function resolveSafeShopReturnPath(nextParam: string | null): string {
+  if (
+    nextParam &&
+    nextParam.startsWith("/shop-dashboard") &&
+    !nextParam.startsWith("//")
+  ) {
+    return nextParam;
+  }
+  return "/shop-dashboard";
+}
+
+function ShopLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+
+  const returnPath = resolveSafeShopReturnPath(searchParams.get("next"));
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      setMessage(SESSION_EXPIRED_MESSAGE);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     console.time("shop-login:form-paint");
@@ -23,7 +44,6 @@ export default function ShopLoginPage() {
       console.timeEnd("shop-login:form-paint");
     });
 
-    // Background session check — never block the login form.
     void fetch("/api/shop-session", { cache: "no-store", credentials: "include" })
       .then((response) => response.json())
       .then((data: {
@@ -51,12 +71,12 @@ export default function ShopLoginPage() {
           }
         }
         setRedirecting(true);
-        router.replace("/shop-dashboard");
+        router.replace(returnPath);
       })
       .catch(() => {
         // stay on login form
       });
-  }, [router]);
+  }, [router, returnPath]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,7 +123,7 @@ export default function ShopLoginPage() {
       }
 
       console.time("shop-login:auth-to-dashboard-nav");
-      router.replace("/shop-dashboard");
+      router.replace(returnPath);
       console.timeEnd("shop-login:auth-to-dashboard-nav");
     } catch (error) {
       console.timeEnd("shop-login:button-to-auth");
@@ -182,5 +202,19 @@ export default function ShopLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function ShopLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex min-h-[70vh] max-w-md items-center justify-center px-4 py-12">
+          <p className="text-sm text-muted">読み込み中...</p>
+        </div>
+      }
+    >
+      <ShopLoginForm />
+    </Suspense>
   );
 }

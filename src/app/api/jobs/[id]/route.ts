@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
@@ -155,7 +156,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
 export async function PUT(request: Request, { params }: RouteContext) {
   if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+    return NextResponse.json({ message: SESSION_EXPIRED_MESSAGE }, { status: 401 });
   }
 
   try {
@@ -298,7 +299,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+    return NextResponse.json({ message: SESSION_EXPIRED_MESSAGE }, { status: 401 });
   }
 
   try {

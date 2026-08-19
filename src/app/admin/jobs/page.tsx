@@ -6,6 +6,19 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminUnsavedChanges } from "@/components/admin/AdminUnsavedChanges";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
+import { useAuthSessionGuard } from "@/hooks/useAuthSessionGuard";
+import {
+  buildAdminLoginRedirectUrl,
+  checkAdminSession,
+  readJsonWithAuth,
+  SESSION_EXPIRED_MESSAGE,
+  isSessionExpiredError,
+} from "@/lib/auth-session-client";
+import {
+  clearAdminJobFormDraft,
+  loadAdminJobFormDraft,
+  saveAdminJobFormDraft,
+} from "@/lib/job-form-draft-storage";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import {
   BENEFIT_CATEGORIES,
@@ -287,15 +300,7 @@ function toForm(job: Job): JobForm {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T & { message?: string; field?: string };
-  if (!response.ok) {
-    const err = new Error(data.message ?? "通信に失敗しました。") as Error & {
-      field?: string;
-    };
-    if (data.field) err.field = data.field;
-    throw err;
-  }
-  return data;
+  return readJsonWithAuth<T>(response);
 }
 
 function formatAdminDateTime(value: string | null | undefined) {
@@ -420,6 +425,54 @@ function AdminJobsPageInner() {
   const [draftCreatedTo, setDraftCreatedTo] = useState("");
   const [draftUpdatedFrom, setDraftUpdatedFrom] = useState("");
   const [draftUpdatedTo, setDraftUpdatedTo] = useState("");
+  const sessionRedirectRef = useRef(false);
+
+  const handleSessionExpired = useCallback(() => {
+    if (sessionRedirectRef.current) return;
+    sessionRedirectRef.current = true;
+
+    if (editingId !== null || isAddFormOpen) {
+      saveAdminJobFormDraft({
+        form: form as unknown as Record<string, unknown>,
+        editingId,
+        draftJobId,
+        isAddFormOpen,
+        editingListingStatus,
+        showPreview,
+        previewKind,
+        savedAt: Date.now(),
+      });
+    }
+
+    const returnPath = editingId
+      ? `/admin/jobs?edit=${encodeURIComponent(editingId)}`
+      : "/admin/jobs";
+    router.replace(buildAdminLoginRedirectUrl(returnPath));
+  }, [
+    draftJobId,
+    editingId,
+    editingListingStatus,
+    form,
+    isAddFormOpen,
+    previewKind,
+    router,
+    showPreview,
+  ]);
+
+  const ensureAdminSession = useCallback(async (): Promise<boolean> => {
+    const ok = await checkAdminSession();
+    if (!ok) {
+      handleSessionExpired();
+      return false;
+    }
+    return true;
+  }, [handleSessionExpired]);
+
+  useAuthSessionGuard({
+    enabled: editingId !== null || isAddFormOpen || showPreview,
+    checkSession: checkAdminSession,
+    onSessionExpired: handleSessionExpired,
+  });
 
   function togglePlanFilter(plan: JobPlan) {
     setPlanFilters((current) =>
@@ -588,6 +641,30 @@ function AdminJobsPageInner() {
   useEffect(() => {
     void loadDraftTotal();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("restoreDraft") !== "1") return;
+    const draft = loadAdminJobFormDraft();
+    if (!draft?.form) return;
+
+    setForm(draft.form as unknown as JobForm);
+    setEditingId(draft.editingId);
+    setDraftJobId(draft.draftJobId);
+    setIsAddFormOpen(draft.isAddFormOpen);
+    setEditingListingStatus(draft.editingListingStatus as JobListingStatus);
+    if (draft.showPreview) {
+      setShowPreview(true);
+      setPreviewKind(draft.previewKind);
+    }
+    setFormDirty(true);
+    setMessage(
+      "入力内容を復元しました。内容をご確認のうえ、再度保存してください。",
+    );
+    clearAdminJobFormDraft();
+
+    router.replace("/admin/jobs", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     const editId = searchParams.get("edit")?.trim();
@@ -833,6 +910,9 @@ function AdminJobsPageInner() {
       setFieldErrors({});
     }
     try {
+      if (!(await ensureAdminSession())) {
+        return null;
+      }
       const wasCreate = !editingId;
       const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
       const method = editingId ? "PUT" : "POST";
@@ -855,6 +935,9 @@ function AdminJobsPageInner() {
         }),
       );
       const savedJob = saveResult.job;
+      if (!savedJob?.id) {
+        throw new Error("保存に失敗しました。");
+      }
       const issued = saveResult.issuedCredentials;
 
       if (issued) {
@@ -885,6 +968,7 @@ function AdminJobsPageInner() {
 
       if (saveIntent === "draft") {
         // 下書き保存成功：フォームを閉じ、一覧を更新し、上部に成功メッセージ
+        clearAdminJobFormDraft();
         closeEditor({
           message: issued
             ? "下書きを保存しました。ログイン情報を店舗へ伝えてください。"
@@ -893,6 +977,7 @@ function AdminJobsPageInner() {
           autoClearMessageMs: 5000,
         });
       } else if (saveIntent === "publish" || saveIntent === "republish") {
+        clearAdminJobFormDraft();
         closeEditor({
           message: isPublishedUpdate
             ? issued
@@ -922,6 +1007,10 @@ function AdminJobsPageInner() {
       }
       return savedJob;
     } catch (error) {
+      if (isSessionExpiredError(error)) {
+        handleSessionExpired();
+        return null;
+      }
       const message =
         error instanceof Error ? error.message : "保存に失敗しました。";
       const field =
@@ -980,6 +1069,7 @@ function AdminJobsPageInner() {
   }
 
   async function openPreview(kind: "publish" | "draft") {
+    if (!(await ensureAdminSession())) return;
     setMessage("");
     if (kind === "publish") {
       const uncontracted = isUncontractedPlan(form.plan);
@@ -1543,7 +1633,12 @@ function AdminJobsPageInner() {
                           <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
                             <button
                               type="button"
-                              onClick={() => handleEdit(job)}
+                              onClick={() => {
+                                void (async () => {
+                                  if (!(await ensureAdminSession())) return;
+                                  handleEdit(job);
+                                })();
+                              }}
                               className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
                             >
                               編集
@@ -1793,7 +1888,12 @@ function AdminJobsPageInner() {
                           <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
                             <button
                               type="button"
-                              onClick={() => handleEdit(job)}
+                              onClick={() => {
+                                void (async () => {
+                                  if (!(await ensureAdminSession())) return;
+                                  handleEdit(job);
+                                })();
+                              }}
                               className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
                             >
                               修正する
@@ -1826,7 +1926,10 @@ function AdminJobsPageInner() {
               requestDiscardForm(() => closeEditor({ scrollToList: false }));
               return;
             }
-            setIsAddFormOpen((open) => !open);
+            void (async () => {
+              if (!isAddFormOpen && !(await ensureAdminSession())) return;
+              setIsAddFormOpen((open) => !open);
+            })();
           }}
           aria-expanded={isAddFormOpen}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-gold/35 bg-gradient-to-r from-gold to-gold-dark px-4 py-3.5 text-base font-semibold text-white shadow-gold transition hover:brightness-105 sm:py-4"

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 import { invalidateAdminCacheByPrefix } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import {
@@ -319,7 +320,10 @@ function getHourlySalary(salary: string): number | null {
 
 export async function POST(request: Request) {
   if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+    return NextResponse.json(
+      { message: SESSION_EXPIRED_MESSAGE },
+      { status: 401 },
+    );
   }
 
   try {

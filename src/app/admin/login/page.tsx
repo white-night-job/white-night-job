@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -9,6 +10,12 @@ function AdminLoginForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      setMessage(SESSION_EXPIRED_MESSAGE);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

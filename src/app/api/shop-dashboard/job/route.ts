@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
+import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 import { rowToJob } from "@/lib/job-db";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
@@ -68,7 +69,7 @@ export async function GET() {
   const startedAt = Date.now();
   const jobId = await getAuthenticatedShopJobId();
   if (!jobId) {
-    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+    return NextResponse.json({ message: SESSION_EXPIRED_MESSAGE }, { status: 401 });
   }
 
   try {
@@ -105,7 +106,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const jobId = await getAuthenticatedShopJobId();
   if (!jobId) {
-    return NextResponse.json({ message: "ログインしてください。" }, { status: 401 });
+    return NextResponse.json({ message: SESSION_EXPIRED_MESSAGE }, { status: 401 });
   }
 
   try {

@@ -4,13 +4,27 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ImageUploadSizeHint } from "@/components/ImageUploadSizeHint";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BENEFIT_CATEGORIES,
   getKnownBenefits,
   getUncategorizedBenefits,
 } from "@/data/benefits";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
+import { useAuthSessionGuard } from "@/hooks/useAuthSessionGuard";
+import {
+  buildShopLoginRedirectUrl,
+  checkShopSession,
+  readJsonWithAuth,
+  SESSION_EXPIRED_MESSAGE,
+  SessionExpiredError,
+  isSessionExpiredError,
+} from "@/lib/auth-session-client";
+import {
+  clearShopJobFormDraft,
+  loadShopJobFormDraft,
+  saveShopJobFormDraft,
+} from "@/lib/job-form-draft-storage";
 import {
   aggregateMonthlyApplicationsForJob,
   emptyApplicationDetail,
@@ -210,9 +224,7 @@ function toPayload(form: ShopForm) {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T & { message?: string };
-  if (!response.ok) throw new Error(data.message ?? "通信に失敗しました。");
-  return data;
+  return readJsonWithAuth<T>(response);
 }
 
 export default function ShopDashboardPage() {
@@ -220,7 +232,7 @@ export default function ShopDashboardPage() {
   const topImageInputRef = useRef<HTMLInputElement>(null);
   const recruiterImageInputRef = useRef<HTMLInputElement>(null);
   const storeImageInputRef = useRef<HTMLInputElement>(null);
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authVerified, setAuthVerified] = useState(false);
   const [shellShopName, setShellShopName] = useState("");
   const [shellPublished, setShellPublished] = useState<boolean | null>(null);
   const [shellDistrict, setShellDistrict] = useState("");
@@ -255,6 +267,50 @@ export default function ShopDashboardPage() {
   const [newJobNotifyCount, setNewJobNotifyCount] = useState(0);
   const [pickupNotifyCount, setPickupNotifyCount] = useState(0);
   const [jobPlan, setJobPlan] = useState<JobPlan>("light");
+  const sessionRedirectRef = useRef(false);
+
+  const handleSessionExpired = useCallback(
+    (options?: { formToSave?: ShopForm | null; openForm?: boolean; preview?: boolean }) => {
+      if (sessionRedirectRef.current) return;
+      sessionRedirectRef.current = true;
+
+      const draftForm = options?.formToSave ?? form;
+      if (draftForm) {
+        saveShopJobFormDraft({
+          form: draftForm as unknown as Record<string, unknown>,
+          isFormOpen: options?.openForm ?? isFormOpen ?? showPreview,
+          showPreview: options?.preview ?? showPreview,
+          savedAt: Date.now(),
+        });
+      }
+
+      try {
+        sessionStorage.removeItem("wnj-shop-bootstrap");
+      } catch {
+        // ignore
+      }
+
+      setAuthVerified(false);
+      setMessage(SESSION_EXPIRED_MESSAGE);
+      router.replace(buildShopLoginRedirectUrl("/shop-dashboard"));
+    },
+    [form, isFormOpen, router, showPreview],
+  );
+
+  const ensureShopSession = useCallback(async (): Promise<boolean> => {
+    const ok = await checkShopSession();
+    if (!ok) {
+      handleSessionExpired();
+      return false;
+    }
+    return true;
+  }, [handleSessionExpired]);
+
+  useAuthSessionGuard({
+    enabled: authVerified && (isFormOpen || showPreview),
+    checkSession: checkShopSession,
+    onSessionExpired: () => handleSessionExpired(),
+  });
 
   function markShellReady() {
     if (shellTimedRef.current) return;
@@ -286,7 +342,6 @@ export default function ShopDashboardPage() {
     setShellPublished(data.published);
     setShellDistrict(data.district);
     setJobPlan(parseJobPlan(data.plan));
-    setAuthenticated(true);
     markShellReady();
   }
 
@@ -414,8 +469,6 @@ export default function ShopDashboardPage() {
         };
         if (bootstrap.shopName) {
           setShellShopName(bootstrap.shopName);
-          setAuthenticated(true);
-          markShellReady();
         }
         if (bootstrap.jobId) setJobId(bootstrap.jobId);
         if (bootstrap.plan) setJobPlan(parseJobPlan(bootstrap.plan));
@@ -429,19 +482,41 @@ export default function ShopDashboardPage() {
 
     void (async () => {
       try {
-        // Shell first (auth + name), then heavy data in parallel — never block redirect.
         await loadShell();
         if (cancelled) return;
-        void Promise.all([
+        setAuthVerified(true);
+
+        const shouldRestoreDraft =
+          new URLSearchParams(window.location.search).get("restoreDraft") === "1";
+        const pendingDraft = shouldRestoreDraft ? loadShopJobFormDraft() : null;
+
+        await Promise.all([
           loadMetrics(),
           loadJobDetails().catch((error) => {
             console.error("[shop-dashboard] job details failed", error);
           }),
           loadDeferredDashboard(),
         ]);
-      } catch {
+
+        if (cancelled) return;
+
+        if (pendingDraft?.form) {
+          setForm(pendingDraft.form as unknown as ShopForm);
+          if (pendingDraft.isFormOpen) setIsFormOpen(true);
+          if (pendingDraft.showPreview) setShowPreview(true);
+          setMessage(
+            "入力内容を復元しました。内容をご確認のうえ、再度保存してください。",
+          );
+          clearShopJobFormDraft();
+          router.replace("/shop-dashboard", { scroll: false });
+        }
+      } catch (error) {
         if (!cancelled) {
-          router.replace("/shop-login");
+          if (isSessionExpiredError(error)) {
+            handleSessionExpired();
+          } else {
+            router.replace(buildShopLoginRedirectUrl("/shop-dashboard"));
+          }
         }
       }
     })();
@@ -547,6 +622,9 @@ export default function ShopDashboardPage() {
   }
 
   async function persistForm(nextForm: ShopForm) {
+    if (!(await ensureShopSession())) {
+      throw new SessionExpiredError();
+    }
     const promoted = await promoteTempImagesInPayload(toPayload(nextForm));
     const { job } = await readJson<{ job: Job }>(
       await fetch("/api/shop-dashboard/job", {
@@ -556,6 +634,9 @@ export default function ShopDashboardPage() {
         body: JSON.stringify(promoted),
       }),
     );
+    if (!job?.id) {
+      throw new Error("保存に失敗しました。");
+    }
     setForm(toForm(job));
     setPublishedJob(job);
     window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
@@ -565,6 +646,7 @@ export default function ShopDashboardPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form) return;
+    if (!(await ensureShopSession())) return;
     setMessage("");
     if (!form.salary.trim() || !form.lineUrl.trim()) {
       setMessage("時給とLINE URLは必須です。");
@@ -576,19 +658,28 @@ export default function ShopDashboardPage() {
 
   async function handleConfirmPublish() {
     if (!form || publishLockRef.current || loading) return;
+    if (!(await ensureShopSession())) return;
     publishLockRef.current = true;
     setLoading(true);
     setMessage("");
     try {
-      await persistForm(form);
+      const savedJob = await persistForm(form);
+      if (!savedJob?.id) {
+        throw new Error("保存に失敗しました。");
+      }
       await refreshAfterSave();
       requestScrollToTop();
       setShowPreview(false);
       setIsFormOpen(false);
+      clearShopJobFormDraft();
       setMessage("求人情報を更新しました。");
     } catch (error) {
       requestScrollToTop();
       setShowPreview(false);
+      if (isSessionExpiredError(error)) {
+        handleSessionExpired({ formToSave: form, openForm: true, preview: true });
+        return;
+      }
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
       setLoading(false);
@@ -714,8 +805,8 @@ export default function ShopDashboardPage() {
     );
   }
 
-  // Soft loading shell while auth cookie is being verified (no long white screen).
-  if (!authenticated && !shellShopName) {
+  // Auth cookie must be verified before showing the dashboard or job editor.
+  if (!authVerified) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="mb-6">
@@ -787,7 +878,8 @@ export default function ShopDashboardPage() {
             message.includes("選択しました") ||
             message.includes("追加しました") ||
             message.includes("削除しました") ||
-            message.includes("削除候補")
+            message.includes("削除候補") ||
+            message.includes("復元しました")
               ? "border border-green-200 bg-green-50 text-green-800"
               : "border border-red-200 bg-red-50 text-red-700"
           }`}
@@ -801,7 +893,10 @@ export default function ShopDashboardPage() {
           type="button"
           onClick={() => {
             if (!form) return;
-            setIsFormOpen((current) => !current);
+            void (async () => {
+              if (!isFormOpen && !(await ensureShopSession())) return;
+              setIsFormOpen((current) => !current);
+            })();
           }}
           disabled={!form || jobLoading}
           className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-ivory/60 disabled:cursor-wait disabled:opacity-70 sm:px-6"
