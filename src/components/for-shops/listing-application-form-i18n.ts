@@ -5,7 +5,7 @@ export const FORM_I18N = {
     "店舗基本情報",
     "担当者情報",
     "SNS・Web情報",
-    "営業・許可情報",
+    "営業情報",
     "確認事項",
     "店舗画像",
     "内容確認",
@@ -121,11 +121,7 @@ export const FORM_I18N = {
   labelYoutube: "YouTube（任意）",
   labelOtherSns: "その他SNS（任意）",
 
-  headingLicense: "4. 営業・許可情報",
-  docBusinessLicense: "営業許可証",
-  docBusinessLicenseHint: "店舗の営業許可証をアップロードしてください。",
-  docEntertainment: "風俗営業許可証（社交飲食店営業許可証）",
-  docLateNight: "深夜酒類提供飲食店営業・開始届出（受領書）",
+  headingLicense: "4. 営業情報",
   labelOpenDate: "オープン日 *",
 
   headingPlan: "（未使用）",

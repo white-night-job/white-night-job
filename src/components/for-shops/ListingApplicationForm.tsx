@@ -88,12 +88,7 @@ type LocalFileInfo = {
   previewUrl: string | null;
 };
 
-type DocKey =
-  | "businessLicenseDocument"
-  | "entertainmentLicenseDocument"
-  | "lateNightAlcoholNotificationDocument"
-  | "identityDocumentFront"
-  | "identityDocumentBack";
+type DocKey = "identityDocumentFront" | "identityDocumentBack";
 
 type FormState = {
   shopName: string;
@@ -118,9 +113,6 @@ type FormState = {
   lineOfficialUrl: string;
   youtubeUrl: string;
   otherSns: string;
-  businessLicenseDocument: ListingDocumentMeta | null;
-  entertainmentLicenseDocument: ListingDocumentMeta | null;
-  lateNightAlcoholNotificationDocument: ListingDocumentMeta | null;
   openDate: string;
   consentAccuracy: boolean;
   consentTerms: boolean;
@@ -158,9 +150,6 @@ const EMPTY: FormState = {
   lineOfficialUrl: "",
   youtubeUrl: "",
   otherSns: "",
-  businessLicenseDocument: null,
-  entertainmentLicenseDocument: null,
-  lateNightAlcoholNotificationDocument: null,
   openDate: "",
   consentAccuracy: false,
   consentTerms: false,
@@ -171,9 +160,6 @@ const EMPTY: FormState = {
 };
 
 const EMPTY_LOCAL: LocalFilesState = {
-  businessLicenseDocument: null,
-  entertainmentLicenseDocument: null,
-  lateNightAlcoholNotificationDocument: null,
   identityDocumentFront: null,
   identityDocumentBack: null,
 };
@@ -212,10 +198,6 @@ function loadDraft(): FormState | null {
       applicantType: isListingApplicantType(parsed.applicantType)
         ? parsed.applicantType
         : "",
-      businessLicenseDocument: parsed.businessLicenseDocument ?? null,
-      entertainmentLicenseDocument: parsed.entertainmentLicenseDocument ?? null,
-      lateNightAlcoholNotificationDocument:
-        parsed.lateNightAlcoholNotificationDocument ?? null,
       identityDocumentFront: parsed.identityDocumentFront ?? null,
       identityDocumentBack: parsed.identityDocumentBack ?? null,
     };
@@ -371,11 +353,6 @@ function validateStep(
     }
   }
   if (step === 4) {
-    const hasLocal = Boolean(localFiles?.businessLicenseDocument);
-    const hasUploaded = Boolean(form.businessLicenseDocument?.storagePath);
-    if (!hasLocal && !hasUploaded) {
-      errors.businessLicenseDocument = FORM_I18N.errBusinessLicense;
-    }
     if (!form.openDate.trim()) errors.openDate = FORM_I18N.errOpenDate;
   }
   if (step === 5) {
@@ -451,9 +428,6 @@ export function ListingApplicationForm() {
   const pendingShopCountRef = useRef({ exterior: 0, interior: 0 });
   const shopUploadedCountRef = useRef({ exterior: 0, interior: 0 });
   const docInputRefs = useRef<Record<DocKey, HTMLInputElement | null>>({
-    businessLicenseDocument: null,
-    entertainmentLicenseDocument: null,
-    lateNightAlcoholNotificationDocument: null,
     identityDocumentFront: null,
     identityDocumentBack: null,
   });
@@ -537,10 +511,6 @@ export function ListingApplicationForm() {
         applicantType: isListingApplicantType(merged.applicantType)
           ? merged.applicantType
           : "",
-        businessLicenseDocument: merged.businessLicenseDocument ?? null,
-        entertainmentLicenseDocument: merged.entertainmentLicenseDocument ?? null,
-        lateNightAlcoholNotificationDocument:
-          merged.lateNightAlcoholNotificationDocument ?? null,
         identityDocumentFront: merged.identityDocumentFront ?? null,
         identityDocumentBack: merged.identityDocumentBack ?? null,
       });
@@ -599,9 +569,7 @@ export function ListingApplicationForm() {
 
   useEffect(() => {
     return () => {
-      revokeUrl(localFiles.businessLicenseDocument?.previewUrl);
-      revokeUrl(localFiles.entertainmentLicenseDocument?.previewUrl);
-      revokeUrl(localFiles.lateNightAlcoholNotificationDocument?.previewUrl);
+      // nothing to revoke for identity docs (handled per-upload)
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -667,15 +635,9 @@ export function ListingApplicationForm() {
     docUploadLockRef.current[key] = true;
 
     const docType =
-      key === "businessLicenseDocument"
-        ? "business-license"
-        : key === "entertainmentLicenseDocument"
-          ? "entertainment-license"
-          : key === "lateNightAlcoholNotificationDocument"
-            ? "late-night-alcohol-notification"
-            : key === "identityDocumentFront"
-              ? "identity-document-front"
-              : "identity-document-back";
+      key === "identityDocumentFront"
+        ? "identity-document-front"
+        : "identity-document-back";
 
     const previewUrl =
       file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name)
@@ -1719,22 +1681,6 @@ export function ListingApplicationForm() {
             <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingLicense}
             </h2>
-            {renderDocUploader(
-              "businessLicenseDocument",
-              FORM_I18N.docBusinessLicense,
-              true,
-              FORM_I18N.docBusinessLicenseHint,
-            )}
-            {renderDocUploader(
-              "entertainmentLicenseDocument",
-              FORM_I18N.docEntertainment,
-              false,
-            )}
-            {renderDocUploader(
-              "lateNightAlcoholNotificationDocument",
-              FORM_I18N.docLateNight,
-              false,
-            )}
             <Field error={fe.openDate}>
               <label className={labelClass}>{FORM_I18N.labelOpenDate}</label>
               <input
@@ -1946,31 +1892,7 @@ export function ListingApplicationForm() {
                     <dd>{form.representativeName || FORM_I18N.emDash}</dd>
                   </div>
                 </>
-              ) : null}
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtBusinessLicense}</dt>
-                <dd>
-                  {form.businessLicenseDocument
-                    ? FORM_I18N.submitted
-                    : FORM_I18N.notSubmitted}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtEntertainment}</dt>
-                <dd>
-                  {form.entertainmentLicenseDocument
-                    ? FORM_I18N.submitted
-                    : FORM_I18N.notSubmitted}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-muted">{FORM_I18N.dtLateNight}</dt>
-                <dd>
-                  {form.lateNightAlcoholNotificationDocument
-                    ? FORM_I18N.submitted
-                    : FORM_I18N.notSubmitted}
-                </dd>
-              </div>
+              ) : null}
             </dl>
 
             <div className="mt-4 space-y-3">
