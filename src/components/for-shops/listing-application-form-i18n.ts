@@ -7,7 +7,6 @@ export const FORM_I18N = {
     "SNS・Web情報",
     "営業情報",
     "確認事項",
-    "店舗画像",
     "内容確認",
   ] as const,
 
@@ -43,9 +42,6 @@ export const FORM_I18N = {
   errConsentTerms: "利用規約・プライバシーポリシーへの同意が必要です。",
   errConsentAntisocial:
     "反社会的勢力に該当しないことの確認が必要です。",
-  errShopImagesBoth: "店舗外観と店舗内観の画像をアップロードしてください",
-  errShopExterior: "店舗外観の画像をアップロードしてください",
-  errShopInterior: "店舗内観の画像をアップロードしてください",
 
   uploadFailed: "アップロードに失敗しました。",
   imageBucketMissing:
@@ -53,8 +49,6 @@ export const FORM_I18N = {
   imageBucketMissingNeedle: "画像の保存先が設定されていません",
   imageUploadFailed:
     "画像のアップロードに失敗しました。もう一度お試しください。",
-  exteriorMax: "店舗外観は最大5枚までです。",
-  interiorMax: "店舗内観は最大10枚までです。",
   duplicateFound:
     "同じ店舗名またはメールアドレスの申請が見つかりました。内容を確認してください。",
   duplicateShort: "同じ店舗名またはメールアドレスの申請が見つかりました。",
@@ -137,14 +131,7 @@ export const FORM_I18N = {
   consentAntisocialText:
     "申請者、代表者、役員および実質的経営者は、反社会的勢力に該当せず、関係も有していません。*",
 
-  headingImages: "6. 店舗画像",
-  imagesHint: "店舗の外観と内観が分かる画像をアップロードしてください。",
-  exteriorTitle: "店舗外観",
-  exteriorDesc: "店舗の入口や建物外観が分かる画像をアップロードしてください。",
-  interiorTitle: "店舗内観",
-  interiorDesc: "店内の雰囲気や設備が分かる画像をアップロードしてください。",
-
-  headingConfirm: "7. 内容確認",
+  headingConfirm: "6. 内容確認",
   dtShopName: "店舗名",
   dtAddress: "所在地",
   dtBusinessType: "業種",
@@ -169,9 +156,6 @@ export const FORM_I18N = {
   dtLateNight: "深夜酒類提供届出",
   submitted: "提出済み",
   notSubmitted: "未提出",
-  exteriorCountPrefix: "店舗外観（",
-  interiorCountPrefix: "店舗内観（",
-  countSuffix: "枚）",
   confirmNote:
     "審査申請のみでは求人は公開されません。承認後に登録手続きへ進みます。",
 
@@ -184,8 +168,6 @@ export const FORM_I18N = {
   compressing: "圧縮中...",
   uploadingProgress: "アップロード中",
   retryUpload: "再試行",
-  uploadWait: "アップロード完了までお待ちください。",
-  duplicateImageSkipped: "同じ画像はすでに選択済みのためスキップしました。",
 } as const;
 
 /** Full-width digits ０-９ */

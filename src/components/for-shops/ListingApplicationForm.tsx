@@ -14,7 +14,6 @@ import {
   type ListingApplicantType,
   type ListingAttachment,
   type ListingDocumentMeta,
-  type ListingShopImage,
 } from "@/lib/listing-application";
 import {
   FORM_I18N,
@@ -24,31 +23,16 @@ import {
 } from "@/components/for-shops/listing-application-form-i18n";
 import {
   compressListingImage,
-  fileFingerprint,
-  mapPool,
   uploadWithProgress,
 } from "@/lib/listing-image-compress";
 
 void (null as ListingAttachment | null);
-
-const SHOP_UPLOAD_CONCURRENCY = 3;
 
 type DocUploadUi = {
   phase: "compressing" | "uploading";
   progress: number;
 };
 
-type PendingShopUpload = {
-  id: string;
-  kind: "exterior" | "interior";
-  fingerprint: string;
-  fileName: string;
-  previewUrl: string | null;
-  progress: number;
-  phase: "compressing" | "uploading" | "error";
-  error?: string;
-  sourceFile: File;
-};
 
 const DRAFT_KEY = "wnj-listing-application-draft-v2";
 const RETURN_STEP_KEY = "listingApplicationCurrentStep";
@@ -73,13 +57,10 @@ const STEPS = [
   { id: 4, title: FORM_I18N.steps[3] },
   { id: 5, title: FORM_I18N.steps[4] },
   { id: 6, title: FORM_I18N.steps[5] },
-  { id: 7, title: FORM_I18N.steps[6] },
 ] as const;
 
 const DOC_ACCEPT =
   ".pdf,.jpeg,.jpg,.png,.heic,image/jpeg,image/png,image/heic,application/pdf";
-const SHOP_IMAGE_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif";
 
 type LocalFileInfo = {
   name: string;
@@ -117,8 +98,6 @@ type FormState = {
   consentAccuracy: boolean;
   consentTerms: boolean;
   consentAntisocial: boolean;
-  shopExteriorImages: ListingShopImage[];
-  shopInteriorImages: ListingShopImage[];
   website: string;
 };
 
@@ -154,8 +133,6 @@ const EMPTY: FormState = {
   consentAccuracy: false,
   consentTerms: false,
   consentAntisocial: false,
-  shopExteriorImages: [],
-  shopInteriorImages: [],
   website: "",
 };
 
@@ -189,12 +166,6 @@ function loadDraft(): FormState | null {
     return {
       ...EMPTY,
       ...parsed,
-      shopExteriorImages: Array.isArray(parsed.shopExteriorImages)
-        ? parsed.shopExteriorImages
-        : [],
-      shopInteriorImages: Array.isArray(parsed.shopInteriorImages)
-        ? parsed.shopInteriorImages
-        : [],
       applicantType: isListingApplicantType(parsed.applicantType)
         ? parsed.applicantType
         : "",
@@ -366,17 +337,6 @@ function validateStep(
       errors.consentAntisocial = FORM_I18N.errConsentAntisocial;
     }
   }
-  if (step === 6) {
-    const exteriorEmpty = form.shopExteriorImages.length === 0;
-    const interiorEmpty = form.shopInteriorImages.length === 0;
-    if (exteriorEmpty && interiorEmpty) {
-      errors.shopExteriorImages = FORM_I18N.errShopImagesBoth;
-    } else if (exteriorEmpty) {
-      errors.shopExteriorImages = FORM_I18N.errShopExterior;
-    } else if (interiorEmpty) {
-      errors.shopInteriorImages = FORM_I18N.errShopInterior;
-    }
-  }
   return errors;
 }
 
@@ -407,9 +367,6 @@ export function ListingApplicationForm() {
   const [docUploadUi, setDocUploadUi] = useState<Partial<Record<DocKey, DocUploadUi>>>(
     {},
   );
-  const [pendingShopUploads, setPendingShopUploads] = useState<PendingShopUpload[]>(
-    [],
-  );
   const [submitMessage, setSubmitMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [duplicateWarning, setDuplicateWarning] = useState(false);
@@ -423,33 +380,16 @@ export function ListingApplicationForm() {
   const draftIdRef = useRef(draftId);
   const inFlightUploadsRef = useRef(0);
   const docUploadLockRef = useRef<Partial<Record<DocKey, boolean>>>({});
-  const shopFingerprintsRef = useRef<Set<string>>(new Set());
-  const shopSortOrderRef = useRef({ exterior: 0, interior: 0 });
-  const pendingShopCountRef = useRef({ exterior: 0, interior: 0 });
-  const shopUploadedCountRef = useRef({ exterior: 0, interior: 0 });
   const docInputRefs = useRef<Record<DocKey, HTMLInputElement | null>>({
     identityDocumentFront: null,
     identityDocumentBack: null,
   });
-  const exteriorInputRef = useRef<HTMLInputElement | null>(null);
-  const interiorInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     draftIdRef.current = draftId;
   }, [draftId]);
 
-  useEffect(() => {
-    shopUploadedCountRef.current = {
-      exterior: form.shopExteriorImages.length,
-      interior: form.shopInteriorImages.length,
-    };
-  }, [form.shopExteriorImages.length, form.shopInteriorImages.length]);
-
-  const shopUploadsBusy = pendingShopUploads.some(
-    (p) => p.phase === "compressing" || p.phase === "uploading",
-  );
-  const shopUploadsIncomplete = pendingShopUploads.length > 0;
-  const uploadsBlockingNext = uploading || shopUploadsIncomplete;
+  const uploadsBlockingNext = uploading;
 
   function beginUploadFlight() {
     inFlightUploadsRef.current += 1;
@@ -502,12 +442,6 @@ export function ListingApplicationForm() {
       } as FormState;
       setForm({
         ...merged,
-        shopExteriorImages: Array.isArray(merged.shopExteriorImages)
-          ? merged.shopExteriorImages
-          : [],
-        shopInteriorImages: Array.isArray(merged.shopInteriorImages)
-          ? merged.shopInteriorImages
-          : [],
         applicantType: isListingApplicantType(merged.applicantType)
           ? merged.applicantType
           : "",
@@ -518,27 +452,11 @@ export function ListingApplicationForm() {
       setForm(draft);
     }
     if (restoredStep) {
-      // 旧8ステップ（5=希望プラン）からの復帰を新7ステップへ寄せる
-      const mappedStep =
-        restoredStep >= 6 ? restoredStep - 1 : Math.min(restoredStep, STEPS.length);
-      setStep(Math.min(STEPS.length, Math.max(1, mappedStep)));
+      // 旧ステップ番号からの復帰を現在のステップ数へ寄せる
+      setStep(Math.min(STEPS.length, Math.max(1, restoredStep)));
       restoredFromReturnRef.current = restoredFromReturn;
       restoreScrollYRef.current = restoredScrollY;
     }
-    const initialExterior = Array.isArray(restoredForm?.shopExteriorImages)
-      ? restoredForm!.shopExteriorImages!
-      : Array.isArray(draft?.shopExteriorImages)
-        ? draft!.shopExteriorImages
-        : [];
-    const initialInterior = Array.isArray(restoredForm?.shopInteriorImages)
-      ? restoredForm!.shopInteriorImages!
-      : Array.isArray(draft?.shopInteriorImages)
-        ? draft!.shopInteriorImages
-        : [];
-    shopSortOrderRef.current = {
-      exterior: initialExterior.length,
-      interior: initialInterior.length,
-    };
     setHydrated(true);
   }, []);
 
@@ -739,211 +657,6 @@ export function ListingApplicationForm() {
     update(key, null);
   }
 
-  function patchPendingShop(
-    id: string,
-    patch: Partial<PendingShopUpload>,
-  ) {
-    setPendingShopUploads((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
-    );
-  }
-
-  function clearShopImageErrors() {
-    setFieldErrors((prev) => {
-      if (!prev.shopExteriorImages && !prev.shopInteriorImages) return prev;
-      const next = { ...prev };
-      delete next.shopExteriorImages;
-      delete next.shopInteriorImages;
-      return next;
-    });
-  }
-
-  async function runShopImageUpload(pending: PendingShopUpload) {
-    beginUploadFlight();
-    patchPendingShop(pending.id, {
-      phase: "compressing",
-      progress: 0,
-      error: undefined,
-    });
-    try {
-      const compressed = await compressListingImage(pending.sourceFile, {
-        preferWebp: true,
-      });
-      patchPendingShop(pending.id, { phase: "uploading", progress: 0 });
-
-      const sortOrder = shopSortOrderRef.current[pending.kind]++;
-      const body = new FormData();
-      body.append("file", compressed.file);
-      body.append("draftId", draftIdRef.current);
-      body.append(
-        "docType",
-        pending.kind === "exterior" ? "shop-exterior" : "shop-interior",
-      );
-      body.append("sortOrder", String(sortOrder));
-
-      const res = await uploadWithProgress(
-        "/api/listing-applications/upload",
-        body,
-        (percent) => {
-          patchPendingShop(pending.id, {
-            phase: "uploading",
-            progress: percent,
-          });
-        },
-      );
-      const data = (await res.json()) as {
-        message?: string;
-        draftId?: string;
-        image?: ListingShopImage;
-      };
-      if (!res.ok) {
-        throw new Error(data.message ?? FORM_I18N.uploadFailed);
-      }
-      if (data.draftId) setDraftId(data.draftId);
-      if (data.image) {
-        if (pending.kind === "exterior") {
-          setForm((c) => ({
-            ...c,
-            shopExteriorImages: [...c.shopExteriorImages, data.image!],
-          }));
-        } else {
-          setForm((c) => ({
-            ...c,
-            shopInteriorImages: [...c.shopInteriorImages, data.image!],
-          }));
-        }
-        clearShopImageErrors();
-      }
-      shopFingerprintsRef.current.delete(pending.fingerprint);
-      pendingShopCountRef.current[pending.kind] = Math.max(
-        0,
-        pendingShopCountRef.current[pending.kind] - 1,
-      );
-      setPendingShopUploads((prev) => {
-        const target = prev.find((p) => p.id === pending.id);
-        if (target?.previewUrl) revokeUrl(target.previewUrl);
-        return prev.filter((p) => p.id !== pending.id);
-      });
-    } catch (e) {
-      shopFingerprintsRef.current.delete(pending.fingerprint);
-      const message =
-        e instanceof Error ? e.message : FORM_I18N.uploadFailed;
-      patchPendingShop(pending.id, {
-        phase: "error",
-        progress: 0,
-        error: message,
-      });
-      setSubmitMessage(message);
-      scrollToStepHeader();
-    } finally {
-      endUploadFlight();
-    }
-  }
-
-  async function enqueueShopImages(
-    files: File[],
-    kind: "exterior" | "interior",
-  ) {
-    const max = kind === "exterior" ? 5 : 10;
-    let slots =
-      max -
-      shopUploadedCountRef.current[kind] -
-      pendingShopCountRef.current[kind];
-
-    if (slots <= 0) {
-      setSubmitMessage(
-        kind === "exterior" ? FORM_I18N.exteriorMax : FORM_I18N.interiorMax,
-      );
-      scrollToStepHeader();
-      return;
-    }
-
-    setSubmitMessage("");
-    const toStart: PendingShopUpload[] = [];
-    let skippedDuplicate = false;
-
-    for (const file of files) {
-      if (slots <= 0) {
-        setSubmitMessage(
-          kind === "exterior" ? FORM_I18N.exteriorMax : FORM_I18N.interiorMax,
-        );
-        scrollToStepHeader();
-        break;
-      }
-      const fingerprint = fileFingerprint(file);
-      if (shopFingerprintsRef.current.has(fingerprint)) {
-        skippedDuplicate = true;
-        continue;
-      }
-      shopFingerprintsRef.current.add(fingerprint);
-      const id = crypto.randomUUID();
-      const previewUrl = URL.createObjectURL(file);
-      toStart.push({
-        id,
-        kind,
-        fingerprint,
-        fileName: file.name,
-        previewUrl,
-        progress: 0,
-        phase: "compressing",
-        sourceFile: file,
-      });
-      slots -= 1;
-    }
-
-    if (skippedDuplicate && toStart.length === 0) {
-      setSubmitMessage(FORM_I18N.duplicateImageSkipped);
-      scrollToStepHeader();
-      return;
-    }
-    if (skippedDuplicate) {
-      setSubmitMessage(FORM_I18N.duplicateImageSkipped);
-    }
-    if (toStart.length === 0) return;
-
-    pendingShopCountRef.current[kind] += toStart.length;
-    setPendingShopUploads((prev) => [...prev, ...toStart]);
-    await mapPool(toStart, SHOP_UPLOAD_CONCURRENCY, async (item) => {
-      await runShopImageUpload(item);
-    });
-  }
-
-  function retryShopUpload(id: string) {
-    const pending = pendingShopUploads.find((p) => p.id === id);
-    if (!pending || pending.phase !== "error") return;
-    shopFingerprintsRef.current.add(pending.fingerprint);
-    void runShopImageUpload(pending);
-  }
-
-  function dismissPendingShop(id: string) {
-    setPendingShopUploads((prev) => {
-      const target = prev.find((p) => p.id === id);
-      if (target) {
-        shopFingerprintsRef.current.delete(target.fingerprint);
-        pendingShopCountRef.current[target.kind] = Math.max(
-          0,
-          pendingShopCountRef.current[target.kind] - 1,
-        );
-        revokeUrl(target.previewUrl);
-      }
-      return prev.filter((p) => p.id !== id);
-    });
-  }
-
-  function removeShopImage(kind: "exterior" | "interior", storagePath: string) {
-    if (kind === "exterior") {
-      update(
-        "shopExteriorImages",
-        form.shopExteriorImages.filter((img) => img.storagePath !== storagePath),
-      );
-    } else {
-      update(
-        "shopInteriorImages",
-        form.shopInteriorImages.filter((img) => img.storagePath !== storagePath),
-      );
-    }
-  }
-
   async function submit(confirmDuplicate = false) {
     if (submittingRef.current) return;
 
@@ -971,14 +684,6 @@ export function ListingApplicationForm() {
       setSubmitMessage(FORM_I18N.errGeneric);
       shouldScrollRef.current = true;
       setStep(5);
-      return;
-    }
-    const imageErrors = validateStep(6, form, localFiles);
-    if (Object.keys(imageErrors).length > 0) {
-      setFieldErrors(imageErrors);
-      setSubmitMessage(FORM_I18N.errGeneric);
-      shouldScrollRef.current = true;
-      setStep(6);
       return;
     }
 
@@ -1134,194 +839,6 @@ export function ListingApplicationForm() {
           </div>
         )}
       </Field>
-    );
-  }
-
-  function renderShopImageSection(
-    kind: "exterior" | "interior",
-    title: string,
-    description: string,
-    max: number,
-  ) {
-    const images =
-      kind === "exterior" ? form.shopExteriorImages : form.shopInteriorImages;
-    const inputRef = kind === "exterior" ? exteriorInputRef : interiorInputRef;
-    const errorKey =
-      kind === "exterior" ? "shopExteriorImages" : "shopInteriorImages";
-    const error = fieldErrors[errorKey] ?? fieldErrors.shopExteriorImages;
-
-    return (
-      <div
-        className="space-y-3"
-        data-error-field={
-          kind === "exterior"
-            ? fieldErrors.shopExteriorImages
-              ? "1"
-              : undefined
-            : fieldErrors.shopInteriorImages ||
-                (fieldErrors.shopExteriorImages &&
-                  form.shopExteriorImages.length > 0 &&
-                  form.shopInteriorImages.length === 0)
-              ? "1"
-              : undefined
-        }
-      >
-        <div>
-          <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
-          <p className="mt-1 text-xs text-muted">{description}</p>
-        </div>
-        {kind === "exterior" && error ? (
-          <p className={errTextClass}>{error}</p>
-        ) : null}
-        {kind === "interior" && fieldErrors.shopInteriorImages ? (
-          <p className={errTextClass}>{fieldErrors.shopInteriorImages}</p>
-        ) : null}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={SHOP_IMAGE_ACCEPT}
-          multiple
-          className="sr-only absolute h-0 w-0 opacity-0"
-          tabIndex={-1}
-          onChange={(e) => {
-            const list = e.target.files;
-            if (list && list.length > 0) {
-              void enqueueShopImages(Array.from(list), kind);
-            }
-            e.target.value = "";
-          }}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          {pendingShopUploads
-            .filter((p) => p.kind === kind)
-            .map((p) => (
-              <div
-                key={p.id}
-                className="overflow-hidden rounded-xl border border-gold/25 bg-white"
-              >
-                {p.previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.previewUrl}
-                    alt={p.fileName}
-                    className="aspect-square w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
-                    {FORM_I18N.noPreview}
-                  </div>
-                )}
-                <div className="space-y-1 p-2">
-                  <p className="truncate text-xs font-medium text-charcoal">
-                    {p.fileName}
-                  </p>
-                  {p.phase === "error" ? (
-                    <>
-                      <p className="text-[11px] text-red-600">
-                        {p.error ?? FORM_I18N.uploadFailed}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={() => retryShopUpload(p.id)}
-                          className="text-xs text-gold-dark disabled:opacity-60"
-                        >
-                          {FORM_I18N.retryUpload}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={loading}
-                          onClick={() => dismissPendingShop(p.id)}
-                          className="text-xs text-red-600 disabled:opacity-60"
-                        >
-                          {FORM_I18N.removeShort}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-[11px] text-muted">
-                        {p.phase === "compressing"
-                          ? FORM_I18N.compressing
-                          : `${FORM_I18N.uploadingProgress} ${p.progress}%`}
-                      </p>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-gold/15">
-                        <div
-                          className="h-full rounded-full bg-gold transition-[width]"
-                          style={{
-                            width: `${
-                              p.phase === "compressing"
-                                ? 8
-                                : Math.max(8, p.progress)
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          {images.map((img) => (
-            <div
-              key={img.storagePath}
-              className="overflow-hidden rounded-xl border border-gold/25 bg-white"
-            >
-              <button
-                type="button"
-                className="block w-full"
-                onClick={() => {
-                  if (img.signedUrl) window.open(img.signedUrl, "_blank");
-                }}
-              >
-                {img.signedUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={img.signedUrl}
-                    alt={img.fileName}
-                    className="aspect-square w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
-                    {FORM_I18N.noPreview}
-                  </div>
-                )}
-              </button>
-              <div className="space-y-1 p-2">
-                <p className="truncate text-xs font-medium text-charcoal">
-                  {img.fileName}
-                </p>
-                <p className="text-[11px] text-muted">{formatBytes(img.size)}</p>
-                <button
-                  type="button"
-                  disabled={loading}
-                  onClick={() => removeShopImage(kind, img.storagePath)}
-                  className="text-xs text-red-600 disabled:opacity-60"
-                >
-                  {FORM_I18N.removeShort}
-                </button>
-              </div>
-            </div>
-          ))}
-          {images.length +
-            pendingShopUploads.filter((p) => p.kind === kind).length <
-          max ? (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => inputRef.current?.click()}
-              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gold/40 bg-ivory/50 text-sm text-gold-dark disabled:opacity-60"
-            >
-              <span className="text-lg leading-none">{FORM_I18N.plus}</span>
-              <span>{FORM_I18N.add}</span>
-              <span className="text-[11px] text-muted">
-                {images.length}/{max}
-              </span>
-            </button>
-          ) : null}
-        </div>
-      </div>
     );
   }
 
@@ -1777,34 +1294,6 @@ export function ListingApplicationForm() {
         {step === 6 ? (
           <section className={sectionClass}>
             <h2 className="font-serif text-lg text-charcoal">
-              {FORM_I18N.headingImages}
-            </h2>
-            <p className="text-xs text-muted">{FORM_I18N.imagesHint}</p>
-            {renderShopImageSection(
-              "exterior",
-              FORM_I18N.exteriorTitle,
-              FORM_I18N.exteriorDesc,
-              5,
-            )}
-            {renderShopImageSection(
-              "interior",
-              FORM_I18N.interiorTitle,
-              FORM_I18N.interiorDesc,
-              10,
-            )}
-            {uploadsBlockingNext ? (
-              <p className="text-sm text-muted">
-                {shopUploadsBusy || uploading
-                  ? FORM_I18N.uploading
-                  : FORM_I18N.uploadWait}
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {step === 7 ? (
-          <section className={sectionClass}>
-            <h2 className="font-serif text-lg text-charcoal">
               {FORM_I18N.headingConfirm}
             </h2>
             <dl className="space-y-2 text-sm text-charcoal">
@@ -1894,73 +1383,6 @@ export function ListingApplicationForm() {
                 </>
               ) : null}
             </dl>
-
-            <div className="mt-4 space-y-3">
-              <div>
-                <p className="text-sm font-medium text-charcoal">
-                  {FORM_I18N.exteriorCountPrefix}
-                  {form.shopExteriorImages.length}
-                  {FORM_I18N.countSuffix}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {form.shopExteriorImages.map((img) => (
-                    <button
-                      key={img.storagePath}
-                      type="button"
-                      onClick={() => {
-                        if (img.signedUrl) window.open(img.signedUrl, "_blank");
-                      }}
-                      className="overflow-hidden rounded-lg border border-gold/20"
-                    >
-                      {img.signedUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={img.signedUrl}
-                          alt={img.fileName}
-                          className="aspect-square w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
-                          {img.fileName}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-charcoal">
-                  {FORM_I18N.interiorCountPrefix}
-                  {form.shopInteriorImages.length}
-                  {FORM_I18N.countSuffix}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {form.shopInteriorImages.map((img) => (
-                    <button
-                      key={img.storagePath}
-                      type="button"
-                      onClick={() => {
-                        if (img.signedUrl) window.open(img.signedUrl, "_blank");
-                      }}
-                      className="overflow-hidden rounded-lg border border-gold/20"
-                    >
-                      {img.signedUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={img.signedUrl}
-                          alt={img.fileName}
-                          className="aspect-square w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex aspect-square items-center justify-center bg-ivory text-xs text-muted">
-                          {img.fileName}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
 
             <p className="mt-4 text-xs text-muted">{FORM_I18N.confirmNote}</p>
           </section>
