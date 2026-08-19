@@ -329,10 +329,6 @@ export function validateListingApplicationInput(
     return "身分証明書（裏面）の形式が正しくありません。";
   }
 
-  if (!isDocMeta(input.businessLicenseDocument)) {
-    return "営業許可証をアップロードしてください。";
-  }
-
   if (!input.consentAccuracy) {
     return "求人内容と実際の勤務条件に相違がないことへの同意が必要です。";
   }
@@ -375,33 +371,6 @@ export function validateListingApplicationInput(
     return "オープン日はYYYY-MM-DD形式で入力してください。";
   }
 
-
-  const exterior = Array.isArray(input.shopExteriorImages)
-    ? input.shopExteriorImages
-    : [];
-  const interior = Array.isArray(input.shopInteriorImages)
-    ? input.shopInteriorImages
-    : [];
-  if (exterior.length === 0 && interior.length === 0) {
-    return "店舗外観と店舗内観の画像をアップロードしてください";
-  }
-  if (exterior.length === 0) {
-    return "店舗外観の画像をアップロードしてください";
-  }
-  if (interior.length === 0) {
-    return "店舗内観の画像をアップロードしてください";
-  }
-  if (exterior.length > 5) {
-    return "店舗外観は最大5枚までです。";
-  }
-  if (interior.length > 10) {
-    return "店舗内観は最大10枚までです。";
-  }
-  for (const img of [...exterior, ...interior]) {
-    if (!isShopImage(img)) {
-      return "店舗画像の形式が正しくありません。";
-    }
-  }
 
   return null;
 }
