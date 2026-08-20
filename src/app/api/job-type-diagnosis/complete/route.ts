@@ -16,6 +16,8 @@ export async function POST(request: Request) {
       completionKey?: string;
       resultJobType?: string;
       area?: string;
+      anonymousId?: string;
+      pagePath?: string;
       // クライアントからの event_type 指定は無視する
       event_type?: unknown;
       eventType?: unknown;
@@ -36,6 +38,8 @@ export async function POST(request: Request) {
       resultJobType: body.resultJobType ?? null,
       area: body.area ?? null,
       userAgent: request.headers.get("user-agent"),
+      anonymousId: body.anonymousId ?? null,
+      pagePath: body.pagePath ?? null,
     });
 
     return NextResponse.json({ ok: true, inserted: result.inserted });

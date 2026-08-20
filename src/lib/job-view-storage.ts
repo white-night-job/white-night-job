@@ -31,12 +31,21 @@ export async function recordJobView(jobId: string): Promise<void> {
   if (shouldSkipDuplicateView(jobId)) return;
 
   try {
+    const { getUserActivityClientContext } = await import(
+      "@/lib/user-activity-client"
+    );
+    const { anonymousId, attribution } = getUserActivityClientContext();
+
     const response = await fetch(`/api/jobs/${jobId}/views`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         referrer:
           typeof document !== "undefined" ? document.referrer || null : null,
+        anonymousId,
+        attribution,
+        pagePath:
+          typeof window !== "undefined" ? window.location.pathname : null,
       }),
       keepalive: true,
     });

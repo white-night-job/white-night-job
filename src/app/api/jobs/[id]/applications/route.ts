@@ -5,6 +5,11 @@ import {
   isInternalAnalyticsRequest,
 } from "@/lib/job-analytics";
 import type { JobApplicationType } from "@/lib/job-applications";
+import {
+  buildUserActivityMetadata,
+  insertUserActivityEvent,
+  type UserActivityAttribution,
+} from "@/lib/user-activity-events";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 type RouteContext = {
@@ -21,6 +26,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     const body = (await request.json()) as {
       type?: unknown;
       sessionId?: string | null;
+      anonymousId?: string | null;
+      attribution?: UserActivityAttribution | null;
+      pagePath?: string | null;
     };
 
     if (!isApplicationType(body.type)) {
@@ -53,6 +61,25 @@ export async function POST(request: Request, { params }: RouteContext) {
         type: body.type,
       });
       if (error) throw error;
+
+      try {
+        await insertUserActivityEvent(supabase, {
+          eventType:
+            body.type === "line" ? "line_apply_click" : "phone_apply_click",
+          jobId,
+          shopId: jobId,
+          anonymousId: body.anonymousId,
+          pagePath: body.pagePath,
+          metadata: buildUserActivityMetadata({
+            attribution: {
+              ...(body.attribution ?? {}),
+              referrer: body.attribution?.referrer || referrer,
+            },
+          }),
+        });
+      } catch {
+        // Table may be missing until SQL migration.
+      }
     }
 
     try {

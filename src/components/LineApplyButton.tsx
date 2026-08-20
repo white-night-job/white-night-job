@@ -74,7 +74,7 @@ function ConfirmApplyModal({
   );
 }
 
-const APPLY_CLICK_COOLDOWN_MS = 800;
+const APPLY_CLICK_COOLDOWN_MS = 2000;
 
 function useApplyConfirm(
   jobId?: string,

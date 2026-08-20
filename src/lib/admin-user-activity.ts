@@ -77,12 +77,11 @@ export function getUserActivityPeriodRange(
 ): { startIso: string; endIso: string; label: string } {
   const now = options?.now ?? new Date();
   const today = jstYmd(now);
-  const tomorrow = addDays(today.year, today.month, today.day, 1);
 
   if (period === "today") {
     return {
       startIso: jstDayStartIso(today.year, today.month, today.day),
-      endIso: jstDayStartIso(tomorrow.year, tomorrow.month, tomorrow.day),
+      endIso: now.toISOString(),
       label: "今日",
     };
   }
@@ -91,7 +90,7 @@ export function getUserActivityPeriodRange(
     const bounds = getJstMonthBounds(0, now);
     return {
       startIso: bounds.startIso,
-      endIso: bounds.endIso,
+      endIso: now.toISOString(),
       label: "今月",
     };
   }
@@ -100,6 +99,7 @@ export function getUserActivityPeriodRange(
     const bounds = getJstMonthBounds(-1, now);
     return {
       startIso: bounds.startIso,
+      // 先月1日 00:00 〜 先月末日 23:59:59（翌月1日 00:00 未満）
       endIso: bounds.endIso,
       label: "先月",
     };

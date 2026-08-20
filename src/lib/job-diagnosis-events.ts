@@ -1,5 +1,9 @@
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { deviceTypeFromUserAgent } from "@/lib/admin-user-activity";
+import {
+  buildUserActivityMetadata,
+  insertUserActivityEvent,
+} from "@/lib/user-activity-events";
 
 export const JOB_DIAGNOSIS_COMPLETED = "job_diagnosis_completed" as const;
 
@@ -10,6 +14,8 @@ export type JobDiagnosisCompletedInput = {
   area?: string | null;
   userAgent?: string | null;
   occurredAt?: string | null;
+  anonymousId?: string | null;
+  pagePath?: string | null;
 };
 
 /**
@@ -44,5 +50,24 @@ export async function recordJobDiagnosisCompleted(
     }
     throw error;
   }
+
+  try {
+    await insertUserActivityEvent(supabase, {
+      eventType: "job_diagnosis_complete",
+      anonymousId: input.anonymousId?.trim() || sessionId.slice(0, 120),
+      pagePath: input.pagePath ?? "/diagnosis",
+      dedupeWindowMs: null,
+      metadata: buildUserActivityMetadata({
+        extra: {
+          completion_key: completionKey.slice(0, 120),
+          result_job_type: input.resultJobType?.trim().slice(0, 80) || null,
+          area: input.area?.trim().slice(0, 80) || null,
+        },
+      }),
+    });
+  } catch {
+    // Table may be missing until SQL migration.
+  }
+
   return { inserted: true };
 }

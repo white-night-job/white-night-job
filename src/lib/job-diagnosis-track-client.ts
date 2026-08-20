@@ -45,6 +45,11 @@ export async function trackJobDiagnosisCompleted(input: {
   markTracked(completionKey);
 
   try {
+    const { getUserActivityClientContext } = await import(
+      "@/lib/user-activity-client"
+    );
+    const { anonymousId } = getUserActivityClientContext();
+
     await fetch("/api/job-type-diagnosis/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -54,6 +59,9 @@ export async function trackJobDiagnosisCompleted(input: {
         completionKey,
         resultJobType: input.resultJobType ?? null,
         area: input.area ?? null,
+        anonymousId,
+        pagePath:
+          typeof window !== "undefined" ? window.location.pathname : null,
       }),
     });
   } catch (error) {

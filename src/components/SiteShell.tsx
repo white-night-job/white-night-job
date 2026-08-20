@@ -6,6 +6,7 @@ import { ChatBot } from "@/components/ChatBot";
 import { CompareProvider } from "@/components/CompareProvider";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { SiteVisitTracker } from "@/components/SiteVisitTracker";
 
 /**
  * Public site chrome. Admin routes (/admin/*) render children only —
@@ -33,6 +34,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <CompareProvider>
+      <SiteVisitTracker />
       <Header />
       <main className="min-w-0 flex-1">{children}</main>
       <Footer />

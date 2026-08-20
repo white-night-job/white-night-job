@@ -16,12 +16,19 @@ export function ReportForm() {
     setMessage("");
 
     const formData = new FormData(form);
+    const { getUserActivityClientContext } = await import(
+      "@/lib/user-activity-client"
+    );
+    const { anonymousId, attribution } = getUserActivityClientContext();
     const payload = {
       shopName: String(formData.get("shopName") ?? ""),
       area: String(formData.get("area") ?? ""),
       category: String(formData.get("category") ?? ""),
       detail: String(formData.get("detail") ?? ""),
       contact: String(formData.get("contact") ?? ""),
+      anonymousId,
+      attribution,
+      pagePath: window.location.pathname,
     };
 
     try {

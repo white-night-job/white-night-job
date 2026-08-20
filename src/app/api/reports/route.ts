@@ -5,6 +5,11 @@ import {
   getClientIp,
   sendReportEmail,
 } from "@/lib/report-email";
+import {
+  buildUserActivityMetadata,
+  insertUserActivityEvent,
+  type UserActivityAttribution,
+} from "@/lib/user-activity-events";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 type ReportBody = {
@@ -13,6 +18,9 @@ type ReportBody = {
   category?: string;
   detail?: string;
   contact?: string;
+  anonymousId?: string;
+  attribution?: UserActivityAttribution | null;
+  pagePath?: string;
 };
 
 export async function POST(request: Request) {
@@ -52,6 +60,25 @@ export async function POST(request: Request) {
 
     dbSaved = true;
     console.log("[reports] DB save succeeded:", { shopName, category });
+
+    try {
+      await insertUserActivityEvent(supabase, {
+        eventType: "black_shop_report",
+        anonymousId: body.anonymousId ?? null,
+        pagePath: body.pagePath ?? "/report",
+        dedupeWindowMs: null,
+        metadata: buildUserActivityMetadata({
+          attribution: body.attribution,
+          extra: {
+            shop_name: shopName.slice(0, 120),
+            category: String(category).slice(0, 80),
+            area: area?.slice(0, 80) || null,
+          },
+        }),
+      });
+    } catch {
+      // Table may be missing until SQL migration.
+    }
 
     try {
       await sendReportEmail({

@@ -5,6 +5,11 @@ import {
   isInternalAnalyticsRequest,
 } from "@/lib/job-analytics";
 import { insertJobViewRow } from "@/lib/insert-job-view";
+import {
+  buildUserActivityMetadata,
+  insertUserActivityEvent,
+  type UserActivityAttribution,
+} from "@/lib/user-activity-events";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +24,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     const body = (await request.json().catch(() => ({}))) as {
       referrer?: string | null;
       sessionId?: string | null;
+      anonymousId?: string | null;
+      attribution?: UserActivityAttribution | null;
+      pagePath?: string | null;
     };
 
     const supabase = createSupabaseAdmin();
@@ -48,6 +56,23 @@ export async function POST(request: Request, { params }: RouteContext) {
           jobId,
           userAgent,
           referrer,
+        }),
+      );
+      tasks.push(
+        insertUserActivityEvent(supabase, {
+          eventType: "job_detail_view",
+          jobId,
+          shopId: jobId,
+          anonymousId: body.anonymousId,
+          pagePath: body.pagePath,
+          metadata: buildUserActivityMetadata({
+            attribution: {
+              ...(body.attribution ?? {}),
+              referrer: body.attribution?.referrer || referrer,
+            },
+          }),
+        }).catch(() => {
+          // Table may be missing until SQL migration.
         }),
       );
     }

@@ -9,11 +9,13 @@ import {
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { JOB_DIAGNOSIS_COMPLETED } from "@/lib/job-diagnosis-events";
+import { isUserActivityTableMissing } from "@/lib/user-activity-events";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
 const SHOP_STATS_LIMIT = 50;
+const FETCH_ERROR_NOTE = "データを取得できませんでした";
 
 type JobMeta = {
   shop_name: string | null;
@@ -37,6 +39,7 @@ export async function GET(request: Request) {
     const supabase = createSupabaseAdmin();
 
     const [
+      siteVisitsResult,
       viewsCountResult,
       lineCountResult,
       phoneCountResult,
@@ -45,6 +48,12 @@ export async function GET(request: Request) {
       allViewsResult,
       allAppsResult,
     ] = await Promise.all([
+      supabase
+        .from("user_activity_events")
+        .select("id", { count: "exact", head: true })
+        .eq("event_type", "site_visit")
+        .gte("created_at", startIso)
+        .lt("created_at", endIso),
       supabase
         .from("job_views")
         .select("id", { count: "exact", head: true })
@@ -84,6 +93,13 @@ export async function GET(request: Request) {
         .gte("created_at", startIso)
         .lt("created_at", endIso),
     ]);
+
+    const siteVisitsTableMissing =
+      Boolean(siteVisitsResult.error) &&
+      isUserActivityTableMissing(siteVisitsResult.error);
+    if (siteVisitsResult.error && !siteVisitsTableMissing) {
+      throw siteVisitsResult.error;
+    }
 
     if (viewsCountResult.error) throw viewsCountResult.error;
     if (lineCountResult.error) throw lineCountResult.error;
@@ -168,7 +184,14 @@ export async function GET(request: Request) {
         endIso,
       },
       summary: {
-        siteVisits: unavailableMetric("現在取得していません"),
+        siteVisits: siteVisitsTableMissing
+          ? unavailableMetric(
+              "サイト訪問の集計準備中です（マイグレーション後に反映）",
+            )
+          : availableMetric(
+              siteVisitsResult.count ?? 0,
+              "同一ユーザーの30分以内の再訪問は1回として集計",
+            ),
         jobDetailViews: availableMetric(viewsCountResult.count ?? 0),
         lineClicks: availableMetric(lineCountResult.count ?? 0),
         phoneClicks: availableMetric(phoneCountResult.count ?? 0),
@@ -188,10 +211,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        message: getErrorMessage(
-          error,
-          "女の子利用状況の取得に失敗しました。",
-        ),
+        message: getErrorMessage(error, FETCH_ERROR_NOTE),
       },
       { status: 500 },
     );

@@ -52,14 +52,18 @@ const SUMMARY_CARDS: Array<{
 function MetricCard({
   label,
   metric,
+  loading,
 }: {
   label: string;
-  metric: MetricAvailability;
+  metric: MetricAvailability | null;
+  loading?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
       <p className="text-sm font-medium text-muted">{label}</p>
-      {metric.available ? (
+      {loading && !metric ? (
+        <p className="mt-3 text-sm font-medium text-muted">集計中…</p>
+      ) : metric?.available ? (
         <>
           <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
             {(metric.value ?? 0).toLocaleString("ja-JP")}
@@ -70,7 +74,7 @@ function MetricCard({
         </>
       ) : (
         <p className="mt-3 text-sm font-medium text-gold-dark">
-          {metric.note ?? "現在取得していません"}
+          {metric?.note ?? "データを取得できませんでした"}
         </p>
       )}
     </div>
@@ -100,12 +104,14 @@ export function UserActivityPanel() {
       );
       const body = (await response.json()) as ActivityResponse;
       if (!response.ok) {
-        throw new Error(body.message ?? "取得に失敗しました。");
+        throw new Error(body.message ?? "データを取得できませんでした");
       }
       setData(body);
     } catch (err) {
       setData(null);
-      setError(err instanceof Error ? err.message : "取得に失敗しました。");
+      setError(
+        err instanceof Error ? err.message : "データを取得できませんでした",
+      );
     } finally {
       setLoading(false);
     }
@@ -208,6 +214,7 @@ export function UserActivityPanel() {
                 key={card.key}
                 label={card.label}
                 metric={data.summary[card.key]}
+                loading={loading}
               />
             ))}
           </section>

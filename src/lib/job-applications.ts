@@ -415,10 +415,21 @@ export async function recordJobApplication(
   type: JobApplicationType,
 ): Promise<void> {
   try {
+    const { getUserActivityClientContext } = await import(
+      "@/lib/user-activity-client"
+    );
+    const { anonymousId, attribution } = getUserActivityClientContext();
+
     await fetch(`/api/jobs/${jobId}/applications`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type }),
+      body: JSON.stringify({
+        type,
+        anonymousId,
+        attribution,
+        pagePath:
+          typeof window !== "undefined" ? window.location.pathname : null,
+      }),
     });
   } catch {
     // 記録失敗時も応募導線は継続する
