@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 
 type HistoryRow = {
   id: string;
@@ -223,7 +224,7 @@ export function LineNotificationHistoryPanel({
                       ) : null}
                     </td>
                     <td className="px-2 py-2">{row.shopName}</td>
-                    <td className="px-2 py-2">{row.district}</td>
+                    <td className="px-2 py-2">{formatDistrictLabel(row.district) || "—"}</td>
                     <td className="px-2 py-2">{row.targetCount}</td>
                     <td className="px-2 py-2 text-[#047a3b]">{row.successCount}</td>
                     <td className="px-2 py-2 text-red-600">{row.failCount}</td>
@@ -250,7 +251,7 @@ export function LineNotificationHistoryPanel({
               >
                 <span className="text-charcoal">
                   {row.shopName}
-                  <span className="ml-2 text-xs text-muted">{row.district}</span>
+                  <span className="ml-2 text-xs text-muted">{formatDistrictLabel(row.district)}</span>
                 </span>
                 <span className="font-semibold text-gold-dark">{row.sendCount}回</span>
               </li>

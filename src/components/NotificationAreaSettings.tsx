@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 import { NOTIFICATION_AREA_OPTIONS } from "@/lib/notification-areas";
 import {
   MIN_HOURLY_WAGE_OPTIONS,
@@ -132,7 +133,7 @@ export function NotificationPreferenceForm({
                   checked={settings.notificationAreas.includes(area)}
                   onChange={() => toggleArea(area)}
                 />
-                {area}
+                {formatDistrictLabel(area)}
               </label>
             ),
           )}

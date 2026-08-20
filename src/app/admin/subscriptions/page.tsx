@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 import {
   STRIPE_BILLING_DEFINITIONS,
   STRIPE_BILLING_KEYS,
@@ -779,7 +780,9 @@ export default function AdminSubscriptionsPage() {
                           {store.shopName}
                         </span>
                         <span className="text-xs text-muted">
-                          {store.district ?? "エリア未設定"}
+                          {store.district
+                            ? formatDistrictLabel(store.district)
+                            : "エリア未設定"}
                           {store.linkedStripeSubscriptionId
                             ? " · 別契約が紐付き済み"
                             : ""}

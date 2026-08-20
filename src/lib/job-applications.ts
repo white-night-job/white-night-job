@@ -51,7 +51,7 @@ export const REGION_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: FIXED_AREA, label: FIXED_AREA },
   { value: "すすきの", label: "すすきの" },
   { value: "琴似", label: "琴似" },
-  { value: "24条", label: "24条" },
+  { value: "24条", label: "北24条" },
   { value: "手稲", label: "手稲" },
 ];
 

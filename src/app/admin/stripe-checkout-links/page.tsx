@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 import type { StripeBillingKey } from "@/lib/stripe-billing";
 import {
   appendStoreIdToCheckoutUrl,
@@ -270,7 +271,10 @@ export default function AdminStripeCheckoutLinksPage() {
                     {selectedStore.shopName}
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-muted">
-                    {selectedStore.district ?? "エリア未設定"} · ID{" "}
+                    {selectedStore.district
+                      ? formatDistrictLabel(selectedStore.district)
+                      : "エリア未設定"}{" "}
+                    · ID{" "}
                     {shortStoreId(selectedStore.id)}
                   </span>
                 </>
@@ -319,7 +323,10 @@ export default function AdminStripeCheckoutLinksPage() {
                         {store.shopName}
                       </span>
                       <span className="text-xs text-muted">
-                        {store.district ?? "エリア未設定"} · ID{" "}
+                        {store.district
+                          ? formatDistrictLabel(store.district)
+                          : "エリア未設定"}{" "}
+                        · ID{" "}
                         {shortStoreId(store.id)}
                       </span>
                     </button>

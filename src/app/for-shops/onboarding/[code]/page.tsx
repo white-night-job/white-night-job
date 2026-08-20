@@ -8,6 +8,7 @@ import {
   PAID_JOB_PLANS,
   type PaidJobPlan,
 } from "@/lib/job-plan";
+import { formatDistrictLabel } from "@/data/districts";
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold";
@@ -214,7 +215,7 @@ export default function ShopOnboardingPage() {
               <option value="">選択してください</option>
               {districts.map((d) => (
                 <option key={d} value={d}>
-                  {d}
+                  {formatDistrictLabel(d)}
                 </option>
               ))}
             </select>

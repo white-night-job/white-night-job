@@ -1,4 +1,5 @@
 import type { JobFilters } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 
 export type SavedSearchFilters = Pick<
   JobFilters,
@@ -70,7 +71,7 @@ const SALARY_LABELS: Record<string, string> = {
 
 export function describeSearchHistory(filters: SavedSearchFilters): string[] {
   const lines: string[] = [];
-  if (filters.district) lines.push(`エリア: ${filters.district}`);
+  if (filters.district) lines.push(`エリア: ${formatDistrictLabel(filters.district)}`);
   if (filters.jobType) lines.push(`職種: ${filters.jobType}`);
   if (filters.minSalary) {
     lines.push(`時給: ${SALARY_LABELS[filters.minSalary] ?? `${filters.minSalary}円以上`}`);

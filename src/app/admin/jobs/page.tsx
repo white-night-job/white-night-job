@@ -25,7 +25,7 @@ import {
   getKnownBenefits,
   getUncategorizedBenefits,
 } from "@/data/benefits";
-import { DISTRICTS } from "@/data/districts";
+import { DISTRICTS, formatDistrictLabel } from "@/data/districts";
 import {
   emptyApplicationDetail,
   formatApplicationDateTime,
@@ -1588,7 +1588,7 @@ function AdminJobsPageInner() {
                                   <span className="mx-1.5 text-gold/40" aria-hidden>
                                     /
                                   </span>
-                                  {job.district}内 {districtLabel}
+                                  {formatDistrictLabel(job.district)}内 {districtLabel}
                                 </p>
                               );
                             })()}
@@ -1728,7 +1728,7 @@ function AdminJobsPageInner() {
                       <option value="all">すべて</option>
                       {DISTRICTS.map((d) => (
                         <option key={d} value={d}>
-                          {d}
+                          {formatDistrictLabel(d)}
                         </option>
                       ))}
                     </select>
@@ -1855,7 +1855,7 @@ function AdminJobsPageInner() {
                             <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
                               <div className="flex flex-wrap gap-x-2">
                                 <dt className="text-muted">エリア:</dt>
-                                <dd>{job.district || "—"}</dd>
+                                <dd>{formatDistrictLabel(job.district) || "—"}</dd>
                               </div>
                               <div className="flex flex-wrap gap-x-2">
                                 <dt className="text-muted">業種:</dt>
@@ -2256,7 +2256,7 @@ function AdminJobsPageInner() {
               </div>
               <div>
                 <dt className="text-xs text-gold-light/80">
-                  エリア内表示順位（{form.district || "—"}）
+                  エリア内表示順位（{formatDistrictLabel(form.district) || "—"}）
                 </dt>
                 <dd className="mt-1 text-lg font-semibold text-white">
                   {editingListingRanks?.districtRank == null
@@ -2344,7 +2344,7 @@ function AdminJobsPageInner() {
             >
               {DISTRICTS.map((district) => (
                 <option key={district} value={district}>
-                  {FIXED_AREA} / {district}
+                  {FIXED_AREA} / {formatDistrictLabel(district)}
                 </option>
               ))}
             </select>

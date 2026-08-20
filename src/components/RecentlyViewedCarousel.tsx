@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
+import { formatDistrictLabel } from "@/data/districts";
 import type { Job } from "@/types/job";
 
 type RecentlyViewedCarouselProps = {
@@ -85,7 +86,7 @@ export function RecentlyViewedCarousel({
                   <p className="truncate font-serif text-sm font-semibold text-charcoal">
                     {job.shopName}
                   </p>
-                  <p className="mt-1 text-xs text-muted">{job.district}</p>
+                  <p className="mt-1 text-xs text-muted">{formatDistrictLabel(job.district)}</p>
                   <p className="mt-1 text-xs font-semibold text-gold-dark">{job.salary}</p>
                   <Link
                     href={`/jobs/${job.id}`}

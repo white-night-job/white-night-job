@@ -1,6 +1,7 @@
 import type { BoostStatsMap } from "@/lib/shop-boosts";
 import { compareJobsForListing } from "@/lib/shop-boosts";
 import { isChatBotEligiblePlan } from "@/lib/job-plan";
+import { formatDistrictLabel } from "@/data/districts";
 import { jobMatchesSelectedAreas } from "./area-options";
 import type { ChatJob, ChatPreferences, ChatRecommendation } from "./types";
 
@@ -29,7 +30,7 @@ function buildReason(job: ChatJob, prefs: ChatPreferences, scoreDetails: string[
     parts.push(scoreDetails.slice(0, 3).join("・"));
   }
   if (prefs.district && job.district === prefs.district) {
-    parts.push(`${prefs.district}エリア`);
+    parts.push(`${formatDistrictLabel(prefs.district)}エリア`);
   }
   if (prefs.jobType && job.jobType === prefs.jobType) {
     parts.push(`${prefs.jobType}の募集`);
@@ -140,7 +141,7 @@ function scoreJob(
   if (prefs.district && prefs.district !== "こだわらない") {
     if (job.district === prefs.district) {
       score += 10;
-      details.push(`${prefs.district}エリア`);
+      details.push(`${formatDistrictLabel(prefs.district)}エリア`);
     } else {
       score -= 5;
     }
@@ -350,8 +351,8 @@ export function matchRecommendationsForAreas(
       selectedAreas.includes(job.district)
     ) {
       total += 20;
-      if (!details.includes(`${job.district}エリア`)) {
-        details.push(`${job.district}エリア`);
+      if (!details.includes(`${formatDistrictLabel(job.district)}エリア`)) {
+        details.push(`${formatDistrictLabel(job.district)}エリア`);
       }
     }
 

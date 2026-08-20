@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 import { NOTIFICATION_AREA_OPTIONS } from "@/lib/notification-areas";
 
 export type BroadcastJobOption = {
@@ -279,7 +280,7 @@ export function LineBroadcastPanel({
                   checked={selectedAreas.includes(area)}
                   onChange={() => toggleArea(area)}
                 />
-                {area}
+                {formatDistrictLabel(area)}
               </label>
             ))}
           </div>
@@ -303,7 +304,7 @@ export function LineBroadcastPanel({
             <option value="">店舗を選択</option>
             {jobs.map((job) => (
               <option key={job.id} value={job.id}>
-                {job.shopName}（{job.district}）
+                {job.shopName}（{formatDistrictLabel(job.district)}）
               </option>
             ))}
           </select>

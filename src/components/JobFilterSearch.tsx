@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { BENEFIT_SEARCH_CATEGORIES } from "@/data/benefits";
-import { DISTRICTS } from "@/data/districts";
+import { DISTRICTS, formatDistrictLabel } from "@/data/districts";
 import {
   isPremiumTheme,
   luxuryCardSurface,
@@ -376,7 +376,7 @@ export function JobFilterSearch({
   }
 
   const districtLabel =
-    draftDistrict === "all" ? "すべて" : draftDistrict;
+    draftDistrict === "all" ? "すべて" : formatDistrictLabel(draftDistrict);
   const jobTypeLabel =
     draftJobType === "all" ? "すべて" : draftJobType;
   const salaryLabel =
@@ -452,7 +452,7 @@ export function JobFilterSearch({
                   isPremium={isPremium || embedded || inPlate}
                   reservation={inPlate}
                 >
-                  {district}
+                  {formatDistrictLabel(district)}
                 </FilterButton>
               ))}
             </div>

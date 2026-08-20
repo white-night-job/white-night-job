@@ -49,6 +49,7 @@ import {
   type Job,
   type JobType,
 } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 import { ShopGirlReviewsManager } from "@/components/ShopGirlReviewsManager";
 import {
   getPlanDefinition,
@@ -831,7 +832,10 @@ export default function ShopDashboardPage() {
   }
 
   const displayShopName = form?.shopName ?? shellShopName ?? "店舗";
-  const displayDistrict = form?.district ?? shellDistrict;
+  const displayDistrict = formatDistrictLabel(
+    form?.district ?? shellDistrict,
+  );
+
   const isPublished = shellPublished ?? true;
 
   return (
@@ -940,7 +944,7 @@ export default function ShopDashboardPage() {
             <label htmlFor="district" className={labelClass}>地区</label>
             <input
               id="district"
-              value={form.district}
+              value={formatDistrictLabel(form.district)}
               readOnly
               className={readonlyInputClass}
               aria-readonly="true"

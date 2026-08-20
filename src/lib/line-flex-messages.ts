@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/lib/site";
+import { formatDistrictLabel } from "@/data/districts";
 import type { Job } from "@/types/job";
 
 const DEFAULT_HERO_IMAGE =
@@ -57,7 +58,7 @@ function buildShopBubble(
         { type: "text", text: "エリア", color: "#8b6f3e", size: "sm", flex: 2 },
         {
           type: "text",
-          text: `${job.area} ${job.district}`,
+          text: `${job.area} ${formatDistrictLabel(job.district)}`,
           wrap: true,
           size: "sm",
           flex: 5,

@@ -8,6 +8,7 @@ import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { MEMBER_PATHS } from "@/lib/member-access";
 import { CHAT_AREA_OPTIONS } from "@/lib/chat/area-options";
+import { formatDistrictLabel } from "@/data/districts";
 import { FAQ_QUICK_REPLIES } from "@/lib/chat/system-prompt";
 import type { ChatRecommendation } from "@/lib/chat/types";
 
@@ -151,7 +152,7 @@ function RecommendationCard({ item }: { item: ChatRecommendation }) {
       <div className="p-3">
         <p className="font-semibold text-charcoal">{item.shopName}</p>
         <p className="mt-0.5 text-xs text-muted">
-          {item.area} / {item.district} / {item.jobType}
+          {item.area} / {formatDistrictLabel(item.district)} / {item.jobType}
         </p>
         <p className="mt-1 text-sm font-medium text-gold-dark">{item.salary}</p>
         <p className="mt-2 text-xs leading-relaxed text-charcoal/80">{item.reason}</p>
@@ -405,7 +406,7 @@ export function ChatBot() {
         {
           id: createId(),
           role: "bot",
-          content: `エリアを「${areas.join("、")}」に変更しました。`,
+          content: `エリアを「${areas.map(formatDistrictLabel).join("、")}」に変更しました。`,
         },
       ];
     });
@@ -622,7 +623,7 @@ export function ChatBot() {
                   <p className="text-sm font-semibold">White Night相談Bot</p>
                   <p className="truncate text-xs text-white/80">
                     {step === "chat" && selectedAreas.length > 0
-                      ? `エリア: ${selectedAreas.join("、")}`
+                      ? `エリア: ${selectedAreas.map(formatDistrictLabel).join("、")}`
                       : "夜職の相談"}
                   </p>
                 </div>
@@ -678,7 +679,7 @@ export function ChatBot() {
                               : "border-gold/30 bg-white text-charcoal hover:border-gold"
                           }`}
                         >
-                          {area}
+                          {formatDistrictLabel(area)}
                         </button>
                       );
                     })}

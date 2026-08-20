@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { formatDistrictLabel } from "@/data/districts";
 import type {
   MetricAvailability,
   UserActivityPeriod,
@@ -249,7 +250,9 @@ export function UserActivityPanel() {
                           {row.shopName}
                         </td>
                         <td className="px-2 py-2.5 text-muted">
-                          {row.district || row.area || "—"}
+                          {formatDistrictLabel(row.district) ||
+                            row.area ||
+                            "—"}
                         </td>
                         <td className="px-2 py-2.5">
                           {row.views.toLocaleString("ja-JP")}

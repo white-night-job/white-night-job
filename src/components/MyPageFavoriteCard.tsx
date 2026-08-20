@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Job } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 
 type MyPageFavoriteCardProps = {
   job: Job;
@@ -53,7 +54,7 @@ export function MyPageFavoriteCard({ job, onRemoved }: MyPageFavoriteCardProps) 
           <dl className="mt-3 space-y-1.5 text-sm text-muted">
             <div className="flex gap-2">
               <dt className="shrink-0 text-gold-dark">エリア</dt>
-              <dd>{job.district}</dd>
+              <dd>{formatDistrictLabel(job.district)}</dd>
             </div>
             <div className="flex gap-2">
               <dt className="shrink-0 text-gold-dark">職種</dt>

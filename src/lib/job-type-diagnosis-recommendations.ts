@@ -14,13 +14,13 @@ import {
 import { parseJobPlan } from "@/lib/job-plan";
 import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import type { District, Job } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 
 const PRIMARY_MATCH_REASON =
   "希望エリア・診断結果の第1位職種にマッチしています";
 
 export function formatDiagnosisDistrictLabel(district: string): string {
-  if (district === "24条") return "北24条";
-  return district;
+  return formatDistrictLabel(district);
 }
 
 export function formatPreferredAreasLabel(

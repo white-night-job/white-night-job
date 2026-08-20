@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 import {
   BUSINESS_EMAIL,
   BUSINESS_LEGAL_NAME,
@@ -686,7 +687,7 @@ export function buildStoreInfoJsonLd(job: Job) {
     .filter((value): value is string => Boolean(value));
 
   const descriptionParts = [
-    `${job.district}にある${job.jobType}${job.shopName}の店舗情報。`,
+    `${formatDistrictLabel(job.district)}にある${job.jobType}${job.shopName}の店舗情報。`,
     job.address?.trim() ? `所在地：${job.address.trim()}。` : null,
     job.businessHours?.trim()
       ? `営業時間：${job.businessHours.trim()}。`
@@ -722,7 +723,7 @@ export function buildStoreInfoDetailMetadata(job: Job): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
   // Example: 〇〇｜すすきののガールズバー店舗情報｜White Night Job
   const title = finalizeDocumentTitle(
-    `${job.shopName}｜${job.district}の${job.jobType}店舗情報`,
+    `${job.shopName}｜${formatDistrictLabel(job.district)}の${job.jobType}店舗情報`,
   );
 
   const hasAddress = Boolean(job.address?.trim());
@@ -742,7 +743,7 @@ export function buildStoreInfoDetailMetadata(job: Job): Metadata {
     detailBits.length > 0 ? `${detailBits.join("・")}などを掲載しています。` : "";
 
   const description =
-    `${job.district}にある${job.jobType}${job.shopName}の店舗情報。${detailText}`.slice(
+    `${formatDistrictLabel(job.district)}にある${job.jobType}${job.shopName}の店舗情報。${detailText}`.slice(
       0,
       160,
     );
@@ -821,10 +822,10 @@ export function buildJobDetailMetadata(job: Job): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
 
   const title = finalizeDocumentTitle(
-    `${job.shopName}の求人｜${job.district}・${job.jobType}`,
+    `${job.shopName}の求人｜${formatDistrictLabel(job.district)}・${job.jobType}`,
   );
   const description =
-    `${job.shopName}（${job.district}・${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
+    `${job.shopName}（${formatDistrictLabel(job.district)}・${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
     (job.salary ? ` 給与：${job.salary}` : "");
 
   const images = job.imageUrl

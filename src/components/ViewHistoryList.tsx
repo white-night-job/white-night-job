@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MyPageSectionSkeleton } from "@/components/mypage/MyPageSkeletons";
 import { useMyPageSection } from "@/components/mypage/useMyPageSection";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
+import { formatDistrictLabel } from "@/data/districts";
 import type { Job } from "@/types/job";
 
 const DEFAULT_LIMIT = 20;
@@ -72,7 +73,7 @@ export function ViewHistoryList({
               {job.shopName}
             </p>
             <p className="mt-0.5 text-xs text-muted">
-              {job.district} · {job.salary}
+              {formatDistrictLabel(job.district)} · {job.salary}
             </p>
             <Link
               href={`/jobs/${job.id}`}

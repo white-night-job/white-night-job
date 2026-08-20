@@ -1,4 +1,5 @@
 import type { Job, JobFilters } from "@/types/job";
+import { formatDistrictLabel } from "@/data/districts";
 
 export const JOBS_UPDATED_EVENT = "jobs-updated";
 
@@ -107,5 +108,5 @@ export function prefetchJobDetail(id: string) {
 }
 
 export function formatLocation(job: Job): string {
-  return `${job.area} / ${job.district}`;
+  return `${job.area} / ${formatDistrictLabel(job.district)}`;
 }

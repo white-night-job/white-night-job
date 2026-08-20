@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CompareButton } from "@/components/CompareButton";
 import { formatLocation, fetchJobs } from "@/lib/job-storage";
+import { formatDistrictLabel } from "@/data/districts";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
@@ -57,7 +58,7 @@ export function CompareRelatedShops({ job }: CompareRelatedShopsProps) {
         この店舗と比較されている店舗
       </h2>
       <p className="mt-1 text-xs text-muted">
-        同じ{job.district}・{job.jobType}の店舗です。比較に追加して違いを確認できます。
+        同じ{formatDistrictLabel(job.district)}・{job.jobType}の店舗です。比較に追加して違いを確認できます。
       </p>
       <ul className="mt-4 space-y-3">
         {related.map((item) => (

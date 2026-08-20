@@ -1,5 +1,6 @@
 import { sendLinePushMessages } from "@/lib/line-auth";
 import { isUncontractedPlan } from "@/lib/job-plan";
+import { formatDistrictLabel } from "@/data/districts";
 import {
   LISTING_PRIORITY_LABELS,
   type ListingPriority,
@@ -254,7 +255,7 @@ function buildNewJobMessage(job: Job): unknown[] {
     "希望条件に合う新着求人です！",
     "",
     job.shopName,
-    `${job.district} / ${job.jobType}`,
+    `${formatDistrictLabel(job.district)} / ${job.jobType}`,
     job.salary,
     "",
     "詳しくはこちら",
