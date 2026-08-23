@@ -33,7 +33,6 @@ export const FORM_I18N = {
   errRepresentativeName: "代表者名を入力してください。",
   errIdentityDocument:
     "顔写真付き身分証明書をアップロードしてください",
-  errWebsiteRequired: "公式WebサイトまたはSNSのURLを入力してください。",
   errWebsiteFormat: "正しいURLを入力してください。",
   errBusinessLicense: "営業許可証をアップロードしてください。",
   errOpenDate: "オープン日を入力してください。",
@@ -104,7 +103,7 @@ export const FORM_I18N = {
 
   headingSns: "3. SNS・Web情報",
   snsUrlHint: "URLは https:// から始まる形式で入力してください。",
-  labelWebsite: "公式Webサイト（Instagram等可） *",
+  labelWebsite: "公式Webサイト（Instagram等可）",
   phWebsite: "例：https://example.com",
   websiteHelp:
     "店舗の確認ができる公式サイトやSNS（Instagram / X / TikTok等）のURLを入力してください。",

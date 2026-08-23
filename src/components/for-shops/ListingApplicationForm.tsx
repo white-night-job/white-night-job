@@ -318,9 +318,7 @@ function validateStep(
   }
   if (step === 3) {
     const url = form.websiteUrl.trim();
-    if (!url) {
-      errors.websiteUrl = FORM_I18N.errWebsiteRequired;
-    } else if (!/^https?:\/\/.+/i.test(url)) {
+    if (url && !/^https?:\/\/.+/i.test(url)) {
       errors.websiteUrl = FORM_I18N.errWebsiteFormat;
     }
   }

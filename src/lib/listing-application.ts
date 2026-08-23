@@ -295,7 +295,6 @@ export function validateListingApplicationInput(
     requiredText(input.contactName, "担当者名"),
     requiredText(input.contactPhone, "担当者電話番号"),
     requiredText(input.contactEmail, "担当者メールアドレス"),
-    requiredText(input.websiteUrl, "公式WebサイトまたはSNSのURL"),
     requiredText(input.openDate, "オープン日"),
   ];
 
@@ -349,11 +348,8 @@ export function validateListingApplicationInput(
     return "担当者電話番号の形式が正しくありません。";
   }
 
-  if (!URL_RE.test(String(input.websiteUrl).trim())) {
-    return "公式WebサイトまたはSNSは https:// から始まるURLで入力してください。";
-  }
-
   const optionalUrlFields: Array<[string | undefined, string]> = [
+    [input.websiteUrl, "公式WebサイトまたはSNS"],
     [input.instagramUrl, "Instagram"],
     [input.xUrl, "X"],
     [input.tiktokUrl, "TikTok"],
