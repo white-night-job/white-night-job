@@ -82,6 +82,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seen = new Set<string>();
   const staticEntries: MetadataRoute.Sitemap = [];
   for (const item of STATIC_PATHS) {
+    // Never list legacy hyphenated girls-bar SEO landings (columns like
+    // /column/girls-bar-beginner are unrelated and stay included).
+    if (/\/girls-bar(\/|$)/.test(item.path)) continue;
     if (seen.has(item.path)) continue;
     seen.add(item.path);
     staticEntries.push({

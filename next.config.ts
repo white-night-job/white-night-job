@@ -48,57 +48,57 @@ const nextConfig: NextConfig = {
       {
         source: "/sapporo/susukino/girls-bar",
         destination: "/sapporo/susukino/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/susukino/girls-bar/:path*",
         destination: "/sapporo/susukino/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/susukino/girls_bar",
         destination: "/sapporo/susukino/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/susukino/girls_bar/:path*",
         destination: "/sapporo/susukino/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/susukino/girlsBar",
         destination: "/sapporo/susukino/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/kotoni/girls-bar",
         destination: "/sapporo/kotoni/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/kotoni/girls-bar/:path*",
         destination: "/sapporo/kotoni/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/kita24jo/girls-bar",
         destination: "/sapporo/kita24jo/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/kita24jo/girls-bar/:path*",
         destination: "/sapporo/kita24jo/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/teine/girls-bar",
         destination: "/sapporo/teine/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/sapporo/teine/girls-bar/:path*",
         destination: "/sapporo/teine/girlsbar",
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: "/listing-criteria",

@@ -3,7 +3,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { SusukinoSeoView } from "@/components/seo/SusukinoSeoView";
 import { getPublishedSeoJobsPage } from "@/lib/seo-area-jobs";
 import { buildPageMetadata } from "@/lib/seo";
-import { getPublishedSeoLanding } from "@/lib/seo-landing";
 import {
   getSusukinoJobTypePage,
   SUSUKINO_DISTRICT,
@@ -26,16 +25,9 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { jobTypeSlug } = await params;
+  // Legacy slugs are 301'd in next.config — do not emit metadata for them here.
   if (jobTypeSlug === "girls-bar" || jobTypeSlug === "girls_bar") {
-    const landing = getPublishedSeoLanding("susukino", "girlsbar");
-    return buildPageMetadata(
-      landing?.title ??
-        "すすきののガールズバー求人・ガルバ求人｜White Night Job",
-      landing?.description ??
-        "すすきのでガールズバー求人を探すならWhite Night Job。すすきののガルバ・ガールズバー求人を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガールズバー求人を探せます。",
-      landing?.path ?? SUSUKINO_GIRLSBAR_PATH,
-      { absoluteTitle: true },
-    );
+    return {};
   }
   const page = getSusukinoJobTypePage(jobTypeSlug);
   if (!page) {
@@ -51,6 +43,7 @@ export default async function SusukinoJobTypePage({
   searchParams,
 }: PageProps) {
   const { jobTypeSlug } = await params;
+  // Safety net only if next.config redirect is bypassed (should not run on Vercel).
   if (jobTypeSlug === "girls-bar" || jobTypeSlug === "girls_bar") {
     permanentRedirect(SUSUKINO_GIRLSBAR_PATH);
   }

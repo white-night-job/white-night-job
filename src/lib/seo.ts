@@ -155,7 +155,7 @@ export function buildPageMetadata(
     },
     ...(options?.noIndex
       ? { robots: { index: false, follow: false } }
-      : {}),
+      : { robots: { index: true, follow: true } }),
   };
 }
 
