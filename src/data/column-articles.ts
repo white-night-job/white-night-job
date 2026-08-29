@@ -6,6 +6,7 @@ import { nightJobFirstGuideSections } from "@/data/column-content/night-job-firs
 import { nightJobInterviewSections } from "@/data/column-content/night-job-interview";
 import { noAlcoholNightJobSections } from "@/data/column-content/no-alcohol-night-job";
 import { sapporoTrialShopsSections } from "@/data/column-content/sapporo-trial-shops";
+import { susukinoGirlsbarBeginnerSections } from "@/data/column-content/susukino-girlsbar-beginner";
 import { susukinoNightJobBeginnerSections } from "@/data/column-content/susukino-night-job-beginner";
 import { trialWorkChecklistSections } from "@/data/column-content/trial-work-checklist";
 import { whatIsTaiinSections } from "@/data/column-content/what-is-taiin";
@@ -26,6 +27,8 @@ export type ColumnSection = {
 export type ColumnArticle = {
   slug: string;
   title: string;
+  /** Optional shorter <title>; defaults to title. */
+  seoTitle?: string;
   category: string;
   description: string;
   metaDescription: string;
@@ -109,6 +112,30 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
     ],
     jobFilter: { district: "すすきの", limit: 3 },
     sections: sapporoTrialShopsSections,
+  },
+  {
+    slug: "susukino-girlsbar-beginner",
+    title:
+      "すすきのでガールズバー求人を探す女性向け｜未経験・体入・お店選びを解説",
+    seoTitle:
+      "すすきのでガールズバー求人を探す女性向け｜未経験・体入・選び方",
+    category: "エリア特集",
+    description:
+      "すすきのでガールズバー求人を探す女性向けに、未経験・体験入店・給与待遇の確認・お店の選び方を解説します。",
+    metaDescription:
+      "すすきのでガールズバー求人を探している女性向けに、未経験からの働き方、体験入店、給与・待遇の確認ポイント、自分に合ったお店の選び方を解説。求人比較はすすきののガールズバー求人一覧へ誘導します。",
+    publishedAt: "2026年8月29日",
+    publishedAtIso: "2026-08-29",
+    updatedAt: "2026年8月29日",
+    updatedAtIso: "2026-08-29",
+    thumbnailTone: "gold",
+    relatedSlugs: [
+      "girls-bar-beginner",
+      "susukino-night-job-beginner",
+      "trial-work-checklist",
+    ],
+    jobFilter: { district: "すすきの", jobType: "ガールズバー", limit: 3 },
+    sections: susukinoGirlsbarBeginnerSections,
   },
   {
     slug: "girls-bar-beginner",

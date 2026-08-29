@@ -31,7 +31,7 @@ export async function generateMetadata({
   if (!article) return {};
 
   return buildArticleMetadata(
-    article.title,
+    article.seoTitle ?? article.title,
     article.metaDescription,
     `/column/${article.slug}`,
   );

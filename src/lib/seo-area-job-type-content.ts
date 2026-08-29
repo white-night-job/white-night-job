@@ -198,6 +198,10 @@ export function getAreaJobTypeColumnLinks(params: {
   jobTypeSlug?: AreaJobTypeSeoSlug;
 }): SeoColumnLink[] {
   const slugs = [
+    // Susukino × girlsbar: prioritize the dedicated SEO support column.
+    ...(params.areaKey === "すすきの" && params.jobTypeSlug === "girls-bar"
+      ? (["susukino-girlsbar-beginner"] as const)
+      : []),
     ...(params.jobTypeSlug ? COLUMN_BY_JOB[params.jobTypeSlug] : []),
     ...(AREA_EXTRA_COLUMNS[params.areaKey] ?? []),
     "trial-work-checklist",
