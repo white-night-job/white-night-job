@@ -7,6 +7,7 @@ import { nightJobInterviewSections } from "@/data/column-content/night-job-inter
 import { noAlcoholNightJobSections } from "@/data/column-content/no-alcohol-night-job";
 import { sapporoTrialShopsSections } from "@/data/column-content/sapporo-trial-shops";
 import { susukinoGirlsbarBeginnerSections } from "@/data/column-content/susukino-girlsbar-beginner";
+import { susukinoGirlsbarTrialSections } from "@/data/column-content/susukino-girlsbar-trial";
 import { susukinoNightJobBeginnerSections } from "@/data/column-content/susukino-night-job-beginner";
 import { trialWorkChecklistSections } from "@/data/column-content/trial-work-checklist";
 import { whatIsTaiinSections } from "@/data/column-content/what-is-taiin";
@@ -130,12 +131,37 @@ export const COLUMN_ARTICLES: ColumnArticle[] = [
     updatedAtIso: "2026-08-29",
     thumbnailTone: "gold",
     relatedSlugs: [
+      "susukino-girlsbar-trial",
       "girls-bar-beginner",
       "susukino-night-job-beginner",
       "trial-work-checklist",
     ],
     jobFilter: { district: "すすきの", jobType: "ガールズバー", limit: 3 },
     sections: susukinoGirlsbarBeginnerSections,
+  },
+  {
+    slug: "susukino-girlsbar-trial",
+    title:
+      "すすきののガールズバーで体入するには？体験入店の流れ・確認ポイントを解説",
+    seoTitle:
+      "すすきののガールズバーで体入するには？体験入店の流れ・確認点",
+    category: "体入・体験入店",
+    description:
+      "すすきののガールズバーで体入（体験入店）を考える方向けに、流れ・求人の確認点・当日のチェック・合うお店の判断を解説します。",
+    metaDescription:
+      "すすきののガールズバーで体入するには？体験入店の流れ、求人情報で確認したいこと、当日のポイント、未経験で気をつけたいこと、合うお店の判断軸を解説。求人比較はすすきののガールズバー求人一覧へ。",
+    publishedAt: "2026年8月29日",
+    publishedAtIso: "2026-08-29",
+    updatedAt: "2026年8月29日",
+    updatedAtIso: "2026-08-29",
+    thumbnailTone: "champagne",
+    relatedSlugs: [
+      "susukino-girlsbar-beginner",
+      "what-is-taiin",
+      "trial-work-checklist",
+    ],
+    jobFilter: { district: "すすきの", jobType: "ガールズバー", limit: 3 },
+    sections: susukinoGirlsbarTrialSections,
   },
   {
     slug: "girls-bar-beginner",
