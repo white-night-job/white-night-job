@@ -16,6 +16,7 @@ import {
   SUSUKINO_JOB_TYPE_PAGES,
   type SusukinoJobTypePage,
 } from "@/lib/susukino-seo";
+import { getPublishedSeoLanding } from "@/lib/seo-landing";
 import {
   getAreaJobTypeColumnLinks,
   type SeoColumnLink,
@@ -252,16 +253,23 @@ export function SusukinoSeoView({
             気になる職種から、すすきのエリアの公開中求人を探せます。
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {SUSUKINO_JOB_TYPE_PAGES.map((item) => (
-              <li key={item.slug}>
-                <Link
-                  href={item.path}
-                  className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
-                >
-                  {item.displayName}求人
-                </Link>
-              </li>
-            ))}
+            {SUSUKINO_JOB_TYPE_PAGES.map((item) => {
+              const landingNav =
+                item.slug === "girlsbar"
+                  ? getPublishedSeoLanding("susukino", "girlsbar")
+                      ?.globalNavLabel
+                  : undefined;
+              return (
+                <li key={item.slug}>
+                  <Link
+                    href={item.path}
+                    className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
+                  >
+                    {landingNav ?? `${item.displayName}求人`}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

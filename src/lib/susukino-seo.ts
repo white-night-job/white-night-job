@@ -371,7 +371,7 @@ export const RELATED_AREA_LINKS: Array<{ label: string; href: string }> = [
 export function getSusukinoJobTypePage(
   slug: string,
 ): SusukinoJobTypePage | undefined {
-  const normalized = slug === "girls-bar" ? "girlsbar" : slug;
+  const normalized = slug === "girls-bar" || slug === "girls_bar" ? "girlsbar" : slug;
   return SUSUKINO_JOB_TYPE_PAGES.find((page) => page.slug === normalized);
 }
 

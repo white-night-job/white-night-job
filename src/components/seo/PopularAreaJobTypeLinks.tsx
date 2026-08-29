@@ -5,7 +5,7 @@ const POPULAR_AREA_JOB_LINKS = [
     area: "すすきの",
     basePath: "/sapporo/susukino",
     jobs: [
-      { label: "ガルバ・ガールズバー", path: "/girlsbar" },
+      { label: "ガールズバー", path: "/girlsbar" },
       { label: "コンカフェ", path: "/concept-cafe" },
       { label: "ニュークラブ", path: "/new-club" },
       { label: "ラウンジ", path: "/lounge" },

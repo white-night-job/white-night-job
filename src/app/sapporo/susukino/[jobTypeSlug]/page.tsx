@@ -26,12 +26,13 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { jobTypeSlug } = await params;
-  if (jobTypeSlug === "girls-bar") {
+  if (jobTypeSlug === "girls-bar" || jobTypeSlug === "girls_bar") {
     const landing = getPublishedSeoLanding("susukino", "girlsbar");
     return buildPageMetadata(
-      landing?.title ?? "すすきののガルバ・ガールズバー求人｜White Night Job",
+      landing?.title ??
+        "すすきののガールズバー求人・ガルバ求人｜White Night Job",
       landing?.description ??
-        "すすきのでガルバ・ガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガルバ求人を探せます。",
+        "すすきのでガールズバー求人を探すならWhite Night Job。すすきののガルバ・ガールズバー求人を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガールズバー求人を探せます。",
       landing?.path ?? SUSUKINO_GIRLSBAR_PATH,
       { absoluteTitle: true },
     );
@@ -50,7 +51,7 @@ export default async function SusukinoJobTypePage({
   searchParams,
 }: PageProps) {
   const { jobTypeSlug } = await params;
-  if (jobTypeSlug === "girls-bar") {
+  if (jobTypeSlug === "girls-bar" || jobTypeSlug === "girls_bar") {
     permanentRedirect(SUSUKINO_GIRLSBAR_PATH);
   }
 

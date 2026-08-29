@@ -12,7 +12,7 @@ export const seoJobTypes: Record<SeoJobTypeSlug, SeoJobTypeDef> = {
     alias: "ガルバ",
     dbJobType: "ガールズバー",
     pathSlug: "girlsbar",
-    legacyPathSlugs: ["girls-bar"],
+    legacyPathSlugs: ["girls-bar", "girls_bar"],
     contentSlug: "girls-bar",
   },
   "new-club": {
