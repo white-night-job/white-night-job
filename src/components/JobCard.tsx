@@ -16,9 +16,20 @@ import {
   isUncontractedPlan,
   UNCONTRACTED_PUBLIC_LABEL,
 } from "@/lib/job-plan";
+import { getJobComparisonBenefitTags } from "@/lib/seo-comparison-tags";
 
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({
+  job,
+  showComparisonTags = false,
+}: {
+  job: Job;
+  /** When true, show DB benefit tags useful for comparing listings (SEO landings). */
+  showComparisonTags?: boolean;
+}) {
   const storeInfoOnly = isUncontractedPlan(job.plan);
+  const comparisonTags = showComparisonTags
+    ? getJobComparisonBenefitTags(job)
+    : [];
   return (
     <JobImpressionTracker jobId={job.id}>
       <article
@@ -115,6 +126,26 @@ export function JobCard({ job }: { job: Job }) {
               </div>
             ) : null}
           </dl>
+
+          {comparisonTags.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {comparisonTags.map((tag) => (
+                <li
+                  key={tag}
+                  className="rounded-full border border-gold/30 bg-champagne/40 px-2 py-0.5 text-[11px] font-medium text-gold-dark"
+                >
+                  {tag}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {showComparisonTags && !storeInfoOnly && job.workHours?.trim() ? (
+            <p className="mt-2 text-xs text-muted">
+              <span className="font-medium text-charcoal">勤務条件：</span>
+              <span className="line-clamp-2">{job.workHours}</span>
+            </p>
+          ) : null}
 
           <p className="mt-4 text-right text-xs font-semibold text-gold-dark">
             {storeInfoOnly ? "店舗情報を見る →" : "詳細を見る →"}

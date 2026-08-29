@@ -7,10 +7,10 @@ import { getPublishedSeoLanding } from "@/lib/seo-landing/build";
 export const SEO_LANDING_PARITY = {
   susukinoGirlsbar: {
     path: "/sapporo/susukino/girlsbar",
-    title: "すすきののガールズバー求人・ガルバ求人｜White Night Job",
-    h1: "すすきののガールズバー求人",
+    title: "すすきののガールズバー・ガルバ求人｜White Night Job",
+    h1: "すすきののガールズバー・ガルバ求人",
     description:
-      "すすきのでガールズバー求人を探すならWhite Night Job。すすきののガルバ・ガールズバー求人を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガールズバー求人を探せます。",
+      "すすきののガールズバー求人・ガルバ求人を探すならWhite Night Job。未経験歓迎や体験入店の案内がある求人を、時給・勤務条件・待遇タグから比較できます。掲載審査を通過した店舗情報をもとに、自分に合うすすきののガールズバーを見つけやすい求人サイトです。",
   },
   kotoniGirlsbar: {
     path: "/sapporo/kotoni/girlsbar",

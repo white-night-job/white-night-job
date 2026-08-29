@@ -147,6 +147,9 @@ export function SusukinoSeoView({
             </h2>
             <p className="mt-1 text-sm text-muted">
               公開中の求人のみ表示しています（{total}件）
+              {jobTypePage?.slug === "girlsbar"
+                ? "。時給・待遇タグは各店舗が登録した情報です。"
+                : ""}
             </p>
           </div>
           <Link
@@ -177,7 +180,11 @@ export function SusukinoSeoView({
         ) : (
           <div className="jobs-list-grid grid gap-4 sm:grid-cols-2">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobCard
+                key={job.id}
+                job={job}
+                showComparisonTags={jobTypePage?.slug === "girlsbar"}
+              />
             ))}
           </div>
         )}
