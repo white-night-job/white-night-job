@@ -148,7 +148,7 @@ export function SusukinoSeoView({
             <p className="mt-1 text-sm text-muted">
               公開中の求人のみ表示しています（{total}件）
               {jobTypePage?.slug === "girlsbar"
-                ? "。時給・待遇タグは各店舗が登録した情報です。"
+                ? "。表示条件は各店舗が登録した情報です。"
                 : ""}
             </p>
           </div>
@@ -163,6 +163,12 @@ export function SusukinoSeoView({
             検索条件でさらに絞り込む
           </Link>
         </div>
+
+        {jobTypePage?.slug === "girlsbar" ? (
+          <p className="mb-4 text-sm leading-7 text-charcoal sm:text-[15px] sm:leading-7">
+            すすきののガールズバー求人を、時給・体験入店・送迎・勤務条件などから比較できます。未経験、学生、Wワークなど、自分の希望条件に合った求人を確認してください。
+          </p>
+        ) : null}
 
         {jobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white py-12 text-center">

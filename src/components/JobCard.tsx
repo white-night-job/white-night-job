@@ -30,6 +30,9 @@ export function JobCard({
   const comparisonTags = showComparisonTags
     ? getJobComparisonBenefitTags(job)
     : [];
+  const salaryText = job.salary?.trim() ?? "";
+  const workHoursText = job.workHours?.trim() ?? "";
+  const showSalary = !storeInfoOnly && (!showComparisonTags || salaryText.length > 0);
   return (
     <JobImpressionTracker jobId={job.id}>
       <article
@@ -88,21 +91,21 @@ export function JobCard({
           </div>
 
           <dl className="grid gap-2 text-sm">
-            {!storeInfoOnly ? (
+            {showSalary ? (
               <div className="rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-2">
                 <dt className="text-xs font-semibold text-gold-dark">時給</dt>
                 <dd className="mt-0.5 min-w-0 break-words bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
-                  {job.salary}
+                  {salaryText}
                 </dd>
               </div>
-            ) : (
+            ) : storeInfoOnly ? (
               <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
                 <dt className="text-xs font-semibold text-muted">営業時間</dt>
                 <dd className="mt-0.5 line-clamp-1 text-muted">
                   {job.businessHours?.trim() || "情報なし"}
                 </dd>
               </div>
-            )}
+            ) : null}
             {!storeInfoOnly ? (
               <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
                 <dt className="text-xs font-semibold text-muted">営業時間</dt>
@@ -128,22 +131,25 @@ export function JobCard({
           </dl>
 
           {comparisonTags.length > 0 ? (
-            <ul className="mt-3 flex flex-wrap gap-1.5">
+            <ul
+              className="mt-3 flex flex-wrap gap-1.5"
+              aria-label="求人の比較ポイント"
+            >
               {comparisonTags.map((tag) => (
                 <li
-                  key={tag}
-                  className="rounded-full border border-gold/30 bg-champagne/40 px-2 py-0.5 text-[11px] font-medium text-gold-dark"
+                  key={tag.match}
+                  className="rounded-full border border-gold/30 bg-champagne/40 px-2.5 py-1 text-[11px] font-semibold text-gold-dark"
                 >
-                  {tag}
+                  {tag.label}
                 </li>
               ))}
             </ul>
           ) : null}
 
-          {showComparisonTags && !storeInfoOnly && job.workHours?.trim() ? (
-            <p className="mt-2 text-xs text-muted">
-              <span className="font-medium text-charcoal">勤務条件：</span>
-              <span className="line-clamp-2">{job.workHours}</span>
+          {showComparisonTags && !storeInfoOnly && workHoursText ? (
+            <p className="mt-2 text-xs leading-5 text-muted">
+              <span className="font-medium text-charcoal">勤務時間：</span>
+              <span className="line-clamp-2">{workHoursText}</span>
             </p>
           ) : null}
 
