@@ -27,8 +27,8 @@ export async function generateMetadata({
   const { jobTypeSlug } = await params;
   if (jobTypeSlug === "girls-bar") {
     return buildPageMetadata(
-      "すすきののガールズバー求人｜優良店専門 White Night Job",
-      "すすきのでガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店の求人を掲載。時給・待遇・勤務時間・口コミなどを比較して、自分に合ったガールズバーを探せます。",
+      "すすきののガルバ・ガールズバー求人｜White Night Job",
+      "すすきのでガルバ・ガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガルバ求人を探せます。",
       SUSUKINO_GIRLSBAR_PATH,
       { absoluteTitle: true },
     );

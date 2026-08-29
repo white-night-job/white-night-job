@@ -15,7 +15,7 @@ const footerSections = [
       { href: "/#about-brand", label: `${SITE_BRAND_JA}とは` },
       { href: "/jobs", label: "求人一覧" },
       { href: "/sapporo/susukino", label: "すすきのの夜職求人" },
-      { href: "/sapporo/susukino/girlsbar", label: "すすきののガールズバー求人" },
+      { href: "/sapporo/susukino/girlsbar", label: "すすきののガルバ求人" },
       { href: "/sapporo/kotoni", label: "琴似の夜職求人" },
       { href: "/sapporo/kita24jo", label: "北24条の夜職求人" },
       { href: "/sapporo/teine", label: "手稲の夜職求人" },

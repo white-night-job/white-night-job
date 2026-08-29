@@ -28,7 +28,7 @@ export const girlsBarBeginnerSections: ColumnSection[] = [
       "未経験者大歓迎のタグで絞り込むと、初めてでも相談しやすいガールズバーが見つかりやすくなります。",
     ],
     links: [
-      { label: "すすきののガールズバー求人", href: "/sapporo/susukino/girlsbar" },
+      { label: "すすきののガルバ求人", href: "/sapporo/susukino/girlsbar" },
       {
         label: "未経験歓迎の求人",
         href: "/jobs?jobType=ガールズバー&benefit=未経験者大歓迎",

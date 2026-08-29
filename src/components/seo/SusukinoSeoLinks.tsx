@@ -3,7 +3,7 @@ import { SUSUKINO_GIRLSBAR_PATH } from "@/lib/susukino-seo";
 
 const AREA_LINKS = [
   { href: "/sapporo/susukino", label: "すすきのの夜職求人" },
-  { href: SUSUKINO_GIRLSBAR_PATH, label: "すすきののガールズバー求人" },
+  { href: SUSUKINO_GIRLSBAR_PATH, label: "すすきののガルバ求人" },
   { href: "/sapporo/kotoni", label: "琴似の夜職求人" },
   { href: "/sapporo/kita24jo", label: "北24条の夜職求人" },
   { href: "/sapporo/teine", label: "手稲の夜職求人" },

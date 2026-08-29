@@ -76,13 +76,24 @@ export function SusukinoSeoView({
   const sections = contentSections ?? jobTypePage?.contentSections;
   const resolvedFaqHeading = faqHeading ?? jobTypePage?.faqHeading ?? "よくある質問";
 
-  const breadcrumbItems: BreadcrumbItem[] = [
-    {
-      label: "すすきのの夜職求人",
-      href: jobTypePage ? "/sapporo/susukino" : undefined,
-    },
-    ...(jobTypePage ? [{ label: breadcrumbLabel }] : []),
-  ];
+  const breadcrumbItems: BreadcrumbItem[] = jobTypePage
+    ? [
+        { label: "札幌", href: "/jobs" },
+        {
+          label: "すすきの",
+          href: "/sapporo/susukino",
+        },
+        {
+          label:
+            jobTypePage.slug === "girlsbar"
+              ? "ガルバ・ガールズバー求人"
+              : breadcrumbLabel,
+        },
+      ]
+    : [
+        { label: "札幌", href: "/jobs" },
+        { label: "すすきのの夜職求人" },
+      ];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
@@ -288,7 +299,7 @@ export function SusukinoSeoView({
           className="font-serif text-xl font-semibold text-charcoal"
         >
           {sections && sections.length > 0
-            ? "初めてガールズバー求人を見る方へ"
+            ? "初めてガルバ求人を見る方へ"
             : "初めて夜職を探す方へ"}
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">

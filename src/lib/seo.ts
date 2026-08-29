@@ -820,12 +820,19 @@ export function buildJobDetailMetadata(job: Job): Metadata {
 
   const pathname = `/jobs/${job.id}`;
   const canonical = `${SITE_URL}${pathname}`;
+  const districtLabel = formatDistrictLabel(job.district);
+  const isSusukinoGirlsBar =
+    job.district === "すすきの" && job.jobType === "ガールズバー";
 
   const title = finalizeDocumentTitle(
-    `${job.shopName}の求人｜${formatDistrictLabel(job.district)}の${job.jobType}`,
+    isSusukinoGirlsBar
+      ? `${job.shopName}の求人｜すすきののガルバ・ガールズバー`
+      : `${job.shopName}の求人｜${districtLabel}の${job.jobType}`,
   );
   const description =
-    `${job.shopName}（${formatDistrictLabel(job.district)}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
+    (isSusukinoGirlsBar
+      ? `${job.shopName}（すすきののガルバ・ガールズバー）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`
+      : `${job.shopName}（${districtLabel}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`) +
     (job.salary ? ` 給与：${job.salary}` : "");
 
   const images = job.imageUrl
