@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { listPublishedSeoLandings } from "@/lib/seo-landing";
 import {
   SITE_BRAND_JA,
   SITE_FORMAL_NAME,
   SITE_TAGLINE,
 } from "@/lib/site";
+
+const landingFooterLinks = listPublishedSeoLandings()
+  .filter((page) => page.showInGlobalNav)
+  .map((page) => ({ href: page.path, label: page.footerNavLabel }));
 
 const footerSections = [
   {
@@ -15,10 +20,15 @@ const footerSections = [
       { href: "/#about-brand", label: `${SITE_BRAND_JA}とは` },
       { href: "/jobs", label: "求人一覧" },
       { href: "/sapporo/susukino", label: "すすきのの夜職求人" },
-      { href: "/sapporo/susukino/girlsbar", label: "すすきののガルバ求人" },
+      ...landingFooterLinks.filter((l) => l.href.startsWith("/sapporo/susukino/")),
       { href: "/sapporo/kotoni", label: "琴似の夜職求人" },
+      ...landingFooterLinks.filter((l) => l.href.startsWith("/sapporo/kotoni/")),
       { href: "/sapporo/kita24jo", label: "北24条の夜職求人" },
+      ...landingFooterLinks.filter((l) =>
+        l.href.startsWith("/sapporo/kita24jo/"),
+      ),
       { href: "/sapporo/teine", label: "手稲の夜職求人" },
+      ...landingFooterLinks.filter((l) => l.href.startsWith("/sapporo/teine/")),
       { href: "/#shop-search", label: "店舗を探す" },
       { href: "/faq", label: "よくある質問" },
     ],

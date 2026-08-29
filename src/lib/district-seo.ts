@@ -1,5 +1,11 @@
 import type { District, JobType } from "@/types/job";
 import {
+  GIRLSBAR_PATH_SLUG,
+  getPublishedSeoLanding,
+  listPublishedSeoLandings,
+  normalizeGirlsBarPathSlug,
+} from "@/lib/seo-landing";
+import {
   buildAreaJobTypeSeoBody,
   getAreaJobTypeColumnLinks,
   type AreaJobTypeSeoSlug,
@@ -11,7 +17,7 @@ export { resolveDistrictSeoPaths } from "@/lib/district-seo-paths";
 export type DistrictSeoSlug = "kotoni" | "kita24jo" | "teine";
 
 export type DistrictJobTypeSlug =
-  | "girls-bar"
+  | "girlsbar"
   | "new-club"
   | "lounge"
   | "snack"
@@ -31,6 +37,10 @@ export type DistrictJobTypePage = {
   guide: string[];
   faqs: DistrictFaq[];
   columnLinks: SeoColumnLink[];
+  /** Optional mid-page H2 blocks (enhanced girlsbar SEO). */
+  contentSections?: Array<{ heading: string; paragraphs: readonly string[] }>;
+  faqHeading?: string;
+  breadcrumbLabel?: string;
 };
 
 export type DistrictAreaPage = {
@@ -52,14 +62,41 @@ export type DistrictAreaPage = {
 
 const JOB_TYPE_META: Array<{
   slug: DistrictJobTypeSlug;
+  /** Content helper key (legacy hyphenated slug for shared copy builders). */
+  contentSlug: AreaJobTypeSeoSlug;
   jobType: JobType;
   displayName: string;
 }> = [
-  { slug: "girls-bar", jobType: "ガールズバー", displayName: "ガールズバー" },
-  { slug: "new-club", jobType: "ニュークラ", displayName: "ニュークラブ" },
-  { slug: "lounge", jobType: "ラウンジ", displayName: "ラウンジ" },
-  { slug: "snack", jobType: "スナック", displayName: "スナック" },
-  { slug: "concept-cafe", jobType: "コンカフェ", displayName: "コンカフェ" },
+  {
+    slug: GIRLSBAR_PATH_SLUG,
+    contentSlug: "girls-bar",
+    jobType: "ガールズバー",
+    displayName: "ガールズバー",
+  },
+  {
+    slug: "new-club",
+    contentSlug: "new-club",
+    jobType: "ニュークラ",
+    displayName: "ニュークラブ",
+  },
+  {
+    slug: "lounge",
+    contentSlug: "lounge",
+    jobType: "ラウンジ",
+    displayName: "ラウンジ",
+  },
+  {
+    slug: "snack",
+    contentSlug: "snack",
+    jobType: "スナック",
+    displayName: "スナック",
+  },
+  {
+    slug: "concept-cafe",
+    contentSlug: "concept-cafe",
+    jobType: "コンカフェ",
+    displayName: "コンカフェ",
+  },
 ];
 
 function benefitLinks(district: District) {
@@ -100,7 +137,7 @@ function ensureMetaDescription(description: string): string {
 function buildJobTypePages(
   area: Pick<DistrictAreaPage, "slug" | "district" | "displayName" | "path">,
   content: Record<
-    DistrictJobTypeSlug,
+    AreaJobTypeSeoSlug,
     {
       faqs: DistrictFaq[];
       titleHint: string;
@@ -124,14 +161,16 @@ function buildJobTypePages(
     throw new Error(`Unsupported district SEO area: ${area.displayName}`);
   }
 
-  return JOB_TYPE_META.map((meta) => {
-    const c = content[meta.slug];
+  const pages = JOB_TYPE_META.map((meta) => {
+    const c = content[meta.contentSlug];
     const body = buildAreaJobTypeSeoBody({
       areaKey,
-      jobTypeSlug: meta.slug as AreaJobTypeSeoSlug,
+      jobTypeSlug: meta.contentSlug,
     });
     return {
-      ...meta,
+      slug: meta.slug,
+      jobType: meta.jobType,
+      displayName: meta.displayName,
       path: `${area.path}/${meta.slug}`,
       title: `${area.displayName}の${meta.displayName}求人｜${c.titleHint}`,
       description: ensureMetaDescription(c.desc),
@@ -141,8 +180,39 @@ function buildJobTypePages(
       faqs: c.faqs,
       columnLinks: getAreaJobTypeColumnLinks({
         areaKey,
-        jobTypeSlug: meta.slug as AreaJobTypeSeoSlug,
+        jobTypeSlug: meta.contentSlug,
       }),
+    };
+  });
+
+  return applyGirlsBarSeoOverride(area.slug, pages);
+}
+
+/** Apply enhanced /girlsbar SEO from seo-landing registry when published. */
+function applyGirlsBarSeoOverride(
+  areaSlug: DistrictSeoSlug,
+  pages: DistrictJobTypePage[],
+): DistrictJobTypePage[] {
+  const landing = getPublishedSeoLanding(areaSlug, GIRLSBAR_PATH_SLUG);
+  if (!landing) return pages;
+
+  return pages.map((page) => {
+    if (page.slug !== GIRLSBAR_PATH_SLUG) return page;
+    return {
+      ...page,
+      displayName: landing.displayName,
+      title: landing.title,
+      description: landing.description,
+      h1: landing.h1,
+      intro: [...landing.intro],
+      guide: [...landing.guide],
+      faqs: landing.faqs.map((faq) => ({ ...faq })),
+      contentSections: landing.contentSections.map((section) => ({
+        heading: section.heading,
+        paragraphs: [...section.paragraphs],
+      })),
+      faqHeading: landing.faqHeading,
+      breadcrumbLabel: landing.breadcrumbLabel,
     };
   });
 }
@@ -873,7 +943,8 @@ export function getDistrictJobTypePage(
 ): { area: DistrictAreaPage; jobTypePage: DistrictJobTypePage } | undefined {
   const area = getDistrictAreaPage(areaSlug);
   if (!area) return undefined;
-  const jobTypePage = area.jobTypePages.find((page) => page.slug === jobTypeSlug);
+  const normalized = normalizeGirlsBarPathSlug(jobTypeSlug);
+  const jobTypePage = area.jobTypePages.find((page) => page.slug === normalized);
   if (!jobTypePage) return undefined;
   return { area, jobTypePage };
 }
@@ -883,13 +954,20 @@ export function buildDistrictBenefitLinks(district: District) {
 }
 
 /** Related SEO area links for footers / cross-linking. */
-export const DISTRICT_SEO_RELATED_LINKS = [
-  { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
-  { label: "琴似の夜職求人", href: "/sapporo/kotoni" },
-  { label: "北24条の夜職求人", href: "/sapporo/kita24jo" },
-  { label: "手稲の夜職求人", href: "/sapporo/teine" },
-  { label: "札幌の求人一覧を見る", href: "/jobs" },
-] as const;
+export const DISTRICT_SEO_RELATED_LINKS: Array<{ label: string; href: string }> =
+  [
+    { label: "すすきのの夜職求人", href: "/sapporo/susukino" },
+    ...listPublishedSeoLandings()
+      .filter((page) => page.showInGlobalNav)
+      .map((page) => ({
+        label: page.globalNavLabel,
+        href: page.path,
+      })),
+    { label: "琴似の夜職求人", href: "/sapporo/kotoni" },
+    { label: "北24条の夜職求人", href: "/sapporo/kita24jo" },
+    { label: "手稲の夜職求人", href: "/sapporo/teine" },
+    { label: "札幌の求人一覧を見る", href: "/jobs" },
+  ];
 
 export function jobTypeSlugFromJobType(jobType: JobType): DistrictJobTypeSlug | null {
   const found = JOB_TYPE_META.find((item) => item.jobType === jobType);

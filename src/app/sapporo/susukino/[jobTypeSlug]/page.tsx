@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { SusukinoSeoView } from "@/components/seo/SusukinoSeoView";
 import { getPublishedSeoJobsPage } from "@/lib/seo-area-jobs";
 import { buildPageMetadata } from "@/lib/seo";
+import { getPublishedSeoLanding } from "@/lib/seo-landing";
 import {
   getSusukinoJobTypePage,
   SUSUKINO_DISTRICT,
@@ -26,10 +27,12 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { jobTypeSlug } = await params;
   if (jobTypeSlug === "girls-bar") {
+    const landing = getPublishedSeoLanding("susukino", "girlsbar");
     return buildPageMetadata(
-      "すすきののガルバ・ガールズバー求人｜White Night Job",
-      "すすきのでガルバ・ガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガルバ求人を探せます。",
-      SUSUKINO_GIRLSBAR_PATH,
+      landing?.title ?? "すすきののガルバ・ガールズバー求人｜White Night Job",
+      landing?.description ??
+        "すすきのでガルバ・ガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガルバ求人を探せます。",
+      landing?.path ?? SUSUKINO_GIRLSBAR_PATH,
       { absoluteTitle: true },
     );
   }

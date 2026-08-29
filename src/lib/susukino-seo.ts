@@ -1,9 +1,14 @@
 import type { JobType } from "@/types/job";
 import {
-  buildAreaJobTypeSeoBody,
   getAreaJobTypeColumnLinks,
+  buildAreaJobTypeSeoBody,
   type SeoColumnLink,
 } from "@/lib/seo-area-job-type-content";
+import {
+  getPublishedSeoLanding,
+  listPublishedSeoLandings,
+  type BuiltSeoLandingPage,
+} from "@/lib/seo-landing";
 
 export const SUSUKINO_DISTRICT = "すすきの" as const;
 export const SUSUKINO_BASE_PATH = "/sapporo/susukino";
@@ -37,7 +42,35 @@ export type SusukinoJobTypePage = {
   /** Optional mid-page H2 blocks (e.g. girlsbar SEO). */
   contentSections?: SusukinoContentSection[];
   faqHeading?: string;
+  breadcrumbLabel?: string;
 };
+
+function landingToSusukinoPage(
+  landing: BuiltSeoLandingPage,
+): SusukinoJobTypePage {
+  return {
+    slug: (landing.jobType.pathSlug ?? landing.jobType.slug) as Exclude<
+      SusukinoJobTypeSlug,
+      "girls-bar"
+    >,
+    jobType: landing.dbJobType,
+    displayName: landing.displayName,
+    path: landing.path,
+    title: landing.title,
+    description: landing.description,
+    h1: landing.h1,
+    intro: landing.intro,
+    guide: landing.guide,
+    faqs: landing.faqs,
+    contentSections: landing.contentSections,
+    faqHeading: landing.faqHeading,
+    breadcrumbLabel: landing.breadcrumbLabel,
+    columnLinks: getAreaJobTypeColumnLinks({
+      areaKey: "すすきの",
+      jobTypeSlug: landing.jobType.contentSlug,
+    }),
+  };
+}
 
 const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
   Omit<SusukinoJobTypePage, "intro" | "guide" | "columnLinks"> & {
@@ -49,88 +82,7 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
     faqHeading?: string;
   }
 > = [
-  {
-    slug: "girlsbar",
-    jobType: "ガールズバー",
-    displayName: "ガルバ・ガールズバー",
-    path: `${SUSUKINO_BASE_PATH}/girlsbar`,
-    title: "すすきののガルバ・ガールズバー求人｜White Night Job",
-    description:
-      "すすきのでガルバ・ガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店を掲載。時給・各種バック・日払い・送迎・体入などの条件から、自分に合ったすすきののガルバ求人を探せます。",
-    h1: "すすきののガルバ・ガールズバー求人",
-    useCustomCopy: true,
-    intro: [
-      "すすきのでガルバ・ガールズバーの求人を探している方へ。White Night Jobでは、すすきのエリアのガルバ求人を掲載しています。時給や各種バック、日払い、送迎、ノルマ、勤務時間、体験入店などを比較しながら、自分に合ったお店を探せます。",
-      "すすきのは札幌を代表する歓楽街で、ガールズバー（通称ガルバ）の店舗も多く、雰囲気や客層、働き方の幅が広いのが特徴です。公開中の求人はページ内に自動で表示され、新規公開・更新時も反映されます。",
-    ],
-    guide: [
-      "初めての方は、未経験歓迎や体験入店（体入）ありの求人から比較するのがおすすめです。店舗ごとの客層やルールは異なるため、写真・紹介文・待遇欄をセットで確認しましょう。",
-      "日払い・送迎・ノルマなしなどの条件は求人ごとに異なります。気になる店舗には応募前に質問し、納得してから体験入店へ進むと安心です。",
-    ],
-    contentSections: [
-      {
-        heading: "すすきのでガルバを探すなら",
-        paragraphs: [
-          "すすきのでガルバを探すなら、希望の出勤日数や終電、お酒の対応可否など、自分が大切にしたい条件を先に決めておくと比較しやすくなります。店舗数が多く雰囲気の差も大きいため、求人票の紹介文と待遇をあわせて見るのがおすすめです。",
-          "White Night Jobでは掲載審査を通過したすすきののガールズバー求人のみを公開しています。気になるお店は一覧から詳細を開き、時給やシフト、体入の有無を確認してみてください。",
-        ],
-      },
-      {
-        heading: "すすきののガルバの時給・待遇",
-        paragraphs: [
-          "すすきののガルバの時給・待遇は店舗ごとに異なります。時給のほか、各種バック、日払い、送迎、ノルマの有無などが求人票に記載されています。表示内容は各店舗が登録した情報です。架空の条件は掲載していません。",
-          "待遇タグ（未経験歓迎・日払いOK・送迎あり・ノルマなしなど）から、自分の働き方に近いガルバ求人へ絞り込むこともできます。精算タイミングや送迎範囲は、応募前の店舗確認が安心です。",
-        ],
-      },
-      {
-        heading: "未経験でも働けるすすきののガルバ",
-        paragraphs: [
-          "未経験でも働けるすすきののガルバ求人があります。会話中心の接客が多い一方、店舗によってルールや客層は異なるため、未経験歓迎の求人や研修・体入のある店舗から探すのが一般的です。",
-          "不安な点は求人詳細と事前相談で確認し、納得してから応募・体験入店へ進みましょう。初めての方向けガイドやコラムもあわせてご覧ください。",
-        ],
-      },
-      {
-        heading: "すすきので体入できるガルバを探す",
-        paragraphs: [
-          "すすきので体入（体験入店）できるガルバを探すなら、求人詳細の案内を確認し、LINEや電話で日程を相談するのがおすすめです。体入時給・衣装・勤務時間は店舗ごとに異なります。",
-          "本入店の前に店内の雰囲気を確かめられるため、初めての方や店舗選びで迷っている方にも向いています。公開中一覧から条件が合うお店を比較してみてください。",
-        ],
-      },
-    ],
-    faqHeading: "すすきののガルバ求人に関するよくある質問",
-    faqs: [
-      {
-        question: "すすきののガルバは未経験でも働ける？",
-        answer:
-          "はい。未経験歓迎のガールズバー（ガルバ）求人を掲載しています。研修やフォローの有無は店舗ごとに異なるため、求人詳細と事前相談で確認してください。",
-      },
-      {
-        question: "すすきののガルバの時給は？",
-        answer:
-          "時給は店舗・シフト・経験によって異なります。各求人票に掲載されている給与情報をご確認ください。当サイトでは架空の時給は表示していません。",
-      },
-      {
-        question: "日払いできるガルバはある？",
-        answer:
-          "日払いOKのガルバ求人があります。支払いのタイミングは店舗ルールによるため、詳細ページと応募前の確認で実条件を確かめてください。",
-      },
-      {
-        question: "送りがあるガルバはある？",
-        answer:
-          "送迎（送り）ありの求人を掲載しています。対応エリアや終電後の条件は店舗ごとに異なるため、応募前に確認するのが安心です。",
-      },
-      {
-        question: "体験入店できる？",
-        answer:
-          "体験入店（体入）を受け付けているすすきののガルバがあります。体入時給や勤務時間、必要な持ち物は事前に店舗へ確認してから日程を決めてください。",
-      },
-      {
-        question: "ノルマなしのガルバはある？",
-        answer:
-          "ノルマなしと記載のある求人もあります。同伴や売上に関するルールは店舗差が大きいため、求人票の確認と事前質問をおすすめします。",
-      },
-    ],
-  },
+  // girlsbar is built from src/lib/seo-landing (seoLandingPages + profiles)
   {
     slug: "new-club",
     jobType: "ニュークラ",
@@ -313,8 +265,8 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
   },
 ];
 
-export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] =
-  SUSUKINO_JOB_TYPE_PAGES_RAW.map((page) => {
+export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
+  const fromRaw = SUSUKINO_JOB_TYPE_PAGES_RAW.map((page) => {
     const contentSlug = page.slug === "girlsbar" ? "girls-bar" : page.slug;
     const body = buildAreaJobTypeSeoBody({
       areaKey: "すすきの",
@@ -331,6 +283,11 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] =
       }),
     };
   });
+
+  const girlsbarLanding = getPublishedSeoLanding("susukino", "girlsbar");
+  if (!girlsbarLanding) return fromRaw;
+  return [landingToSusukinoPage(girlsbarLanding), ...fromRaw];
+})();
 
 export const SUSUKINO_AREA_PAGE = {
   path: SUSUKINO_BASE_PATH,
@@ -398,12 +355,18 @@ export const SUSUKINO_BENEFIT_LINKS = [
   },
 ] as const;
 
-export const RELATED_AREA_LINKS = [
+export const RELATED_AREA_LINKS: Array<{ label: string; href: string }> = [
   { label: "琴似の夜職求人", href: "/sapporo/kotoni" },
+  ...listPublishedSeoLandings()
+    .filter((page) => page.area.slug !== "susukino" && page.showInGlobalNav)
+    .map((page) => ({
+      label: page.globalNavLabel,
+      href: page.path,
+    })),
   { label: "北24条の夜職求人", href: "/sapporo/kita24jo" },
   { label: "手稲の夜職求人", href: "/sapporo/teine" },
   { label: "札幌の求人一覧を見る", href: "/jobs" },
-] as const;
+];
 
 export function getSusukinoJobTypePage(
   slug: string,

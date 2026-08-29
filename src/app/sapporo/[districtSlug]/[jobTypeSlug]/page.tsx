@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { DistrictSeoView } from "@/components/seo/DistrictSeoView";
 import {
+  GIRLSBAR_LEGACY_PATH_SLUG,
+  GIRLSBAR_PATH_SLUG,
+} from "@/lib/area-girlsbar-seo";
+import {
   DISTRICT_AREA_PAGES,
+  getDistrictAreaPage,
   getDistrictJobTypePage,
 } from "@/lib/district-seo";
 import { getPublishedSeoJobsPage } from "@/lib/seo-area-jobs";
@@ -26,6 +31,23 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { districtSlug, jobTypeSlug } = await params;
+  if (jobTypeSlug === GIRLSBAR_LEGACY_PATH_SLUG) {
+    const area = getDistrictAreaPage(districtSlug);
+    if (area) {
+      const girlsbar = area.jobTypePages.find(
+        (page) => page.slug === GIRLSBAR_PATH_SLUG,
+      );
+      if (girlsbar) {
+        return buildPageMetadata(
+          girlsbar.title,
+          girlsbar.description,
+          girlsbar.path,
+          { absoluteTitle: true },
+        );
+      }
+    }
+  }
+
   const matched = getDistrictJobTypePage(districtSlug, jobTypeSlug);
   if (!matched) return { title: "ページが見つかりません" };
   return buildPageMetadata(
@@ -41,6 +63,14 @@ export default async function DistrictJobTypePage({
   searchParams,
 }: PageProps) {
   const { districtSlug, jobTypeSlug } = await params;
+
+  if (jobTypeSlug === GIRLSBAR_LEGACY_PATH_SLUG) {
+    const area = getDistrictAreaPage(districtSlug);
+    if (area) {
+      permanentRedirect(`${area.path}/${GIRLSBAR_PATH_SLUG}`);
+    }
+  }
+
   const matched = getDistrictJobTypePage(districtSlug, jobTypeSlug);
   if (!matched) notFound();
 

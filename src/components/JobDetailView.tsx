@@ -19,10 +19,9 @@ import {
 import { formatLocation } from "@/lib/job-storage";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import {
-  formatJobTypeSeoLabel,
-  isSusukinoGirlsBarJob,
-  SUSUKINO_GIRLSBAR_PATH,
-} from "@/lib/susukino-seo";
+  getPublishedSeoLandingByDistrictJobType,
+} from "@/lib/seo-landing";
+import { formatJobTypeSeoLabel } from "@/lib/susukino-seo";
 import type { Job } from "@/types/job";
 import type { GirlReview } from "@/types/girl-review";
 
@@ -293,30 +292,53 @@ export function JobDetailView({
 
       {showBreadcrumbs && (
         <Breadcrumbs
-          items={
-            !preview && isSusukinoGirlsBarJob(job)
-              ? [
-                  { label: "札幌", href: "/jobs" },
-                  { label: "すすきの", href: "/sapporo/susukino" },
-                  {
-                    label: "ガルバ・ガールズバー求人",
-                    href: SUSUKINO_GIRLSBAR_PATH,
-                  },
-                  { label: job.shopName },
-                ]
-              : [
-                  { label: "求人一覧", href: preview ? undefined : "/jobs" },
-                  ...(!preview && job.district === "すすきの"
-                    ? [
-                        {
-                          label: "すすきのの夜職求人",
-                          href: "/sapporo/susukino",
-                        },
-                      ]
-                    : []),
-                  { label: `${job.shopName}の求人` },
-                ]
-          }
+          items={(() => {
+            if (preview) {
+              return [
+                { label: "求人一覧" },
+                { label: `${job.shopName}の求人` },
+              ];
+            }
+
+            const landing = getPublishedSeoLandingByDistrictJobType(
+              job.district,
+              job.jobType,
+            );
+            if (landing) {
+              return [
+                { label: "札幌", href: "/jobs" },
+                {
+                  label: landing.area.name,
+                  href: landing.area.basePath,
+                },
+                {
+                  label: landing.breadcrumbLabel,
+                  href: landing.path,
+                },
+                { label: job.shopName },
+              ];
+            }
+
+            return [
+              { label: "求人一覧", href: "/jobs" },
+              ...(job.district === "すすきの"
+                ? [
+                    {
+                      label: "すすきのの夜職求人",
+                      href: "/sapporo/susukino",
+                    },
+                  ]
+                : job.district === "琴似"
+                  ? [
+                      {
+                        label: "琴似の夜職求人",
+                        href: "/sapporo/kotoni",
+                      },
+                    ]
+                  : []),
+              { label: `${job.shopName}の求人` },
+            ];
+          })()}
         />
       )}
       <div className="job-detail-layout">
@@ -325,7 +347,10 @@ export function JobDetailView({
           <div className="border-b border-gold/20 px-5 py-6 sm:px-8">
             <p className="text-sm font-medium text-gold-dark">
               {formatLocation(job)} ·{" "}
-              {isSusukinoGirlsBarJob(job)
+              {getPublishedSeoLandingByDistrictJobType(
+                job.district,
+                job.jobType,
+              )
                 ? formatJobTypeSeoLabel(job.jobType)
                 : job.jobType}
             </p>
@@ -601,7 +626,10 @@ export function JobDetailView({
             </p>
             <p className="mt-1 text-sm text-gold-dark">
               {formatLocation(job)} ·{" "}
-              {isSusukinoGirlsBarJob(job)
+              {getPublishedSeoLandingByDistrictJobType(
+                job.district,
+                job.jobType,
+              )
                 ? formatJobTypeSeoLabel(job.jobType)
                 : job.jobType}
             </p>
@@ -641,16 +669,24 @@ export function JobDetailView({
         </aside>
       </div>
 
-      {!preview && isSusukinoGirlsBarJob(job) ? (
-        <p className="mt-6 text-sm text-muted">
-          <Link
-            href={SUSUKINO_GIRLSBAR_PATH}
-            className="font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            すすきののガルバ求人一覧を見る
-          </Link>
-        </p>
-      ) : null}
+      {!preview &&
+      (() => {
+        const landing = getPublishedSeoLandingByDistrictJobType(
+          job.district,
+          job.jobType,
+        );
+        if (!landing) return null;
+        return (
+          <p className="mt-6 text-sm text-muted">
+            <Link
+              href={landing.path}
+              className="font-medium text-gold-dark underline-offset-2 hover:underline"
+            >
+              {landing.listLinkLabel}
+            </Link>
+          </p>
+        );
+      })()}
 
       {!preview && <CompareRelatedShops job={job} />}
     </div>

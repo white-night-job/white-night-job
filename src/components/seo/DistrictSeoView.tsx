@@ -46,6 +46,9 @@ export function DistrictSeoView({
   const faqs = jobTypePage?.faqs ?? area.faqs;
   const columnLinks: SeoColumnLink[] =
     jobTypePage?.columnLinks ?? area.columnLinks;
+  const contentSections = jobTypePage?.contentSections;
+  const faqHeading =
+    jobTypePage?.faqHeading ?? "よくある質問";
   const { jobs, page, total, totalPages } = jobsResult;
   const benefitLinks = buildDistrictBenefitLinks(area.district);
   const listHeading = jobTypePage
@@ -56,13 +59,18 @@ export function DistrictSeoView({
     (link) => link.href !== area.path,
   );
 
-  const breadcrumbItems: BreadcrumbItem[] = [
-    {
-      label: area.h1,
-      href: jobTypePage ? area.path : undefined,
-    },
-    ...(jobTypePage ? [{ label: jobTypePage.h1 }] : []),
-  ];
+  const breadcrumbItems: BreadcrumbItem[] = jobTypePage
+    ? [
+        { label: "札幌", href: "/jobs" },
+        { label: area.displayName, href: area.path },
+        {
+          label: jobTypePage.breadcrumbLabel ?? `${jobTypePage.displayName}求人`,
+        },
+      ]
+    : [
+        { label: "札幌", href: "/jobs" },
+        { label: `${area.displayName}の夜職求人` },
+      ];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
@@ -93,7 +101,7 @@ export function DistrictSeoView({
 
       <Breadcrumbs
         items={breadcrumbItems}
-        includeJsonLd={!jobTypePage}
+        includeJsonLd
       />
 
       <header className="mt-4">
@@ -239,12 +247,37 @@ export function DistrictSeoView({
         )}
       </section>
 
+      {contentSections && contentSections.length > 0 ? (
+        <div className="mt-8 space-y-8">
+          {contentSections.map((section) => (
+            <section
+              key={section.heading}
+              aria-labelledby={`district-seo-${section.heading.slice(0, 12)}`}
+            >
+              <h2
+                id={`district-seo-${section.heading.slice(0, 12)}`}
+                className="font-serif text-xl font-semibold text-charcoal"
+              >
+                {section.heading}
+              </h2>
+              <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
+
       <section className="mt-10" aria-labelledby="district-beginner">
         <h2
           id="district-beginner"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          未経験から探す方へ
+          {contentSections && contentSections.length > 0
+            ? "初めてガールズバー求人を見る方へ"
+            : "未経験から探す方へ"}
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
           {beginnerGuide.map((paragraph) => (
@@ -287,7 +320,7 @@ export function DistrictSeoView({
           id="district-faq"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          よくある質問
+          {faqHeading}
         </h2>
         <div className="mt-4 space-y-3">
           {faqs.map((faq) => (

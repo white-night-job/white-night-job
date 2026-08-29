@@ -3,11 +3,19 @@ import { COLUMN_ARTICLES } from "@/data/column-articles";
 import { DISTRICT_AREA_PAGES } from "@/lib/district-seo";
 import { isUncontractedPlan } from "@/lib/job-plan";
 import { listPublishedJobsForSitemap } from "@/lib/seo-area-jobs";
+import { listPublishedSeoLandings } from "@/lib/seo-landing";
+import { assertSeoLandingParity } from "@/lib/seo-landing/parity";
 import { SITE_URL } from "@/lib/site";
 import {
   SUSUKINO_AREA_PAGE,
   SUSUKINO_JOB_TYPE_PAGES,
 } from "@/lib/susukino-seo";
+
+const landingPaths = listPublishedSeoLandings().map((page) => ({
+  path: page.path,
+  changeFrequency: "daily" as const,
+  priority: 0.9,
+}));
 
 const STATIC_PATHS: Array<{
   path: string;
@@ -34,6 +42,7 @@ const STATIC_PATHS: Array<{
       priority: 0.8,
     })),
   ),
+  ...landingPaths,
   { path: "/first-time-guide", changeFrequency: "monthly", priority: 0.7 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.6 },
   { path: "/column", changeFrequency: "weekly", priority: 0.7 },
@@ -62,13 +71,26 @@ const STATIC_PATHS: Array<{
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (process.env.NODE_ENV !== "production") {
+    const parityErrors = assertSeoLandingParity();
+    if (parityErrors.length > 0) {
+      console.warn("[seo-landing parity]", parityErrors.join(" | "));
+    }
+  }
+
   const now = new Date();
-  const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((item) => ({
-    url: `${SITE_URL}${item.path}`,
-    lastModified: now,
-    changeFrequency: item.changeFrequency,
-    priority: item.priority,
-  }));
+  const seen = new Set<string>();
+  const staticEntries: MetadataRoute.Sitemap = [];
+  for (const item of STATIC_PATHS) {
+    if (seen.has(item.path)) continue;
+    seen.add(item.path);
+    staticEntries.push({
+      url: `${SITE_URL}${item.path}`,
+      lastModified: now,
+      changeFrequency: item.changeFrequency,
+      priority: item.priority,
+    });
+  }
 
   let jobEntries: MetadataRoute.Sitemap = [];
   try {

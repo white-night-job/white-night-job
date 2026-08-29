@@ -1,14 +1,15 @@
 import type { District, JobType } from "@/types/job";
+import { GIRLSBAR_PATH_SLUG } from "@/lib/area-girlsbar-seo";
 
 type JobTypeSlug =
-  | "girls-bar"
+  | "girlsbar"
   | "new-club"
   | "lounge"
   | "snack"
   | "concept-cafe";
 
 const JOB_TYPE_SLUGS: Array<{ slug: JobTypeSlug; jobType: JobType; displayName: string }> = [
-  { slug: "girls-bar", jobType: "ガールズバー", displayName: "ガールズバー" },
+  { slug: GIRLSBAR_PATH_SLUG, jobType: "ガールズバー", displayName: "ガールズバー" },
   { slug: "new-club", jobType: "ニュークラ", displayName: "ニュークラブ" },
   { slug: "lounge", jobType: "ラウンジ", displayName: "ラウンジ" },
   { slug: "snack", jobType: "スナック", displayName: "スナック" },

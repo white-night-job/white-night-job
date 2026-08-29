@@ -16,7 +16,7 @@ const POPULAR_AREA_JOB_LINKS = [
     area: "琴似",
     basePath: "/sapporo/kotoni",
     jobs: [
-      { label: "ガールズバー", path: "/girls-bar" },
+      { label: "ガールズバー・ガルバ", path: "/girlsbar" },
       { label: "コンカフェ", path: "/concept-cafe" },
       { label: "ニュークラブ", path: "/new-club" },
       { label: "ラウンジ", path: "/lounge" },
@@ -27,7 +27,7 @@ const POPULAR_AREA_JOB_LINKS = [
     area: "北24条",
     basePath: "/sapporo/kita24jo",
     jobs: [
-      { label: "ガールズバー", path: "/girls-bar" },
+      { label: "ガールズバー", path: "/girlsbar" },
       { label: "コンカフェ", path: "/concept-cafe" },
       { label: "ニュークラブ", path: "/new-club" },
       { label: "ラウンジ", path: "/lounge" },
@@ -38,7 +38,7 @@ const POPULAR_AREA_JOB_LINKS = [
     area: "手稲",
     basePath: "/sapporo/teine",
     jobs: [
-      { label: "ガールズバー", path: "/girls-bar" },
+      { label: "ガールズバー", path: "/girlsbar" },
       { label: "コンカフェ", path: "/concept-cafe" },
       { label: "ニュークラブ", path: "/new-club" },
       { label: "ラウンジ", path: "/lounge" },

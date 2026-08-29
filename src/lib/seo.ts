@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
 import { formatDistrictLabel } from "@/data/districts";
+import { getGirlsBarDetailSeo } from "@/lib/area-girlsbar-seo";
 import {
   BUSINESS_EMAIL,
   BUSINESS_LEGAL_NAME,
@@ -821,18 +822,15 @@ export function buildJobDetailMetadata(job: Job): Metadata {
   const pathname = `/jobs/${job.id}`;
   const canonical = `${SITE_URL}${pathname}`;
   const districtLabel = formatDistrictLabel(job.district);
-  const isSusukinoGirlsBar =
-    job.district === "すすきの" && job.jobType === "ガールズバー";
+  const girlsBarDetail = getGirlsBarDetailSeo(job);
 
   const title = finalizeDocumentTitle(
-    isSusukinoGirlsBar
-      ? `${job.shopName}の求人｜すすきののガルバ・ガールズバー`
-      : `${job.shopName}の求人｜${districtLabel}の${job.jobType}`,
+    girlsBarDetail?.titleBase ??
+      `${job.shopName}の求人｜${districtLabel}の${job.jobType}`,
   );
   const description =
-    (isSusukinoGirlsBar
-      ? `${job.shopName}（すすきののガルバ・ガールズバー）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`
-      : `${job.shopName}（${districtLabel}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`) +
+    (girlsBarDetail?.descriptionLead ??
+      `${job.shopName}（${districtLabel}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`) +
     (job.salary ? ` 給与：${job.salary}` : "");
 
   const images = job.imageUrl

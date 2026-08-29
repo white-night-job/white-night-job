@@ -84,10 +84,7 @@ export function SusukinoSeoView({
           href: "/sapporo/susukino",
         },
         {
-          label:
-            jobTypePage.slug === "girlsbar"
-              ? "ガルバ・ガールズバー求人"
-              : breadcrumbLabel,
+          label: jobTypePage.breadcrumbLabel ?? breadcrumbLabel,
         },
       ]
     : [

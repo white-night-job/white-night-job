@@ -56,6 +56,36 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/sapporo/kotoni/girls-bar",
+        destination: "/sapporo/kotoni/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/kotoni/girls-bar/:path*",
+        destination: "/sapporo/kotoni/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/kita24jo/girls-bar",
+        destination: "/sapporo/kita24jo/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/kita24jo/girls-bar/:path*",
+        destination: "/sapporo/kita24jo/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/teine/girls-bar",
+        destination: "/sapporo/teine/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/teine/girls-bar/:path*",
+        destination: "/sapporo/teine/girlsbar",
+        permanent: true,
+      },
+      {
         source: "/listing-criteria",
         destination: "/first-time-guide",
         permanent: true,
