@@ -57,7 +57,7 @@ export const girlsBarVsNewClubSections: ColumnSection[] = [
       { label: "ガールズバーの求人を探す", href: "/jobs?jobType=ガールズバー" },
       { label: "ニュークラの求人を探す", href: "/jobs?jobType=ニュークラ" },
       { label: "向いている職種を診断する", href: "/diagnosis" },
-      { label: "すすきののガールズバー求人", href: "/sapporo/susukino/girls-bar" },
+      { label: "すすきののガールズバー求人", href: "/sapporo/susukino/girlsbar" },
       { label: "すすきののニュークラ求人", href: "/sapporo/susukino/new-club" },
     ],
   },

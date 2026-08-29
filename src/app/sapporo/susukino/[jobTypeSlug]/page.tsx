@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { SusukinoSeoView } from "@/components/seo/SusukinoSeoView";
 import { getPublishedSeoJobsPage } from "@/lib/seo-area-jobs";
 import { buildPageMetadata } from "@/lib/seo";
 import {
   getSusukinoJobTypePage,
   SUSUKINO_DISTRICT,
+  SUSUKINO_GIRLSBAR_PATH,
   SUSUKINO_JOB_TYPE_PAGES,
 } from "@/lib/susukino-seo";
 
@@ -24,6 +25,14 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { jobTypeSlug } = await params;
+  if (jobTypeSlug === "girls-bar") {
+    return buildPageMetadata(
+      "すすきののガールズバー求人｜優良店専門 White Night Job",
+      "すすきのでガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店の求人を掲載。時給・待遇・勤務時間・口コミなどを比較して、自分に合ったガールズバーを探せます。",
+      SUSUKINO_GIRLSBAR_PATH,
+      { absoluteTitle: true },
+    );
+  }
   const page = getSusukinoJobTypePage(jobTypeSlug);
   if (!page) {
     return { title: "ページが見つかりません" };
@@ -38,6 +47,10 @@ export default async function SusukinoJobTypePage({
   searchParams,
 }: PageProps) {
   const { jobTypeSlug } = await params;
+  if (jobTypeSlug === "girls-bar") {
+    permanentRedirect(SUSUKINO_GIRLSBAR_PATH);
+  }
+
   const page = getSusukinoJobTypePage(jobTypeSlug);
   if (!page) notFound();
 
@@ -62,6 +75,8 @@ export default async function SusukinoJobTypePage({
       breadcrumbLabel={page.h1}
       jobTypePage={page}
       showJobTypeLinks
+      contentSections={page.contentSections}
+      faqHeading={page.faqHeading}
     />
   );
 }

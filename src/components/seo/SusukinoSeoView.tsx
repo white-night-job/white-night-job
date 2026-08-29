@@ -36,6 +36,8 @@ type SusukinoSeoViewProps = {
   jobTypePage?: SusukinoJobTypePage;
   showJobTypeLinks?: boolean;
   columnLinks?: SeoColumnLink[];
+  contentSections?: Array<{ heading: string; paragraphs: readonly string[] }>;
+  faqHeading?: string;
 };
 
 function pageHref(basePath: string, page: number) {
@@ -56,6 +58,8 @@ export function SusukinoSeoView({
   jobTypePage,
   showJobTypeLinks = true,
   columnLinks,
+  contentSections,
+  faqHeading = "よくある質問",
 }: SusukinoSeoViewProps) {
   const { jobs, page, total, totalPages } = jobsResult;
   const listHeading = jobTypePage
@@ -66,8 +70,11 @@ export function SusukinoSeoView({
     jobTypePage?.columnLinks ??
     getAreaJobTypeColumnLinks({
       areaKey: "すすきの",
-      jobTypeSlug: jobTypePage?.slug,
+      jobTypeSlug:
+        jobTypePage?.slug === "girlsbar" ? "girls-bar" : jobTypePage?.slug,
     });
+  const sections = contentSections ?? jobTypePage?.contentSections;
+  const resolvedFaqHeading = faqHeading ?? jobTypePage?.faqHeading ?? "よくある質問";
 
   const breadcrumbItems: BreadcrumbItem[] = [
     {
@@ -106,7 +113,7 @@ export function SusukinoSeoView({
 
       <Breadcrumbs
         items={breadcrumbItems}
-        includeJsonLd={!jobTypePage}
+        includeJsonLd
       />
 
       <header className="mt-4">
@@ -119,56 +126,6 @@ export function SusukinoSeoView({
           ))}
         </div>
       </header>
-
-      {showJobTypeLinks && (
-        <section className="mt-8" aria-labelledby="susukino-job-types">
-          <h2
-            id="susukino-job-types"
-            className="font-serif text-xl font-semibold text-charcoal"
-          >
-            職種別のすすきの求人
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            気になる職種から、すすきのエリアの公開中求人を探せます。
-          </p>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {SUSUKINO_JOB_TYPE_PAGES.map((item) => (
-              <li key={item.slug}>
-                <Link
-                  href={item.path}
-                  className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
-                >
-                  {item.displayName}求人
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="mt-8" aria-labelledby="susukino-benefits">
-        <h2
-          id="susukino-benefits"
-          className="font-serif text-xl font-semibold text-charcoal"
-        >
-          待遇から探す
-        </h2>
-        <p className="mt-2 text-sm text-muted">
-          希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {SUSUKINO_BENEFIT_LINKS.map((item) => (
-            <li key={item.label}>
-              <Link
-                href={item.href}
-                className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <section className="mt-10" aria-labelledby="susukino-jobs">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -252,12 +209,87 @@ export function SusukinoSeoView({
         )}
       </section>
 
+      {sections && sections.length > 0 ? (
+        <div className="mt-8 space-y-8">
+          {sections.map((section) => (
+            <section
+              key={section.heading}
+              aria-labelledby={`seo-section-${section.heading.slice(0, 12)}`}
+            >
+              <h2
+                id={`seo-section-${section.heading.slice(0, 12)}`}
+                className="font-serif text-xl font-semibold text-charcoal"
+              >
+                {section.heading}
+              </h2>
+              <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
+
+      {showJobTypeLinks && (
+        <section className="mt-8" aria-labelledby="susukino-job-types">
+          <h2
+            id="susukino-job-types"
+            className="font-serif text-xl font-semibold text-charcoal"
+          >
+            職種別のすすきの求人
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            気になる職種から、すすきのエリアの公開中求人を探せます。
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {SUSUKINO_JOB_TYPE_PAGES.map((item) => (
+              <li key={item.slug}>
+                <Link
+                  href={item.path}
+                  className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
+                >
+                  {item.displayName}求人
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="mt-8" aria-labelledby="susukino-benefits">
+        <h2
+          id="susukino-benefits"
+          className="font-serif text-xl font-semibold text-charcoal"
+        >
+          待遇から探す
+        </h2>
+        <p className="mt-2 text-sm text-muted">
+          希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {SUSUKINO_BENEFIT_LINKS.map((item) => (
+            <li key={item.label}>
+              <Link
+                href={item.href}
+                className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="mt-10" aria-labelledby="susukino-beginner">
         <h2
           id="susukino-beginner"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          初めて夜職を探す方へ
+          {sections && sections.length > 0
+            ? "初めてガールズバー求人を見る方へ"
+            : "初めて夜職を探す方へ"}
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
           {beginnerGuide.map((paragraph) => (
@@ -300,7 +332,7 @@ export function SusukinoSeoView({
           id="susukino-faq"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          よくある質問
+          {resolvedFaqHeading}
         </h2>
         <div className="mt-4 space-y-3">
           {faqs.map((faq) => (

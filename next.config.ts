@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/sapporo/susukino/girls-bar",
+        destination: "/sapporo/susukino/girlsbar",
+        permanent: true,
+      },
+      {
+        source: "/sapporo/susukino/girls-bar/:path*",
+        destination: "/sapporo/susukino/girlsbar",
+        permanent: true,
+      },
+      {
         source: "/listing-criteria",
         destination: "/first-time-guide",
         permanent: true,

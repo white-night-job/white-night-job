@@ -10,14 +10,20 @@ export const SUSUKINO_BASE_PATH = "/sapporo/susukino";
 export { SEO_JOBS_PAGE_SIZE } from "@/lib/seo-area-jobs";
 
 export type SusukinoJobTypeSlug =
-  | "girls-bar"
+  | "girlsbar"
+  | "girls-bar" // legacy alias resolved in getSusukinoJobTypePage
   | "new-club"
   | "lounge"
   | "snack"
   | "concept-cafe";
 
+export type SusukinoContentSection = {
+  heading: string;
+  paragraphs: string[];
+};
+
 export type SusukinoJobTypePage = {
-  slug: SusukinoJobTypeSlug;
+  slug: Exclude<SusukinoJobTypeSlug, "girls-bar">;
   jobType: JobType;
   displayName: string;
   path: string;
@@ -28,56 +34,100 @@ export type SusukinoJobTypePage = {
   guide: string[];
   faqs: Array<{ question: string; answer: string }>;
   columnLinks: SeoColumnLink[];
+  /** Optional mid-page H2 blocks (e.g. girlsbar SEO). */
+  contentSections?: SusukinoContentSection[];
+  faqHeading?: string;
 };
 
 const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
   Omit<SusukinoJobTypePage, "intro" | "guide" | "columnLinks"> & {
     intro: string[];
     guide: string[];
+    /** When true, keep RAW intro/guide instead of shared body copy. */
+    useCustomCopy?: boolean;
+    contentSections?: SusukinoContentSection[];
+    faqHeading?: string;
   }
 > = [
   {
-    slug: "girls-bar",
+    slug: "girlsbar",
     jobType: "ガールズバー",
     displayName: "ガールズバー",
-    path: `${SUSUKINO_BASE_PATH}/girls-bar`,
-    title: "すすきののガールズバー求人｜未経験歓迎の優良店求人",
+    path: `${SUSUKINO_BASE_PATH}/girlsbar`,
+    title: "すすきののガールズバー求人｜優良店専門 White Night Job",
     description:
-      "すすきののガールズバー求人を掲載。未経験歓迎・体験入店・日払いなど、掲載審査を通過した店舗を条件から比較しながら探せます。体入ホワイトナイトは優良店のみを公開し、応募前の条件確認を後押しします。",
+      "すすきのでガールズバー求人を探すならWhite Night Job。独自審査を通過した優良店の求人を掲載。時給・待遇・勤務時間・口コミなどを比較して、自分に合ったガールズバーを探せます。",
     h1: "すすきののガールズバー求人",
+    useCustomCopy: true,
     intro: [
-      "すすきののガールズバー求人は、会話を中心にした接客が多く、札幌の夜職のなかでも未経験から始めやすい職種のひとつです。White Night Job（体入ホワイトナイト）では、掲載審査を通過した店舗のみを公開しています。",
-      "時給やシフトだけでなく、体験入店の有無、送迎、ノルマなし、お酒が飲めなくても応募可能かなど、働き方に関わる条件を求人詳細で確認できます。まずは気になる店舗を比較しながら、自分のペースで応募先を絞ってみてください。",
+      "すすきのでガールズバー求人を探している方へ。White Night Jobでは、独自の掲載審査を通過した店舗の求人情報を掲載しています。時給や各種バック、日払い、送迎、ノルマ、勤務時間、体験入店などの条件を比較しながら、自分に合ったガールズバーを探せます。",
+      "すすきのは札幌を代表する歓楽街で、ガールズバーの店舗数も多く、雰囲気や客層、時給帯の幅が広いのが特徴です。公開中の求人は、このページ下部に自動で表示されます。新しく求人が追加・公開された場合も、ここに反映されます。",
     ],
     guide: [
-      "初めての方は、未経験歓迎のタグがある求人から見るのがおすすめです。ガールズバーは店舗ごとに客層や雰囲気が異なるため、写真と紹介文に加えて待遇欄もあわせて確認しましょう。",
-      "体験入店ができる店舗なら、本番のシフトに入る前に店内の空気感を確かめられます。日払いや送迎がある求人は、通勤や初月から手元に残る金額を意識したい方にも役立ちます。",
+      "初めての方は、未経験歓迎や体験入店ありの求人から比較するのがおすすめです。店舗ごとの客層やルールは異なるため、写真・紹介文・待遇欄をセットで確認しましょう。",
+      "日払い・送迎・ノルマなしなどの条件は求人ごとに異なります。気になる店舗には応募前に質問し、納得してから体験入店へ進むと安心です。",
     ],
+    contentSections: [
+      {
+        heading: "すすきのでガールズバーを探すポイント",
+        paragraphs: [
+          "すすきののガールズバーは店舗数が多く、にぎやかな店から落ち着いた店まで雰囲気の差が大きいエリアです。希望の出勤日数、終電のタイミング、お酒の対応可否など、自分が譲れない条件を先に決めてから絞り込むと、比較しやすくなります。",
+          "White Night Jobでは掲載審査を通過した店舗のみを公開しています。求人票の時給・待遇・勤務時間に加えて、店舗からの紹介文もあわせて確認し、気になるお店をピックアップしてみてください。",
+        ],
+      },
+      {
+        heading: "すすきののガールズバーの時給・待遇",
+        paragraphs: [
+          "すすきののガールズバー求人では、時給のほか各種バック、日払い、送迎、ノルマの有無などが店舗ごとに異なります。表示されている給与や待遇は各店舗が登録した内容です。条件は求人詳細ページで必ず確認してください。",
+          "待遇タグ（未経験歓迎・日払いOK・送迎あり・ノルマなしなど）から、自分の働き方に近い求人へ絞り込むこともできます。実際の精算タイミングや送迎範囲は、応募前の店舗確認が安心です。",
+        ],
+      },
+      {
+        heading: "未経験からガールズバーで働くには",
+        paragraphs: [
+          "未経験からガールズバーを始める方は、未経験歓迎の求人や、研修・体験入店のある店舗から探すのが一般的です。会話中心の接客が多い一方、店舗によってルールや客層は異なるため、求人詳細と事前相談で不安点を解消してから進みましょう。",
+          "初めての方へ向けたガイドやコラムも公開しています。職種選びに迷う場合は、あわせてご覧ください。",
+        ],
+      },
+      {
+        heading: "すすきので体験入店できるガールズバーを探す",
+        paragraphs: [
+          "体験入店（体入）を受け付けている店舗なら、本入店の前に店内の雰囲気や客層を確かめられます。体入時給・衣装・勤務時間は店舗ごとに異なるため、求人詳細の案内を確認し、LINEや電話で日程を相談してから進めるのがおすすめです。",
+          "体験入店可能な求人は、公開中一覧や待遇・詳細ページから確認できます。条件が合う店舗だけに絞って比較してみてください。",
+        ],
+      },
+    ],
+    faqHeading: "すすきののガールズバー求人に関するよくある質問",
     faqs: [
       {
-        question: "すすきのでガールズバーは未経験から働けますか？",
+        question: "未経験でも働けますか？",
         answer:
           "未経験歓迎のガールズバー求人を掲載しています。研修やフォローの有無は店舗ごとに異なるため、求人詳細と事前相談で確認してください。",
       },
       {
-        question: "ガールズバーで体験入店できますか？",
+        question: "日払いはできますか？",
         answer:
-          "体験入店を受け付けている店舗があります。体入時給や衣装、勤務時間は事前に確認してから日程を決めるのが安心です。",
+          "日払いOKの求人があります。支払いのタイミングは店舗ルールによるため、詳細ページと応募前の確認で実条件を確かめてください。",
       },
       {
-        question: "お酒が飲めなくてもガールズバーに応募できますか？",
+        question: "送迎はありますか？",
+        answer:
+          "送迎ありの求人を掲載しています。対応エリアや終電後の条件は店舗ごとに異なるため、応募前に確認するのが安心です。",
+      },
+      {
+        question: "ノルマはありますか？",
+        answer:
+          "ノルマなしと記載のある求人もあります。同伴や売上に関するルールは店舗差が大きいため、求人票の確認と事前質問をおすすめします。",
+      },
+      {
+        question: "体験入店はできますか？",
+        answer:
+          "体験入店を受け付けている店舗があります。体入時給や勤務時間、必要な持ち物は事前に店舗へ確認してから日程を決めてください。",
+      },
+      {
+        question: "お酒が飲めなくても応募できますか？",
         answer:
           "お酒飲めなくてもOKの求人があります。ノンアルコール対応の有無は店舗によるため、応募前に確認してください。",
-      },
-      {
-        question: "日払いや送迎があるガールズバーはありますか？",
-        answer:
-          "日払いOK・送迎ありの求人を待遇から探せます。実際の支払いタイミングや送迎範囲は詳細と店舗確認で確かめてください。",
-      },
-      {
-        question: "求人内容と条件が違うと感じたら？",
-        answer:
-          "応募や体験入店を見送って問題ありません。危険な店舗や実態が大きく異なる場合は、ブラック店舗報告から運営へ情報を送れます。",
       },
     ],
   },
@@ -265,17 +315,19 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
 
 export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] =
   SUSUKINO_JOB_TYPE_PAGES_RAW.map((page) => {
+    const contentSlug = page.slug === "girlsbar" ? "girls-bar" : page.slug;
     const body = buildAreaJobTypeSeoBody({
       areaKey: "すすきの",
-      jobTypeSlug: page.slug,
+      jobTypeSlug: contentSlug,
     });
+    const { useCustomCopy, ...rest } = page;
     return {
-      ...page,
-      intro: body.intro,
-      guide: body.guide,
+      ...rest,
+      intro: useCustomCopy ? page.intro : body.intro,
+      guide: useCustomCopy ? page.guide : body.guide,
       columnLinks: getAreaJobTypeColumnLinks({
         areaKey: "すすきの",
-        jobTypeSlug: page.slug,
+        jobTypeSlug: contentSlug,
       }),
     };
   });
@@ -356,5 +408,9 @@ export const RELATED_AREA_LINKS = [
 export function getSusukinoJobTypePage(
   slug: string,
 ): SusukinoJobTypePage | undefined {
-  return SUSUKINO_JOB_TYPE_PAGES.find((page) => page.slug === slug);
+  const normalized = slug === "girls-bar" ? "girlsbar" : slug;
+  return SUSUKINO_JOB_TYPE_PAGES.find((page) => page.slug === normalized);
 }
+
+/** Canonical path for Susukino × ガールズバー SEO landing. */
+export const SUSUKINO_GIRLSBAR_PATH = `${SUSUKINO_BASE_PATH}/girlsbar`;

@@ -822,10 +822,10 @@ export function buildJobDetailMetadata(job: Job): Metadata {
   const canonical = `${SITE_URL}${pathname}`;
 
   const title = finalizeDocumentTitle(
-    `${job.shopName}の求人｜${formatDistrictLabel(job.district)}・${job.jobType}`,
+    `${job.shopName}の求人｜${formatDistrictLabel(job.district)}の${job.jobType}`,
   );
   const description =
-    `${job.shopName}（${formatDistrictLabel(job.district)}・${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
+    `${job.shopName}（${formatDistrictLabel(job.district)}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。` +
     (job.salary ? ` 給与：${job.salary}` : "");
 
   const images = job.imageUrl

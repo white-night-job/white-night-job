@@ -18,6 +18,7 @@ import {
 } from "@/lib/job-db";
 import { formatLocation } from "@/lib/job-storage";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
+import { SUSUKINO_GIRLSBAR_PATH } from "@/lib/susukino-seo";
 import type { Job } from "@/types/job";
 import type { GirlReview } from "@/types/girl-review";
 
@@ -291,7 +292,20 @@ export function JobDetailView({
           items={[
             { label: "求人一覧", href: preview ? undefined : "/jobs" },
             ...(!preview && job.district === "すすきの"
-              ? [{ label: "すすきのの夜職求人", href: "/sapporo/susukino" }]
+              ? [
+                  {
+                    label: "すすきのの夜職求人",
+                    href: "/sapporo/susukino",
+                  },
+                  ...(job.jobType === "ガールズバー"
+                    ? [
+                        {
+                          label: "すすきののガールズバー求人",
+                          href: SUSUKINO_GIRLSBAR_PATH,
+                        },
+                      ]
+                    : []),
+                ]
               : []),
             { label: `${job.shopName}の求人` },
           ]}
@@ -612,6 +626,17 @@ export function JobDetailView({
           </div>
         </aside>
       </div>
+
+      {!preview && job.district === "すすきの" && job.jobType === "ガールズバー" ? (
+        <p className="mt-6 text-sm text-muted">
+          <Link
+            href={SUSUKINO_GIRLSBAR_PATH}
+            className="font-medium text-gold-dark underline-offset-2 hover:underline"
+          >
+            すすきののガールズバー求人一覧を見る
+          </Link>
+        </p>
+      ) : null}
 
       {!preview && <CompareRelatedShops job={job} />}
     </div>
