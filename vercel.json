@@ -1,6 +1,66 @@
 {
   "redirects": [
     {
+      "source": "/sapporo/susukino/girls-bar",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls-bar/",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls-bar/:path*",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls_bar",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girlsBar",
+      "has": [{ "type": "host", "value": "whitenightjob.jp" }],
+      "destination": "https://www.whitenightjob.jp/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls-bar",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls-bar/",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls-bar/:path*",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls_bar",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girls_bar/:path*",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
+      "source": "/sapporo/susukino/girlsBar",
+      "destination": "/sapporo/susukino/girlsbar",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "whitenightjob.jp" }],
       "destination": "https://www.whitenightjob.jp/:path*",

@@ -15,6 +15,9 @@ type PageProps = {
   searchParams: Promise<{ page?: string }>;
 };
 
+/** Only published job-type slugs; legacy girls-bar must never soft-render as 200. */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return SUSUKINO_JOB_TYPE_PAGES.map((page) => ({
     jobTypeSlug: page.slug,
