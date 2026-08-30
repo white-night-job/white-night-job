@@ -33,6 +33,13 @@ export const SEO_LANDING_PARITY = {
     description:
       "すすきののスナック求人を探すならWhite Night Job。未経験から相談しやすい店舗や体験入店の案内がある求人を、時給・勤務条件・シフトの現実感から比較できます。",
   },
+  susukinoLounge: {
+    path: "/sapporo/susukino/lounge",
+    title: "すすきののラウンジ求人｜White Night Job",
+    h1: "すすきののラウンジ求人",
+    description:
+      "すすきののラウンジ求人を探すならWhite Night Job。未経験から相談しやすい店舗や体験入店の案内がある求人を、時給・勤務条件・接客のテンポから比較できます。",
+  },
 } as const;
 
 export function assertSeoLandingParity(): string[] {
@@ -44,6 +51,7 @@ export function assertSeoLandingParity(): string[] {
     "concept-cafe",
   );
   const susukinoSnack = getPublishedSeoLanding("susukino", "snack");
+  const susukinoLounge = getPublishedSeoLanding("susukino", "lounge");
   const checks: Array<{
     name: string;
     actual: ReturnType<typeof getPublishedSeoLanding>;
@@ -68,6 +76,11 @@ export function assertSeoLandingParity(): string[] {
       name: "susukino/snack",
       actual: susukinoSnack,
       expected: SEO_LANDING_PARITY.susukinoSnack,
+    },
+    {
+      name: "susukino/lounge",
+      actual: susukinoLounge,
+      expected: SEO_LANDING_PARITY.susukinoLounge,
     },
   ];
 

@@ -127,51 +127,6 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
       },
     ],
   },
-  {
-    slug: "lounge",
-    jobType: "ラウンジ",
-    displayName: "ラウンジ",
-    path: `${SUSUKINO_BASE_PATH}/lounge`,
-    title: "すすきののラウンジ求人｜落ち着いて働ける優良店求人",
-    description:
-      "すすきののラウンジ求人を掲載。落ち着いた接客を求める方向けに、掲載審査を通過した店舗の求人を集めました。体入ホワイトナイトで条件を比較しながら、安心してお店探しができます。",
-    h1: "すすきののラウンジ求人",
-    intro: [
-      "すすきののラウンジ求人は、比較的落ち着いた雰囲気のなかで接客したい方に向いていることが多い職種です。札幌の夜職求人を探すとき、にぎやかな店舗だけでなく、会話を丁寧に重ねるスタイルを選びたい場合の候補になります。",
-      "当サイトでは掲載審査を通過したラウンジのみを掲載しています。未経験歓迎、体験入店、日払い、送迎、ノルマなし、お酒が飲めなくても応募可能といった条件は、求人ごとに異なるため詳細で確認してください。",
-    ],
-    guide: [
-      "ラウンジは客層や営業時間の差が大きいため、自分の生活圏と終電のタイミングを先に決めてから絞り込むと失敗しにくくなります。",
-      "初めて夜職を探す方は、未経験歓迎や体験入店がある求人から比較し、気になる店舗には事前に質問してから応募するのがおすすめです。",
-    ],
-    faqs: [
-      {
-        question: "すすきののラウンジは未経験から働けますか？",
-        answer:
-          "未経験歓迎のラウンジ求人があります。落ち着いた接客を求める方向けの店舗もあるため、雰囲気と待遇を比較して選んでください。",
-      },
-      {
-        question: "ラウンジでも体験入店できますか？",
-        answer:
-          "体験入店を受け付ける店舗があります。体入時間や時給は店舗ごとに異なるため、応募前に確認しましょう。",
-      },
-      {
-        question: "お酒が飲めなくてもラウンジに応募できますか？",
-        answer:
-          "お酒飲めなくてもOKの求人があります。対応可否は店舗によるため、事前に質問するのが安心です。",
-      },
-      {
-        question: "送迎があるラウンジ求人はありますか？",
-        answer:
-          "送迎ありの求人を待遇から探せます。対応エリアや終電後の条件は店舗確認が必要です。",
-      },
-      {
-        question: "条件が求人と違うと感じたときは？",
-        answer:
-          "無理に進めず、相談や応募をストップして問題ありません。危険なケースはブラック店舗報告も利用できます。",
-      },
-    ],
-  },
 ];
 
 export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
@@ -202,11 +157,13 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
   });
 
   const girlsbar = landingBySlug.get("girlsbar");
+  const lounge = landingBySlug.get("lounge");
   const snack = landingBySlug.get("snack");
   const conceptCafe = landingBySlug.get("concept-cafe");
   return [
     ...(girlsbar ? [girlsbar] : []),
     ...fromRaw,
+    ...(lounge ? [lounge] : []),
     ...(snack ? [snack] : []),
     ...(conceptCafe ? [conceptCafe] : []),
   ];

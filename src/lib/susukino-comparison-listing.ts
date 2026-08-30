@@ -4,7 +4,7 @@ import {
 } from "@/lib/seo-comparison-tags";
 
 export type SusukinoComparisonListingCopy = {
-  slug: "girlsbar" | "concept-cafe" | "snack";
+  slug: "girlsbar" | "concept-cafe" | "snack" | "lounge";
   dbJobType: string;
   listHeading: (total: number) => string;
   countNote: string;
@@ -77,6 +77,25 @@ export const SUSUKINO_COMPARISON_LISTINGS: Record<
       "体験入店ではトーク力より、スタッフの話しやすさや店内の距離感を確認するのがポイントです。求人票の待遇と店側の説明が一致しているか、応募前の質問で確かめるとミスマッチを減らせます。",
     ],
     beginnerHeading: "初めてスナック求人を見る方へ",
+  },
+  lounge: {
+    slug: "lounge",
+    dbJobType: "ラウンジ",
+    listHeading: (total) => `公開中のすすきのラウンジ求人 ${total}件`,
+    countNote:
+      "表示条件は各店舗が登録した情報です。件数はDBの公開中求人から自動集計しています。",
+    compareIntro:
+      "すすきののラウンジ求人を、時給・体験入店・送迎・シフト・未経験歓迎などの条件から比較できます。気になる求人は詳細ページで勤務時間や待遇を確認してください。",
+    filterAria: "すすきのラウンジ求人の条件から探す",
+    benefitHint:
+      "公開中のすすきのラウンジ求人に実際にある待遇だけを表示しています。条件を選ぶと求人一覧へ絞り込めます。",
+    compareTipsId: "susukino-lounge-compare-tips",
+    compareTipsH2: "すすきのでラウンジ求人を比較するときのポイント",
+    compareTips: [
+      "時給だけで決めず、席での距離感・ドレスコード・終業後の帰宅まで見ておくと、続けやすい店舗を選びやすくなります。White Night Jobでは、掲載審査を通過した店舗の登録情報をもとに、すすきののラウンジ求人を並べて比較できます。",
+      "体験入店では盛り上げ力より、スタッフの話しやすさや客席のテンポを確認するのがポイントです。求人票の待遇と店側の説明が一致しているか、応募前の質問で確かめるとミスマッチを減らせます。",
+    ],
+    beginnerHeading: "初めてラウンジ求人を見る方へ",
   },
 };
 
