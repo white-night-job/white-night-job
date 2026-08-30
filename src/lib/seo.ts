@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { GirlReview } from "@/types/girl-review";
 import type { Job } from "@/types/job";
 import { formatDistrictLabel } from "@/data/districts";
-import { getGirlsBarDetailSeo } from "@/lib/area-girlsbar-seo";
+import { getGirlsBarDetailSeo, buildSusukinoGirlsBarDetailTitleBase, buildSusukinoGirlsBarMetaDescription, isSusukinoGirlsBarDetailJob } from "@/lib/area-girlsbar-seo";
 import {
   BUSINESS_EMAIL,
   BUSINESS_LEGAL_NAME,
@@ -616,7 +616,9 @@ export function buildJobPostingJsonLd(
   const data: Record<string, unknown> = {
     "@context": "https://schema.org/",
     "@type": "JobPosting",
-    title: `${job.shopName}の求人（${job.jobType}）`,
+    title: isSusukinoGirlsBarDetailJob(job)
+      ? `${job.shopName}のガールズバー求人（すすきの）`
+      : `${job.shopName}の求人（${job.jobType}）`,
     description: description || `${job.shopName}の${job.jobType}求人情報。`,
     datePosted,
     validThrough: resolveValidThrough(job),
@@ -822,16 +824,20 @@ export function buildJobDetailMetadata(job: Job): Metadata {
   const pathname = `/jobs/${job.id}`;
   const canonical = `${SITE_URL}${pathname}`;
   const districtLabel = formatDistrictLabel(job.district);
-  const girlsBarDetail = getGirlsBarDetailSeo(job);
 
   const title = finalizeDocumentTitle(
-    girlsBarDetail?.titleBase ??
-      `${job.shopName}の求人｜${districtLabel}の${job.jobType}`,
+    isSusukinoGirlsBarDetailJob(job)
+      ? buildSusukinoGirlsBarDetailTitleBase(job)
+      : (getGirlsBarDetailSeo(job)?.titleBase ??
+          `${job.shopName}の求人｜${districtLabel}の${job.jobType}`),
   );
-  const description =
-    (girlsBarDetail?.descriptionLead ??
-      `${job.shopName}（${districtLabel}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`) +
-    (job.salary ? ` 給与：${job.salary}` : "");
+
+  const girlsBarDetail = getGirlsBarDetailSeo(job);
+  const description = isSusukinoGirlsBarDetailJob(job)
+    ? buildSusukinoGirlsBarMetaDescription(job)
+    : (girlsBarDetail?.descriptionLead ??
+        `${job.shopName}（${districtLabel}の${job.jobType}）の求人情報。時給・勤務時間・待遇・アクセス・体験入店の有無を掲載。札幌の審査済み店舗から安心して応募できます。`) +
+      (job.salary ? ` 給与：${job.salary}` : "");
 
   const images = job.imageUrl
     ? [{ url: job.imageUrl, alt: `${job.shopName}の求人` }]

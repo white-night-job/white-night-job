@@ -21,7 +21,10 @@ import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import {
   getPublishedSeoLandingByDistrictJobType,
 } from "@/lib/seo-landing";
-import { formatJobTypeSeoLabel } from "@/lib/susukino-seo";
+import {
+  formatJobTypeSeoLabel,
+  isSusukinoGirlsBarJob,
+} from "@/lib/susukino-seo";
 import type { Job } from "@/types/job";
 import type { GirlReview } from "@/types/girl-review";
 
@@ -210,6 +213,8 @@ export function JobDetailView({
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
   const displayStoreImages = getDisplayStoreImages(job);
+  const isSusukinoGirlsBar = isSusukinoGirlsBarJob(job);
+  const workHoursText = job.workHours?.trim() ?? "";
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
     : null;
@@ -312,7 +317,9 @@ export function JobDetailView({
                   href: landing.area.basePath,
                 },
                 {
-                  label: landing.breadcrumbLabel,
+                  label: isSusukinoGirlsBar
+                    ? "ガールズバー求人"
+                    : landing.breadcrumbLabel,
                   href: landing.path,
                 },
                 { label: job.shopName },
@@ -356,7 +363,9 @@ export function JobDetailView({
             </p>
             <div className="mt-1 flex items-start justify-between gap-3">
               <h1 className="font-serif text-xl font-semibold sm:text-2xl">
-                {job.shopName}の求人
+                {isSusukinoGirlsBar
+                  ? `${job.shopName}のガールズバー求人`
+                  : `${job.shopName}の求人`}
               </h1>
               <div className="flex flex-col items-end gap-1">
                 <FavoriteSlot
@@ -406,7 +415,27 @@ export function JobDetailView({
             )}
           </div>
           <div className="space-y-6 px-5 py-6 sm:px-8">
-            <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
+            {isSusukinoGirlsBar ? (
+              <div>
+                {job.salary?.trim() ? (
+                  <p className="text-lg font-semibold text-gold-dark">
+                    {job.salary.trim()}
+                  </p>
+                ) : null}
+                {workHoursText ? (
+                  <p
+                    className={`text-sm leading-relaxed text-muted ${
+                      job.salary?.trim() ? "mt-1" : ""
+                    }`}
+                  >
+                    <span className="font-medium text-charcoal">勤務時間：</span>
+                    {workHoursText}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
+            )}
 
             {showExtras && displayStoreImages.length > 0 ? (
               <StoreImagesGallery
