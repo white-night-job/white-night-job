@@ -172,51 +172,6 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
       },
     ],
   },
-  {
-    slug: "snack",
-    jobType: "スナック",
-    displayName: "スナック",
-    path: `${SUSUKINO_BASE_PATH}/snack`,
-    title: "すすきののスナック求人｜地域密着の優良店求人",
-    description:
-      "すすきののスナック求人を掲載。地域密着の接客や無理のないシフトを探しやすい、審査通過店舗の求人です。体入ホワイトナイトは優良店のみを公開し、待遇タグからの絞り込みもできます。",
-    h1: "すすきののスナック求人",
-    intro: [
-      "すすきののスナック求人は、常連さんとの会話を大切にする店舗が多く、札幌の夜職のなかでも落ち着いた働き方を探しやすい職種です。規模の小さな店舗もあるため、人間関係やシフトの柔軟さを重視する方に選ばれることがあります。",
-      "White Night Jobでは、掲載審査を通過したスナック求人を公開しています。体験入店の可否、日払い、送迎、ノルマなし、お酒が飲めなくても応募可能かなど、気になる条件は求人詳細で確認できます。",
-    ],
-    guide: [
-      "スナックは店舗ごとの個性が強いため、紹介文や写真だけでなく、勤務時間と待遇タグをセットで見るのがおすすめです。",
-      "未経験歓迎の求人から始め、必要なら体験入店で雰囲気を確かめてから本入店を検討すると、ミスマッチを減らしやすくなります。",
-    ],
-    faqs: [
-      {
-        question: "すすきののスナックは未経験でも大丈夫ですか？",
-        answer:
-          "未経験歓迎のスナック求人があります。少人数店舗もあるため、雰囲気の相性を体験入店で確かめるのがおすすめです。",
-      },
-      {
-        question: "スナックで体験入店はできますか？",
-        answer:
-          "体験入店可能な店舗があります。勤務時間や報酬の扱いを事前に確認してから日程を決めてください。",
-      },
-      {
-        question: "日払いのスナック求人はありますか？",
-        answer:
-          "日払いOKの求人を待遇から探せます。精算方法は店舗ごとに異なるため詳細確認が必要です。",
-      },
-      {
-        question: "ノルマなしのスナックはありますか？",
-        answer:
-          "ノルマなしと掲載している求人があります。売上や同伴のルールは店舗差があるため、応募前に確認してください。",
-      },
-      {
-        question: "求人内容と違う場合はどうすればよいですか？",
-        answer:
-          "入店を急がず、条件の再確認や応募取り下げを行ってください。危険な店舗は報告フォームから知らせられます。",
-      },
-    ],
-  },
 ];
 
 export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
@@ -247,10 +202,12 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
   });
 
   const girlsbar = landingBySlug.get("girlsbar");
+  const snack = landingBySlug.get("snack");
   const conceptCafe = landingBySlug.get("concept-cafe");
   return [
     ...(girlsbar ? [girlsbar] : []),
     ...fromRaw,
+    ...(snack ? [snack] : []),
     ...(conceptCafe ? [conceptCafe] : []),
   ];
 })();
