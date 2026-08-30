@@ -21,6 +21,10 @@ import {
   getAreaJobTypeColumnLinks,
   type SeoColumnLink,
 } from "@/lib/seo-area-job-type-content";
+import {
+  SEO_GIRLSBAR_FILTER_DEFS,
+  buildGirlsBarBenefitFilterHref,
+} from "@/lib/seo-comparison-tags";
 
 type FaqItem = { question: string; answer: string };
 
@@ -62,10 +66,22 @@ export function SusukinoSeoView({
   contentSections,
   faqHeading = "よくある質問",
 }: SusukinoSeoViewProps) {
-  const { jobs, page, total, totalPages } = jobsResult;
-  const listHeading = jobTypePage
-    ? `公開中の${jobTypePage.displayName}求人`
-    : "公開中のすすきの求人";
+  const { jobs, page, total, totalPages, presentComparisonBenefits } =
+    jobsResult;
+  const isGirlsbar = jobTypePage?.slug === "girlsbar";
+  const listHeading = isGirlsbar
+    ? `公開中のすすきのガールズバー求人 ${total}件`
+    : jobTypePage
+      ? `公開中の${jobTypePage.displayName}求人`
+      : "公開中のすすきの求人";
+  const girlsbarFilterLinks = isGirlsbar
+    ? SEO_GIRLSBAR_FILTER_DEFS.filter((def) =>
+        presentComparisonBenefits.includes(def.match),
+      ).map((def) => ({
+        label: def.label,
+        href: buildGirlsBarBenefitFilterHref(def.match),
+      }))
+    : [];
   const relatedColumns =
     columnLinks ??
     jobTypePage?.columnLinks ??
@@ -145,12 +161,15 @@ export function SusukinoSeoView({
             >
               {listHeading}
             </h2>
-            <p className="mt-1 text-sm text-muted">
-              公開中の求人のみ表示しています（{total}件）
-              {jobTypePage?.slug === "girlsbar"
-                ? "。表示条件は各店舗が登録した情報です。"
-                : ""}
-            </p>
+            {!isGirlsbar ? (
+              <p className="mt-1 text-sm text-muted">
+                公開中の求人のみ表示しています（{total}件）
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-muted">
+                表示条件は各店舗が登録した情報です。件数はDBの公開中求人から自動集計しています。
+              </p>
+            )}
           </div>
           <Link
             href={`/jobs?district=${encodeURIComponent("すすきの")}${
@@ -164,10 +183,33 @@ export function SusukinoSeoView({
           </Link>
         </div>
 
-        {jobTypePage?.slug === "girlsbar" ? (
+        {isGirlsbar ? (
           <p className="mb-4 text-sm leading-7 text-charcoal sm:text-[15px] sm:leading-7">
-            すすきののガールズバー求人を、時給・体験入店・送迎・勤務条件などから比較できます。未経験、学生、Wワークなど、自分の希望条件に合った求人を確認してください。
+            すすきののガールズバー求人を、時給・体験入店・送迎・シフト・未経験歓迎などの条件から比較できます。気になる求人は詳細ページで勤務時間や待遇を確認してください。
           </p>
+        ) : null}
+
+        {girlsbarFilterLinks.length > 0 ? (
+          <nav
+            className="mb-5"
+            aria-label="すすきのガールズバー求人の条件から探す"
+          >
+            <p className="mb-2 text-xs font-semibold tracking-wide text-muted">
+              条件から探す（公開中に該当があるもののみ）
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {girlsbarFilterLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="inline-flex rounded-full border border-gold/35 bg-white px-3.5 py-2 text-sm font-medium text-gold-dark transition-colors hover:border-gold hover:bg-champagne/40"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         ) : null}
 
         {jobs.length === 0 ? (
@@ -189,7 +231,7 @@ export function SusukinoSeoView({
               <JobCard
                 key={job.id}
                 job={job}
-                showComparisonTags={jobTypePage?.slug === "girlsbar"}
+                showComparisonTags={isGirlsbar}
               />
             ))}
           </div>
@@ -230,6 +272,29 @@ export function SusukinoSeoView({
           </nav>
         )}
       </section>
+
+      {isGirlsbar ? (
+        <section
+          className="mt-10"
+          aria-labelledby="susukino-girlsbar-compare-tips"
+        >
+          <h2
+            id="susukino-girlsbar-compare-tips"
+            className="font-serif text-xl font-semibold text-charcoal"
+          >
+            すすきのでガールズバー求人を比較するときのポイント
+          </h2>
+          <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
+            <p>
+              時給の高さだけで決めず、通いやすさ・シフトの入りやすさ・終業後の帰宅手段までセットで見ると、続けやすいお店を選びやすくなります。White
+              Night Jobでは、掲載審査を通過した店舗の登録情報をもとに、すすきののガールズバー求人を並べて比較できます。
+            </p>
+            <p>
+              体験入店（体入）の案内があるか、送迎や終業時間、週の出勤ペース、未経験者へのサポート（研修・フォローの記載）も確認ポイントです。求人票の待遇タグと詳細の説明が一致しているか、応募前の質問で確かめるとミスマッチを減らせます。
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {sections && sections.length > 0 ? (
         <div className="mt-8 space-y-8">
@@ -295,10 +360,15 @@ export function SusukinoSeoView({
           待遇から探す
         </h2>
         <p className="mt-2 text-sm text-muted">
-          希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。
+          {isGirlsbar
+            ? "公開中のすすきのガールズバー求人に実際にある待遇だけを表示しています。条件を選ぶと求人一覧へ絞り込めます。"
+            : "希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。"}
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
-          {SUSUKINO_BENEFIT_LINKS.map((item) => (
+          {(isGirlsbar && girlsbarFilterLinks.length > 0
+            ? girlsbarFilterLinks
+            : SUSUKINO_BENEFIT_LINKS
+          ).map((item) => (
             <li key={item.label}>
               <Link
                 href={item.href}

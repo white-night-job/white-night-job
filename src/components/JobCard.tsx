@@ -16,7 +16,7 @@ import {
   isUncontractedPlan,
   UNCONTRACTED_PUBLIC_LABEL,
 } from "@/lib/job-plan";
-import { getJobComparisonBenefitTags } from "@/lib/seo-comparison-tags";
+import { getJobComparisonBenefitTags, buildJobComparisonFeatureBlurb } from "@/lib/seo-comparison-tags";
 
 export function JobCard({
   job,
@@ -30,6 +30,10 @@ export function JobCard({
   const comparisonTags = showComparisonTags
     ? getJobComparisonBenefitTags(job)
     : [];
+  const featureBlurb =
+    showComparisonTags && !storeInfoOnly
+      ? buildJobComparisonFeatureBlurb(job)
+      : null;
   const salaryText = job.salary?.trim() ?? "";
   const workHoursText = job.workHours?.trim() ?? "";
   const showSalary = !storeInfoOnly && (!showComparisonTags || salaryText.length > 0);
@@ -81,11 +85,15 @@ export function JobCard({
               <h3 className="truncate font-serif text-2xl font-semibold text-charcoal">
                 {job.shopName}
               </h3>
-              {!storeInfoOnly && job.introductionText && (
+              {featureBlurb ? (
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-charcoal">
+                  {featureBlurb}
+                </p>
+              ) : !storeInfoOnly && job.introductionText ? (
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">
                   {job.introductionText}
                 </p>
-              )}
+              ) : null}
             </div>
             {!storeInfoOnly && job.isVerified && <SafetyBadge size="sm" />}
           </div>

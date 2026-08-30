@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { rowToJob } from "@/lib/job-db";
 import { listingDisplayGroupRank } from "@/lib/shop-boosts";
+import { collectPresentComparisonBenefits } from "@/lib/seo-comparison-tags";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job, JobType } from "@/types/job";
 
@@ -40,6 +41,8 @@ export type SeoJobsPageResult = {
   page: number;
   pageSize: number;
   totalPages: number;
+  /** Exact benefit strings present among all matching published jobs (pre-pagination). */
+  presentComparisonBenefits: string[];
 };
 
 async function fetchPublishedJobsPageUncached(params: {
@@ -56,6 +59,7 @@ async function fetchPublishedJobsPageUncached(params: {
     page,
     pageSize,
     totalPages: 0,
+    presentComparisonBenefits: [],
   };
 
   if (
@@ -101,6 +105,7 @@ async function fetchPublishedJobsPageUncached(params: {
   const total = sorted.length;
   const from = (page - 1) * pageSize;
   const jobs = sorted.slice(from, from + pageSize);
+  const presentComparisonBenefits = collectPresentComparisonBenefits(sorted);
 
   return {
     jobs,
@@ -108,6 +113,7 @@ async function fetchPublishedJobsPageUncached(params: {
     page,
     pageSize,
     totalPages: total === 0 ? 0 : Math.ceil(total / pageSize),
+    presentComparisonBenefits,
   };
 }
 
