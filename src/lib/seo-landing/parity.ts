@@ -17,7 +17,7 @@ export const SEO_LANDING_PARITY = {
     title: "琴似のガールズバー・ガルバ求人｜White Night Job",
     h1: "琴似のガールズバー・ガルバ求人",
     description:
-      "琴似でガールズバーを探すならWhite Night Job。琴似エリアのガルバ・ガールズバー求人を掲載。時給・各種バック・日払い・送迎・体入などの条件を比較して、自分に合ったお店を探せます。",
+      "琴似のガールズバー求人・ガルバ求人を探すならWhite Night Job。未経験から相談しやすい店舗や体験入店の案内がある求人を、時給・勤務条件・通勤のしやすさから比較できます。",
   },
   susukinoConceptCafe: {
     path: "/sapporo/susukino/concept-cafe",

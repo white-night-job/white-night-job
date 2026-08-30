@@ -17,6 +17,10 @@ import {
   type DistrictJobTypePage,
 } from "@/lib/district-seo";
 import type { SeoColumnLink } from "@/lib/seo-area-job-type-content";
+import {
+  buildDistrictComparisonFilterLinks,
+  getDistrictComparisonListing,
+} from "@/lib/district-comparison-listing";
 
 type DistrictSeoViewProps = {
   area: DistrictAreaPage;
@@ -49,11 +53,24 @@ export function DistrictSeoView({
   const contentSections = jobTypePage?.contentSections;
   const faqHeading =
     jobTypePage?.faqHeading ?? "よくある質問";
-  const { jobs, page, total, totalPages } = jobsResult;
+  const { jobs, page, total, totalPages, presentComparisonBenefits } =
+    jobsResult;
+  const comparisonListing = getDistrictComparisonListing(
+    area.slug,
+    jobTypePage?.slug,
+  );
+  const comparisonFilterLinks = comparisonListing
+    ? buildDistrictComparisonFilterLinks(
+        comparisonListing,
+        presentComparisonBenefits,
+      )
+    : [];
   const benefitLinks = buildDistrictBenefitLinks(area.district);
-  const listHeading = jobTypePage
-    ? `公開中の${jobTypePage.displayName}求人`
-    : `公開中の${area.displayName}求人`;
+  const listHeading = comparisonListing
+    ? comparisonListing.listHeading(total)
+    : jobTypePage
+      ? `公開中の${jobTypePage.displayName}求人`
+      : `公開中の${area.displayName}求人`;
 
   const relatedLinks = DISTRICT_SEO_RELATED_LINKS.filter(
     (link) => link.href !== area.path,
@@ -149,10 +166,13 @@ export function DistrictSeoView({
           待遇から探す
         </h2>
         <p className="mt-2 text-sm text-muted">
-          希望の働き方に近い条件で、{area.displayName}の求人一覧へ絞り込めます。
+          {comparisonListing
+            ? comparisonListing.benefitHint
+            : `希望の働き方に近い条件で、${area.displayName}の求人一覧へ絞り込めます。`}
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
-          {benefitLinks.map((item) => (
+          {(comparisonListing ? comparisonFilterLinks : benefitLinks).map(
+            (item) => (
             <li key={item.label}>
               <Link
                 href={item.href}
@@ -175,7 +195,9 @@ export function DistrictSeoView({
               {listHeading}
             </h2>
             <p className="mt-1 text-sm text-muted">
-              公開中の求人のみ表示しています（{total}件）
+              {comparisonListing
+                ? comparisonListing.countNote
+                : `公開中の求人のみ表示しています（${total}件）`}
             </p>
           </div>
           <Link
@@ -189,6 +211,12 @@ export function DistrictSeoView({
             検索条件でさらに絞り込む
           </Link>
         </div>
+
+        {comparisonListing ? (
+          <p className="mb-4 text-sm leading-7 text-charcoal sm:text-[15px] sm:leading-7">
+            {comparisonListing.compareIntro}
+          </p>
+        ) : null}
 
         {jobs.length === 0 ? (
           <div className="rounded-2xl border border-gold/20 bg-white py-12 text-center">
@@ -206,7 +234,11 @@ export function DistrictSeoView({
         ) : (
           <div className="jobs-list-grid grid gap-4 sm:grid-cols-2">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobCard
+                key={job.id}
+                job={job}
+                showComparisonTags={Boolean(comparisonListing)}
+              />
             ))}
           </div>
         )}
@@ -247,6 +279,25 @@ export function DistrictSeoView({
         )}
       </section>
 
+      {comparisonListing ? (
+        <section
+          className="mt-10"
+          aria-labelledby={comparisonListing.compareTipsId}
+        >
+          <h2
+            id={comparisonListing.compareTipsId}
+            className="font-serif text-xl font-semibold text-charcoal"
+          >
+            {comparisonListing.compareTipsH2}
+          </h2>
+          <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
+            {comparisonListing.compareTips.map((paragraph) => (
+              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {contentSections && contentSections.length > 0 ? (
         <div className="mt-8 space-y-8">
           {contentSections.map((section) => (
@@ -275,9 +326,11 @@ export function DistrictSeoView({
           id="district-beginner"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          {contentSections && contentSections.length > 0
-            ? "初めてガールズバー求人を見る方へ"
-            : "未経験から探す方へ"}
+          {comparisonListing
+            ? comparisonListing.beginnerHeading
+            : contentSections && contentSections.length > 0
+              ? "初めてガールズバー求人を見る方へ"
+              : "未経験から探す方へ"}
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
           {beginnerGuide.map((paragraph) => (

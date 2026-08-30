@@ -120,7 +120,7 @@ export const seoLandingPages: SeoLandingPageDef[] = [
     area: "kotoni",
     jobType: "girlsbar",
     published: true,
-    profile: "girlsbar-name-first",
+    profile: "girlsbar-kotoni-access",
     showInGlobalNav: true,
     globalNavLabel: "{areaName}の{jobTypeName}求人",
     footerNavLabel: "{areaName}の{jobTypeAlias}求人",
