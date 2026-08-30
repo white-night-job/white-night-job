@@ -3,6 +3,7 @@
  * Run: npx tsc --noEmit && node (via next build) or import in tests.
  */
 import { getPublishedSeoLanding } from "@/lib/seo-landing/build";
+import { assertOuterDistrictPages } from "@/lib/seo-landing/assert-outer-district-pages";
 
 export const SEO_LANDING_PARITY = {
   susukinoGirlsbar: {
@@ -117,6 +118,7 @@ export function assertSeoLandingParity(): string[] {
       errors.push(`${check.name}: description mismatch`);
     }
   }
+  errors.push(...assertOuterDistrictPages());
   return errors;
 }
 

@@ -1,4 +1,5 @@
 import type { SeoCopyProfile } from "@/lib/seo-landing/types";
+import { outerDistrictSeoProfiles } from "@/lib/seo-landing/outer-district-profiles";
 
 /**
  * Copy profiles use {areaName} {jobTypeName} {jobTypeAlias} {jobTypeDisplay} {brandName}.
@@ -798,6 +799,7 @@ export const seoCopyProfiles: Record<string, SeoCopyProfile> = {
     detailDescriptionSegment: "{areaName}の{jobTypeAlias}",
     listLinkLabel: "{areaName}の{jobTypeAlias}求人を見る",
   },
+  ...outerDistrictSeoProfiles,
 };
 
 export function getSeoCopyProfile(id: string): SeoCopyProfile | undefined {

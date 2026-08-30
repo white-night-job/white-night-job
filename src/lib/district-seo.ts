@@ -1,10 +1,9 @@
 import type { District, JobType } from "@/types/job";
 import {
-  GIRLSBAR_PATH_SLUG,
   getPublishedSeoLanding,
   listPublishedSeoLandings,
-  normalizeGirlsBarPathSlug,
-} from "@/lib/seo-landing";
+} from "@/lib/seo-landing/build";
+import { normalizeSeoJobTypePathSlug } from "@/lib/seo-landing/job-types";
 import {
   buildAreaJobTypeSeoBody,
   getAreaJobTypeColumnLinks,
@@ -68,7 +67,7 @@ const JOB_TYPE_META: Array<{
   displayName: string;
 }> = [
   {
-    slug: GIRLSBAR_PATH_SLUG,
+    slug: "girlsbar",
     contentSlug: "girls-bar",
     jobType: "ガールズバー",
     displayName: "ガールズバー",
@@ -185,19 +184,17 @@ function buildJobTypePages(
     };
   });
 
-  return applyGirlsBarSeoOverride(area.slug, pages);
+  return applyPublishedLandingOverrides(area.slug, pages);
 }
 
-/** Apply enhanced /girlsbar SEO from seo-landing registry when published. */
-function applyGirlsBarSeoOverride(
+/** Overlay published seo-landing copy onto matching district job-type pages. */
+function applyPublishedLandingOverrides(
   areaSlug: DistrictSeoSlug,
   pages: DistrictJobTypePage[],
 ): DistrictJobTypePage[] {
-  const landing = getPublishedSeoLanding(areaSlug, GIRLSBAR_PATH_SLUG);
-  if (!landing) return pages;
-
   return pages.map((page) => {
-    if (page.slug !== GIRLSBAR_PATH_SLUG) return page;
+    const landing = getPublishedSeoLanding(areaSlug, page.slug);
+    if (!landing) return page;
     return {
       ...page,
       displayName: landing.displayName,
@@ -943,7 +940,7 @@ export function getDistrictJobTypePage(
 ): { area: DistrictAreaPage; jobTypePage: DistrictJobTypePage } | undefined {
   const area = getDistrictAreaPage(areaSlug);
   if (!area) return undefined;
-  const normalized = normalizeGirlsBarPathSlug(jobTypeSlug);
+  const normalized = normalizeSeoJobTypePathSlug(jobTypeSlug);
   const jobTypePage = area.jobTypePages.find((page) => page.slug === normalized);
   if (!jobTypePage) return undefined;
   return { area, jobTypePage };
