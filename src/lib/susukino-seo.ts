@@ -81,52 +81,8 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
     faqHeading?: string;
   }
 > = [
-  // girlsbar is built from src/lib/seo-landing (seoLandingPages + profiles)
-  {
-    slug: "new-club",
-    jobType: "ニュークラ",
-    displayName: "ニュークラブ",
-    path: `${SUSUKINO_BASE_PATH}/new-club`,
-    title: "すすきののニュークラブ求人｜高時給・体験入店求人",
-    description:
-      "すすきののニュークラブ（ニュークラ）求人を掲載。高時給や体験入店を検討しやすい、審査通過店舗の求人を比較できます。体入ホワイトナイトは優良店のみを公開し、ドレスやルールの差も詳細で確認できます。",
-    h1: "すすきののニュークラブ求人",
-    intro: [
-      "すすきののニュークラブ求人（当サイト表記はニュークラ）は、より丁寧な接客や高い時給帯を求める方に選ばれやすい職種です。札幌の夜職求人のなかでも、店舗ごとのルールやドレスコードの差が出やすいため、求人票の確認が重要です。",
-      "White Night Jobでは、掲載審査を通過したニュークラブ求人だけを公開しています。体験入店の流れ、ノルマの有無、送迎、お酒が飲めなくても応募可能かなど、不安になりやすい点は詳細ページと店舗への事前相談で確認してください。",
-    ],
-    guide: [
-      "高時給の求人ほど、勤務時間・同伴・ドレスなどの条件も合わせて読むのが大切です。数字だけで決めず、未経験歓迎か、体験入店から始められるかをチェックしましょう。",
-      "日払いや送迎がある店舗は、生活リズムに合わせた働き方を探しやすい傾向があります。条件が自分に合うか分からない場合は、応募前に質問してから体験入店へ進むのが安心です。",
-    ],
-    faqs: [
-      {
-        question: "すすきののニュークラブは未経験でも応募できますか？",
-        answer:
-          "未経験歓迎の求人もあります。求められる接客やドレスコードは店舗差が大きいため、詳細を確認し、必要なら体験入店から始めるのがおすすめです。",
-      },
-      {
-        question: "ニュークラブで体験入店はできますか？",
-        answer:
-          "体験入店可能な店舗があります。体入時の時給や勤務時間、必要な持ち物は事前に店舗へ確認してください。",
-      },
-      {
-        question: "ノルマが心配です。どう確認すればよいですか？",
-        answer:
-          "待遇にノルマなしとある求人もありますが、同伴や売上に関するルールは店舗ごとに異なります。応募前に必ず質問して確認してください。",
-      },
-      {
-        question: "日払いに対応しているニュークラブはありますか？",
-        answer:
-          "日払いOKの求人を待遇から探せます。精算タイミングは店舗ルールによるため、詳細ページと事前確認が必要です。",
-      },
-      {
-        question: "求人と実際の条件が違う場合は？",
-        answer:
-          "納得できない条件での入店は見送って構いません。危険な店舗や虚偽が疑われる場合は、当サイトの報告フォームをご利用ください。",
-      },
-    ],
-  },
+  // Job-type landings for girlsbar / new-club / lounge / snack / concept-cafe
+  // are built from src/lib/seo-landing (seoLandingPages + profiles).
 ];
 
 export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
@@ -157,11 +113,13 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
   });
 
   const girlsbar = landingBySlug.get("girlsbar");
+  const newClub = landingBySlug.get("new-club");
   const lounge = landingBySlug.get("lounge");
   const snack = landingBySlug.get("snack");
   const conceptCafe = landingBySlug.get("concept-cafe");
   return [
     ...(girlsbar ? [girlsbar] : []),
+    ...(newClub ? [newClub] : []),
     ...fromRaw,
     ...(lounge ? [lounge] : []),
     ...(snack ? [snack] : []),

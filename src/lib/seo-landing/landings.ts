@@ -127,6 +127,15 @@ export const seoLandingPages: SeoLandingPageDef[] = [
   },
   {
     area: "susukino",
+    jobType: "new-club",
+    published: true,
+    profile: "new-club-seated",
+    showInGlobalNav: true,
+    globalNavLabel: "{areaName}の{jobTypeAlias}求人",
+    footerNavLabel: "{areaName}の{jobTypeAlias}求人",
+  },
+  {
+    area: "susukino",
     jobType: "lounge",
     published: true,
     profile: "lounge-calm",
