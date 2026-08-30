@@ -5,7 +5,6 @@ import {
   type SeoColumnLink,
 } from "@/lib/seo-area-job-type-content";
 import {
-  getPublishedSeoLanding,
   listPublishedSeoLandings,
   type BuiltSeoLandingPage,
 } from "@/lib/seo-landing";
@@ -218,55 +217,18 @@ const SUSUKINO_JOB_TYPE_PAGES_RAW: Array<
       },
     ],
   },
-  {
-    slug: "concept-cafe",
-    jobType: "コンカフェ",
-    displayName: "コンカフェ",
-    path: `${SUSUKINO_BASE_PATH}/concept-cafe`,
-    title: "すすきののコンカフェ求人｜世界観を楽しめる優良店求人",
-    description:
-      "すすきののコンカフェ求人を掲載。世界観や衣装が魅力の店舗など、掲載審査を通過した求人を条件から比較できます。体入ホワイトナイトは優良店のみを公開し、応募前のイメージ作りを支えます。",
-    h1: "すすきののコンカフェ求人",
-    intro: [
-      "すすきののコンカフェ求人は、コンセプトや衣装、店内の世界観を大切にする働き方が特徴です。札幌の夜職求人のなかでも、演出や接客スタイルにこだわりたい方の選択肢になります。",
-      "当サイトでは掲載審査を通過したコンカフェのみを掲載しています。未経験歓迎、体験入店、日払い、送迎、ノルマなし、お酒が飲めなくても応募可能といった条件は店舗ごとに異なるため、詳細ページで比較してください。",
-    ],
-    guide: [
-      "コンカフェはコンセプトの相性が働きやすさに直結します。写真や紹介文で雰囲気を確認したうえで、シフトや待遇も必ず見ておきましょう。",
-      "初めての方は体験入店ができる求人から始め、店内の空気感とルールを確かめてから応募を進めるのが安心です。",
-    ],
-    faqs: [
-      {
-        question: "すすきののコンカフェは未経験から働けますか？",
-        answer:
-          "未経験歓迎のコンカフェ求人があります。コンセプトや衣装のルールは店舗ごとに異なるため、詳細を読んでから応募してください。",
-      },
-      {
-        question: "コンカフェで体験入店できますか？",
-        answer:
-          "体験入店を受け付ける店舗があります。体入時の衣装や勤務時間は事前確認がおすすめです。",
-      },
-      {
-        question: "お酒が飲めなくてもコンカフェに応募できますか？",
-        answer:
-          "お酒飲めなくてもOKの求人があります。ドリンク提供のルールは店舗によるため、応募前に確認してください。",
-      },
-      {
-        question: "送迎や日払いがあるコンカフェはありますか？",
-        answer:
-          "送迎あり・日払いOKの求人を待遇から探せます。対応範囲と精算タイミングは店舗確認が必要です。",
-      },
-      {
-        question: "求人と条件が違うと感じたら？",
-        answer:
-          "無理に進めず、相談や応募を停止して構いません。危険なケースはブラック店舗報告をご利用ください。",
-      },
-    ],
-  },
 ];
 
 export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
-  const fromRaw = SUSUKINO_JOB_TYPE_PAGES_RAW.map((page) => {
+  const landingBySlug = new Map(
+    listPublishedSeoLandings()
+      .filter((page) => page.area.slug === "susukino")
+      .map((page) => [page.jobType.pathSlug ?? page.jobType.slug, landingToSusukinoPage(page)]),
+  );
+
+  const fromRaw = SUSUKINO_JOB_TYPE_PAGES_RAW.filter(
+    (page) => !landingBySlug.has(page.slug),
+  ).map((page) => {
     const contentSlug = page.slug === "girlsbar" ? "girls-bar" : page.slug;
     const body = buildAreaJobTypeSeoBody({
       areaKey: "すすきの",
@@ -284,9 +246,13 @@ export const SUSUKINO_JOB_TYPE_PAGES: SusukinoJobTypePage[] = (() => {
     };
   });
 
-  const girlsbarLanding = getPublishedSeoLanding("susukino", "girlsbar");
-  if (!girlsbarLanding) return fromRaw;
-  return [landingToSusukinoPage(girlsbarLanding), ...fromRaw];
+  const girlsbar = landingBySlug.get("girlsbar");
+  const conceptCafe = landingBySlug.get("concept-cafe");
+  return [
+    ...(girlsbar ? [girlsbar] : []),
+    ...fromRaw,
+    ...(conceptCafe ? [conceptCafe] : []),
+  ];
 })();
 
 export const SUSUKINO_AREA_PAGE = {

@@ -109,10 +109,22 @@ export function buildJobComparisonFeatureBlurb(job: {
 }
 
 export function buildGirlsBarBenefitFilterHref(benefitMatch: string): string {
-  const params = new URLSearchParams({
+  return buildSeoBenefitFilterHref({
     district: "すすきの",
     jobType: "ガールズバー",
     benefit: benefitMatch,
   });
-  return `/jobs?${params.toString()}`;
+}
+
+export function buildSeoBenefitFilterHref(params: {
+  district: string;
+  jobType: string;
+  benefit: string;
+}): string {
+  const search = new URLSearchParams({
+    district: params.district,
+    jobType: params.jobType,
+    benefit: params.benefit,
+  });
+  return `/jobs?${search.toString()}`;
 }

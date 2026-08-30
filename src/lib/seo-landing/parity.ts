@@ -19,12 +19,23 @@ export const SEO_LANDING_PARITY = {
     description:
       "琴似でガールズバーを探すならWhite Night Job。琴似エリアのガルバ・ガールズバー求人を掲載。時給・各種バック・日払い・送迎・体入などの条件を比較して、自分に合ったお店を探せます。",
   },
+  susukinoConceptCafe: {
+    path: "/sapporo/susukino/concept-cafe",
+    title: "すすきののコンカフェ求人｜White Night Job",
+    h1: "すすきののコンカフェ求人",
+    description:
+      "すすきののコンカフェ求人を探すならWhite Night Job。未経験からでも相談しやすい求人や体験入店の案内がある店舗を、時給・勤務条件・衣装・コンセプトから比較できます。",
+  },
 } as const;
 
 export function assertSeoLandingParity(): string[] {
   const errors: string[] = [];
   const susukino = getPublishedSeoLanding("susukino", "girlsbar");
   const kotoni = getPublishedSeoLanding("kotoni", "girlsbar");
+  const susukinoConceptCafe = getPublishedSeoLanding(
+    "susukino",
+    "concept-cafe",
+  );
   const checks: Array<{
     name: string;
     actual: ReturnType<typeof getPublishedSeoLanding>;
@@ -39,6 +50,11 @@ export function assertSeoLandingParity(): string[] {
       name: "kotoni/girlsbar",
       actual: kotoni,
       expected: SEO_LANDING_PARITY.kotoniGirlsbar,
+    },
+    {
+      name: "susukino/concept-cafe",
+      actual: susukinoConceptCafe,
+      expected: SEO_LANDING_PARITY.susukinoConceptCafe,
     },
   ];
 

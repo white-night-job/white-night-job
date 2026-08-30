@@ -125,6 +125,15 @@ export const seoLandingPages: SeoLandingPageDef[] = [
     globalNavLabel: "{areaName}の{jobTypeName}求人",
     footerNavLabel: "{areaName}の{jobTypeAlias}求人",
   },
+  {
+    area: "susukino",
+    jobType: "concept-cafe",
+    published: true,
+    profile: "concept-cafe-worldview",
+    showInGlobalNav: true,
+    globalNavLabel: "{areaName}の{jobTypeName}求人",
+    footerNavLabel: "{areaName}の{jobTypeName}求人",
+  },
   // Examples (unpublished — keep commented or published:false):
   // { area: "kita24jo", jobType: "girlsbar", published: false, profile: "girlsbar-name-first" },
   // { area: "teine", jobType: "girlsbar", published: false, profile: "girlsbar-name-first" },

@@ -22,9 +22,9 @@ import {
   type SeoColumnLink,
 } from "@/lib/seo-area-job-type-content";
 import {
-  SEO_GIRLSBAR_FILTER_DEFS,
-  buildGirlsBarBenefitFilterHref,
-} from "@/lib/seo-comparison-tags";
+  getSusukinoComparisonListing,
+  buildSusukinoComparisonFilterLinks,
+} from "@/lib/susukino-comparison-listing";
 
 type FaqItem = { question: string; answer: string };
 
@@ -68,19 +68,17 @@ export function SusukinoSeoView({
 }: SusukinoSeoViewProps) {
   const { jobs, page, total, totalPages, presentComparisonBenefits } =
     jobsResult;
-  const isGirlsbar = jobTypePage?.slug === "girlsbar";
-  const listHeading = isGirlsbar
-    ? `公開中のすすきのガールズバー求人 ${total}件`
+  const comparisonListing = getSusukinoComparisonListing(jobTypePage?.slug);
+  const listHeading = comparisonListing
+    ? comparisonListing.listHeading(total)
     : jobTypePage
       ? `公開中の${jobTypePage.displayName}求人`
       : "公開中のすすきの求人";
-  const girlsbarFilterLinks = isGirlsbar
-    ? SEO_GIRLSBAR_FILTER_DEFS.filter((def) =>
-        presentComparisonBenefits.includes(def.match),
-      ).map((def) => ({
-        label: def.label,
-        href: buildGirlsBarBenefitFilterHref(def.match),
-      }))
+  const comparisonFilterLinks = comparisonListing
+    ? buildSusukinoComparisonFilterLinks(
+        comparisonListing,
+        presentComparisonBenefits,
+      )
     : [];
   const relatedColumns =
     columnLinks ??
@@ -161,13 +159,13 @@ export function SusukinoSeoView({
             >
               {listHeading}
             </h2>
-            {!isGirlsbar ? (
+            {!comparisonListing ? (
               <p className="mt-1 text-sm text-muted">
                 公開中の求人のみ表示しています（{total}件）
               </p>
             ) : (
               <p className="mt-1 text-sm text-muted">
-                表示条件は各店舗が登録した情報です。件数はDBの公開中求人から自動集計しています。
+                {comparisonListing.countNote}
               </p>
             )}
           </div>
@@ -183,22 +181,22 @@ export function SusukinoSeoView({
           </Link>
         </div>
 
-        {isGirlsbar ? (
+        {comparisonListing ? (
           <p className="mb-4 text-sm leading-7 text-charcoal sm:text-[15px] sm:leading-7">
-            すすきののガールズバー求人を、時給・体験入店・送迎・シフト・未経験歓迎などの条件から比較できます。気になる求人は詳細ページで勤務時間や待遇を確認してください。
+            {comparisonListing.compareIntro}
           </p>
         ) : null}
 
-        {girlsbarFilterLinks.length > 0 ? (
+        {comparisonFilterLinks.length > 0 ? (
           <nav
             className="mb-5"
-            aria-label="すすきのガールズバー求人の条件から探す"
+            aria-label={comparisonListing?.filterAria}
           >
             <p className="mb-2 text-xs font-semibold tracking-wide text-muted">
               条件から探す（公開中に該当があるもののみ）
             </p>
             <ul className="flex flex-wrap gap-2">
-              {girlsbarFilterLinks.map((item) => (
+              {comparisonFilterLinks.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -231,7 +229,7 @@ export function SusukinoSeoView({
               <JobCard
                 key={job.id}
                 job={job}
-                showComparisonTags={isGirlsbar}
+                showComparisonTags={Boolean(comparisonListing)}
               />
             ))}
           </div>
@@ -273,25 +271,21 @@ export function SusukinoSeoView({
         )}
       </section>
 
-      {isGirlsbar ? (
+      {comparisonListing ? (
         <section
           className="mt-10"
-          aria-labelledby="susukino-girlsbar-compare-tips"
+          aria-labelledby={comparisonListing.compareTipsId}
         >
           <h2
-            id="susukino-girlsbar-compare-tips"
+            id={comparisonListing.compareTipsId}
             className="font-serif text-xl font-semibold text-charcoal"
           >
-            すすきのでガールズバー求人を比較するときのポイント
+            {comparisonListing.compareTipsH2}
           </h2>
           <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
-            <p>
-              時給の高さだけで決めず、通いやすさ・シフトの入りやすさ・終業後の帰宅手段までセットで見ると、続けやすいお店を選びやすくなります。White
-              Night Jobでは、掲載審査を通過した店舗の登録情報をもとに、すすきののガールズバー求人を並べて比較できます。
-            </p>
-            <p>
-              体験入店（体入）の案内があるか、送迎や終業時間、週の出勤ペース、未経験者へのサポート（研修・フォローの記載）も確認ポイントです。求人票の待遇タグと詳細の説明が一致しているか、応募前の質問で確かめるとミスマッチを減らせます。
-            </p>
+            {comparisonListing.compareTips.map((paragraph) => (
+              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+            ))}
           </div>
         </section>
       ) : null}
@@ -332,11 +326,10 @@ export function SusukinoSeoView({
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
             {SUSUKINO_JOB_TYPE_PAGES.map((item) => {
-              const landingNav =
-                item.slug === "girlsbar"
-                  ? getPublishedSeoLanding("susukino", "girlsbar")
-                      ?.globalNavLabel
-                  : undefined;
+              const landingNav = getPublishedSeoLanding(
+                "susukino",
+                item.slug,
+              )?.globalNavLabel;
               return (
                 <li key={item.slug}>
                   <Link
@@ -360,13 +353,13 @@ export function SusukinoSeoView({
           待遇から探す
         </h2>
         <p className="mt-2 text-sm text-muted">
-          {isGirlsbar
-            ? "公開中のすすきのガールズバー求人に実際にある待遇だけを表示しています。条件を選ぶと求人一覧へ絞り込めます。"
+          {comparisonListing
+            ? comparisonListing.benefitHint
             : "希望の働き方に近い条件で、すすきのの求人一覧へ絞り込めます。"}
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
-          {(isGirlsbar && girlsbarFilterLinks.length > 0
-            ? girlsbarFilterLinks
+          {(comparisonListing && comparisonFilterLinks.length > 0
+            ? comparisonFilterLinks
             : SUSUKINO_BENEFIT_LINKS
           ).map((item) => (
             <li key={item.label}>
@@ -386,8 +379,8 @@ export function SusukinoSeoView({
           id="susukino-beginner"
           className="font-serif text-xl font-semibold text-charcoal"
         >
-          {sections && sections.length > 0
-            ? "初めてガルバ求人を見る方へ"
+          {comparisonListing
+            ? comparisonListing.beginnerHeading
             : "初めて夜職を探す方へ"}
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-charcoal sm:text-base sm:leading-8">
