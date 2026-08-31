@@ -137,7 +137,7 @@ export function GirlReviewsJumpCard({
         onClick={handleClick}
         className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-gold-dark underline-offset-2 hover:underline"
       >
-        💬 女の子の口コミを見る
+        💬 女の子の口コミ・体験談を見る
       </a>
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
