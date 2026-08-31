@@ -537,6 +537,7 @@ export default function ShopDashboardPage() {
   const planDefinition = getPlanDefinition(jobPlan);
   const planFeatures = getPlanFeatures(jobPlan);
   const analyticsEnabled = planFeatures.analytics;
+  const isLightPlan = jobPlan === "light";
 
   function setField<K extends keyof ShopForm>(key: K, value: ShopForm[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -847,7 +848,9 @@ export default function ShopDashboardPage() {
             {displayShopName}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            自店舗の求人情報と応募・表示回数を確認できます。
+            {isLightPlan
+              ? "自店舗の求人情報と応募数を確認できます。"
+              : "自店舗の求人情報と応募・表示回数を確認できます。"}
           </p>
           <p className="mt-2 inline-flex items-center gap-2 text-xs font-medium">
             <span
@@ -1290,8 +1293,14 @@ export default function ShopDashboardPage() {
       </div>
 
       <section className="mb-8 space-y-3">
-        <h2 className="text-lg font-semibold text-charcoal">応募・表示回数（累計）</h2>
-        <dl className="grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className="text-lg font-semibold text-charcoal">
+          {isLightPlan ? "応募数（累計）" : "応募・表示回数（累計）"}
+        </h2>
+        <dl
+          className={`grid gap-3 rounded-2xl border border-gold/20 bg-white p-4 sm:grid-cols-2 ${
+            isLightPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"
+          }`}
+        >
           <div>
             <dt className="text-xs text-muted">LINE応募数</dt>
             <dd className="text-lg font-semibold text-[#047a3b]">
@@ -1322,6 +1331,7 @@ export default function ShopDashboardPage() {
               )}
             </dd>
           </div>
+          {!isLightPlan && (
           <div>
             <dt className="text-xs text-muted">詳細ページ表示（累計）</dt>
             <dd className="text-lg font-semibold text-charcoal">
@@ -1332,6 +1342,7 @@ export default function ShopDashboardPage() {
               )}
             </dd>
           </div>
+          )}
         </dl>
       </section>
 
@@ -1479,6 +1490,7 @@ export default function ShopDashboardPage() {
         monthlyApplications={monthlyApplicationStats}
         monthlyApplicationsLoading={deferredLoading}
         lightPlan={!analyticsEnabled}
+        jobPlan={jobPlan}
       />
 
       <p className="mt-6 text-center text-xs text-muted">

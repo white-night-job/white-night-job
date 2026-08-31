@@ -10,6 +10,7 @@ import type {
   ShopImprovementReport as ReportPayload,
   ShopLightAnalyticsSummary,
 } from "@/lib/shop-improvement-report";
+import type { JobPlan } from "@/lib/job-plan";
 
 type ApiResponse = {
   report?: ReportPayload;
@@ -23,6 +24,7 @@ type ShopImprovementReportProps = {
   monthlyApplicationsLoading: boolean;
   /** 見出しの初期表示用。実際の表示内容はサーバーのプラン判定（APIレスポンス）に従う。 */
   lightPlan: boolean;
+  jobPlan: JobPlan;
 };
 
 const REPORT_LOAD_ERROR_MESSAGE =
@@ -220,6 +222,7 @@ export function ShopImprovementReport({
   monthlyApplications,
   monthlyApplicationsLoading,
   lightPlan,
+  jobPlan,
 }: ShopImprovementReportProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -270,6 +273,7 @@ export function ShopImprovementReport({
   }, []);
 
   const premium = report?.premium ?? null;
+  const isLightPlan = jobPlan === "light";
   // サーバーのプラン判定（レスポンス種別）を優先し、読み込み中は props で見出しを出し分ける。
   const isLightView = light != null || (lightPlan && !report);
 
@@ -293,11 +297,17 @@ export function ShopImprovementReport({
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-serif text-lg font-semibold text-charcoal">
-            {isLightView ? "アクセス・応募分析" : "アクセス・応募分析・レポート"}
+            {isLightView
+              ? isLightPlan
+                ? "応募分析"
+                : "アクセス・応募分析"
+              : "アクセス・応募分析・レポート"}
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted">
             {isLightView
-              ? `${light?.monthLabel ?? "今月"}のアクセスと応募の状況です。`
+              ? isLightPlan
+                ? `${light?.monthLabel ?? "今月"}の応募の状況です。`
+                : `${light?.monthLabel ?? "今月"}のアクセスと応募の状況です。`
               : report
                 ? `${report.monthLabel}の数値と求人内容から、応募を増やすための改善案をご提案します。`
                 : "今月の数値と求人内容から、応募を増やすための改善案をご提案します。"}
@@ -326,13 +336,19 @@ export function ShopImprovementReport({
           <div className="space-y-5">
             <div>
               <h3 className="text-sm font-semibold text-charcoal">
-                基本的なアクセス・応募状況
+                {isLightPlan ? "基本的な応募状況" : "基本的なアクセス・応募状況"}
               </h3>
               <p className="mt-1 text-xs text-muted">
                 対象期間：{light.periodLabel || light.monthLabel}
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                <MetricCard label="表示回数" value={light.current.impressions} />
+              <div
+                className={`mt-2 grid grid-cols-2 gap-2 ${
+                  isLightPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"
+                }`}
+              >
+                {!isLightPlan && (
+                  <MetricCard label="表示回数" value={light.current.impressions} />
+                )}
                 <MetricCard
                   label="LINE応募数"
                   value={light.current.lineClicks}
@@ -348,12 +364,16 @@ export function ShopImprovementReport({
               </div>
             </div>
 
-            <ShopMonthlyImpressionBarChart data={light.monthly ?? []} />
+            {!isLightPlan && (
+              <ShopMonthlyImpressionBarChart data={light.monthly ?? []} />
+            )}
 
             {monthlyApplicationsBlock}
 
             <p className="text-[11px] leading-relaxed text-muted">
-              応募数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの1分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。
+              {isLightPlan
+                ? "応募数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。"
+                : "応募数は実際の応募完了人数ではなく、LINE・電話の応募ボタンのクリック数です。表示回数は同一ユーザーの1分以内の連続表示と、管理画面・プレビューからのアクセスを除外しています。詳細クリック数や改善レポートはスタンダード以上のプランでご利用いただけます。"}
             </p>
           </div>
         )}
