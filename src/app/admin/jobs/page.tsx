@@ -383,6 +383,11 @@ function AdminJobsPageInner() {
   const pendingScrollToEditorRef = useRef(false);
   const pendingScrollToListRef = useRef(false);
   const pendingScrollToTopRef = useRef(false);
+  /** Prevents ?edit= reload from wiping in-progress form (e.g. preview → 修正する). */
+  const editingIdRef = useRef<string | null>(null);
+  const showPreviewRef = useRef(false);
+  /** Form state at preview open — restored on「修正する」so edits are never reset. */
+  const previewFormSnapshotRef = useRef<JobForm | null>(null);
   const messageClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -666,9 +671,15 @@ function AdminJobsPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  editingIdRef.current = editingId;
+  showPreviewRef.current = showPreview;
+
   useEffect(() => {
     const editId = searchParams.get("edit")?.trim();
     if (!editId) return;
+    // Already editing this job (or previewing it): do not reload from API.
+    // Reloading would call handleEdit and wipe unsaved form / close preview.
+    if (editingIdRef.current === editId || showPreviewRef.current) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -682,6 +693,8 @@ function AdminJobsPageInner() {
           }),
         );
         if (cancelled) return;
+        // Re-check after await: user may have opened preview or started editing.
+        if (editingIdRef.current === editId || showPreviewRef.current) return;
         handleEdit(data.job, { skipUrlUpdate: true });
         setEditingListingRanks(data.listingRanks ?? null);
       } catch (error) {
@@ -867,6 +880,7 @@ function AdminJobsPageInner() {
     setShowPreview(false);
     setPreviewKind("publish");
     setPreviewGirlReviews([]);
+    previewFormSnapshotRef.current = null;
     setFormDirty(false);
     setFieldErrors({});
     setPendingSaveIntent(null);
@@ -952,9 +966,12 @@ function AdminJobsPageInner() {
 
       if (options?.silent) {
         setEditingId(savedJob.id);
-        setForm(toForm(savedJob));
+        // While preview is open, keep the in-memory form (preview → 修正する must not lose edits).
+        if (!showPreviewRef.current) {
+          setForm(toForm(savedJob));
+          setFormDirty(false);
+        }
         setEditingListingStatus(resolveJobListingStatus(savedJob));
-        setFormDirty(false);
         setDraftJobId(savedJob.id);
         if (!editingId) {
           router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
@@ -1087,9 +1104,32 @@ function AdminJobsPageInner() {
     }
     const jobId = editingId ?? draftJobId;
     await loadPreviewGirlReviews(jobId);
+    // Snapshot before preview so「修正する」can restore without re-init / DB reload.
+    try {
+      previewFormSnapshotRef.current = structuredClone(form);
+    } catch {
+      previewFormSnapshotRef.current = {
+        ...form,
+        benefits: [...form.benefits],
+        storeImages: [...form.storeImages],
+        castVoices: form.castVoices.map((voice) => ({ ...voice })),
+      };
+    }
     setPreviewKind(kind);
     requestScrollToTop();
     setShowPreview(true);
+  }
+
+  function handleBackFromPreview() {
+    const snapshot = previewFormSnapshotRef.current;
+    previewFormSnapshotRef.current = null;
+    if (snapshot) {
+      setForm(snapshot);
+      // Keep editor open with in-progress edits; do not reset / reload / close.
+      setFormDirty(true);
+    }
+    requestScrollToTop();
+    setShowPreview(false);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -1378,10 +1418,7 @@ function AdminJobsPageInner() {
         listingStatus={editingListingStatus}
         submitting={loading}
         girlReviews={previewGirlReviews}
-        onBack={() => {
-          requestScrollToTop();
-          setShowPreview(false);
-        }}
+        onBack={handleBackFromPreview}
         onConfirm={
           previewKind === "publish"
             ? () => {
