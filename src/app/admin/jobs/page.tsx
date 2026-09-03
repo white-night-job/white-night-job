@@ -366,7 +366,6 @@ function AdminJobsPageInner() {
   const [formDirty, setFormDirty] = useState(false);
   const [editingListingStatus, setEditingListingStatus] =
     useState<JobListingStatus>("draft");
-  const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [expandedHistoryJobIds, setExpandedHistoryJobIds] = useState<
     Set<string>
   >(new Set());
@@ -388,6 +387,19 @@ function AdminJobsPageInner() {
   const showPreviewRef = useRef(false);
   /** Form state at preview open — restored on「修正する」so edits are never reset. */
   const previewFormSnapshotRef = useRef<JobForm | null>(null);
+  /** Always-current form/dirty for autosave (avoids stale closures overwriting newer input). */
+  const formRef = useRef<JobForm>(emptyForm);
+  const formDirtyRef = useRef(false);
+  const isAddFormOpenRef = useRef(false);
+  const editingListingStatusRef = useRef<JobListingStatus>("draft");
+  const draftJobIdRef = useRef(draftJobId);
+  const previewKindRef = useRef(previewKind);
+  const localPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverAutosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autosaveInFlightRef = useRef(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const messageClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -436,33 +448,24 @@ function AdminJobsPageInner() {
     if (sessionRedirectRef.current) return;
     sessionRedirectRef.current = true;
 
-    if (editingId !== null || isAddFormOpen) {
+    if (editingIdRef.current !== null || isAddFormOpenRef.current) {
       saveAdminJobFormDraft({
-        form: form as unknown as Record<string, unknown>,
-        editingId,
-        draftJobId,
-        isAddFormOpen,
-        editingListingStatus,
-        showPreview,
-        previewKind,
+        form: formRef.current as unknown as Record<string, unknown>,
+        editingId: editingIdRef.current,
+        draftJobId: draftJobIdRef.current,
+        isAddFormOpen: isAddFormOpenRef.current,
+        editingListingStatus: editingListingStatusRef.current,
+        showPreview: showPreviewRef.current,
+        previewKind: previewKindRef.current,
         savedAt: Date.now(),
       });
     }
 
-    const returnPath = editingId
-      ? `/admin/jobs?edit=${encodeURIComponent(editingId)}`
+    const returnPath = editingIdRef.current
+      ? `/admin/jobs?edit=${encodeURIComponent(editingIdRef.current)}`
       : "/admin/jobs";
     router.replace(buildAdminLoginRedirectUrl(returnPath));
-  }, [
-    draftJobId,
-    editingId,
-    editingListingStatus,
-    form,
-    isAddFormOpen,
-    previewKind,
-    router,
-    showPreview,
-  ]);
+  }, [router]);
 
   const ensureAdminSession = useCallback(async (): Promise<boolean> => {
     const ok = await checkAdminSession();
@@ -478,6 +481,30 @@ function AdminJobsPageInner() {
     checkSession: checkAdminSession,
     onSessionExpired: handleSessionExpired,
   });
+
+  function persistLocalDraftNow() {
+    if (!(editingIdRef.current !== null || isAddFormOpenRef.current || showPreviewRef.current)) {
+      return;
+    }
+    saveAdminJobFormDraft({
+      form: formRef.current as unknown as Record<string, unknown>,
+      editingId: editingIdRef.current,
+      draftJobId: draftJobIdRef.current,
+      isAddFormOpen: isAddFormOpenRef.current,
+      editingListingStatus: editingListingStatusRef.current,
+      showPreview: showPreviewRef.current,
+      previewKind: previewKindRef.current,
+      savedAt: Date.now(),
+    });
+  }
+
+  function scheduleLocalDraftPersist() {
+    if (localPersistTimerRef.current) clearTimeout(localPersistTimerRef.current);
+    localPersistTimerRef.current = setTimeout(() => {
+      localPersistTimerRef.current = null;
+      persistLocalDraftNow();
+    }, 800);
+  }
 
   function togglePlanFilter(plan: JobPlan) {
     setPlanFilters((current) =>
@@ -662,24 +689,41 @@ function AdminJobsPageInner() {
       setPreviewKind(draft.previewKind);
     }
     setFormDirty(true);
+    setAutosaveStatus("saved");
     setMessage(
       "入力内容を復元しました。内容をご確認のうえ、再度保存してください。",
     );
-    clearAdminJobFormDraft();
 
-    router.replace("/admin/jobs", { scroll: false });
+    router.replace(
+      draft.editingId
+        ? `/admin/jobs?edit=${encodeURIComponent(draft.editingId)}`
+        : "/admin/jobs",
+      { scroll: false },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   editingIdRef.current = editingId;
   showPreviewRef.current = showPreview;
+  formRef.current = form;
+  formDirtyRef.current = formDirty;
+  isAddFormOpenRef.current = isAddFormOpen;
+  editingListingStatusRef.current = editingListingStatus;
+  draftJobIdRef.current = draftJobId;
+  previewKindRef.current = previewKind;
 
   useEffect(() => {
+    if (searchParams.get("restoreDraft") === "1") return;
     const editId = searchParams.get("edit")?.trim();
     if (!editId) return;
-    // Already editing this job (or previewing it): do not reload from API.
-    // Reloading would call handleEdit and wipe unsaved form / close preview.
-    if (editingIdRef.current === editId || showPreviewRef.current) return;
+    // Already editing this job (or previewing / dirty): never reload DB over input.
+    if (
+      editingIdRef.current === editId ||
+      showPreviewRef.current ||
+      (formDirtyRef.current && editingIdRef.current === editId)
+    ) {
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {
@@ -693,10 +737,35 @@ function AdminJobsPageInner() {
           }),
         );
         if (cancelled) return;
-        // Re-check after await: user may have opened preview or started editing.
-        if (editingIdRef.current === editId || showPreviewRef.current) return;
-        handleEdit(data.job, { skipUrlUpdate: true });
+        // Re-check after await: user may have started typing or opened preview.
+        if (
+          showPreviewRef.current ||
+          (editingIdRef.current === editId && formDirtyRef.current)
+        ) {
+          return;
+        }
+        // Prefer local in-progress draft over older DB row (reload / session return).
+        const local = loadAdminJobFormDraft();
+        const hasLocalForJob =
+          local?.form &&
+          local.editingId === editId &&
+          typeof local.savedAt === "number";
+
+        if (editingIdRef.current === editId && !hasLocalForJob) {
+          return;
+        }
+
+        handleEdit(data.job, {
+          skipUrlUpdate: true,
+          preserveLocalDraft: true,
+        });
         setEditingListingRanks(data.listingRanks ?? null);
+
+        if (hasLocalForJob && local?.form) {
+          setForm(local.form as unknown as JobForm);
+          setFormDirty(true);
+          setAutosaveStatus("saved");
+        }
       } catch (error) {
         if (!cancelled) {
           setMessage(
@@ -713,6 +782,24 @@ function AdminJobsPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Restore in-progress "求人を追加" form after reload (no ?edit=).
+  useEffect(() => {
+    if (searchParams.get("restoreDraft") === "1") return;
+    if (searchParams.get("edit")?.trim()) return;
+    if (editingIdRef.current || isAddFormOpenRef.current) return;
+    const draft = loadAdminJobFormDraft();
+    if (!draft?.form || !draft.isAddFormOpen || draft.editingId) return;
+    if (Date.now() - draft.savedAt > 24 * 60 * 60 * 1000) return;
+    setForm(draft.form as unknown as JobForm);
+    setDraftJobId(draft.draftJobId);
+    setIsAddFormOpen(true);
+    setEditingListingStatus(draft.editingListingStatus as JobListingStatus);
+    setFormDirty(true);
+    setAutosaveStatus("saved");
+    setMessage("前回の入力内容を復元しました。");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     if (isDraftSearchOpen && !draftSearchPerformed) {
       void runDraftSearch();
@@ -721,8 +808,15 @@ function AdminJobsPageInner() {
   }, [isDraftSearchOpen]);
 
   function setField<K extends keyof JobForm>(key: K, value: JobForm[K]) {
-    setForm((current) => ({ ...current, [key]: value }));
+    setForm((current) => {
+      const next = { ...current, [key]: value };
+      formRef.current = next;
+      return next;
+    });
     setFormDirty(true);
+    formDirtyRef.current = true;
+    setAutosaveStatus("idle");
+    scheduleLocalDraftPersist();
     setFieldErrors((prev) => {
       if (!prev[key as string]) return prev;
       const next = { ...prev };
@@ -733,6 +827,9 @@ function AdminJobsPageInner() {
 
   function markFormDirty() {
     setFormDirty(true);
+    formDirtyRef.current = true;
+    setAutosaveStatus("idle");
+    scheduleLocalDraftPersist();
   }
 
   const showCopyToast = useCallback(
@@ -780,36 +877,49 @@ function AdminJobsPageInner() {
   }, []);
 
   function applyPlan(plan: JobPlan) {
-    setForm((current) => ({
-      ...current,
-      ...planToFormPatch(plan),
-    }));
+    setForm((current) => {
+      const next = { ...current, ...planToFormPatch(plan) };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
   function toggleBenefit(benefit: string) {
-    setForm((current) => ({
-      ...current,
-      benefits: current.benefits.includes(benefit)
-        ? current.benefits.filter((item) => item !== benefit)
-        : [...current.benefits, benefit],
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        benefits: current.benefits.includes(benefit)
+          ? current.benefits.filter((item) => item !== benefit)
+          : [...current.benefits, benefit],
+      };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
   function addCastVoice() {
-    setForm((current) => ({
-      ...current,
-      castVoices: [...current.castVoices, emptyCastVoiceEntry()],
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        castVoices: [...current.castVoices, emptyCastVoiceEntry()],
+      };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
   function removeCastVoice(index: number) {
-    setForm((current) => ({
-      ...current,
-      castVoices: current.castVoices.filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        castVoices: current.castVoices.filter((_, itemIndex) => itemIndex !== index),
+      };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
@@ -818,20 +928,28 @@ function AdminJobsPageInner() {
     key: keyof CastVoiceEntry,
     value: string,
   ) {
-    setForm((current) => ({
-      ...current,
-      castVoices: current.castVoices.map((entry, itemIndex) =>
-        itemIndex === index ? { ...entry, [key]: value } : entry,
-      ),
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        castVoices: current.castVoices.map((entry, itemIndex) =>
+          itemIndex === index ? { ...entry, [key]: value } : entry,
+        ),
+      };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
   function removeStoreImage(index: number) {
-    setForm((current) => ({
-      ...current,
-      storeImages: current.storeImages.filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        storeImages: current.storeImages.filter((_, itemIndex) => itemIndex !== index),
+      };
+      formRef.current = next;
+      return next;
+    });
     markFormDirty();
   }
 
@@ -874,14 +992,21 @@ function AdminJobsPageInner() {
     autoClearMessageMs?: number;
   }) {
     setForm(emptyForm);
+    formRef.current = emptyForm;
     setEditingId(null);
+    editingIdRef.current = null;
     setEditingListingStatus("draft");
+    editingListingStatusRef.current = "draft";
     setIsAddFormOpen(false);
+    isAddFormOpenRef.current = false;
     setShowPreview(false);
     setPreviewKind("publish");
     setPreviewGirlReviews([]);
     previewFormSnapshotRef.current = null;
     setFormDirty(false);
+    formDirtyRef.current = false;
+    setAutosaveStatus("idle");
+    clearAdminJobFormDraft();
     setFieldErrors({});
     setPendingSaveIntent(null);
     pendingScrollToEditorRef.current = false;
@@ -907,12 +1032,16 @@ function AdminJobsPageInner() {
   }
 
   async function saveJob(saveIntent: "draft" | "publish" | "pause" | "republish", options?: { silent?: boolean }) {
-    if (publishLockRef.current || loading) return null;
+    if (publishLockRef.current || (!options?.silent && loading)) return null;
+    if (options?.silent && autosaveInFlightRef.current) return null;
     publishLockRef.current = true;
+    if (options?.silent) autosaveInFlightRef.current = true;
     const isPublishedUpdate =
-      editingId != null &&
-      editingListingStatus === "published" &&
+      editingIdRef.current != null &&
+      editingListingStatusRef.current === "published" &&
       saveIntent === "publish";
+    const formAtSave = formRef.current;
+    const editingIdAtSave = editingIdRef.current;
     if (!options?.silent) {
       setLoading(true);
       setPendingSaveIntent(saveIntent);
@@ -922,16 +1051,19 @@ function AdminJobsPageInner() {
       }
       setMessage("");
       setFieldErrors({});
+    } else {
+      setAutosaveStatus("saving");
     }
     try {
       if (!(await ensureAdminSession())) {
+        if (options?.silent) setAutosaveStatus("error");
         return null;
       }
-      const wasCreate = !editingId;
-      const url = editingId ? `/api/jobs/${editingId}` : "/api/jobs";
-      const method = editingId ? "PUT" : "POST";
+      const wasCreate = !editingIdAtSave;
+      const url = editingIdAtSave ? `/api/jobs/${editingIdAtSave}` : "/api/jobs";
+      const method = editingIdAtSave ? "PUT" : "POST";
       const payload = {
-        ...(await promoteTempImagesInPayload(toPayload(form))),
+        ...(await promoteTempImagesInPayload(toPayload(formAtSave))),
         saveIntent,
       };
       const saveResult = await readJson<{
@@ -966,14 +1098,24 @@ function AdminJobsPageInner() {
 
       if (options?.silent) {
         setEditingId(savedJob.id);
-        // While preview is open, keep the in-memory form (preview → 修正する must not lose edits).
-        if (!showPreviewRef.current) {
-          setForm(toForm(savedJob));
-          setFormDirty(false);
-        }
+        editingIdRef.current = savedJob.id;
         setEditingListingStatus(resolveJobListingStatus(savedJob));
+        editingListingStatusRef.current = resolveJobListingStatus(savedJob);
         setDraftJobId(savedJob.id);
-        if (!editingId) {
+        draftJobIdRef.current = savedJob.id;
+        // Never replace in-progress form with DB response (wipes newer keystrokes).
+        // Clear dirty only when the user has not typed since this save started.
+        const unchangedSinceSave =
+          JSON.stringify(formRef.current) === JSON.stringify(formAtSave);
+        if (unchangedSinceSave) {
+          setFormDirty(false);
+          formDirtyRef.current = false;
+          setAutosaveStatus("saved");
+        } else {
+          setAutosaveStatus("idle");
+        }
+        persistLocalDraftNow();
+        if (!editingIdAtSave) {
           router.replace(`/admin/jobs?edit=${savedJob.id}`, { scroll: false });
         }
         return savedJob;
@@ -1024,6 +1166,10 @@ function AdminJobsPageInner() {
       }
       return savedJob;
     } catch (error) {
+      if (options?.silent) {
+        setAutosaveStatus("error");
+        persistLocalDraftNow();
+      }
       if (isSessionExpiredError(error)) {
         handleSessionExpired();
         return null;
@@ -1061,6 +1207,7 @@ function AdminJobsPageInner() {
         setLoading(false);
         setPendingSaveIntent(null);
       }
+      autosaveInFlightRef.current = false;
       publishLockRef.current = false;
     }
   }
@@ -1125,8 +1272,11 @@ function AdminJobsPageInner() {
     previewFormSnapshotRef.current = null;
     if (snapshot) {
       setForm(snapshot);
+      formRef.current = snapshot;
       // Keep editor open with in-progress edits; do not reset / reload / close.
       setFormDirty(true);
+      formDirtyRef.current = true;
+      scheduleLocalDraftPersist();
     }
     requestScrollToTop();
     setShowPreview(false);
@@ -1272,13 +1422,17 @@ function AdminJobsPageInner() {
       }
 
       if (uploadedUrls.length > 0) {
-        setForm((current) => ({
-          ...current,
-          storeImages: sanitizeStoreImagesForSave([
-            ...current.storeImages,
-            ...uploadedUrls,
-          ]),
-        }));
+        setForm((current) => {
+          const next = {
+            ...current,
+            storeImages: sanitizeStoreImagesForSave([
+              ...current.storeImages,
+              ...uploadedUrls,
+            ]),
+          };
+          formRef.current = next;
+          return next;
+        });
         markFormDirty();
       }
 
@@ -1310,19 +1464,30 @@ function AdminJobsPageInner() {
 
   function handleEdit(
     job: Job,
-    options?: { skipUrlUpdate?: boolean },
+    options?: { skipUrlUpdate?: boolean; preserveLocalDraft?: boolean },
   ) {
     // Single editor only — reusing the same form state (no duplicate mounts).
+    const nextForm = toForm(job);
     setEditingId(job.id);
-    setForm(toForm(job));
+    editingIdRef.current = job.id;
+    setForm(nextForm);
+    formRef.current = nextForm;
     setEditingListingStatus(resolveJobListingStatus(job));
+    editingListingStatusRef.current = resolveJobListingStatus(job);
     setEditingListingRanks(listingRanksByJobId[job.id] ?? null);
     setIsAddFormOpen(false);
+    isAddFormOpenRef.current = false;
     setShowPreview(false);
     setFormDirty(false);
+    formDirtyRef.current = false;
+    setAutosaveStatus("idle");
     setFieldErrors({});
     setMessage("");
     setDraftJobId(job.id);
+    draftJobIdRef.current = job.id;
+    if (!options?.preserveLocalDraft) {
+      clearAdminJobFormDraft();
+    }
     if (!options?.skipUrlUpdate) {
       router.replace(`/admin/jobs?edit=${job.id}`, { scroll: false });
     }
@@ -1386,24 +1551,51 @@ function AdminJobsPageInner() {
       if (messageClearTimerRef.current) {
         clearTimeout(messageClearTimerRef.current);
       }
+      if (localPersistTimerRef.current) clearTimeout(localPersistTimerRef.current);
+      if (serverAutosaveTimerRef.current) clearTimeout(serverAutosaveTimerRef.current);
     };
   }, []);
 
+  // Debounced server autosave after idle typing (existing drafts only).
+  // Uses formRef so the latest input is saved — never a stale closure snapshot.
   useEffect(() => {
     if (!isFormVisible || !formDirty) return;
-    if (autosaveTimerRef.current) clearInterval(autosaveTimerRef.current);
-    autosaveTimerRef.current = setInterval(() => {
-      if (!formDirty || publishLockRef.current || loading) return;
-      if (!editingId) return; // 新規は手動の下書き保存のみ（重複作成防止）
+    if (showPreview) return;
+    if (!editingId) {
+      // New job: localStorage only (avoid duplicate DB drafts). Status still updates.
+      if (serverAutosaveTimerRef.current) clearTimeout(serverAutosaveTimerRef.current);
+      serverAutosaveTimerRef.current = setTimeout(() => {
+        persistLocalDraftNow();
+        setAutosaveStatus("saved");
+      }, 2000);
+      return () => {
+        if (serverAutosaveTimerRef.current) clearTimeout(serverAutosaveTimerRef.current);
+      };
+    }
+    if (serverAutosaveTimerRef.current) clearTimeout(serverAutosaveTimerRef.current);
+    serverAutosaveTimerRef.current = setTimeout(() => {
+      if (!formDirtyRef.current || publishLockRef.current || autosaveInFlightRef.current) {
+        return;
+      }
+      if (uploading || uploadingStoreImages || uploadingRecruiterImage) return;
       void saveJob("draft", { silent: true }).catch(() => {
-        /* keep editing; silent autosave failures are non-blocking */
+        /* local draft already persisted; keep editing */
       });
-    }, 45000);
+    }, 5000);
     return () => {
-      if (autosaveTimerRef.current) clearInterval(autosaveTimerRef.current);
+      if (serverAutosaveTimerRef.current) clearTimeout(serverAutosaveTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormVisible, formDirty, editingId, loading]);
+  }, [
+    isFormVisible,
+    formDirty,
+    editingId,
+    showPreview,
+    form,
+    uploading,
+    uploadingStoreImages,
+    uploadingRecruiterImage,
+  ]);
 
 
   if (showPreview) {
@@ -1985,16 +2177,27 @@ function AdminJobsPageInner() {
             onSubmit={handleSubmit}
             className="space-y-4"
           >
-            {editingId && (
-              <h2 className="text-lg font-semibold text-charcoal">
-                求人を編集
-                {editingListingStatus === "draft" ? (
-                  <span className="ml-2 text-sm font-normal text-muted">
-                    （下書き）
-                  </span>
+            {editingId ? (
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-lg font-semibold text-charcoal">
+                  求人を編集
+                  {editingListingStatus === "draft" ? (
+                    <span className="ml-2 text-sm font-normal text-muted">
+                      （下書き）
+                    </span>
+                  ) : null}
+                </h2>
+                {autosaveStatus === "saving" || autosaveStatus === "saved" ? (
+                  <p className="text-xs text-muted" aria-live="polite">
+                    {autosaveStatus === "saving" ? "保存中…" : "下書き保存済み"}
+                  </p>
                 ) : null}
-              </h2>
-            )}
+              </div>
+            ) : autosaveStatus === "saving" || autosaveStatus === "saved" ? (
+              <p className="text-xs text-muted" aria-live="polite">
+                {autosaveStatus === "saving" ? "保存中…" : "下書き保存済み"}
+              </p>
+            ) : null}
 
         <div className="rounded-2xl border border-gold/30 bg-ivory/60 p-4 sm:p-5">
           <h3 className="text-base font-semibold text-charcoal">掲載プラン</h3>
