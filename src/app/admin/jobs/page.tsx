@@ -1123,18 +1123,46 @@ function AdminJobsPageInner() {
 
       await refreshAfterMutation();
       window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+      previewFormSnapshotRef.current = null;
+      requestScrollToTop();
       setShowPreview(false);
 
       if (saveIntent === "draft") {
-        // 下書き保存成功：フォームを閉じ、一覧を更新し、上部に成功メッセージ
-        clearAdminJobFormDraft();
-        closeEditor({
-          message: issued
-            ? "下書きを保存しました。ログイン情報を店舗へ伝えてください。"
-            : "下書きを保存しました",
-          scrollToTop: true,
-          autoClearMessageMs: 5000,
+        // Keep editor open with the just-saved payload. Never reset to emptyForm —
+        // 「修正する」/再編集 must show this latest draft, not the initial state.
+        const savedForm = toForm(savedJob);
+        setEditingId(savedJob.id);
+        editingIdRef.current = savedJob.id;
+        setForm(savedForm);
+        formRef.current = savedForm;
+        setEditingListingStatus(resolveJobListingStatus(savedJob));
+        editingListingStatusRef.current = resolveJobListingStatus(savedJob);
+        setIsAddFormOpen(false);
+        isAddFormOpenRef.current = false;
+        setDraftJobId(savedJob.id);
+        draftJobIdRef.current = savedJob.id;
+        setFormDirty(false);
+        formDirtyRef.current = false;
+        setAutosaveStatus("saved");
+        setFieldErrors({});
+        saveAdminJobFormDraft({
+          form: savedForm as unknown as Record<string, unknown>,
+          editingId: savedJob.id,
+          draftJobId: savedJob.id,
+          isAddFormOpen: false,
+          editingListingStatus: resolveJobListingStatus(savedJob),
+          showPreview: false,
+          previewKind: "draft",
+          savedAt: Date.now(),
         });
+        router.replace(`/admin/jobs?edit=${encodeURIComponent(savedJob.id)}`, {
+          scroll: false,
+        });
+        const draftMessage = issued
+          ? "下書きを保存しました。ログイン情報を店舗へ伝えてください。"
+          : "下書きを保存しました";
+        setMessage(draftMessage);
+        scheduleMessageAutoClear(draftMessage, 5000);
       } else if (saveIntent === "publish" || saveIntent === "republish") {
         clearAdminJobFormDraft();
         closeEditor({
@@ -1233,13 +1261,28 @@ function AdminJobsPageInner() {
   }
 
   async function openPreview(kind: "publish" | "draft") {
+    // Snapshot the latest in-memory form immediately (before awaits) so「修正する」
+    // never falls back to an empty / re-fetched initial state.
+    const formForPreview = formRef.current;
+    try {
+      previewFormSnapshotRef.current = structuredClone(formForPreview);
+    } catch {
+      previewFormSnapshotRef.current = {
+        ...formForPreview,
+        benefits: [...formForPreview.benefits],
+        storeImages: [...formForPreview.storeImages],
+        castVoices: formForPreview.castVoices.map((voice) => ({ ...voice })),
+      };
+    }
+
     if (!(await ensureAdminSession())) return;
     setMessage("");
     if (kind === "publish") {
-      const uncontracted = isUncontractedPlan(form.plan);
+      const uncontracted = isUncontractedPlan(formForPreview.plan);
       if (
-        !form.shopName.trim() ||
-        (!uncontracted && (!form.salary.trim() || !form.lineUrl.trim()))
+        !formForPreview.shopName.trim() ||
+        (!uncontracted &&
+          (!formForPreview.salary.trim() || !formForPreview.lineUrl.trim()))
       ) {
         setMessage(
           uncontracted
@@ -1249,19 +1292,8 @@ function AdminJobsPageInner() {
         return;
       }
     }
-    const jobId = editingId ?? draftJobId;
+    const jobId = editingIdRef.current ?? draftJobIdRef.current;
     await loadPreviewGirlReviews(jobId);
-    // Snapshot before preview so「修正する」can restore without re-init / DB reload.
-    try {
-      previewFormSnapshotRef.current = structuredClone(form);
-    } catch {
-      previewFormSnapshotRef.current = {
-        ...form,
-        benefits: [...form.benefits],
-        storeImages: [...form.storeImages],
-        castVoices: form.castVoices.map((voice) => ({ ...voice })),
-      };
-    }
     setPreviewKind(kind);
     requestScrollToTop();
     setShowPreview(true);
@@ -1274,6 +1306,13 @@ function AdminJobsPageInner() {
       setForm(snapshot);
       formRef.current = snapshot;
       // Keep editor open with in-progress edits; do not reset / reload / close.
+      setFormDirty(true);
+      formDirtyRef.current = true;
+      setAutosaveStatus("idle");
+      scheduleLocalDraftPersist();
+    } else if (formRef.current) {
+      // Fallback: keep whatever is currently in memory (never emptyForm).
+      setForm(formRef.current);
       setFormDirty(true);
       formDirtyRef.current = true;
       scheduleLocalDraftPersist();
@@ -2120,7 +2159,29 @@ function AdminJobsPageInner() {
                               onClick={() => {
                                 void (async () => {
                                   if (!(await ensureAdminSession())) return;
-                                  handleEdit(job);
+                                  try {
+                                    // Always load the latest saved draft from API
+                                    // (list row can be stale right after 下書き保存).
+                                    const data = await readJson<{
+                                      job: Job;
+                                      listingRanks?: JobListingRanks | null;
+                                    }>(
+                                      await fetch(`/api/admin/jobs/${job.id}`, {
+                                        cache: "no-store",
+                                        credentials: "include",
+                                      }),
+                                    );
+                                    handleEdit(data.job);
+                                    setEditingListingRanks(
+                                      data.listingRanks ?? null,
+                                    );
+                                  } catch (error) {
+                                    setMessage(
+                                      error instanceof Error
+                                        ? error.message
+                                        : "下書きの読み込みに失敗しました。",
+                                    );
+                                  }
                                 })();
                               }}
                               className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
