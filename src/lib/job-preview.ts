@@ -50,6 +50,7 @@ export type ShopPreviewForm = {
   salary: string;
   access: string;
   businessHours: string;
+  workHours?: string;
   ageGroup: string;
   customerPersonalityLevel: number;
   customerAgeLevel: number;
@@ -65,6 +66,15 @@ export type ShopPreviewForm = {
   storeImages: string[];
   benefits: string[];
   otherBenefits: string;
+  requirements?: string;
+  regularHourlyPay?: string;
+  trialHourlyPay?: string;
+  backPayDetails?: string;
+  salaryPaymentMethod?: string;
+  minWorkDays?: string;
+  costumeUniform?: string;
+  trialVisitAvailable?: "" | "yes" | "no";
+  trialVisitNotes?: string;
   phone: string;
   xUrl: string;
   instagramUrl: string;
@@ -156,6 +166,16 @@ export function buildPreviewJobFromShopForm(
   form: ShopPreviewForm,
   baseJob: Job,
 ): Job {
+  const trialChoice = form.trialVisitAvailable;
+  const trialVisitAvailable =
+    trialChoice === "yes"
+      ? true
+      : trialChoice === "no"
+        ? false
+        : trialChoice === ""
+          ? undefined
+          : baseJob.trialVisitAvailable;
+
   return {
     ...baseJob,
     shopName: form.shopName || baseJob.shopName,
@@ -163,7 +183,10 @@ export function buildPreviewJobFromShopForm(
     jobType: form.jobType || baseJob.jobType,
     title: `${form.shopName || baseJob.shopName}｜${form.jobType || baseJob.jobType}募集`,
     salary: form.salary.trim() || baseJob.salary,
-    workHours: form.businessHours.trim() || baseJob.workHours,
+    workHours:
+      form.workHours?.trim() ||
+      form.businessHours.trim() ||
+      baseJob.workHours,
     businessHours: form.businessHours.trim() || undefined,
     ageGroup: form.ageGroup.trim() || undefined,
     customerPersonalityLevel: form.customerPersonalityLevel,
@@ -174,6 +197,18 @@ export function buildPreviewJobFromShopForm(
     castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
+    requirements:
+      form.requirements !== undefined
+        ? parseBenefits(form.requirements)
+        : baseJob.requirements,
+    regularHourlyPay: form.regularHourlyPay?.trim() || undefined,
+    trialHourlyPay: form.trialHourlyPay?.trim() || undefined,
+    backPayDetails: form.backPayDetails?.trim() || undefined,
+    salaryPaymentMethod: form.salaryPaymentMethod?.trim() || undefined,
+    minWorkDays: form.minWorkDays?.trim() || undefined,
+    costumeUniform: form.costumeUniform?.trim() || undefined,
+    trialVisitAvailable,
+    trialVisitNotes: form.trialVisitNotes?.trim() || undefined,
     imageUrl: form.imageUrl.trim() || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     recruiterName: form.recruiterName.trim() || undefined,

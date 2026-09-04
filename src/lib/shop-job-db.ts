@@ -9,6 +9,7 @@ export type ShopJobPayload = {
   salary: string;
   access?: string;
   businessHours?: string;
+  workHours?: string;
   ageGroup?: string;
   customerPersonalityLevel?: number;
   customerAgeLevel?: number;
@@ -23,6 +24,7 @@ export type ShopJobPayload = {
   managerComment?: string;
   benefits: string[];
   otherBenefits?: string[];
+  requirements?: string[];
   phone?: string;
   xUrl?: string;
   instagramUrl?: string;
@@ -30,6 +32,15 @@ export type ShopJobPayload = {
   youtubeUrl?: string;
   websiteUrl?: string;
   lineUrl: string;
+  regularHourlyPay?: string;
+  trialHourlyPay?: string;
+  backPayDetails?: string;
+  salaryPaymentMethod?: string;
+  minWorkDays?: string;
+  costumeUniform?: string;
+  /** null = unset; undefined = omit from DB update */
+  trialVisitAvailable?: boolean | null;
+  trialVisitNotes?: string;
 };
 
 function normalizeLevel(value: unknown): number {
@@ -38,12 +49,41 @@ function normalizeLevel(value: unknown): number {
   return Math.min(5, Math.max(1, Math.round(n)));
 }
 
+function hasOwn(data: object, ...keys: string[]): boolean {
+  return keys.some((key) => Object.prototype.hasOwnProperty.call(data, key));
+}
+
+function readPresentString(
+  data: Record<string, unknown>,
+  camel: string,
+  snake?: string,
+): string | undefined {
+  const keys = snake ? [camel, snake] : [camel];
+  if (!hasOwn(data, ...keys)) return undefined;
+  return String(data[camel] ?? (snake ? data[snake] : "") ?? "").trim();
+}
+
+function normalizeRequirements(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) return [];
+  return value.map(String).map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeTrialVisitAvailable(
+  value: unknown,
+): boolean | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return null;
+}
+
 export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
-  const data = body as Partial<ShopJobPayload> & {
-    image_url?: unknown;
-  };
-  const hasImageUrl =
-    data.imageUrl !== undefined || data.image_url !== undefined;
+  const data = body as Partial<ShopJobPayload> & Record<string, unknown>;
+  const hasImageUrl = hasOwn(data, "imageUrl", "image_url");
+  const hasTrialVisit = hasOwn(data, "trialVisitAvailable", "trial_visit_available");
+
   return {
     imageUrl: hasImageUrl
       ? String(data.imageUrl ?? data.image_url ?? "").trim() || null
@@ -51,19 +91,16 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
     salary: String(data.salary ?? ""),
     access: data.access ? String(data.access) : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
+    workHours: readPresentString(data, "workHours", "work_hours"),
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: normalizeLevel(
-      data.customerPersonalityLevel ??
-        (data as { customer_personality_level?: unknown })
-          .customer_personality_level,
+      data.customerPersonalityLevel ?? data.customer_personality_level,
     ),
     customerAgeLevel: normalizeLevel(
-      data.customerAgeLevel ??
-        (data as { customer_age_level?: unknown }).customer_age_level,
+      data.customerAgeLevel ?? data.customer_age_level,
     ),
     customerRegularLevel: normalizeLevel(
-      data.customerRegularLevel ??
-        (data as { customer_regular_level?: unknown }).customer_regular_level,
+      data.customerRegularLevel ?? data.customer_regular_level,
     ),
     introductionText: data.introductionText
       ? String(data.introductionText)
@@ -72,43 +109,40 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
       ? String(data.descriptionText)
       : undefined,
     storeImages: sanitizeStoreImagesForSave(
-      parseStoreImages(
-        data.storeImages ?? (data as { store_images?: unknown }).store_images,
-      ),
+      parseStoreImages(data.storeImages ?? data.store_images),
     ),
     recruiterName: data.recruiterName
       ? String(data.recruiterName)
-      : (data as { recruiter_name?: unknown }).recruiter_name
-        ? String((data as { recruiter_name?: unknown }).recruiter_name)
+      : data.recruiter_name
+        ? String(data.recruiter_name)
         : undefined,
     recruiterTitle: data.recruiterTitle
       ? String(data.recruiterTitle)
-      : (data as { recruiter_title?: unknown }).recruiter_title
-        ? String((data as { recruiter_title?: unknown }).recruiter_title)
+      : data.recruiter_title
+        ? String(data.recruiter_title)
         : undefined,
     recruiterImage:
-      data.recruiterImage !== undefined ||
-      (data as { recruiter_image?: unknown }).recruiter_image !== undefined
-        ? String(
-            data.recruiterImage ??
-              (data as { recruiter_image?: unknown }).recruiter_image ??
-              "",
-          ).trim() || null
+      hasOwn(data, "recruiterImage", "recruiter_image")
+        ? String(data.recruiterImage ?? data.recruiter_image ?? "").trim() ||
+          null
         : undefined,
     recruiterMessage: data.recruiterMessage
       ? String(data.recruiterMessage)
-      : (data as { recruiter_message?: unknown }).recruiter_message
-        ? String((data as { recruiter_message?: unknown }).recruiter_message)
+      : data.recruiter_message
+        ? String(data.recruiter_message)
         : undefined,
     managerComment: data.managerComment
       ? String(data.managerComment)
-      : (data as { manager_comment?: unknown }).manager_comment
-        ? String((data as { manager_comment?: unknown }).manager_comment)
+      : data.manager_comment
+        ? String(data.manager_comment)
         : undefined,
     benefits: Array.isArray(data.benefits) ? data.benefits.map(String) : [],
     otherBenefits: Array.isArray(data.otherBenefits)
       ? data.otherBenefits.map(String)
       : parseBenefits(String(data.otherBenefits ?? "")),
+    requirements: hasOwn(data, "requirements")
+      ? normalizeRequirements(data.requirements) ?? []
+      : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     xUrl: data.xUrl ? String(data.xUrl) : undefined,
     instagramUrl: data.instagramUrl ? String(data.instagramUrl) : undefined,
@@ -116,6 +150,42 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
     youtubeUrl: data.youtubeUrl ? String(data.youtubeUrl) : undefined,
     websiteUrl: data.websiteUrl ? String(data.websiteUrl) : undefined,
     lineUrl: String(data.lineUrl ?? ""),
+    regularHourlyPay: readPresentString(
+      data,
+      "regularHourlyPay",
+      "regular_hourly_pay",
+    ),
+    trialHourlyPay: readPresentString(
+      data,
+      "trialHourlyPay",
+      "trial_hourly_pay",
+    ),
+    backPayDetails: readPresentString(
+      data,
+      "backPayDetails",
+      "back_pay_details",
+    ),
+    salaryPaymentMethod: readPresentString(
+      data,
+      "salaryPaymentMethod",
+      "salary_payment_method",
+    ),
+    minWorkDays: readPresentString(data, "minWorkDays", "min_work_days"),
+    costumeUniform: readPresentString(
+      data,
+      "costumeUniform",
+      "costume_uniform",
+    ),
+    trialVisitAvailable: hasTrialVisit
+      ? normalizeTrialVisitAvailable(
+          data.trialVisitAvailable ?? data.trial_visit_available,
+        )
+      : undefined,
+    trialVisitNotes: readPresentString(
+      data,
+      "trialVisitNotes",
+      "trial_visit_notes",
+    ),
   };
 }
 
@@ -123,6 +193,15 @@ export function validateShopJobPayload(payload: ShopJobPayload): string | null {
   if (!payload.salary.trim()) return "時給を入力してください。";
   if (!payload.lineUrl.trim()) return "LINE応募URLを入力してください。";
   return null;
+}
+
+function setNullableText(
+  row: Record<string, unknown>,
+  column: string,
+  value: string | undefined,
+) {
+  if (value === undefined) return;
+  row[column] = value.trim() || null;
 }
 
 export function shopPayloadToRow(payload: ShopJobPayload) {
@@ -154,6 +233,23 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
     website_url: payload.websiteUrl?.trim() || null,
     line_url: payload.lineUrl.trim(),
   };
+
+  setNullableText(row, "work_hours", payload.workHours);
+  setNullableText(row, "regular_hourly_pay", payload.regularHourlyPay);
+  setNullableText(row, "trial_hourly_pay", payload.trialHourlyPay);
+  setNullableText(row, "back_pay_details", payload.backPayDetails);
+  setNullableText(row, "salary_payment_method", payload.salaryPaymentMethod);
+  setNullableText(row, "min_work_days", payload.minWorkDays);
+  setNullableText(row, "costume_uniform", payload.costumeUniform);
+  setNullableText(row, "trial_visit_notes", payload.trialVisitNotes);
+
+  if (payload.requirements !== undefined) {
+    row.requirements = payload.requirements;
+  }
+
+  if (payload.trialVisitAvailable !== undefined) {
+    row.trial_visit_available = payload.trialVisitAvailable;
+  }
 
   if (payload.imageUrl !== undefined) {
     row.image_url = payload.imageUrl?.trim() || null;

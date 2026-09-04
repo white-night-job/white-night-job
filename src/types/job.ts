@@ -108,6 +108,22 @@ export interface Job {
   isVerified: boolean;
   imageUrl?: string;
   storeImages?: string[];
+  /** 本入時給（表示用）。未設定は非表示 */
+  regularHourlyPay?: string;
+  /** 体入時給（表示用）。未設定は非表示 */
+  trialHourlyPay?: string;
+  /** 各種バックの詳細テキスト */
+  backPayDetails?: string;
+  /** 給与支払方法 */
+  salaryPaymentMethod?: string;
+  /** 最低勤務日数 */
+  minWorkDays?: string;
+  /** 衣装／制服の説明 */
+  costumeUniform?: string;
+  /** 体験入店可否（undefined=未設定） */
+  trialVisitAvailable?: boolean;
+  /** 体験入店時の条件・注意事項 */
+  trialVisitNotes?: string;
   recruiterName?: string;
   recruiterTitle?: string;
   recruiterImage?: string;

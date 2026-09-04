@@ -18,6 +18,7 @@ export const BENEFIT_CATEGORIES = [
     title: "環境",
     items: [
       "未経験者大歓迎",
+      "学生歓迎",
       "経験者優遇",
       "友達と一緒に応募OK",
       "3時間以内の勤務OK",
@@ -54,6 +55,7 @@ export const BENEFIT_SEARCH_CATEGORIES = [
     title: "環境",
     items: [
       "未経験者大歓迎",
+      "学生歓迎",
       "経験者優遇",
       "Wワーク歓迎",
       "3時間以内の勤務OK",

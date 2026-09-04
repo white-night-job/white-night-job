@@ -80,6 +80,8 @@ const JobListingPreview = dynamic(
   { ssr: false },
 );
 
+type TrialVisitChoice = "" | "yes" | "no";
+
 type ShopForm = {
   shopName: string;
   district: District;
@@ -88,6 +90,7 @@ type ShopForm = {
   salary: string;
   access: string;
   businessHours: string;
+  workHours: string;
   openDate: string;
   ageGroup: string;
   customerPersonalityLevel: number;
@@ -103,6 +106,15 @@ type ShopForm = {
   storeImages: string[];
   benefits: string[];
   otherBenefits: string;
+  requirements: string;
+  regularHourlyPay: string;
+  trialHourlyPay: string;
+  backPayDetails: string;
+  salaryPaymentMethod: string;
+  minWorkDays: string;
+  costumeUniform: string;
+  trialVisitAvailable: TrialVisitChoice;
+  trialVisitNotes: string;
   phone: string;
   xUrl: string;
   instagramUrl: string;
@@ -111,6 +123,65 @@ type ShopForm = {
   websiteUrl: string;
   lineUrl: string;
 };
+
+function trialVisitToChoice(
+  value: boolean | undefined,
+): TrialVisitChoice {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  return "";
+}
+
+function trialVisitFromChoice(
+  value: TrialVisitChoice,
+): boolean | null {
+  if (value === "yes") return true;
+  if (value === "no") return false;
+  return null;
+}
+
+const SHOP_FORM_DEFAULTS: Pick<
+  ShopForm,
+  | "workHours"
+  | "requirements"
+  | "regularHourlyPay"
+  | "trialHourlyPay"
+  | "backPayDetails"
+  | "salaryPaymentMethod"
+  | "minWorkDays"
+  | "costumeUniform"
+  | "trialVisitAvailable"
+  | "trialVisitNotes"
+> = {
+  workHours: "",
+  requirements: "",
+  regularHourlyPay: "",
+  trialHourlyPay: "",
+  backPayDetails: "",
+  salaryPaymentMethod: "",
+  minWorkDays: "",
+  costumeUniform: "",
+  trialVisitAvailable: "",
+  trialVisitNotes: "",
+};
+
+function normalizeShopForm(raw: Partial<ShopForm>): ShopForm {
+  const base = raw as ShopForm;
+  return {
+    ...base,
+    ...SHOP_FORM_DEFAULTS,
+    workHours: raw.workHours ?? "",
+    requirements: raw.requirements ?? "",
+    regularHourlyPay: raw.regularHourlyPay ?? "",
+    trialHourlyPay: raw.trialHourlyPay ?? "",
+    backPayDetails: raw.backPayDetails ?? "",
+    salaryPaymentMethod: raw.salaryPaymentMethod ?? "",
+    minWorkDays: raw.minWorkDays ?? "",
+    costumeUniform: raw.costumeUniform ?? "",
+    trialVisitAvailable: raw.trialVisitAvailable ?? "",
+    trialVisitNotes: raw.trialVisitNotes ?? "",
+  };
+}
 
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
@@ -164,6 +235,7 @@ function toForm(job: Job): ShopForm {
     salary: job.salary,
     access: job.access ?? "",
     businessHours: job.businessHours ?? "",
+    workHours: job.workHours ?? "",
     openDate: toOpenDateInputValue(job.openDate),
     ageGroup: job.ageGroup ?? "",
     customerPersonalityLevel: normalizeAtmosphereLevel(
@@ -184,6 +256,15 @@ function toForm(job: Job): ShopForm {
       ...(job.otherBenefits ?? []),
       ...getUncategorizedBenefits(job.benefits),
     ].join("\n"),
+    requirements: (job.requirements ?? []).join("\n"),
+    regularHourlyPay: job.regularHourlyPay ?? "",
+    trialHourlyPay: job.trialHourlyPay ?? "",
+    backPayDetails: job.backPayDetails ?? "",
+    salaryPaymentMethod: job.salaryPaymentMethod ?? "",
+    minWorkDays: job.minWorkDays ?? "",
+    costumeUniform: job.costumeUniform ?? "",
+    trialVisitAvailable: trialVisitToChoice(job.trialVisitAvailable),
+    trialVisitNotes: job.trialVisitNotes ?? "",
     phone: job.phone ?? "",
     xUrl: job.xUrl ?? "",
     instagramUrl: job.instagramUrl ?? "",
@@ -200,6 +281,7 @@ function toPayload(form: ShopForm) {
     salary: form.salary,
     access: form.access || undefined,
     businessHours: form.businessHours || undefined,
+    workHours: form.workHours,
     ageGroup: form.ageGroup || undefined,
     customerPersonalityLevel: form.customerPersonalityLevel,
     customerAgeLevel: form.customerAgeLevel,
@@ -214,6 +296,15 @@ function toPayload(form: ShopForm) {
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
+    requirements: parseBenefits(form.requirements),
+    regularHourlyPay: form.regularHourlyPay,
+    trialHourlyPay: form.trialHourlyPay,
+    backPayDetails: form.backPayDetails,
+    salaryPaymentMethod: form.salaryPaymentMethod,
+    minWorkDays: form.minWorkDays,
+    costumeUniform: form.costumeUniform,
+    trialVisitAvailable: trialVisitFromChoice(form.trialVisitAvailable),
+    trialVisitNotes: form.trialVisitNotes,
     phone: form.phone || undefined,
     xUrl: form.xUrl || undefined,
     instagramUrl: form.instagramUrl || undefined,
@@ -507,7 +598,7 @@ export default function ShopDashboardPage() {
         if (cancelled) return;
 
         if (pendingDraft?.form) {
-          setForm(pendingDraft.form as unknown as ShopForm);
+          setForm(normalizeShopForm(pendingDraft.form as Partial<ShopForm>));
           if (pendingDraft.isFormOpen) setIsFormOpen(true);
           if (pendingDraft.showPreview) setShowPreview(true);
           setMessage(
@@ -1003,8 +1094,59 @@ export default function ShopDashboardPage() {
             />
           </div>
           <div>
-            <label htmlFor="salary" className={labelClass}>時給</label>
+            <label htmlFor="salary" className={labelClass}>時給（一覧・見出し用）</label>
             <input id="salary" value={form.salary} onChange={(e) => setField("salary", e.target.value)} className={inputClass} required />
+          </div>
+          <div>
+            <label htmlFor="regularHourlyPay" className={labelClass}>本入時給</label>
+            <input
+              id="regularHourlyPay"
+              value={form.regularHourlyPay}
+              onChange={(e) => setField("regularHourlyPay", e.target.value)}
+              className={inputClass}
+              placeholder="例）時給 3,000円〜"
+            />
+          </div>
+          <div>
+            <label htmlFor="trialHourlyPay" className={labelClass}>体入時給</label>
+            <input
+              id="trialHourlyPay"
+              value={form.trialHourlyPay}
+              onChange={(e) => setField("trialHourlyPay", e.target.value)}
+              className={inputClass}
+              placeholder="例）時給 2,500円"
+            />
+          </div>
+          <div>
+            <label htmlFor="backPayDetails" className={labelClass}>各種バック</label>
+            <textarea
+              id="backPayDetails"
+              value={form.backPayDetails}
+              onChange={(e) => setField("backPayDetails", e.target.value)}
+              rows={2}
+              className={inputClass}
+              placeholder="例）ドリンクバック・同伴バックあり"
+            />
+          </div>
+          <div>
+            <label htmlFor="salaryPaymentMethod" className={labelClass}>給与支払方法</label>
+            <input
+              id="salaryPaymentMethod"
+              value={form.salaryPaymentMethod}
+              onChange={(e) => setField("salaryPaymentMethod", e.target.value)}
+              className={inputClass}
+              placeholder="例）月末締め翌月払い / 手渡し"
+            />
+          </div>
+          <div>
+            <label htmlFor="minWorkDays" className={labelClass}>最低勤務日数</label>
+            <input
+              id="minWorkDays"
+              value={form.minWorkDays}
+              onChange={(e) => setField("minWorkDays", e.target.value)}
+              className={inputClass}
+              placeholder="例）週2日〜"
+            />
           </div>
           <div>
             <label htmlFor="access" className={labelClass}>アクセス</label>
@@ -1013,6 +1155,16 @@ export default function ShopDashboardPage() {
           <div>
             <label htmlFor="businessHours" className={labelClass}>営業時間</label>
             <input id="businessHours" value={form.businessHours} onChange={(e) => setField("businessHours", e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <label htmlFor="workHours" className={labelClass}>勤務時間</label>
+            <input
+              id="workHours"
+              value={form.workHours}
+              onChange={(e) => setField("workHours", e.target.value)}
+              className={inputClass}
+              placeholder="例）20:00〜LAST（実働）"
+            />
           </div>
           <div>
             <label htmlFor="openDate" className={labelClass}>オープン日</label>
@@ -1291,6 +1443,9 @@ export default function ShopDashboardPage() {
 
         <div>
           <p className={labelClass}>待遇</p>
+          <p className="mb-2 text-xs text-muted">
+            日払い・週1・終電上がり・送迎・未経験・学生・Wワーク・お酒NG・ノルマなし・衣装貸与などはこちらから選択できます。
+          </p>
           <div className="space-y-4">
             {BENEFIT_CATEGORIES.map((category) => (
               <div key={category.title}>
@@ -1307,6 +1462,62 @@ export default function ShopDashboardPage() {
             ))}
           </div>
           <textarea value={form.otherBenefits} onChange={(e) => setField("otherBenefits", e.target.value)} rows={3} placeholder="その他待遇（1行1項目）" className={`${inputClass} mt-3`} />
+
+          <div className="mt-5 space-y-4 rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+            <p className="text-sm font-semibold text-gold-dark">勤務・応募条件（任意）</p>
+            <div>
+              <label htmlFor="costumeUniform" className={labelClass}>衣装／制服</label>
+              <input
+                id="costumeUniform"
+                value={form.costumeUniform}
+                onChange={(e) => setField("costumeUniform", e.target.value)}
+                className={inputClass}
+                placeholder="例）ドレス貸与 / 私服OK"
+              />
+            </div>
+            <div>
+              <label htmlFor="requirements" className={labelClass}>応募資格</label>
+              <textarea
+                id="requirements"
+                value={form.requirements}
+                onChange={(e) => setField("requirements", e.target.value)}
+                rows={3}
+                className={inputClass}
+                placeholder="1行1項目（例：20歳以上）"
+              />
+            </div>
+            <div>
+              <label htmlFor="trialVisitAvailable" className={labelClass}>体験入店</label>
+              <select
+                id="trialVisitAvailable"
+                value={form.trialVisitAvailable}
+                onChange={(e) =>
+                  setField(
+                    "trialVisitAvailable",
+                    e.target.value as TrialVisitChoice,
+                  )
+                }
+                className={inputClass}
+              >
+                <option value="">未設定</option>
+                <option value="yes">可能</option>
+                <option value="no">不可</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="trialVisitNotes" className={labelClass}>
+                体験入店時の条件・注意事項
+              </label>
+              <textarea
+                id="trialVisitNotes"
+                value={form.trialVisitNotes}
+                onChange={(e) => setField("trialVisitNotes", e.target.value)}
+                rows={3}
+                className={inputClass}
+                placeholder="例）身分証必須・当日給与支給など"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

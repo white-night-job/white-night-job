@@ -580,7 +580,19 @@ function buildJobDescriptionForJsonLd(job: Job): string {
   const parts = [
     job.introductionText,
     job.descriptionText,
+    job.regularHourlyPay?.trim()
+      ? `本入時給: ${job.regularHourlyPay.trim()}`
+      : null,
+    job.trialHourlyPay?.trim()
+      ? `体入時給: ${job.trialHourlyPay.trim()}`
+      : null,
     job.salary ? `給与: ${job.salary}` : null,
+    job.salaryPaymentMethod?.trim()
+      ? `給与支払方法: ${job.salaryPaymentMethod.trim()}`
+      : null,
+    job.minWorkDays?.trim()
+      ? `最低勤務日数: ${job.minWorkDays.trim()}`
+      : null,
     job.workHours ? `勤務時間: ${job.workHours}` : null,
     job.businessHours ? `営業時間: ${job.businessHours}` : null,
     job.requirements.length > 0
@@ -602,7 +614,9 @@ export function buildJobPostingJsonLd(
 
   const url = `${SITE_URL}/jobs/${job.id}`;
   const description = buildJobDescriptionForJsonLd(job);
-  const salary = parseHourlySalaryForJsonLd(job.salary);
+  const salarySource =
+    job.regularHourlyPay?.trim() || job.salary;
+  const salary = parseHourlySalaryForJsonLd(salarySource);
   const datePosted = resolveDatePosted(job);
   const address = resolveJobLocationAddress(job);
   const experienceRequirements = resolveExperienceRequirements(job);

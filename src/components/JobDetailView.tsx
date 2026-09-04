@@ -14,6 +14,9 @@ import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton"
 import { SafetyBadge } from "@/components/SafetyBadge";
 import { getBenefitCategoryGroups } from "@/data/benefits";
 import {
+  buildJobConditionRows,
+} from "@/lib/job-conditions";
+import {
   getDisplayStoreImages,
 } from "@/lib/job-db";
 import { formatLocation } from "@/lib/job-storage";
@@ -212,6 +215,7 @@ export function JobDetailView({
 
   const benefitGroups = getBenefitCategoryGroups(job.benefits);
   const otherBenefits = job.otherBenefits ?? [];
+  const conditionRows = buildJobConditionRows(job);
   const displayStoreImages = getDisplayStoreImages(job);
   const isSusukinoGirlsBar = isSusukinoGirlsBarJob(job);
   const workHoursText = job.workHours?.trim() ?? "";
@@ -436,6 +440,30 @@ export function JobDetailView({
             ) : (
               <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
             )}
+
+            {conditionRows.length > 0 ? (
+              <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
+                <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal">
+                  <span className="text-gold-dark">◆</span>
+                  給与・勤務条件
+                </h2>
+                <dl className="divide-y divide-gold/15 rounded-2xl border border-gold/20 bg-white">
+                  {conditionRows.map((row) => (
+                    <div
+                      key={`${row.label}:${row.value}`}
+                      className="grid gap-1 px-4 py-3 sm:grid-cols-[8.5rem_1fr] sm:gap-4"
+                    >
+                      <dt className="text-xs font-medium text-muted sm:text-sm">
+                        {row.label}
+                      </dt>
+                      <dd className="whitespace-pre-wrap text-sm font-medium text-charcoal">
+                        {row.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ) : null}
 
             {showExtras && displayStoreImages.length > 0 ? (
               <StoreImagesGallery

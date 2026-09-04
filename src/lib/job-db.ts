@@ -45,6 +45,15 @@ export type JobPayload = {
   requirements?: string[];
   isVerified?: boolean;
   plan?: string;
+  regularHourlyPay?: string;
+  trialHourlyPay?: string;
+  backPayDetails?: string;
+  salaryPaymentMethod?: string;
+  minWorkDays?: string;
+  costumeUniform?: string;
+  /** null clears; undefined leaves unchanged on partial updates that omit the key */
+  trialVisitAvailable?: boolean | null;
+  trialVisitNotes?: string;
 };
 
 type JobRow = {
@@ -110,6 +119,14 @@ type JobRow = {
   chat_recommend_high_earning?: boolean | null;
   listing_status?: string | null;
   published?: boolean | null;
+  regular_hourly_pay?: string | null;
+  trial_hourly_pay?: string | null;
+  back_pay_details?: string | null;
+  salary_payment_method?: string | null;
+  min_work_days?: string | null;
+  costume_uniform?: string | null;
+  trial_visit_available?: boolean | null;
+  trial_visit_notes?: string | null;
 };
 
 type RowToJobOptions = {
@@ -142,6 +159,17 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     isVerified: row.is_verified,
     imageUrl: row.image_url ?? undefined,
     storeImages: getDisplayStoreImages({ storeImages: undefined, store_images: row.store_images }),
+    regularHourlyPay: row.regular_hourly_pay?.trim() || undefined,
+    trialHourlyPay: row.trial_hourly_pay?.trim() || undefined,
+    backPayDetails: row.back_pay_details?.trim() || undefined,
+    salaryPaymentMethod: row.salary_payment_method?.trim() || undefined,
+    minWorkDays: row.min_work_days?.trim() || undefined,
+    costumeUniform: row.costume_uniform?.trim() || undefined,
+    trialVisitAvailable:
+      typeof row.trial_visit_available === "boolean"
+        ? row.trial_visit_available
+        : undefined,
+    trialVisitNotes: row.trial_visit_notes?.trim() || undefined,
     recruiterName: row.recruiter_name?.trim() || undefined,
     recruiterTitle: row.recruiter_title?.trim() || undefined,
     recruiterImage: row.recruiter_image?.trim() || undefined,
