@@ -18,6 +18,8 @@ type JobListingPreviewProps = {
   girlReviews?: GirlReview[];
   onBack: () => void;
   onConfirm?: () => void;
+  /** Defaults to「修正する」. View-only previews may pass e.g.「ダッシュボードに戻る」. */
+  backLabel?: string;
 };
 
 export function JobListingPreview({
@@ -29,8 +31,10 @@ export function JobListingPreview({
   girlReviews = [],
   onBack,
   onConfirm,
+  backLabel = "修正する",
 }: JobListingPreviewProps) {
   const isDraftPreview = variant === "draft";
+  const isViewOnly = onConfirm == null;
   const isStoreInfo = isUncontractedPlan(job.plan);
   const confirmLabel = isDraftPreview
     ? "この内容で下書き保存"
@@ -51,7 +55,11 @@ export function JobListingPreview({
     <div className="min-h-screen bg-[#f7f4ee] pb-28">
       <div className="sticky top-0 z-40 border-b border-gold/30 bg-charcoal/95 px-4 py-3 text-center text-white backdrop-blur">
         <p className="text-xs font-medium tracking-wide text-gold-light">
-          {isDraftPreview ? "下書きプレビュー" : "掲載前プレビュー"}
+          {isViewOnly
+            ? "求人プレビュー"
+            : isDraftPreview
+              ? "下書きプレビュー"
+              : "掲載前プレビュー"}
         </p>
         <p className="mt-0.5 text-sm text-white/85">
           {isStoreInfo
@@ -81,7 +89,7 @@ export function JobListingPreview({
             disabled={submitting}
             className="rounded-full border border-gold/40 px-5 py-3 text-sm font-semibold text-charcoal hover:bg-ivory disabled:opacity-60"
           >
-            修正する
+            {backLabel}
           </button>
           {onConfirm ? (
             <button

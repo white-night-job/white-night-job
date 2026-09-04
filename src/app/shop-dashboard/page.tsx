@@ -253,8 +253,13 @@ export default function ShopDashboardPage() {
   const [boostLoading, setBoostLoading] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  /** Header「プレビュー」: view-only listing preview (separate from edit-confirm preview). */
+  const [showViewPreview, setShowViewPreview] = useState(false);
   const publishLockRef = useRef(false);
-  const requestScrollToTop = useScrollToTopAfterChange([showPreview]);
+  const requestScrollToTop = useScrollToTopAfterChange([
+    showPreview,
+    showViewPreview,
+  ]);
   const [uploadingTopImage, setUploadingTopImage] = useState(false);
   const [uploadingRecruiterImage, setUploadingRecruiterImage] = useState(false);
   const [uploadingStoreImages, setUploadingStoreImages] = useState(false);
@@ -308,7 +313,7 @@ export default function ShopDashboardPage() {
   }, [handleSessionExpired]);
 
   useAuthSessionGuard({
-    enabled: authVerified && (isFormOpen || showPreview),
+    enabled: authVerified && (isFormOpen || showPreview || showViewPreview),
     checkSession: checkShopSession,
     onSessionExpired: () => handleSessionExpired(),
   });
@@ -789,6 +794,23 @@ export default function ShopDashboardPage() {
     }
   }
 
+  if (showViewPreview && publishedJob) {
+    const previewJob = form
+      ? buildPreviewJobFromShopForm(form, publishedJob)
+      : publishedJob;
+    return (
+      <JobListingPreview
+        job={previewJob}
+        mode="edit"
+        backLabel="ダッシュボードに戻る"
+        onBack={() => {
+          requestScrollToTop();
+          setShowViewPreview(false);
+        }}
+      />
+    );
+  }
+
   if (showPreview && publishedJob && form) {
     const previewJob = buildPreviewJobFromShopForm(form, publishedJob);
     return (
@@ -867,13 +889,30 @@ export default function ShopDashboardPage() {
             </span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
-        >
-          ログアウト
-        </button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!publishedJob) {
+                setMessage("求人情報の読み込み後にプレビューできます。");
+                return;
+              }
+              requestScrollToTop();
+              setShowViewPreview(true);
+            }}
+            disabled={!publishedJob || jobLoading}
+            className="rounded-full border border-gold/35 bg-white px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            プレビュー
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+          >
+            ログアウト
+          </button>
+        </div>
       </div>
 
       {message && (
