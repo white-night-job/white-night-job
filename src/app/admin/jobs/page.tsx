@@ -387,6 +387,8 @@ function AdminJobsPageInner() {
   const showPreviewRef = useRef(false);
   /** Form state at preview open — restored on「修正する」so edits are never reset. */
   const previewFormSnapshotRef = useRef<JobForm | null>(null);
+  /** When true, closing preview should scroll to the editor (not page top / draft list). */
+  const returnToEditorFromPreviewRef = useRef(false);
   /** Always-current form/dirty for autosave (avoids stale closures overwriting newer input). */
   const formRef = useRef<JobForm>(emptyForm);
   const formDirtyRef = useRef(false);
@@ -1317,7 +1319,21 @@ function AdminJobsPageInner() {
       formDirtyRef.current = true;
       scheduleLocalDraftPersist();
     }
-    requestScrollToTop();
+
+    // 「修正する」= return to the in-progress editor, never the draft list / page top.
+    // Do not router.push/replace to /admin/jobs (list). Keep ?edit=<id> when editing.
+    const editId = editingIdRef.current;
+    if (editId) {
+      const editPath = `/admin/jobs?edit=${encodeURIComponent(editId)}`;
+      if (
+        typeof window === "undefined" ||
+        `${window.location.pathname}${window.location.search}` !== editPath
+      ) {
+        router.replace(editPath, { scroll: false });
+      }
+    }
+    returnToEditorFromPreviewRef.current = true;
+    pendingScrollToEditorRef.current = true;
     setShowPreview(false);
   }
 
@@ -1550,16 +1566,19 @@ function AdminJobsPageInner() {
   }
 
   useEffect(() => {
-    if (!pendingScrollToEditorRef.current || !editingId) return;
-    if (!isFormVisible) return;
+    if (!pendingScrollToEditorRef.current && !returnToEditorFromPreviewRef.current) {
+      return;
+    }
+    if (!isFormVisible || showPreview) return;
     pendingScrollToEditorRef.current = false;
+    returnToEditorFromPreviewRef.current = false;
     const frame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         scrollToEditorSection();
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [editingId, isFormVisible, form]);
+  }, [editingId, isAddFormOpen, isFormVisible, showPreview, form]);
 
   useEffect(() => {
     if (!pendingScrollToTopRef.current) return;
