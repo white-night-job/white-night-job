@@ -12,6 +12,14 @@ export type AdminPreviewForm = {
   district: District;
   jobType: JobType;
   salary: string;
+  regularHourlyPay?: string;
+  trialHourlyPay?: string;
+  backPayDetails?: string;
+  salaryPaymentMethod?: string;
+  minWorkDays?: string;
+  costumeUniform?: string;
+  trialVisitAvailable?: "" | "yes" | "no";
+  trialVisitNotes?: string;
   businessHours: string;
   ageGroup: string;
   customerPersonalityLevel: string;
@@ -101,6 +109,13 @@ export function buildPreviewJobFromAdminForm(
 
   const uncontracted = form.plan === "uncontracted";
   const shopName = form.shopName.trim() || "店舗名未入力";
+  const trialChoice = form.trialVisitAvailable;
+  const trialVisitAvailable =
+    trialChoice === "yes"
+      ? true
+      : trialChoice === "no"
+        ? false
+        : undefined;
 
   return {
     id: options?.id ?? "preview-draft",
@@ -131,6 +146,28 @@ export function buildPreviewJobFromAdminForm(
     benefits: uncontracted ? [] : form.benefits,
     otherBenefits: uncontracted ? [] : parseBenefits(form.otherBenefits),
     isVerified: uncontracted ? false : true,
+    regularHourlyPay: uncontracted
+      ? undefined
+      : form.regularHourlyPay?.trim() || undefined,
+    trialHourlyPay: uncontracted
+      ? undefined
+      : form.trialHourlyPay?.trim() || undefined,
+    backPayDetails: uncontracted
+      ? undefined
+      : form.backPayDetails?.trim() || undefined,
+    salaryPaymentMethod: uncontracted
+      ? undefined
+      : form.salaryPaymentMethod?.trim() || undefined,
+    minWorkDays: uncontracted
+      ? undefined
+      : form.minWorkDays?.trim() || undefined,
+    costumeUniform: uncontracted
+      ? undefined
+      : form.costumeUniform?.trim() || undefined,
+    trialVisitAvailable: uncontracted ? undefined : trialVisitAvailable,
+    trialVisitNotes: uncontracted
+      ? undefined
+      : form.trialVisitNotes?.trim() || undefined,
     imageUrl: form.imageUrl.trim() || undefined,
     storeImages: sanitizeStoreImagesForSave(form.storeImages),
     recruiterName: uncontracted

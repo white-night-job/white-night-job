@@ -90,6 +90,14 @@ type JobForm = {
   district: District;
   jobType: JobType;
   salary: string;
+  regularHourlyPay: string;
+  trialHourlyPay: string;
+  backPayDetails: string;
+  salaryPaymentMethod: string;
+  minWorkDays: string;
+  costumeUniform: string;
+  trialVisitAvailable: "" | "yes" | "no";
+  trialVisitNotes: string;
   businessHours: string;
   ageGroup: string;
   customerPersonalityLevel: string;
@@ -129,11 +137,35 @@ type JobForm = {
   listingPriority: "normal" | "priority" | "top";
 };
 
+function trialVisitToChoice(
+  value: boolean | undefined,
+): "" | "yes" | "no" {
+  if (value === true) return "yes";
+  if (value === false) return "no";
+  return "";
+}
+
+function trialVisitFromChoice(
+  value: "" | "yes" | "no",
+): boolean | null {
+  if (value === "yes") return true;
+  if (value === "no") return false;
+  return null;
+}
+
 const emptyForm: JobForm = {
   shopName: "",
   district: "すすきの",
   jobType: "ニュークラ",
   salary: "",
+  regularHourlyPay: "",
+  trialHourlyPay: "",
+  backPayDetails: "",
+  salaryPaymentMethod: "",
+  minWorkDays: "",
+  costumeUniform: "",
+  trialVisitAvailable: "",
+  trialVisitNotes: "",
   businessHours: "",
   ageGroup: "",
   customerPersonalityLevel: "",
@@ -167,6 +199,24 @@ const emptyForm: JobForm = {
   openDate: "",
 };
 
+function normalizeAdminJobForm(raw: Partial<JobForm>): JobForm {
+  return {
+    ...emptyForm,
+    ...raw,
+    regularHourlyPay: raw.regularHourlyPay ?? "",
+    trialHourlyPay: raw.trialHourlyPay ?? "",
+    backPayDetails: raw.backPayDetails ?? "",
+    salaryPaymentMethod: raw.salaryPaymentMethod ?? "",
+    minWorkDays: raw.minWorkDays ?? "",
+    costumeUniform: raw.costumeUniform ?? "",
+    trialVisitAvailable: raw.trialVisitAvailable ?? "",
+    trialVisitNotes: raw.trialVisitNotes ?? "",
+    benefits: Array.isArray(raw.benefits) ? raw.benefits : [],
+    castVoices: Array.isArray(raw.castVoices) ? raw.castVoices : [],
+    storeImages: Array.isArray(raw.storeImages) ? raw.storeImages : [],
+  };
+}
+
 const inputClass =
   "w-full rounded-xl border border-gold/30 bg-ivory px-4 py-3 text-base outline-none focus:border-gold focus:ring-2 focus:ring-gold/20";
 
@@ -194,6 +244,14 @@ function toPayload(form: JobForm) {
     district: form.district,
     jobType: form.jobType,
     salary: form.salary,
+    regularHourlyPay: form.regularHourlyPay,
+    trialHourlyPay: form.trialHourlyPay,
+    backPayDetails: form.backPayDetails,
+    salaryPaymentMethod: form.salaryPaymentMethod,
+    minWorkDays: form.minWorkDays,
+    costumeUniform: form.costumeUniform,
+    trialVisitAvailable: trialVisitFromChoice(form.trialVisitAvailable),
+    trialVisitNotes: form.trialVisitNotes,
     businessHours: form.businessHours,
     ageGroup: form.ageGroup,
     customerPersonalityLevel: form.customerPersonalityLevel
@@ -245,6 +303,14 @@ function toForm(job: Job): JobForm {
     district: job.district,
     jobType: job.jobType,
     salary: job.salary,
+    regularHourlyPay: job.regularHourlyPay ?? "",
+    trialHourlyPay: job.trialHourlyPay ?? "",
+    backPayDetails: job.backPayDetails ?? "",
+    salaryPaymentMethod: job.salaryPaymentMethod ?? "",
+    minWorkDays: job.minWorkDays ?? "",
+    costumeUniform: job.costumeUniform ?? "",
+    trialVisitAvailable: trialVisitToChoice(job.trialVisitAvailable),
+    trialVisitNotes: job.trialVisitNotes ?? "",
     businessHours: job.businessHours ?? "",
     ageGroup: job.ageGroup ?? "",
     customerPersonalityLevel: job.customerPersonalityLevel
@@ -681,7 +747,7 @@ function AdminJobsPageInner() {
     const draft = loadAdminJobFormDraft();
     if (!draft?.form) return;
 
-    setForm(draft.form as unknown as JobForm);
+    setForm(normalizeAdminJobForm(draft.form as Partial<JobForm>));
     setEditingId(draft.editingId);
     setDraftJobId(draft.draftJobId);
     setIsAddFormOpen(draft.isAddFormOpen);
@@ -764,7 +830,7 @@ function AdminJobsPageInner() {
         setEditingListingRanks(data.listingRanks ?? null);
 
         if (hasLocalForJob && local?.form) {
-          setForm(local.form as unknown as JobForm);
+          setForm(normalizeAdminJobForm(local.form as Partial<JobForm>));
           setFormDirty(true);
           setAutosaveStatus("saved");
         }
@@ -792,7 +858,7 @@ function AdminJobsPageInner() {
     const draft = loadAdminJobFormDraft();
     if (!draft?.form || !draft.isAddFormOpen || draft.editingId) return;
     if (Date.now() - draft.savedAt > 24 * 60 * 60 * 1000) return;
-    setForm(draft.form as unknown as JobForm);
+    setForm(normalizeAdminJobForm(draft.form as Partial<JobForm>));
     setDraftJobId(draft.draftJobId);
     setIsAddFormOpen(true);
     setEditingListingStatus(draft.editingListingStatus as JobListingStatus);
@@ -2689,7 +2755,7 @@ function AdminJobsPageInner() {
         {!isUncontracted && (
         <div>
           <label htmlFor="salary" className={labelClass}>
-            時給
+            時給（一覧・見出し用）
           </label>
           <input
             id="salary"
@@ -2698,6 +2764,84 @@ function AdminJobsPageInner() {
             className={inputClass}
             placeholder="例：時給 4,000円〜"
             required
+          />
+        </div>
+        )}
+
+        {!isUncontracted && (
+        <div>
+          <label htmlFor="regularHourlyPay" className={labelClass}>
+            本入時給
+          </label>
+          <input
+            id="regularHourlyPay"
+            value={form.regularHourlyPay}
+            onChange={(event) => setField("regularHourlyPay", event.target.value)}
+            className={inputClass}
+            placeholder="例）時給 3,000円〜"
+          />
+        </div>
+        )}
+
+        {!isUncontracted && (
+        <div>
+          <label htmlFor="trialHourlyPay" className={labelClass}>
+            体入時給
+          </label>
+          <input
+            id="trialHourlyPay"
+            value={form.trialHourlyPay}
+            onChange={(event) => setField("trialHourlyPay", event.target.value)}
+            className={inputClass}
+            placeholder="例）時給 2,500円"
+          />
+        </div>
+        )}
+
+        {!isUncontracted && (
+        <div>
+          <label htmlFor="backPayDetails" className={labelClass}>
+            各種バック
+          </label>
+          <textarea
+            id="backPayDetails"
+            value={form.backPayDetails}
+            onChange={(event) => setField("backPayDetails", event.target.value)}
+            rows={2}
+            className={inputClass}
+            placeholder="例）ドリンクバック・同伴バックあり"
+          />
+        </div>
+        )}
+
+        {!isUncontracted && (
+        <div>
+          <label htmlFor="salaryPaymentMethod" className={labelClass}>
+            給与支払方法
+          </label>
+          <input
+            id="salaryPaymentMethod"
+            value={form.salaryPaymentMethod}
+            onChange={(event) =>
+              setField("salaryPaymentMethod", event.target.value)
+            }
+            className={inputClass}
+            placeholder="例）月末締め翌月払い / 手渡し"
+          />
+        </div>
+        )}
+
+        {!isUncontracted && (
+        <div>
+          <label htmlFor="minWorkDays" className={labelClass}>
+            最低勤務日数
+          </label>
+          <input
+            id="minWorkDays"
+            value={form.minWorkDays}
+            onChange={(event) => setField("minWorkDays", event.target.value)}
+            className={inputClass}
+            placeholder="例）週2日〜"
           />
         </div>
         )}
@@ -2862,6 +3006,61 @@ function AdminJobsPageInner() {
               <p className="mt-1 text-xs text-muted">
                 1行に1つ、または「、」で区切って自由に入力できます。
               </p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4 rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+            <p className="text-sm font-semibold text-gold-dark">
+              勤務・応募条件（任意）
+            </p>
+            <div>
+              <label htmlFor="costumeUniform" className={labelClass}>
+                衣装／制服
+              </label>
+              <input
+                id="costumeUniform"
+                value={form.costumeUniform}
+                onChange={(event) =>
+                  setField("costumeUniform", event.target.value)
+                }
+                className={inputClass}
+                placeholder="例）ドレス貸与 / 私服OK"
+              />
+            </div>
+            <div>
+              <label htmlFor="trialVisitAvailable" className={labelClass}>
+                体験入店
+              </label>
+              <select
+                id="trialVisitAvailable"
+                value={form.trialVisitAvailable}
+                onChange={(event) =>
+                  setField(
+                    "trialVisitAvailable",
+                    event.target.value as "" | "yes" | "no",
+                  )
+                }
+                className={inputClass}
+              >
+                <option value="">未設定</option>
+                <option value="yes">可能</option>
+                <option value="no">不可</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="trialVisitNotes" className={labelClass}>
+                体験入店時の条件・注意事項
+              </label>
+              <textarea
+                id="trialVisitNotes"
+                value={form.trialVisitNotes}
+                onChange={(event) =>
+                  setField("trialVisitNotes", event.target.value)
+                }
+                rows={3}
+                className={inputClass}
+                placeholder="例）身分証必須・当日給与支給など"
+              />
             </div>
           </div>
         </div>

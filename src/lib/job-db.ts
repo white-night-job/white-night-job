@@ -276,6 +276,32 @@ function readOptionalString(value: unknown): string | undefined {
   return trimmed || undefined;
 }
 
+function hasPayloadKey(data: object, ...keys: string[]): boolean {
+  return keys.some((key) => Object.prototype.hasOwnProperty.call(data, key));
+}
+
+/** Empty string is kept so callers can clear DB columns to null. */
+function readPresentOptionalText(
+  data: object,
+  camel: string,
+  snake?: string,
+): string | undefined {
+  const keys = snake ? [camel, snake] : [camel];
+  if (!hasPayloadKey(data, ...keys)) return undefined;
+  const record = data as Record<string, unknown>;
+  return String(record[camel] ?? (snake ? record[snake] : "") ?? "").trim();
+}
+
+function normalizeTrialVisitAvailableInput(
+  value: unknown,
+): boolean | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return null;
+}
+
 export function hasRecruiterContent(
   job: Pick<
     Job,
@@ -345,6 +371,32 @@ export function payloadToRow(
     youtube_url: payload.youtubeUrl?.trim() || null,
     website_url: payload.websiteUrl?.trim() || null,
     line_url: lineUrl,
+    ...(payload.regularHourlyPay !== undefined
+      ? { regular_hourly_pay: payload.regularHourlyPay.trim() || null }
+      : {}),
+    ...(payload.trialHourlyPay !== undefined
+      ? { trial_hourly_pay: payload.trialHourlyPay.trim() || null }
+      : {}),
+    ...(payload.backPayDetails !== undefined
+      ? { back_pay_details: payload.backPayDetails.trim() || null }
+      : {}),
+    ...(payload.salaryPaymentMethod !== undefined
+      ? {
+          salary_payment_method: payload.salaryPaymentMethod.trim() || null,
+        }
+      : {}),
+    ...(payload.minWorkDays !== undefined
+      ? { min_work_days: payload.minWorkDays.trim() || null }
+      : {}),
+    ...(payload.costumeUniform !== undefined
+      ? { costume_uniform: payload.costumeUniform.trim() || null }
+      : {}),
+    ...(payload.trialVisitAvailable !== undefined
+      ? { trial_visit_available: payload.trialVisitAvailable }
+      : {}),
+    ...(payload.trialVisitNotes !== undefined
+      ? { trial_visit_notes: payload.trialVisitNotes.trim() || null }
+      : {}),
   };
 }
 
@@ -420,6 +472,47 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       typeof (data as { plan?: unknown }).plan === "string"
         ? String((data as { plan?: unknown }).plan)
         : undefined,
+    regularHourlyPay: readPresentOptionalText(
+      data,
+      "regularHourlyPay",
+      "regular_hourly_pay",
+    ),
+    trialHourlyPay: readPresentOptionalText(
+      data,
+      "trialHourlyPay",
+      "trial_hourly_pay",
+    ),
+    backPayDetails: readPresentOptionalText(
+      data,
+      "backPayDetails",
+      "back_pay_details",
+    ),
+    salaryPaymentMethod: readPresentOptionalText(
+      data,
+      "salaryPaymentMethod",
+      "salary_payment_method",
+    ),
+    minWorkDays: readPresentOptionalText(data, "minWorkDays", "min_work_days"),
+    costumeUniform: readPresentOptionalText(
+      data,
+      "costumeUniform",
+      "costume_uniform",
+    ),
+    trialVisitAvailable: hasPayloadKey(
+      data,
+      "trialVisitAvailable",
+      "trial_visit_available",
+    )
+      ? normalizeTrialVisitAvailableInput(
+          data.trialVisitAvailable ??
+            (data as { trial_visit_available?: unknown }).trial_visit_available,
+        ) ?? null
+      : undefined,
+    trialVisitNotes: readPresentOptionalText(
+      data,
+      "trialVisitNotes",
+      "trial_visit_notes",
+    ),
   };
 }
 
