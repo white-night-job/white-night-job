@@ -16,7 +16,14 @@ import {
   isUncontractedPlan,
   UNCONTRACTED_PUBLIC_LABEL,
 } from "@/lib/job-plan";
-import { getJobComparisonBenefitTags, buildJobComparisonFeatureBlurb } from "@/lib/seo-comparison-tags";
+import {
+  getJobComparisonBenefitTags,
+  buildJobComparisonFeatureBlurb,
+} from "@/lib/seo-comparison-tags";
+import { buildSusukinoGirlsBarCardConditions } from "@/lib/susukino-girlsbar-card-conditions";
+import { isSusukinoGirlsBarJob } from "@/lib/susukino-seo";
+
+const MAX_SUSUKINO_GIRLSBAR_CARD_TAGS = 8;
 
 export function JobCard({
   job,
@@ -27,16 +34,30 @@ export function JobCard({
   showComparisonTags?: boolean;
 }) {
   const storeInfoOnly = isUncontractedPlan(job.plan);
-  const comparisonTags = showComparisonTags
-    ? getJobComparisonBenefitTags(job)
-    : [];
+  const richSusukinoGirlsBar =
+    showComparisonTags && !storeInfoOnly && isSusukinoGirlsBarJob(job);
+  const girlsBarConditions = richSusukinoGirlsBar
+    ? buildSusukinoGirlsBarCardConditions(job)
+    : null;
+  const comparisonTags =
+    showComparisonTags && !richSusukinoGirlsBar
+      ? getJobComparisonBenefitTags(job)
+      : [];
   const featureBlurb =
-    showComparisonTags && !storeInfoOnly
+    showComparisonTags && !storeInfoOnly && !richSusukinoGirlsBar
       ? buildJobComparisonFeatureBlurb(job)
       : null;
   const salaryText = job.salary?.trim() ?? "";
   const workHoursText = job.workHours?.trim() ?? "";
-  const showSalary = !storeInfoOnly && (!showComparisonTags || salaryText.length > 0);
+  const showSalary =
+    !storeInfoOnly &&
+    !richSusukinoGirlsBar &&
+    (!showComparisonTags || salaryText.length > 0);
+  const girlsBarTags = (girlsBarConditions?.tags ?? []).slice(
+    0,
+    MAX_SUSUKINO_GIRLSBAR_CARD_TAGS,
+  );
+
   return (
     <JobImpressionTracker jobId={job.id}>
       <article
@@ -89,7 +110,7 @@ export function JobCard({
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-charcoal">
                   {featureBlurb}
                 </p>
-              ) : !storeInfoOnly && job.introductionText ? (
+              ) : !storeInfoOnly && !richSusukinoGirlsBar && job.introductionText ? (
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">
                   {job.introductionText}
                 </p>
@@ -98,68 +119,122 @@ export function JobCard({
             {!storeInfoOnly && job.isVerified && <SafetyBadge size="sm" />}
           </div>
 
-          <dl className="grid gap-2 text-sm">
-            {showSalary ? (
-              <div className="rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-2">
-                <dt className="text-xs font-semibold text-gold-dark">時給</dt>
-                <dd className="mt-0.5 min-w-0 break-words bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
-                  {salaryText}
-                </dd>
-              </div>
-            ) : storeInfoOnly ? (
-              <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                <dt className="text-xs font-semibold text-muted">営業時間</dt>
-                <dd className="mt-0.5 line-clamp-1 text-muted">
-                  {job.businessHours?.trim() || "情報なし"}
-                </dd>
-              </div>
-            ) : null}
-            {!storeInfoOnly ? (
-              <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                <dt className="text-xs font-semibold text-muted">営業時間</dt>
-                <dd className="mt-0.5 line-clamp-1 text-muted">
-                  {job.businessHours || "応相談"}
-                </dd>
-              </div>
-            ) : null}
-            {job.address && (
-              <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                <dt className="text-xs font-semibold text-muted">住所</dt>
-                <dd className="mt-0.5 line-clamp-2 text-muted">{job.address}</dd>
-              </div>
-            )}
-            {!storeInfoOnly ? (
-              <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                <dt className="text-xs font-semibold text-muted">キャスト年齢</dt>
-                <dd className="mt-0.5 line-clamp-1 text-muted">
-                  {job.ageGroup || "詳細ページで確認"}
-                </dd>
-              </div>
-            ) : null}
-          </dl>
+          {richSusukinoGirlsBar && girlsBarConditions ? (
+            <>
+              {girlsBarConditions.priorityRows.length > 0 ? (
+                <dl className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+                  {girlsBarConditions.priorityRows.map((row) => (
+                    <div
+                      key={`${row.label}:${row.value}`}
+                      className={
+                        row.emphasize
+                          ? "rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-1.5 sm:col-span-2"
+                          : "rounded-xl border border-gold/20 bg-white/50 px-3 py-1.5"
+                      }
+                    >
+                      <dt
+                        className={`text-[11px] font-semibold ${
+                          row.emphasize ? "text-gold-dark" : "text-muted"
+                        }`}
+                      >
+                        {row.label}
+                      </dt>
+                      <dd
+                        className={`mt-0.5 line-clamp-2 min-w-0 break-words text-sm font-medium ${
+                          row.emphasize
+                            ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text font-bold text-transparent"
+                            : "text-charcoal"
+                        }`}
+                      >
+                        {row.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
 
-          {comparisonTags.length > 0 ? (
-            <ul
-              className="mt-3 flex flex-wrap gap-1.5"
-              aria-label="求人の比較ポイント"
-            >
-              {comparisonTags.map((tag) => (
-                <li
-                  key={tag.match}
-                  className="rounded-full border border-gold/30 bg-champagne/40 px-2.5 py-1 text-[11px] font-semibold text-gold-dark"
+              {girlsBarTags.length > 0 ? (
+                <ul
+                  className="mt-2.5 flex flex-wrap gap-1.5"
+                  aria-label="求人の比較ポイント"
                 >
-                  {tag.label}
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                  {girlsBarTags.map((tag) => (
+                    <li
+                      key={tag.key}
+                      className="rounded-full border border-gold/30 bg-champagne/40 px-2 py-0.5 text-[11px] font-semibold text-gold-dark"
+                    >
+                      {tag.label}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <dl className="grid gap-2 text-sm">
+                {showSalary ? (
+                  <div className="rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-2">
+                    <dt className="text-xs font-semibold text-gold-dark">時給</dt>
+                    <dd className="mt-0.5 min-w-0 break-words bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text text-base font-bold text-transparent">
+                      {salaryText}
+                    </dd>
+                  </div>
+                ) : storeInfoOnly ? (
+                  <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-muted">営業時間</dt>
+                    <dd className="mt-0.5 line-clamp-1 text-muted">
+                      {job.businessHours?.trim() || "情報なし"}
+                    </dd>
+                  </div>
+                ) : null}
+                {!storeInfoOnly ? (
+                  <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-muted">営業時間</dt>
+                    <dd className="mt-0.5 line-clamp-1 text-muted">
+                      {job.businessHours || "応相談"}
+                    </dd>
+                  </div>
+                ) : null}
+                {job.address && (
+                  <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-muted">住所</dt>
+                    <dd className="mt-0.5 line-clamp-2 text-muted">{job.address}</dd>
+                  </div>
+                )}
+                {!storeInfoOnly ? (
+                  <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
+                    <dt className="text-xs font-semibold text-muted">キャスト年齢</dt>
+                    <dd className="mt-0.5 line-clamp-1 text-muted">
+                      {job.ageGroup || "詳細ページで確認"}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
 
-          {showComparisonTags && !storeInfoOnly && workHoursText ? (
-            <p className="mt-2 text-xs leading-5 text-muted">
-              <span className="font-medium text-charcoal">勤務時間：</span>
-              <span className="line-clamp-2">{workHoursText}</span>
-            </p>
-          ) : null}
+              {comparisonTags.length > 0 ? (
+                <ul
+                  className="mt-3 flex flex-wrap gap-1.5"
+                  aria-label="求人の比較ポイント"
+                >
+                  {comparisonTags.map((tag) => (
+                    <li
+                      key={tag.match}
+                      className="rounded-full border border-gold/30 bg-champagne/40 px-2.5 py-1 text-[11px] font-semibold text-gold-dark"
+                    >
+                      {tag.label}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {showComparisonTags && !storeInfoOnly && workHoursText ? (
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  <span className="font-medium text-charcoal">勤務時間：</span>
+                  <span className="line-clamp-2">{workHoursText}</span>
+                </p>
+              ) : null}
+            </>
+          )}
 
           <p className="mt-4 text-right text-xs font-semibold text-gold-dark">
             {storeInfoOnly ? "店舗情報を見る →" : "詳細を見る →"}

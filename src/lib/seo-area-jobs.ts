@@ -24,6 +24,11 @@ const SEO_JOB_CARD_COLUMNS = [
   "benefits",
   "other_benefits",
   "requirements",
+  "regular_hourly_pay",
+  "trial_hourly_pay",
+  "min_work_days",
+  "costume_uniform",
+  "trial_visit_available",
   "is_verified",
   "image_url",
   "line_url",
@@ -135,7 +140,7 @@ export async function getPublishedSeoJobsPage(params: {
         page,
         pageSize,
       }),
-    ["seo-area-jobs", params.district, jobTypeKey, String(page), String(pageSize)],
+    ["seo-area-jobs-v2", params.district, jobTypeKey, String(page), String(pageSize)],
     { revalidate: 120 },
   )();
 }
