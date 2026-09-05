@@ -214,8 +214,12 @@ export function JobDetailView({
     window.setTimeout(() => setPreviewNotice(""), 2200);
   }
 
-  const benefitGroups = getBenefitCategoryGroups(job.benefits);
-  const otherBenefits = job.otherBenefits ?? [];
+  const benefitGroups = getBenefitCategoryGroups(
+    Array.isArray(job.benefits) ? job.benefits : [],
+  );
+  const otherBenefits = Array.isArray(job.otherBenefits)
+    ? job.otherBenefits
+    : [];
   const conditionRows = buildJobConditionRows(job);
   const displayStoreImages = getDisplayStoreImages(job);
   const isSusukinoGirlsBar = isSusukinoGirlsBarJob(job);

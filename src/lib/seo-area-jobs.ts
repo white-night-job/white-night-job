@@ -7,8 +7,8 @@ import type { Job, JobType } from "@/types/job";
 
 export const SEO_JOBS_PAGE_SIZE = 12;
 
-/** Columns needed to render public JobCard on SEO landings. */
-const SEO_JOB_CARD_COLUMNS = [
+/** Base card columns (safe if new condition columns are not migrated yet). */
+const SEO_JOB_CARD_COLUMNS_BASE = [
   "id",
   "shop_name",
   "area",
@@ -24,11 +24,6 @@ const SEO_JOB_CARD_COLUMNS = [
   "benefits",
   "other_benefits",
   "requirements",
-  "regular_hourly_pay",
-  "trial_hourly_pay",
-  "min_work_days",
-  "costume_uniform",
-  "trial_visit_available",
   "is_verified",
   "image_url",
   "line_url",
@@ -39,6 +34,23 @@ const SEO_JOB_CARD_COLUMNS = [
   "listing_priority",
   "plan",
 ].join(", ");
+
+/** Prefer these when migration is applied; fall back to BASE on missing-column errors. */
+const SEO_JOB_CARD_COLUMNS_WITH_CONDITIONS = [
+  SEO_JOB_CARD_COLUMNS_BASE,
+  "regular_hourly_pay",
+  "trial_hourly_pay",
+  "min_work_days",
+  "costume_uniform",
+  "trial_visit_available",
+].join(", ");
+
+function isMissingColumnError(message: string | undefined): boolean {
+  if (!message) return false;
+  return /regular_hourly_pay|trial_hourly_pay|min_work_days|costume_uniform|trial_visit_available|does not exist|column/i.test(
+    message,
+  );
+}
 
 export type SeoJobsPageResult = {
   jobs: Job[];
@@ -75,18 +87,28 @@ async function fetchPublishedJobsPageUncached(params: {
   }
 
   const supabase = createSupabaseAdmin();
-  let query = supabase
-    .from("jobs")
-    .select(SEO_JOB_CARD_COLUMNS)
-    .eq("published", true)
-    .eq("district", params.district)
-    .order("created_at", { ascending: false });
+  const runSelect = async (columns: string) => {
+    let query = supabase
+      .from("jobs")
+      .select(columns)
+      .eq("published", true)
+      .eq("district", params.district)
+      .order("created_at", { ascending: false });
+    if (params.jobType) {
+      query = query.eq("job_type", params.jobType);
+    }
+    return query;
+  };
 
-  if (params.jobType) {
-    query = query.eq("job_type", params.jobType);
+  let { data, error } = await runSelect(SEO_JOB_CARD_COLUMNS_WITH_CONDITIONS);
+  if (error && isMissingColumnError(error.message)) {
+    console.warn(
+      "[seo-area-jobs] condition columns missing; falling back to base select",
+      { message: error.message },
+    );
+    ({ data, error } = await runSelect(SEO_JOB_CARD_COLUMNS_BASE));
   }
 
-  const { data, error } = await query;
   if (error) {
     console.error("[seo-area-jobs] select failed", {
       district: params.district,
@@ -140,7 +162,7 @@ export async function getPublishedSeoJobsPage(params: {
         page,
         pageSize,
       }),
-    ["seo-area-jobs-v2", params.district, jobTypeKey, String(page), String(pageSize)],
+    ["seo-area-jobs-v3", params.district, jobTypeKey, String(page), String(pageSize)],
     { revalidate: 120 },
   )();
 }

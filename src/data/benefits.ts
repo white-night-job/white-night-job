@@ -73,28 +73,31 @@ export const BENEFIT_SEARCH_CATEGORIES = [
   },
 ] as const;
 
-export function getBenefitCategoryGroups(benefits: string[]) {
+export function getBenefitCategoryGroups(benefits: string[] | null | undefined) {
+  const list = Array.isArray(benefits) ? benefits : [];
   const categoryGroups: Array<{ title: string; items: string[] }> =
     BENEFIT_CATEGORIES.map((category) => ({
     title: category.title,
-    items: category.items.filter((item) => benefits.includes(item)),
+    items: category.items.filter((item) => list.includes(item)),
   })).filter((category) => category.items.length > 0);
 
   return categoryGroups;
 }
 
-export function getKnownBenefits(benefits: string[]) {
+export function getKnownBenefits(benefits: string[] | null | undefined) {
+  const list = Array.isArray(benefits) ? benefits : [];
   const knownBenefits = new Set<string>(
     BENEFIT_CATEGORIES.flatMap((category) => [...category.items]),
   );
 
-  return benefits.filter((benefit) => knownBenefits.has(benefit));
+  return list.filter((benefit) => knownBenefits.has(benefit));
 }
 
-export function getUncategorizedBenefits(benefits: string[]) {
+export function getUncategorizedBenefits(benefits: string[] | null | undefined) {
+  const list = Array.isArray(benefits) ? benefits : [];
   const knownBenefits = new Set<string>(
     BENEFIT_CATEGORIES.flatMap((category) => [...category.items]),
   );
 
-  return benefits.filter((benefit) => !knownBenefits.has(benefit));
+  return list.filter((benefit) => !knownBenefits.has(benefit));
 }

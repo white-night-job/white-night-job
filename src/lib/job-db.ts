@@ -133,6 +133,23 @@ type RowToJobOptions = {
   includeShopLoginPassword?: boolean;
 };
 
+function coerceText(value: unknown, fallback = ""): string {
+  if (value == null) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+function coerceOptionalText(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const text = String(value).trim();
+  return text || undefined;
+}
+
+function coerceStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
 export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
   return {
     id: row.id,
@@ -141,40 +158,41 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     district: row.district,
     jobType: row.job_type,
     title: row.title,
-    salary: row.salary,
-    workHours: row.work_hours,
-    businessHours: row.business_hours ?? undefined,
-    ageGroup: row.age_group ?? undefined,
+    salary: coerceText(row.salary),
+    workHours: coerceText(row.work_hours),
+    businessHours: coerceOptionalText(row.business_hours),
+    ageGroup: coerceOptionalText(row.age_group),
     customerPersonalityLevel: row.customer_personality_level ?? undefined,
     customerAgeLevel: row.customer_age_level ?? undefined,
     customerRegularLevel: row.customer_regular_level ?? undefined,
-    introductionText: row.introduction_text?.trim() || undefined,
+    introductionText: coerceOptionalText(row.introduction_text),
     descriptionText:
-      row.description_text?.trim() || row.description?.trim() || undefined,
+      coerceOptionalText(row.description_text) ||
+      coerceOptionalText(row.description),
     castVoices: resolveCastVoicesFromRow(row),
-    castVoice: row.cast_voice?.trim() || undefined,
-    requirements: row.requirements ?? [],
-    benefits: row.benefits ?? [],
-    otherBenefits: row.other_benefits ?? [],
-    isVerified: row.is_verified,
-    imageUrl: row.image_url ?? undefined,
+    castVoice: coerceOptionalText(row.cast_voice),
+    requirements: coerceStringArray(row.requirements),
+    benefits: coerceStringArray(row.benefits),
+    otherBenefits: coerceStringArray(row.other_benefits),
+    isVerified: Boolean(row.is_verified),
+    imageUrl: coerceOptionalText(row.image_url),
     storeImages: getDisplayStoreImages({ storeImages: undefined, store_images: row.store_images }),
-    regularHourlyPay: row.regular_hourly_pay?.trim() || undefined,
-    trialHourlyPay: row.trial_hourly_pay?.trim() || undefined,
-    backPayDetails: row.back_pay_details?.trim() || undefined,
-    salaryPaymentMethod: row.salary_payment_method?.trim() || undefined,
-    minWorkDays: row.min_work_days?.trim() || undefined,
-    costumeUniform: row.costume_uniform?.trim() || undefined,
+    regularHourlyPay: coerceOptionalText(row.regular_hourly_pay),
+    trialHourlyPay: coerceOptionalText(row.trial_hourly_pay),
+    backPayDetails: coerceOptionalText(row.back_pay_details),
+    salaryPaymentMethod: coerceOptionalText(row.salary_payment_method),
+    minWorkDays: coerceOptionalText(row.min_work_days),
+    costumeUniform: coerceOptionalText(row.costume_uniform),
     trialVisitAvailable:
       typeof row.trial_visit_available === "boolean"
         ? row.trial_visit_available
         : undefined,
-    trialVisitNotes: row.trial_visit_notes?.trim() || undefined,
-    recruiterName: row.recruiter_name?.trim() || undefined,
-    recruiterTitle: row.recruiter_title?.trim() || undefined,
-    recruiterImage: row.recruiter_image?.trim() || undefined,
-    recruiterMessage: row.recruiter_message?.trim() || undefined,
-    managerComment: row.manager_comment?.trim() || undefined,
+    trialVisitNotes: coerceOptionalText(row.trial_visit_notes),
+    recruiterName: coerceOptionalText(row.recruiter_name),
+    recruiterTitle: coerceOptionalText(row.recruiter_title),
+    recruiterImage: coerceOptionalText(row.recruiter_image),
+    recruiterMessage: coerceOptionalText(row.recruiter_message),
+    managerComment: coerceOptionalText(row.manager_comment),
     phone: row.phone ?? undefined,
     address: row.address ?? undefined,
     access: row.access ?? undefined,
@@ -183,7 +201,7 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
     tiktokUrl: row.tiktok_url ?? undefined,
     youtubeUrl: row.youtube_url ?? undefined,
     websiteUrl: row.website_url ?? undefined,
-    lineUrl: row.line_url,
+    lineUrl: coerceText(row.line_url),
     postedAt: row.posted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

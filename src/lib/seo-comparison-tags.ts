@@ -44,9 +44,13 @@ export function getJobComparisonBenefitTags(job: {
   benefits?: string[] | null;
   otherBenefits?: string[] | null;
 }): JobComparisonBenefitTag[] {
-  const pool = new Set([
-    ...(job.benefits ?? []),
-    ...(job.otherBenefits ?? []),
+  const benefits = Array.isArray(job.benefits) ? job.benefits : [];
+  const otherBenefits = Array.isArray(job.otherBenefits)
+    ? job.otherBenefits
+    : [];
+  const pool = new Set<string>([
+    ...benefits.map((item) => String(item ?? "")),
+    ...otherBenefits.map((item) => String(item ?? "")),
   ]);
   return SEO_COMPARISON_BENEFIT_DEFS.filter((def) => pool.has(def.match)).map(
     (def) => ({ match: def.match, label: def.label }),

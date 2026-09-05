@@ -403,11 +403,12 @@ export function buildJobPostingItemListJsonLd(
 }
 
 /** Parse free-text salary only when numeric hourly values are clear. */
-export function parseHourlySalaryForJsonLd(salary: string): {
+export function parseHourlySalaryForJsonLd(salary: string | null | undefined): {
   minValue: number;
   maxValue: number;
 } | null {
-  const normalized = salary.replace(/,/g, "").replace(/／/g, "/");
+  if (salary == null) return null;
+  const normalized = String(salary).replace(/,/g, "").replace(/／/g, "/");
   if (!/時給|円/.test(normalized)) return null;
   const matches = [...normalized.matchAll(/(\d{3,6})\s*円/g)].map((m) =>
     Number(m[1]),
@@ -511,9 +512,9 @@ function resolveEmploymentType(job: Job): string | string[] {
     job.salary,
     job.introductionText,
     job.descriptionText,
-    ...job.benefits,
-    ...job.requirements,
-    ...(job.otherBenefits ?? []),
+    ...(Array.isArray(job.benefits) ? job.benefits : []),
+    ...(Array.isArray(job.requirements) ? job.requirements : []),
+    ...(Array.isArray(job.otherBenefits) ? job.otherBenefits : []),
   ]
     .filter(Boolean)
     .join(" ");
@@ -541,10 +542,12 @@ function resolveEmploymentType(job: Job): string | string[] {
 function resolveExperienceRequirements(
   job: Job,
 ): string | Record<string, unknown> {
-  const reqText = job.requirements.join("、");
+  const requirements = Array.isArray(job.requirements) ? job.requirements : [];
+  const benefits = Array.isArray(job.benefits) ? job.benefits : [];
+  const reqText = requirements.join("、");
   const haystack = [
     reqText,
-    ...job.benefits,
+    ...benefits,
     job.introductionText ?? "",
     job.descriptionText ?? "",
   ].join(" ");
@@ -566,9 +569,9 @@ function resolveExperienceRequirements(
   }
 
   const beginner =
-    job.benefits.some((b) => /未経験/.test(b)) ||
+    benefits.some((b) => /未経験/.test(b)) ||
     /未経験|経験不問|経験不要|初心者歓迎/.test(haystack) ||
-    job.requirements.length === 0;
+    requirements.length === 0;
 
   if (beginner) return "no requirements";
 
@@ -577,6 +580,8 @@ function resolveExperienceRequirements(
 }
 
 function buildJobDescriptionForJsonLd(job: Job): string {
+  const requirements = Array.isArray(job.requirements) ? job.requirements : [];
+  const benefits = Array.isArray(job.benefits) ? job.benefits : [];
   const parts = [
     job.introductionText,
     job.descriptionText,
@@ -595,10 +600,10 @@ function buildJobDescriptionForJsonLd(job: Job): string {
       : null,
     job.workHours ? `勤務時間: ${job.workHours}` : null,
     job.businessHours ? `営業時間: ${job.businessHours}` : null,
-    job.requirements.length > 0
-      ? `応募条件: ${job.requirements.join("、")}`
+    requirements.length > 0
+      ? `応募条件: ${requirements.join("、")}`
       : null,
-    job.benefits.length > 0 ? `待遇: ${job.benefits.join("、")}` : null,
+    benefits.length > 0 ? `待遇: ${benefits.join("、")}` : null,
   ].filter(Boolean);
   return parts.join("\n\n").slice(0, 5000);
 }
@@ -615,7 +620,7 @@ export function buildJobPostingJsonLd(
   const url = `${SITE_URL}/jobs/${job.id}`;
   const description = buildJobDescriptionForJsonLd(job);
   const salarySource =
-    job.regularHourlyPay?.trim() || job.salary;
+    job.regularHourlyPay?.trim() || job.salary || "";
   const salary = parseHourlySalaryForJsonLd(salarySource);
   const datePosted = resolveDatePosted(job);
   const address = resolveJobLocationAddress(job);
@@ -667,14 +672,16 @@ export function buildJobPostingJsonLd(
     };
   }
 
-  if (job.requirements.length > 0) {
+  if (Array.isArray(job.requirements) && job.requirements.length > 0) {
     data.qualifications = job.requirements.join("、");
   }
 
-  if (job.benefits.length > 0 || (job.otherBenefits?.length ?? 0) > 0) {
-    data.jobBenefits = [...job.benefits, ...(job.otherBenefits ?? [])].join(
-      "、",
-    );
+  const benefits = Array.isArray(job.benefits) ? job.benefits : [];
+  const otherBenefits = Array.isArray(job.otherBenefits)
+    ? job.otherBenefits
+    : [];
+  if (benefits.length > 0 || otherBenefits.length > 0) {
+    data.jobBenefits = [...benefits, ...otherBenefits].join("、");
   }
 
   const hours = job.workHours?.trim() || job.businessHours?.trim();

@@ -20,14 +20,20 @@ export type JobConditionRow = {
   value: string;
 };
 
-function trimText(value: string | undefined | null): string {
-  return value?.trim() ?? "";
+function trimText(value: unknown): string {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
 }
 
 /** Build detail rows from dedicated columns + known benefit tags. Empty values omitted. */
 export function buildJobConditionRows(job: Job): JobConditionRow[] {
   const rows: JobConditionRow[] = [];
-  const benefits = new Set(job.benefits);
+  const benefits = new Set(asStringArray(job.benefits));
 
   const regular = trimText(job.regularHourlyPay);
   if (regular) rows.push({ label: "本入時給", value: regular });
@@ -61,9 +67,7 @@ export function buildJobConditionRows(job: Job): JobConditionRow[] {
   const costume = trimText(job.costumeUniform);
   if (costume) rows.push({ label: "衣装／制服", value: costume });
 
-  const requirements = job.requirements
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const requirements = asStringArray(job.requirements);
   if (requirements.length > 0) {
     rows.push({ label: "応募資格", value: requirements.join("、") });
   }

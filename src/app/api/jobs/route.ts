@@ -213,8 +213,8 @@ export async function GET(request: Request) {
         job.access,
         job.introductionText,
         job.descriptionText,
-        ...job.benefits,
-        ...(job.otherBenefits ?? []),
+        ...(Array.isArray(job.benefits) ? job.benefits : []),
+        ...(Array.isArray(job.otherBenefits) ? job.otherBenefits : []),
       ]
         .join(" ")
         .toLowerCase();
@@ -226,7 +226,9 @@ export async function GET(request: Request) {
       }
       if (
         selectedBenefits.length > 0 &&
-        !selectedBenefits.every((benefit) => job.benefits.includes(benefit))
+        !selectedBenefits.every((benefit) =>
+          (Array.isArray(job.benefits) ? job.benefits : []).includes(benefit),
+        )
       ) {
         return false;
       }
