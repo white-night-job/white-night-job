@@ -228,3 +228,32 @@ export function isSusukinoGirlsBarJob(job: {
 }): boolean {
   return job.district === SUSUKINO_DISTRICT && job.jobType === "ガールズバー";
 }
+
+/**
+ * Natural (non-exact-match-spam) anchors back to /sapporo/susukino/girlsbar.
+ * Stable per job id so crawl/HTML stays consistent for each detail URL.
+ */
+const SUSUKINO_GIRLSBAR_LISTING_BACK_LABELS = [
+  "すすきののガールズバー求人一覧",
+  "すすきのでガールズバー求人を探す",
+  "すすきののガルバ求人を見る",
+  "すすきののガールズバー求人を比較する",
+  "ほかのすすきのガールズバー求人を見る",
+] as const;
+
+function stableIndexFromId(id: string, modulo: number): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    hash = (hash + id.charCodeAt(i) * (i + 1)) % 9973;
+  }
+  return modulo > 0 ? hash % modulo : 0;
+}
+
+export function getSusukinoGirlsBarListingBackLink(jobId: string): {
+  href: typeof SUSUKINO_GIRLSBAR_PATH;
+  label: string;
+} {
+  const labels = SUSUKINO_GIRLSBAR_LISTING_BACK_LABELS;
+  const label = labels[stableIndexFromId(jobId, labels.length)] ?? labels[0];
+  return { href: SUSUKINO_GIRLSBAR_PATH, label };
+}

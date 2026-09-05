@@ -26,6 +26,7 @@ import {
 } from "@/lib/seo-landing";
 import {
   formatJobTypeSeoLabel,
+  getSusukinoGirlsBarListingBackLink,
   isSusukinoGirlsBarJob,
 } from "@/lib/susukino-seo";
 import type { Job } from "@/types/job";
@@ -218,6 +219,9 @@ export function JobDetailView({
   const conditionRows = buildJobConditionRows(job);
   const displayStoreImages = getDisplayStoreImages(job);
   const isSusukinoGirlsBar = isSusukinoGirlsBarJob(job);
+  const susukinoGirlsBarBackLink = isSusukinoGirlsBar
+    ? getSusukinoGirlsBarListingBackLink(job.id)
+    : null;
   const workHoursText = job.workHours?.trim() ?? "";
   const googleMapUrl = job.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`
@@ -289,13 +293,23 @@ export function JobDetailView({
 
       {!preview && (
         <div className="mb-3">
-          <Link
-            href="/jobs"
-            scroll={false}
-            className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
-          >
-            ← 戻る
-          </Link>
+          {susukinoGirlsBarBackLink ? (
+            <Link
+              href={susukinoGirlsBarBackLink.href}
+              scroll={false}
+              className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
+            >
+              ← {susukinoGirlsBarBackLink.label}
+            </Link>
+          ) : (
+            <Link
+              href="/jobs"
+              scroll={false}
+              className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
+            >
+              ← 戻る
+            </Link>
+          )}
         </div>
       )}
 
@@ -462,7 +476,30 @@ export function JobDetailView({
                     </div>
                   ))}
                 </dl>
+                {susukinoGirlsBarBackLink && !preview ? (
+                  <p className="mt-4 text-sm leading-relaxed text-muted">
+                    時給や待遇をほかの店舗とも比べたい場合は、
+                    <Link
+                      href={susukinoGirlsBarBackLink.href}
+                      className="font-medium text-gold-dark underline-offset-2 hover:underline"
+                    >
+                      {susukinoGirlsBarBackLink.label}
+                    </Link>
+                    から公開中の求人を確認できます。
+                  </p>
+                ) : null}
               </section>
+            ) : susukinoGirlsBarBackLink && !preview ? (
+              <p className="text-sm leading-relaxed text-muted">
+                ほかの店舗の条件も見たい場合は、
+                <Link
+                  href={susukinoGirlsBarBackLink.href}
+                  className="font-medium text-gold-dark underline-offset-2 hover:underline"
+                >
+                  {susukinoGirlsBarBackLink.label}
+                </Link>
+                をご覧ください。
+              </p>
             ) : null}
 
             {showExtras && displayStoreImages.length > 0 ? (
@@ -728,6 +765,18 @@ export function JobDetailView({
 
       {!preview &&
       (() => {
+        if (susukinoGirlsBarBackLink) {
+          return (
+            <p className="mt-6 text-sm text-muted">
+              <Link
+                href={susukinoGirlsBarBackLink.href}
+                className="font-medium text-gold-dark underline-offset-2 hover:underline"
+              >
+                {susukinoGirlsBarBackLink.label}
+              </Link>
+            </p>
+          );
+        }
         const landing = getPublishedSeoLandingByDistrictJobType(
           job.district,
           job.jobType,
