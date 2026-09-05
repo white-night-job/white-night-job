@@ -125,25 +125,25 @@ export function JobCard({
               {hasConditionBlock && conditions ? (
                 <>
                   {conditions.priorityRows.length > 0 ? (
-                    <dl className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+                    <dl className="grid grid-cols-2 gap-1.5 text-sm">
                       {conditions.priorityRows.map((row) => (
                         <div
                           key={`${row.label}:${row.value}`}
                           className={
                             row.emphasize
-                              ? "rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-3 py-1.5 sm:col-span-2"
-                              : "rounded-xl border border-gold/20 bg-white/50 px-3 py-1.5"
+                              ? "min-w-0 rounded-lg border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-2 py-1"
+                              : "min-w-0 rounded-lg border border-gold/20 bg-white/50 px-2 py-1"
                           }
                         >
                           <dt
-                            className={`text-[11px] font-semibold ${
+                            className={`text-[10px] font-semibold leading-tight ${
                               row.emphasize ? "text-gold-dark" : "text-muted"
                             }`}
                           >
                             {row.label}
                           </dt>
                           <dd
-                            className={`mt-0.5 line-clamp-2 min-w-0 break-words text-sm font-medium ${
+                            className={`mt-0.5 line-clamp-2 min-w-0 break-words text-xs font-medium leading-snug sm:text-sm ${
                               row.emphasize
                                 ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text font-bold text-transparent"
                                 : "text-charcoal"
