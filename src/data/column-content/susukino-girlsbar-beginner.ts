@@ -23,6 +23,12 @@ export const susukinoGirlsbarBeginnerSections: ColumnSection[] = [
       "未経験でも始めやすい理由のひとつは、カウンター越しの会話やドリンク提供が中心になりやすいことです。最初から完璧なトークが求められるわけではなく、あいづちや笑顔、丁寧な対応から慣れていくケースも多いです。一方で、客層・ルール・忙しさは店舗差が大きいため、未経験歓迎の求人だけを見て即決せず、複数店舗を比較することが大切です。",
       "お酒が飲めない方や、週の出勤日数が限られる方も、求人情報の待遇欄で対応可否を確認できます。タグが無い場合は「不可」と決めつけず、店舗に実条件を確認してください。",
     ],
+    links: [
+      {
+        label: "未経験歓迎のすすきのガールズバー求人を比較する",
+        href: "/sapporo/susukino/girlsbar",
+      },
+    ],
   },
   {
     id: "work",
@@ -42,7 +48,7 @@ export const susukinoGirlsbarBeginnerSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきのでガルバ求人を探す",
+        label: "すすきののガールズバー求人を比較する",
         href: "/sapporo/susukino/girlsbar",
       },
     ],
@@ -57,8 +63,12 @@ export const susukinoGirlsbarBeginnerSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきののガールズバーで体入するには？",
+        label: "体入・体験入店の流れを詳しく読む",
         href: "/column/susukino-girlsbar-trial",
+      },
+      {
+        label: "体入できるガールズバー求人を探す",
+        href: "/sapporo/susukino/girlsbar",
       },
     ],
   },
@@ -69,6 +79,12 @@ export const susukinoGirlsbarBeginnerSections: ColumnSection[] = [
       "自分に合ったお店を選ぶときは、時給の高さだけでなく、通いやすさ・シフトの柔軟さ・相談のしやすさを同じ重みで見てください。すすきのは選択肢が多い分、雰囲気の差も大きいため、写真・紹介文・待遇タグをセットで比較するのがおすすめです。",
       "向いている人の例としては、会話を大切にしたい方、少人数の空間が好みの方、まずは未経験から夜職を試したい方などが挙げられます。ただし相性は個人差が大きいので、最終的には体入での実感を優先してください。",
       "最初は2〜3店舗を候補にし、条件表を作ってから体入日程を入れると、感情だけで決めにくくなります。合わないと感じたら次の候補へ進む、という進め方が失敗しにくいです。",
+    ],
+    links: [
+      {
+        label: "すすきののガールズバー求人を比較する",
+        href: "/sapporo/susukino/girlsbar",
+      },
     ],
   },
   {
@@ -88,7 +104,7 @@ export const susukinoGirlsbarBeginnerSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきののガールズバー求人一覧",
+        label: "すすきののガールズバー求人を見る",
         href: "/sapporo/susukino/girlsbar",
       },
     ],

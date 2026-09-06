@@ -388,14 +388,30 @@ export function SusukinoSeoView({
             <p key={paragraph.slice(0, 24)}>{paragraph}</p>
           ))}
         </div>
-        <p className="mt-4">
-          <Link
-            href="/first-time-guide"
-            className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
-          >
-            初めての方への案内を読む
-          </Link>
-        </p>
+        {comparisonListing?.supportGuideLinks &&
+        comparisonListing.supportGuideLinks.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {comparisonListing.supportGuideLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4">
+            <Link
+              href="/first-time-guide"
+              className="text-sm font-medium text-gold-dark underline-offset-2 hover:underline"
+            >
+              初めての方への案内を読む
+            </Link>
+          </p>
+        )}
       </section>
 
       <section className="mt-10" aria-labelledby="susukino-columns">

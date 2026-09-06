@@ -10,7 +10,7 @@ export const susukinoGirlsbarTrialSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきののガールズバー求人",
+        label: "すすきののガールズバー求人を見る",
         href: "/sapporo/susukino/girlsbar",
       },
     ],
@@ -25,8 +25,12 @@ export const susukinoGirlsbarTrialSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきのでガールズバー求人を探す女性向けガイド",
+        label: "未経験・お店選びのガイドを読む",
         href: "/column/susukino-girlsbar-beginner",
+      },
+      {
+        label: "すすきののガールズバー求人を比較する",
+        href: "/sapporo/susukino/girlsbar",
       },
     ],
   },
@@ -39,7 +43,7 @@ export const susukinoGirlsbarTrialSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきので体入できるガールズバー求人を探す",
+        label: "体入できるガールズバー求人を探す",
         href: "/sapporo/susukino/girlsbar",
       },
     ],
@@ -77,7 +81,7 @@ export const susukinoGirlsbarTrialSections: ColumnSection[] = [
     ],
     links: [
       {
-        label: "すすきののガールズバー求人一覧",
+        label: "すすきののガールズバー求人を見る",
         href: "/sapporo/susukino/girlsbar",
       },
     ],

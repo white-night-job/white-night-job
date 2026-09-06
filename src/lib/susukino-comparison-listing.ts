@@ -15,6 +15,8 @@ export type SusukinoComparisonListingCopy = {
   compareTipsH2: string;
   compareTips: readonly [string, string];
   beginnerHeading: string;
+  /** Intent hub links to support columns (girlsbar SEO cluster). */
+  supportGuideLinks?: ReadonlyArray<{ label: string; href: string }>;
 };
 
 export const SUSUKINO_COMPARISON_LISTINGS: Record<
@@ -39,6 +41,16 @@ export const SUSUKINO_COMPARISON_LISTINGS: Record<
       "体験入店（体入）の案内があるか、送迎や終業時間、週の出勤ペース、未経験者へのサポート（研修・フォローの記載）も確認ポイントです。求人票の待遇タグと詳細の説明が一致しているか、応募前の質問で確かめるとミスマッチを減らせます。",
     ],
     beginnerHeading: "初めてガルバ求人を見る方へ",
+    supportGuideLinks: [
+      {
+        label: "未経験について詳しく知りたい人向けガイド",
+        href: "/column/susukino-girlsbar-beginner",
+      },
+      {
+        label: "体入について詳しく知りたい人向けガイド",
+        href: "/column/susukino-girlsbar-trial",
+      },
+    ],
   },
   "concept-cafe": {
     slug: "concept-cafe",

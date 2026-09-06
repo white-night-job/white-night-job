@@ -218,8 +218,16 @@ export function getAreaJobTypeColumnLinks(params: {
     seen.add(slug);
     const article = getColumnArticle(slug);
     if (!article) continue;
+    const intentLabel =
+      params.areaKey === "すすきの" && params.jobTypeSlug === "girls-bar"
+        ? slug === "susukino-girlsbar-beginner"
+          ? "未経験・お店選びを詳しく読む"
+          : slug === "susukino-girlsbar-trial"
+            ? "体入・体験入店を詳しく読む"
+            : null
+        : null;
     links.push({
-      label: article.title,
+      label: intentLabel ?? article.title,
       href: `/column/${article.slug}`,
     });
     if (links.length >= 4) break;
