@@ -85,17 +85,17 @@ export function JobCard({
             </div>
           </div>
         )}
-        <div className="p-4 sm:p-5">
-          <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5">
+          <div className="mb-2 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <p className="mb-1 text-xs font-medium text-muted">
+              <p className="mb-0.5 text-[11px] font-medium leading-tight text-muted">
                 {formatLocation(job)} · {job.jobType}
               </p>
-              <h3 className="truncate font-serif text-2xl font-semibold text-charcoal">
+              <h3 className="truncate font-serif text-2xl font-semibold leading-tight text-charcoal">
                 {job.shopName}
               </h3>
               {!storeInfoOnly && introText ? (
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
+                <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted sm:text-sm sm:leading-5">
                   {introText}
                 </p>
               ) : null}
@@ -104,46 +104,44 @@ export function JobCard({
           </div>
 
           {storeInfoOnly ? (
-            <dl className="grid gap-2 text-sm">
+            <div className="space-y-0.5 text-xs leading-snug text-muted">
               {businessHoursText ? (
-                <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                  <dt className="text-xs font-semibold text-muted">営業時間</dt>
-                  <dd className="mt-0.5 line-clamp-1 text-muted">
-                    {businessHoursText}
-                  </dd>
-                </div>
+                <p className="line-clamp-1">
+                  <span className="font-medium text-charcoal">営業時間：</span>
+                  {businessHoursText}
+                </p>
               ) : null}
               {addressText ? (
-                <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-2">
-                  <dt className="text-xs font-semibold text-muted">住所</dt>
-                  <dd className="mt-0.5 line-clamp-2 text-muted">{addressText}</dd>
-                </div>
+                <p className="line-clamp-2">
+                  <span className="font-medium text-charcoal">住所：</span>
+                  {addressText}
+                </p>
               ) : null}
-            </dl>
+            </div>
           ) : (
             <>
               {hasConditionBlock && conditions ? (
                 <>
                   {conditions.priorityRows.length > 0 ? (
-                    <dl className="grid grid-cols-2 gap-1.5 text-sm">
+                    <dl className="grid grid-cols-2 gap-1">
                       {conditions.priorityRows.map((row) => (
                         <div
                           key={`${row.label}:${row.value}`}
                           className={
                             row.emphasize
-                              ? "min-w-0 rounded-lg border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-2 py-1"
-                              : "min-w-0 rounded-lg border border-gold/20 bg-white/50 px-2 py-1"
+                              ? "min-w-0 rounded-md border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-1.5 py-0.5"
+                              : "min-w-0 rounded-md border border-gold/20 bg-white/50 px-1.5 py-0.5"
                           }
                         >
                           <dt
-                            className={`text-[10px] font-semibold leading-tight ${
+                            className={`text-[9px] font-semibold leading-none ${
                               row.emphasize ? "text-gold-dark" : "text-muted"
                             }`}
                           >
                             {row.label}
                           </dt>
                           <dd
-                            className={`mt-0.5 line-clamp-2 min-w-0 break-words text-xs font-medium leading-snug sm:text-sm ${
+                            className={`mt-0.5 line-clamp-2 min-w-0 break-words text-[11px] font-medium leading-tight sm:text-xs ${
                               row.emphasize
                                 ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text font-bold text-transparent"
                                 : "text-charcoal"
@@ -158,13 +156,15 @@ export function JobCard({
 
                   {conditionTags.length > 0 ? (
                     <ul
-                      className="mt-2.5 flex flex-wrap gap-1.5"
+                      className={`flex flex-wrap gap-1 ${
+                        conditions.priorityRows.length > 0 ? "mt-1.5" : ""
+                      }`}
                       aria-label="求人の比較ポイント"
                     >
                       {conditionTags.map((tag) => (
                         <li
                           key={tag.key}
-                          className="rounded-full border border-gold/30 bg-champagne/40 px-2 py-0.5 text-[11px] font-semibold text-gold-dark"
+                          className="rounded-full border border-gold/30 bg-champagne/40 px-1.5 py-px text-[10px] font-semibold leading-4 text-gold-dark"
                         >
                           {tag.label}
                         </li>
@@ -175,37 +175,31 @@ export function JobCard({
               ) : null}
 
               {(addressText || ageGroupText) && (
-                <dl
-                  className={`grid gap-1.5 text-sm ${
-                    hasConditionBlock ? "mt-2.5" : ""
+                <div
+                  className={`space-y-0.5 text-[11px] leading-snug text-muted ${
+                    hasConditionBlock ? "mt-1.5" : ""
                   }`}
                 >
                   {addressText ? (
-                    <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-1.5">
-                      <dt className="text-[11px] font-semibold text-muted">
-                        住所
-                      </dt>
-                      <dd className="mt-0.5 line-clamp-2 text-muted">
-                        {addressText}
-                      </dd>
-                    </div>
+                    <p className="line-clamp-2">
+                      <span className="font-medium text-charcoal">住所：</span>
+                      {addressText}
+                    </p>
                   ) : null}
                   {ageGroupText ? (
-                    <div className="rounded-xl border border-gold/20 bg-white/50 px-3 py-1.5">
-                      <dt className="text-[11px] font-semibold text-muted">
-                        キャスト年齢
-                      </dt>
-                      <dd className="mt-0.5 line-clamp-1 text-muted">
-                        {ageGroupText}
-                      </dd>
-                    </div>
+                    <p className="line-clamp-1">
+                      <span className="font-medium text-charcoal">
+                        キャスト年齢：
+                      </span>
+                      {ageGroupText}
+                    </p>
                   ) : null}
-                </dl>
+                </div>
               )}
             </>
           )}
 
-          <p className="mt-4 text-right text-xs font-semibold text-gold-dark">
+          <p className="mt-2 text-right text-[11px] font-semibold text-gold-dark">
             {storeInfoOnly ? "店舗情報を見る →" : "詳細を見る →"}
           </p>
         </div>
