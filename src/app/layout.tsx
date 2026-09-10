@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAdsTag } from "@/components/GoogleAdsTag";
 import { JsonLd } from "@/components/JsonLd";
 import { SiteShell } from "@/components/SiteShell";
 import { UserSessionProvider } from "@/components/UserSessionProvider";
@@ -25,6 +26,7 @@ export default async function RootLayout({
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
+        <GoogleAdsTag />
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
