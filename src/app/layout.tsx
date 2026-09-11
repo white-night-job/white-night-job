@@ -25,8 +25,10 @@ export default async function RootLayout({
 
   return (
     <html lang="ja">
-      <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
+      <head>
         <GoogleAdsTag />
+      </head>
+      <body className="flex min-h-screen flex-col bg-ivory font-sans text-charcoal antialiased">
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         <UserSessionProvider initialSession={initialSession}>
