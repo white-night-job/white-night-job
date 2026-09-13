@@ -325,6 +325,7 @@ export default function ShopDashboardPage() {
   const recruiterImageInputRef = useRef<HTMLInputElement>(null);
   const storeImageInputRef = useRef<HTMLInputElement>(null);
   const [authVerified, setAuthVerified] = useState(false);
+  const [adminView, setAdminView] = useState(false);
   const [shellShopName, setShellShopName] = useState("");
   const [shellPublished, setShellPublished] = useState<boolean | null>(null);
   const [shellDistrict, setShellDistrict] = useState("");
@@ -371,6 +372,17 @@ export default function ShopDashboardPage() {
       if (sessionRedirectRef.current) return;
       sessionRedirectRef.current = true;
 
+      if (adminView) {
+        try {
+          sessionStorage.removeItem("wnj-shop-bootstrap");
+        } catch {
+          // ignore
+        }
+        setAuthVerified(false);
+        window.location.href = "/admin/jobs";
+        return;
+      }
+
       const draftForm = options?.formToSave ?? form;
       if (draftForm) {
         saveShopJobFormDraft({
@@ -391,7 +403,7 @@ export default function ShopDashboardPage() {
       setMessage(SESSION_EXPIRED_MESSAGE);
       router.replace(buildShopLoginRedirectUrl("/shop-dashboard"));
     },
-    [form, isFormOpen, router, showPreview],
+    [adminView, form, isFormOpen, router, showPreview],
   );
 
   const ensureShopSession = useCallback(async (): Promise<boolean> => {
@@ -423,6 +435,7 @@ export default function ShopDashboardPage() {
       published: boolean;
       plan: string | null;
       district: string;
+      adminView?: boolean;
       timings?: Record<string, number>;
     }>(
       await fetch("/api/shop-dashboard", {
@@ -439,6 +452,7 @@ export default function ShopDashboardPage() {
     setShellPublished(data.published);
     setShellDistrict(data.district);
     setJobPlan(parseJobPlan(data.plan));
+    setAdminView(Boolean(data.adminView));
     markShellReady();
   }
 
@@ -657,8 +671,29 @@ export default function ShopDashboardPage() {
     } catch {
       // ignore
     }
+    if (adminView) {
+      await fetch("/api/admin/exit-shop-view", {
+        method: "POST",
+        credentials: "include",
+      });
+      window.location.href = "/admin/jobs";
+      return;
+    }
     await fetch("/api/shop-logout", { method: "POST", credentials: "include" });
     router.replace("/shop-login");
+  }
+
+  async function handleReturnToAdmin() {
+    try {
+      sessionStorage.removeItem("wnj-shop-bootstrap");
+    } catch {
+      // ignore
+    }
+    await fetch("/api/admin/exit-shop-view", {
+      method: "POST",
+      credentials: "include",
+    });
+    window.location.href = "/admin/jobs";
   }
 
   async function handleBoost() {
@@ -954,6 +989,20 @@ export default function ShopDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      {adminView ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/70 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900">
+            運営管理者としてこの店舗を表示中
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleReturnToAdmin()}
+            className="rounded-full border border-amber-400/80 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100"
+          >
+            管理画面へ戻る
+          </button>
+        </div>
+      ) : null}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-gold-dark">店舗ダッシュボード</p>
@@ -1001,7 +1050,7 @@ export default function ShopDashboardPage() {
             onClick={handleLogout}
             className="rounded-full border border-gold/35 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
           >
-            ログアウト
+            {adminView ? "管理画面へ戻る" : "ログアウト"}
           </button>
         </div>
       </div>

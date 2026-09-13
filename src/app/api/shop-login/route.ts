@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clearAdminShopViewCookie } from "@/lib/admin-shop-view";
 import { getErrorMessage } from "@/lib/api-error";
 import { setShopCookie } from "@/lib/shop-auth";
 import { shopPasswordsMatch } from "@/lib/shop-credentials";
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
       })
       .eq("id", job.id);
 
+    await clearAdminShopViewCookie();
     await setShopCookie(job.id);
     console.info("[shop-login] auth-complete", {
       jobId: job.id,

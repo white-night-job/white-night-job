@@ -1996,6 +1996,45 @@ function AdminJobsPageInner() {
                             >
                               編集
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void (async () => {
+                                  if (!(await ensureAdminSession())) return;
+                                  try {
+                                    const res = await fetch(
+                                      `/api/admin/jobs/${job.id}/view-dashboard`,
+                                      {
+                                        method: "POST",
+                                        credentials: "include",
+                                      },
+                                    );
+                                    const data = (await res.json()) as {
+                                      message?: string;
+                                      redirectTo?: string;
+                                    };
+                                    if (!res.ok) {
+                                      setMessage(
+                                        data.message ??
+                                          "店舗ダッシュボードを開けませんでした。",
+                                      );
+                                      return;
+                                    }
+                                    window.location.href =
+                                      data.redirectTo ?? "/shop-dashboard";
+                                  } catch (error) {
+                                    setMessage(
+                                      error instanceof Error
+                                        ? error.message
+                                        : "店舗ダッシュボードを開けませんでした。",
+                                    );
+                                  }
+                                })();
+                              }}
+                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                            >
+                              店舗ダッシュボードを見る
+                            </button>
                           </div>
                         </div>
                       </li>
@@ -2272,6 +2311,45 @@ function AdminJobsPageInner() {
                               className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
                             >
                               修正する
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void (async () => {
+                                  if (!(await ensureAdminSession())) return;
+                                  try {
+                                    const res = await fetch(
+                                      `/api/admin/jobs/${job.id}/view-dashboard`,
+                                      {
+                                        method: "POST",
+                                        credentials: "include",
+                                      },
+                                    );
+                                    const data = (await res.json()) as {
+                                      message?: string;
+                                      redirectTo?: string;
+                                    };
+                                    if (!res.ok) {
+                                      setMessage(
+                                        data.message ??
+                                          "店舗ダッシュボードを開けませんでした。",
+                                      );
+                                      return;
+                                    }
+                                    window.location.href =
+                                      data.redirectTo ?? "/shop-dashboard";
+                                  } catch (error) {
+                                    setMessage(
+                                      error instanceof Error
+                                        ? error.message
+                                        : "店舗ダッシュボードを開けませんでした。",
+                                    );
+                                  }
+                                })();
+                              }}
+                              className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
+                            >
+                              店舗ダッシュボードを見る
                             </button>
                             <button
                               type="button"

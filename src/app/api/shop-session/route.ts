@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminShopViewForJob } from "@/lib/admin-shop-view";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
   getShopScopedCache,
@@ -26,11 +27,14 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
+  const adminView = await isAdminShopViewForJob(jobId);
+
   const cacheKey = shopSessionCacheKey(jobId);
   const cached = getShopScopedCache<SessionPayload>(cacheKey, jobId);
   if (cached) {
     return NextResponse.json({
       ...cached,
+      adminView,
       timings: { totalMs: Date.now() - startedAt, cache: "hit" },
     });
   }
@@ -58,6 +62,7 @@ export async function GET() {
 
   return NextResponse.json({
     ...payload,
+    adminView,
     timings: { totalMs: Date.now() - startedAt, cache: "miss" },
   });
 }

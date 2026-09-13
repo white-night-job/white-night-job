@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminShopViewForJob } from "@/lib/admin-shop-view";
 import { getErrorMessage } from "@/lib/api-error";
 import { SESSION_EXPIRED_MESSAGE } from "@/lib/auth-session-messages";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
@@ -32,6 +33,8 @@ export async function GET() {
     return NextResponse.json({ message: SESSION_EXPIRED_MESSAGE }, { status: 401 });
   }
 
+  const adminView = await isAdminShopViewForJob(jobId);
+
   const cacheKey = shopDashboardShellCacheKey(jobId);
   const cached = getShopScopedCache<ShellPayload>(cacheKey, jobId);
   if (cached) {
@@ -41,6 +44,7 @@ export async function GET() {
     });
     return NextResponse.json({
       ...cached,
+      adminView,
       cache: "hit",
       timings: { totalMs: Date.now() - startedAt, cache: "hit" },
     });
@@ -71,7 +75,12 @@ export async function GET() {
     const timings = { totalMs: Date.now() - startedAt, cache: "miss" };
     console.info("[shop-dashboard/shell]", { jobId, timings });
 
-    return NextResponse.json({ ...payload, cache: "miss", timings });
+    return NextResponse.json({
+      ...payload,
+      adminView,
+      cache: "miss",
+      timings,
+    });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error, "ダッシュボードの取得に失敗しました。") },
