@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JobSearchSection } from "@/components/JobSearchSection";
+import { parseJobFiltersFromParams } from "@/lib/job-filters";
 import { buildPageMetadata } from "@/lib/seo";
 import { SITE_FORMAL_NAME } from "@/lib/site";
-import type { JobFilters } from "@/types/job";
 
 export const metadata: Metadata = buildPageMetadata(
   "札幌の夜職・体験入店求人一覧",
@@ -13,28 +13,17 @@ export const metadata: Metadata = buildPageMetadata(
 
 interface JobsPageProps {
   searchParams: Promise<{
-    district?: string;
-    jobType?: string;
+    district?: string | string[];
+    jobType?: string | string[];
     q?: string;
     minSalary?: string;
     benefit?: string | string[];
   }>;
 }
 
-function toArray(value: string | string[] | undefined): string[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
 export default async function JobsPage({ searchParams }: JobsPageProps) {
   const params = await searchParams;
-  const filters: JobFilters = {
-    district: params.district ?? null,
-    jobType: params.jobType ?? null,
-    query: params.q ?? null,
-    minSalary: params.minSalary ?? null,
-    benefits: toArray(params.benefit),
-  };
+  const filters = parseJobFiltersFromParams(params);
 
   return (
     <div className="mx-auto box-border w-full min-w-0 max-w-5xl px-4 py-6 sm:px-6 sm:py-8">

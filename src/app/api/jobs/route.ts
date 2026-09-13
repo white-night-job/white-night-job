@@ -107,8 +107,14 @@ function resolveSaveIntent(body: Record<string, unknown>): {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const district = searchParams.get("district");
-    const jobType = searchParams.get("jobType");
+    const districts = searchParams
+      .getAll("district")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0 && value !== "all");
+    const jobTypes = searchParams
+      .getAll("jobType")
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0 && value !== "all");
     const keyword = searchParams.get("q")?.trim().toLowerCase() ?? "";
     const minSalary = Number(searchParams.get("minSalary") ?? 0);
     const selectedBenefits = searchParams.getAll("benefit").filter(Boolean);
@@ -129,8 +135,17 @@ export async function GET(request: Request) {
       query = query.not("open_date", "is", null);
     }
 
-    if (district && district !== "all") query = query.eq("district", district);
-    if (jobType && jobType !== "all") query = query.eq("job_type", jobType);
+    if (districts.length === 1) {
+      query = query.eq("district", districts[0]);
+    } else if (districts.length > 1) {
+      query = query.in("district", districts);
+    }
+
+    if (jobTypes.length === 1) {
+      query = query.eq("job_type", jobTypes[0]);
+    } else if (jobTypes.length > 1) {
+      query = query.in("job_type", jobTypes);
+    }
 
     const { data, error } = await query;
     if (error) throw error;

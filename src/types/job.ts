@@ -161,8 +161,10 @@ export interface Job {
 }
 
 export interface JobFilters {
-  district: string | null;
-  jobType: string | null;
+  /** Empty = all districts. Multiple values are OR within this field. */
+  districts: string[];
+  /** Empty = all job types. Multiple values are OR within this field. */
+  jobTypes: string[];
   query?: string | null;
   minSalary?: string | null;
   benefits?: string[];

@@ -15,11 +15,13 @@ const jobByIdInflight = new Map<string, Promise<Job | null>>();
 
 function buildJobQuery(filters?: JobFilters): string {
   const params = new URLSearchParams();
-  if (filters?.district) params.set("district", filters.district);
-  if (filters?.jobType) params.set("jobType", filters.jobType);
-  if (filters?.query) params.set("q", filters.query);
-  if (filters?.minSalary) params.set("minSalary", filters.minSalary);
-  filters?.benefits?.forEach((benefit) => params.append("benefit", benefit));
+  if (filters) {
+    filters.districts.forEach((district) => params.append("district", district));
+    filters.jobTypes.forEach((jobType) => params.append("jobType", jobType));
+    if (filters.query) params.set("q", filters.query);
+    if (filters.minSalary) params.set("minSalary", filters.minSalary);
+    filters.benefits?.forEach((benefit) => params.append("benefit", benefit));
+  }
   const query = params.toString();
   return query ? `?${query}` : "";
 }

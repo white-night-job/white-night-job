@@ -16,6 +16,11 @@ import {
   type LuxuryTheme,
 } from "@/lib/luxury-styles";
 import { saveSearchHistory } from "@/lib/search-history";
+import {
+  formatDistrictSelectionLabel,
+  formatJobTypeSelectionLabel,
+  toggleMultiSelectValue,
+} from "@/lib/job-filters";
 import { JOB_TYPES, type JobFilters } from "@/types/job";
 
 const SALARY_OPTIONS = [
@@ -44,7 +49,7 @@ function FilterButton({
       <button
         type="button"
         onClick={onClick}
-        className={`reservation-option-btn rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+        className={`reservation-option-btn min-h-10 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
           active ? "is-active" : ""
         }`}
       >
@@ -57,7 +62,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2.5 text-sm font-medium transition-all ${
+      className={`min-h-10 rounded-full px-4 py-2.5 text-sm font-medium transition-all ${
         active
           ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid text-charcoal shadow-luxury-sm"
           : isPremium
@@ -252,15 +257,17 @@ export function JobFilterSearch({
   const router = useRouter();
   const pathname = usePathname();
   const pickerRef = useRef<HTMLDivElement>(null);
-  const currentDistrict = appliedFilters.district ?? "all";
-  const currentJobType = appliedFilters.jobType ?? "all";
+  const currentDistricts = appliedFilters.districts ?? [];
+  const currentJobTypes = appliedFilters.jobTypes ?? [];
   const currentQuery = appliedFilters.query ?? "";
   const currentMinSalary = appliedFilters.minSalary ?? "all";
   const currentBenefits = appliedFilters.benefits ?? [];
+  const currentDistrictsKey = currentDistricts.join(",");
+  const currentJobTypesKey = currentJobTypes.join(",");
   const currentBenefitsKey = currentBenefits.join(",");
   const [keyword, setKeyword] = useState(currentQuery);
-  const [draftDistrict, setDraftDistrict] = useState(currentDistrict);
-  const [draftJobType, setDraftJobType] = useState(currentJobType);
+  const [draftDistricts, setDraftDistricts] = useState<string[]>(currentDistricts);
+  const [draftJobTypes, setDraftJobTypes] = useState<string[]>(currentJobTypes);
   const [draftMinSalary, setDraftMinSalary] = useState(currentMinSalary);
   const [draftBenefits, setDraftBenefits] = useState<string[]>(currentBenefits);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -268,8 +275,10 @@ export function JobFilterSearch({
 
   useEffect(() => {
     setKeyword(currentQuery);
-    setDraftDistrict(currentDistrict);
-    setDraftJobType(currentJobType);
+    setDraftDistricts(
+      currentDistrictsKey ? currentDistrictsKey.split(",") : [],
+    );
+    setDraftJobTypes(currentJobTypesKey ? currentJobTypesKey.split(",") : []);
     setDraftMinSalary(currentMinSalary);
     setDraftBenefits(currentBenefitsKey ? currentBenefitsKey.split(",") : []);
 
@@ -281,8 +290,8 @@ export function JobFilterSearch({
   }, [
     currentBenefits.length,
     currentBenefitsKey,
-    currentDistrict,
-    currentJobType,
+    currentDistrictsKey,
+    currentJobTypesKey,
     currentMinSalary,
     currentQuery,
   ]);
@@ -304,10 +313,10 @@ export function JobFilterSearch({
 
   function pushParams(filters: JobFilters) {
     const params = new URLSearchParams();
+    filters.districts.forEach((district) => params.append("district", district));
+    filters.jobTypes.forEach((jobType) => params.append("jobType", jobType));
     if (filters.query) params.set("q", filters.query);
     if (filters.minSalary) params.set("minSalary", filters.minSalary);
-    if (filters.district) params.set("district", filters.district);
-    if (filters.jobType) params.set("jobType", filters.jobType);
     filters.benefits?.forEach((benefit) => params.append("benefit", benefit));
     const query = params.toString();
     const targetPath = resultsPath ?? pathname;
@@ -326,8 +335,8 @@ export function JobFilterSearch({
 
   function resetFilters() {
     setKeyword("");
-    setDraftDistrict("all");
-    setDraftJobType("all");
+    setDraftDistricts([]);
+    setDraftJobTypes([]);
     setDraftMinSalary("all");
     setDraftBenefits([]);
     setShowAdvanced(false);
@@ -338,8 +347,8 @@ export function JobFilterSearch({
     event?.preventDefault();
     const nextKeyword = keyword.trim();
     const nextFilters: JobFilters = {
-      district: draftDistrict === "all" ? null : draftDistrict,
-      jobType: draftJobType === "all" ? null : draftJobType,
+      districts: draftDistricts,
+      jobTypes: draftJobTypes,
       query: nextKeyword || null,
       minSalary: draftMinSalary === "all" ? null : draftMinSalary,
       benefits: draftBenefits,
@@ -356,13 +365,11 @@ export function JobFilterSearch({
   }
 
   function selectDistrict(value: string) {
-    setDraftDistrict(value);
-    setOpenPicker(null);
+    setDraftDistricts((current) => toggleMultiSelectValue(current, value));
   }
 
   function selectJobType(value: string) {
-    setDraftJobType(value);
-    setOpenPicker(null);
+    setDraftJobTypes((current) => toggleMultiSelectValue(current, value));
   }
 
   function selectMinSalary(value: string) {
@@ -370,10 +377,8 @@ export function JobFilterSearch({
     setOpenPicker(null);
   }
 
-  const districtLabel =
-    draftDistrict === "all" ? "すべて" : formatDistrictLabel(draftDistrict);
-  const jobTypeLabel =
-    draftJobType === "all" ? "すべて" : draftJobType;
+  const districtLabel = formatDistrictSelectionLabel(draftDistricts);
+  const jobTypeLabel = formatJobTypeSelectionLabel(draftJobTypes);
   const salaryLabel =
     SALARY_OPTIONS.find((option) => option.value === draftMinSalary)?.label ??
     "指定なし";
@@ -430,9 +435,9 @@ export function JobFilterSearch({
             reservation={inPlate}
             iconKind="district"
           >
-            <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+            <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto py-0.5 sm:max-h-40">
               <FilterButton
-                active={draftDistrict === "all"}
+                active={draftDistricts.length === 0}
                 onClick={() => selectDistrict("all")}
                 isPremium={isPremium || embedded || inPlate}
                 reservation={inPlate}
@@ -442,7 +447,7 @@ export function JobFilterSearch({
               {DISTRICTS.map((district) => (
                 <FilterButton
                   key={district}
-                  active={draftDistrict === district}
+                  active={draftDistricts.includes(district)}
                   onClick={() => selectDistrict(district)}
                   isPremium={isPremium || embedded || inPlate}
                   reservation={inPlate}
@@ -462,9 +467,9 @@ export function JobFilterSearch({
             reservation={inPlate}
             iconKind="jobType"
           >
-            <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+            <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto py-0.5 sm:max-h-40">
               <FilterButton
-                active={draftJobType === "all"}
+                active={draftJobTypes.length === 0}
                 onClick={() => selectJobType("all")}
                 isPremium={isPremium || embedded || inPlate}
                 reservation={inPlate}
@@ -474,7 +479,7 @@ export function JobFilterSearch({
               {JOB_TYPES.map((type) => (
                 <FilterButton
                   key={type}
-                  active={draftJobType === type}
+                  active={draftJobTypes.includes(type)}
                   onClick={() => selectJobType(type)}
                   isPremium={isPremium || embedded || inPlate}
                   reservation={inPlate}
@@ -484,7 +489,6 @@ export function JobFilterSearch({
               ))}
             </div>
           </CompactPickerRow>
-
           <CompactPickerRow
             label="時給"
             value={salaryLabel}

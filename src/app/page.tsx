@@ -12,9 +12,9 @@ import { TopJobDiscovery } from "@/components/TopJobDiscovery";
 import { TopMidBand } from "@/components/TopMidBand";
 import { TopPageShell } from "@/components/TopPageShell";
 import { HomeHashScroll } from "@/components/HomeHashScroll";
+import { parseJobFiltersFromParams } from "@/lib/job-filters";
 import { buildPageMetadata } from "@/lib/seo";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
-import type { JobFilters } from "@/types/job";
 
 export const metadata: Metadata = buildPageMetadata(
   SITE_TITLE,
@@ -25,28 +25,17 @@ export const metadata: Metadata = buildPageMetadata(
 
 interface HomePageProps {
   searchParams: Promise<{
-    district?: string;
-    jobType?: string;
+    district?: string | string[];
+    jobType?: string | string[];
     q?: string;
     minSalary?: string;
     benefit?: string | string[];
   }>;
 }
 
-function toArray(value: string | string[] | undefined): string[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
-  const filters: JobFilters = {
-    district: params.district ?? null,
-    jobType: params.jobType ?? null,
-    query: params.q ?? null,
-    minSalary: params.minSalary ?? null,
-    benefits: toArray(params.benefit),
-  };
+  const filters = parseJobFiltersFromParams(params);
 
   return (
     <TopPageShell

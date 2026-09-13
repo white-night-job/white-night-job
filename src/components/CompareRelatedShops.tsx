@@ -22,7 +22,7 @@ export function CompareRelatedShops({ job }: CompareRelatedShopsProps) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchJobs({ district: job.district, jobType: job.jobType })
+    fetchJobs({ districts: [job.district], jobTypes: [job.jobType] })
       .then((jobs) => {
         if (cancelled) return;
         const next = jobs.filter((item) => item.id !== job.id).slice(0, 3);

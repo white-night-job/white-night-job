@@ -9,8 +9,8 @@ const jobsListCache = new Map<string, Job[]>();
 
 function filtersCacheKey(filters: JobFilters): string {
   return JSON.stringify({
-    district: filters.district ?? null,
-    jobType: filters.jobType ?? null,
+    districts: filters.districts ?? [],
+    jobTypes: filters.jobTypes ?? [],
     query: filters.query ?? null,
     minSalary: filters.minSalary ?? null,
     benefits: filters.benefits ?? [],

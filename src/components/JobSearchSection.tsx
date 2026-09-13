@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import type { JobFilters } from "@/types/job";
+import {
+  formatDistrictSelectionLabel,
+  formatJobTypeSelectionLabel,
+} from "@/lib/job-filters";
 import { luxurySectionDivider, luxurySectionHeading } from "@/lib/luxury-styles";
 import { SusukinoSeoLinks } from "@/components/seo/SusukinoSeoLinks";
 import { JobCount } from "./JobCount";
@@ -17,10 +21,16 @@ type JobSearchSectionProps = {
 
 function getFilterLabel(filters: JobFilters) {
   return [
-    filters.district,
-    filters.jobType,
+    filters.districts.length > 0
+      ? formatDistrictSelectionLabel(filters.districts)
+      : null,
+    filters.jobTypes.length > 0
+      ? formatJobTypeSelectionLabel(filters.jobTypes)
+      : null,
     filters.query,
-    filters.minSalary ? `${Number(filters.minSalary).toLocaleString()}円以上` : null,
+    filters.minSalary
+      ? `${Number(filters.minSalary).toLocaleString()}円以上`
+      : null,
     ...(filters.benefits ?? []),
   ]
     .filter(Boolean)
