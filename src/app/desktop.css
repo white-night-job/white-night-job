@@ -738,35 +738,33 @@
   }
 
   .top-search-cta-grid {
-    flex-direction: row;
-    align-items: stretch;
-    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
   }
 
   .top-search-cta {
-    flex: 1 1 0;
-    min-height: 5.5rem;
+    min-height: 8rem;
     border-radius: 1.6rem;
-    padding: 1.25rem 1.15rem 1.3rem 1.05rem;
+    padding: 1.25rem 1.1rem 1.3rem;
   }
 
   .top-search-cta-decor-figure--advisor {
-    width: 7.8rem;
+    width: 7.4rem;
     opacity: 0.17;
   }
 
   .top-search-cta-decor-figure--robot {
-    width: 8.4rem;
+    width: 8rem;
     opacity: 0.18;
   }
 
   .top-search-cta-content {
-    max-width: 14rem;
-    padding-right: 3.2rem;
+    min-height: 6.4rem;
+    padding-right: 1.8rem;
   }
 
   .top-search-cta-title {
-    font-size: 1.01rem;
+    font-size: 1.02rem;
     font-weight: 600;
   }
 

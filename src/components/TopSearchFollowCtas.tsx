@@ -223,7 +223,8 @@ export function TopSearchFollowCtas() {
           <DiagnosisDecor />
           <span className="top-search-cta-content">
             <span className="top-search-cta-title">
-              自分に合う職種診断をする
+              <span className="top-search-cta-title-line">自分に合う</span>
+              <span className="top-search-cta-title-line">職種診断をする</span>
             </span>
             <span className="top-search-cta-badge">無料</span>
           </span>
@@ -246,11 +247,12 @@ export function TopSearchFollowCtas() {
         >
           <ChatDecor />
           <span className="top-search-cta-content">
-            <span className="top-search-cta-main">
-              <ChatBubbleIcon />
-              <span className="top-search-cta-title">
-                AIチャットで相談する
+            <span className="top-search-cta-title">
+              <span className="top-search-cta-title-line top-search-cta-title-line--with-icon">
+                <ChatBubbleIcon />
+                <span>AIチャットで</span>
               </span>
+              <span className="top-search-cta-title-line">相談する</span>
             </span>
             <span className="top-search-cta-badge">24時間対応</span>
           </span>
@@ -264,7 +266,8 @@ export function TopSearchFollowCtas() {
               />
             </svg>
           </span>
-        </button>      </div>
+        </button>
+      </div>
 
       <MemberGateModal
         open={gate === "ai"}
