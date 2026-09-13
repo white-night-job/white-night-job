@@ -732,6 +732,23 @@
     width: 100%;
   }
 
+  .top-search-cta-section {
+    max-width: min(720px, 92vw);
+    margin: 1.1rem auto 0.65rem;
+  }
+
+  .top-search-cta-grid {
+    flex-direction: row;
+  }
+
+  .top-search-cta {
+    min-height: 4rem;
+  }
+
+  .top-search-cta-title {
+    font-size: 1.05rem;
+  }
+
   .feature-intro-section {
     margin-top: 0;
   }
