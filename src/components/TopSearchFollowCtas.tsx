@@ -32,6 +32,7 @@ function ChatBubbleIcon() {
 function DiagnosisDecor() {
   return (
     <span className="top-search-cta-decor" aria-hidden>
+      <span className="top-search-cta-decor-glow" />
       <svg
         className="top-search-cta-decor-figure top-search-cta-decor-figure--advisor"
         viewBox="0 0 100 130"
@@ -119,6 +120,8 @@ function DiagnosisDecor() {
           strokeLinejoin="round"
         />
       </svg>
+      <span className="top-search-cta-spark top-search-cta-spark--a" />
+      <span className="top-search-cta-spark top-search-cta-spark--b" />
     </span>
   );
 }
@@ -127,6 +130,7 @@ function DiagnosisDecor() {
 function ChatDecor() {
   return (
     <span className="top-search-cta-decor" aria-hidden>
+      <span className="top-search-cta-decor-glow" />
       <svg
         className="top-search-cta-decor-figure top-search-cta-decor-figure--robot"
         viewBox="0 0 100 130"
@@ -178,6 +182,8 @@ function ChatDecor() {
           strokeLinecap="round"
         />
       </svg>
+      <span className="top-search-cta-spark top-search-cta-spark--c" />
+      <span className="top-search-cta-spark top-search-cta-spark--d" />
     </span>
   );
 }
