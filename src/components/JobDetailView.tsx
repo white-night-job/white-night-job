@@ -485,28 +485,37 @@ export function JobDetailView({
             ) : null}
 
             {conditionRows.length > 0 ? (
-              <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
-                <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal">
+              <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-3 shadow-[0_8px_28px_rgba(201,169,98,0.12)] sm:p-4">
+                <h2 className="mb-2.5 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal sm:mb-3">
                   <span className="text-gold-dark">◆</span>
                   給与・勤務条件
                 </h2>
-                <dl className="divide-y divide-gold/15 rounded-2xl border border-gold/20 bg-white">
-                  {conditionRows.map((row) => (
-                    <div
-                      key={`${row.label}:${row.value}`}
-                      className="grid gap-1 px-4 py-3 sm:grid-cols-[8.5rem_1fr] sm:gap-4"
-                    >
-                      <dt className="text-xs font-medium text-muted sm:text-sm">
-                        {row.label}
-                      </dt>
-                      <dd className="whitespace-pre-wrap text-sm font-medium text-charcoal">
-                        {row.value}
-                      </dd>
-                    </div>
-                  ))}
+                <dl className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4">
+                  {conditionRows.map((row) => {
+                    const fullWidth =
+                      row.label === "各種バック" ||
+                      row.label === "体験入店の条件・注意事項";
+                    return (
+                      <div
+                        key={`${row.label}:${row.value}`}
+                        className={`rounded-xl border border-gold/15 bg-white px-2.5 py-2 ${
+                          fullWidth
+                            ? "col-span-2 sm:col-span-3 lg:col-span-4"
+                            : ""
+                        }`}
+                      >
+                        <dt className="text-[10px] font-medium leading-tight text-muted sm:text-[11px]">
+                          {row.label}
+                        </dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap text-[13px] font-semibold leading-snug text-charcoal sm:text-sm">
+                          {row.value}
+                        </dd>
+                      </div>
+                    );
+                  })}
                 </dl>
                 {susukinoGirlsBarBackLink && !preview ? (
-                  <p className="mt-4 text-sm leading-relaxed text-muted">
+                  <p className="mt-3 text-sm leading-relaxed text-muted">
                     時給や待遇をほかの店舗とも比べたい場合は、
                     <Link
                       href={susukinoGirlsBarBackLink.href}
