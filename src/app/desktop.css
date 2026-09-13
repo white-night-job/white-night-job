@@ -742,11 +742,13 @@
   }
 
   .top-search-cta {
-    min-height: 4rem;
+    min-height: 4.75rem;
+    border-radius: 1.6rem;
+    padding: 1.2rem 1.6rem;
   }
 
   .top-search-cta-title {
-    font-size: 1.05rem;
+    font-size: 1rem;
   }
 
   .feature-intro-section {
