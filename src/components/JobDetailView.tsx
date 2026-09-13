@@ -437,27 +437,12 @@ export function JobDetailView({
             )}
           </div>
           <div className="space-y-6 px-5 py-6 sm:px-8">
-            {isSusukinoGirlsBar ? (
-              <div>
-                {job.salary?.trim() ? (
-                  <p className="text-lg font-semibold text-gold-dark">
-                    {job.salary.trim()}
-                  </p>
-                ) : null}
-                {workHoursText ? (
-                  <p
-                    className={`text-sm leading-relaxed text-muted ${
-                      job.salary?.trim() ? "mt-1" : ""
-                    }`}
-                  >
-                    <span className="font-medium text-charcoal">勤務時間：</span>
-                    {workHoursText}
-                  </p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-lg font-semibold text-gold-dark">{job.salary}</p>
-            )}
+            {isSusukinoGirlsBar && workHoursText ? (
+              <p className="text-sm leading-relaxed text-muted">
+                <span className="font-medium text-charcoal">勤務時間：</span>
+                {workHoursText}
+              </p>
+            ) : null}
 
             {conditionRows.length > 0 ? (
               <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
