@@ -22,11 +22,6 @@ const SALARY_OPTIONS = [
   { label: "指定なし", value: "all" },
   { label: "1,500円以上", value: "1500" },
   { label: "2,000円以上", value: "2000" },
-  { label: "2,500円以上", value: "2500" },
-  { label: "3,000円以上", value: "3000" },
-  { label: "3,500円以上", value: "3500" },
-  { label: "4,000円以上", value: "4000" },
-  { label: "5,000円以上", value: "5000" },
 ];
 
 type PickerKey = "district" | "jobType" | "minSalary";

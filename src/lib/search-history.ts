@@ -62,11 +62,6 @@ export function buildJobsSearchUrl(filters: SavedSearchFilters): string {
 const SALARY_LABELS: Record<string, string> = {
   "1500": "1,500円以上",
   "2000": "2,000円以上",
-  "2500": "2,500円以上",
-  "3000": "3,000円以上",
-  "3500": "3,500円以上",
-  "4000": "4,000円以上",
-  "5000": "5,000円以上",
 };
 
 export function describeSearchHistory(filters: SavedSearchFilters): string[] {
