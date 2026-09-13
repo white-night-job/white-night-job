@@ -3418,6 +3418,7 @@
 }
 
 .top-search-cta {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3426,6 +3427,8 @@
   width: 100%;
   min-height: 4.25rem;
   padding: 1.05rem 1.35rem 1.1rem;
+  overflow: hidden;
+  isolation: isolate;
   border-radius: 1.35rem;
   border: 1px solid rgba(201, 173, 122, 0.38);
   text-align: center;
@@ -3437,6 +3440,92 @@
     background 0.2s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.top-search-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 70% 80% at 18% 30%,
+      rgba(255, 255, 255, 0.55) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 55% 70% at 88% 78%,
+      rgba(201, 173, 122, 0.12) 0%,
+      transparent 62%
+    );
+}
+
+.top-search-cta-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  color: #b59a6a;
+  overflow: hidden;
+}
+
+.top-search-cta-decor-figure {
+  position: absolute;
+  right: -0.35rem;
+  bottom: -0.85rem;
+  width: 5.6rem;
+  height: auto;
+  opacity: 0.08;
+}
+
+.top-search-cta-decor-motif {
+  position: absolute;
+  width: 1.35rem;
+  height: 1.35rem;
+  opacity: 0.07;
+  color: #a8895c;
+}
+
+.top-search-cta-decor-motif--check {
+  left: 0.85rem;
+  top: 0.7rem;
+}
+
+.top-search-cta-decor-motif--bulb {
+  left: 2.4rem;
+  bottom: 0.75rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  opacity: 0.06;
+}
+
+.top-search-cta-decor-motif--bubble {
+  left: 0.9rem;
+  top: 0.65rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  opacity: 0.07;
+}
+
+.top-search-cta-decor-motif--spark {
+  left: 2.55rem;
+  bottom: 0.7rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.06;
+}
+
+.top-search-cta-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  max-width: 100%;
+  padding-right: 1.1rem;
 }
 
 .top-search-cta-main {
@@ -3481,10 +3570,11 @@
 
 .top-search-cta--diagnosis {
   background: linear-gradient(
-    165deg,
-    #faf6ef 0%,
-    #f3ebe0 48%,
-    #f7f0e6 100%
+    155deg,
+    #fbf8f2 0%,
+    #f4ebe0 42%,
+    #f8f1e7 72%,
+    #f3e8db 100%
   );
 }
 
@@ -3500,10 +3590,11 @@
 
 .top-search-cta--chat {
   background: linear-gradient(
-    165deg,
+    155deg,
     #ffffff 0%,
-    #faf8f4 55%,
-    #f6f1e8 100%
+    #faf8f4 48%,
+    #f7f2ea 78%,
+    #f3ebe1 100%
   );
 }
 
@@ -3541,6 +3632,17 @@
     min-height: 4.5rem;
     padding: 1.15rem 1.5rem 1.2rem;
     border-radius: 1.5rem;
+  }
+
+  .top-search-cta-decor-figure {
+    right: -0.2rem;
+    bottom: -1rem;
+    width: 6.4rem;
+    opacity: 0.085;
+  }
+
+  .top-search-cta-content {
+    padding-right: 1.35rem;
   }
 
   .top-search-cta-title {
