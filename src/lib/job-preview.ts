@@ -1,7 +1,8 @@
-import { FIXED_AREA, type Job } from "@/types/job";
+import { FIXED_AREA, type Job, type JobFaqEntry } from "@/types/job";
 import {
   parseBenefits,
   sanitizeCastVoicesForSave,
+  sanitizeJobFaqsForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import type { CastVoiceEntry, District, JobType } from "@/types/job";
@@ -30,6 +31,7 @@ export type AdminPreviewForm = {
   introductionText: string;
   descriptionText: string;
   castVoices?: CastVoiceEntry[];
+  faqs?: JobFaqEntry[];
   recruiterName: string;
   recruiterTitle: string;
   recruiterImage: string;
@@ -66,6 +68,7 @@ export type ShopPreviewForm = {
   introductionText: string;
   descriptionText: string;
   castVoices?: CastVoiceEntry[];
+  faqs?: JobFaqEntry[];
   recruiterName: string;
   recruiterTitle: string;
   recruiterImage: string;
@@ -142,6 +145,7 @@ export function buildPreviewJobFromAdminForm(
     castVoices: uncontracted
       ? []
       : sanitizeCastVoicesForSave(form.castVoices ?? []),
+    faqs: uncontracted ? [] : sanitizeJobFaqsForSave(form.faqs ?? []),
     requirements: [],
     benefits: uncontracted ? [] : form.benefits,
     otherBenefits: uncontracted ? [] : parseBenefits(form.otherBenefits),
@@ -232,6 +236,10 @@ export function buildPreviewJobFromShopForm(
     introductionText: form.introductionText.trim() || undefined,
     descriptionText: form.descriptionText.trim() || undefined,
     castVoices: sanitizeCastVoicesForSave(form.castVoices ?? []),
+    faqs:
+      form.faqs !== undefined
+        ? sanitizeJobFaqsForSave(form.faqs)
+        : sanitizeJobFaqsForSave(baseJob.faqs ?? []),
     benefits: form.benefits,
     otherBenefits: parseBenefits(form.otherBenefits),
     requirements:

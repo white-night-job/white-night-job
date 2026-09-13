@@ -34,6 +34,7 @@ import {
 import {
   getDisplayStoreImages,
   parseBenefits,
+  sanitizeJobFaqsForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
 import { buildPreviewJobFromShopForm } from "@/lib/job-preview";
@@ -45,8 +46,10 @@ import {
 } from "@/lib/upload-temp-client";
 import {
   FIXED_AREA,
+  JOB_FAQ_MAX,
   type District,
   type Job,
+  type JobFaqEntry,
   type JobType,
 } from "@/types/job";
 import { formatDistrictLabel } from "@/data/districts";
@@ -115,6 +118,7 @@ type ShopForm = {
   costumeUniform: string;
   trialVisitAvailable: TrialVisitChoice;
   trialVisitNotes: string;
+  faqs: JobFaqEntry[];
   phone: string;
   xUrl: string;
   instagramUrl: string;
@@ -152,6 +156,7 @@ const SHOP_FORM_DEFAULTS: Pick<
   | "costumeUniform"
   | "trialVisitAvailable"
   | "trialVisitNotes"
+  | "faqs"
 > = {
   workHours: "",
   requirements: "",
@@ -163,7 +168,37 @@ const SHOP_FORM_DEFAULTS: Pick<
   costumeUniform: "",
   trialVisitAvailable: "",
   trialVisitNotes: "",
+  faqs: [],
 };
+
+const FAQ_QUESTION_EXAMPLES = [
+  "未経験でも応募できますか？",
+  "体験入店はできますか？",
+  "お酒が飲めなくても大丈夫ですか？",
+  "ノルマや罰金はありますか？",
+  "ドレス・衣装は用意されていますか？",
+  "日払いはできますか？",
+  "送迎はありますか？",
+  "友達と一緒に応募できますか？",
+] as const;
+
+function emptyFaqEntry(): JobFaqEntry {
+  return { question: "", answer: "" };
+}
+
+function normalizeFaqsForForm(value: unknown): JobFaqEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, JOB_FAQ_MAX)
+    .map((item) => {
+      if (!item || typeof item !== "object") return emptyFaqEntry();
+      const record = item as Record<string, unknown>;
+      return {
+        question: String(record.question ?? ""),
+        answer: String(record.answer ?? ""),
+      };
+    });
+}
 
 function normalizeShopForm(raw: Partial<ShopForm>): ShopForm {
   const base = raw as ShopForm;
@@ -180,6 +215,7 @@ function normalizeShopForm(raw: Partial<ShopForm>): ShopForm {
     costumeUniform: raw.costumeUniform ?? "",
     trialVisitAvailable: raw.trialVisitAvailable ?? "",
     trialVisitNotes: raw.trialVisitNotes ?? "",
+    faqs: normalizeFaqsForForm(raw.faqs),
   };
 }
 
@@ -265,6 +301,7 @@ function toForm(job: Job): ShopForm {
     costumeUniform: job.costumeUniform ?? "",
     trialVisitAvailable: trialVisitToChoice(job.trialVisitAvailable),
     trialVisitNotes: job.trialVisitNotes ?? "",
+    faqs: normalizeFaqsForForm(job.faqs),
     phone: job.phone ?? "",
     xUrl: job.xUrl ?? "",
     instagramUrl: job.instagramUrl ?? "",
@@ -305,6 +342,7 @@ function toPayload(form: ShopForm) {
     costumeUniform: form.costumeUniform,
     trialVisitAvailable: trialVisitFromChoice(form.trialVisitAvailable),
     trialVisitNotes: form.trialVisitNotes,
+    faqs: sanitizeJobFaqsForSave(form.faqs),
     phone: form.phone || undefined,
     xUrl: form.xUrl || undefined,
     instagramUrl: form.instagramUrl || undefined,
@@ -661,6 +699,64 @@ export default function ShopDashboardPage() {
         benefits: current.benefits.includes(benefit)
           ? current.benefits.filter((item) => item !== benefit)
           : [...current.benefits, benefit],
+      };
+    });
+  }
+
+  function addFaqEntry(question = "") {
+    setForm((current) => {
+      if (!current || current.faqs.length >= JOB_FAQ_MAX) return current;
+      return {
+        ...current,
+        faqs: [...current.faqs, { question, answer: "" }],
+      };
+    });
+  }
+
+  function removeFaqEntry(index: number) {
+    setForm((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        faqs: current.faqs.filter((_, itemIndex) => itemIndex !== index),
+      };
+    });
+  }
+
+  function updateFaqEntry(
+    index: number,
+    key: keyof JobFaqEntry,
+    value: string,
+  ) {
+    setForm((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        faqs: current.faqs.map((entry, itemIndex) =>
+          itemIndex === index ? { ...entry, [key]: value } : entry,
+        ),
+      };
+    });
+  }
+
+  function applyFaqExample(question: string) {
+    setForm((current) => {
+      if (!current) return current;
+      const emptyIndex = current.faqs.findIndex(
+        (entry) => !entry.question.trim() && !entry.answer.trim(),
+      );
+      if (emptyIndex >= 0) {
+        return {
+          ...current,
+          faqs: current.faqs.map((entry, itemIndex) =>
+            itemIndex === emptyIndex ? { ...entry, question } : entry,
+          ),
+        };
+      }
+      if (current.faqs.length >= JOB_FAQ_MAX) return current;
+      return {
+        ...current,
+        faqs: [...current.faqs, { question, answer: "" }],
       };
     });
   }
@@ -1567,6 +1663,81 @@ export default function ShopDashboardPage() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-gold/20 bg-ivory/40 p-4">
+          <div>
+            <p className={labelClass}>よくある質問</p>
+            <p className="mt-1 text-xs text-muted">
+              応募前によく聞かれる内容を登録できます（最大{JOB_FAQ_MAX}件）。質問と回答の両方が入っている項目だけ公開されます。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {FAQ_QUESTION_EXAMPLES.map((example) => {
+              const used = form.faqs.some(
+                (entry) => entry.question.trim() === example,
+              );
+              return (
+                <button
+                  key={example}
+                  type="button"
+                  disabled={used || form.faqs.length >= JOB_FAQ_MAX}
+                  onClick={() => applyFaqExample(example)}
+                  className="rounded-full border border-gold/30 bg-white px-3 py-1.5 text-left text-xs text-charcoal transition enabled:hover:border-gold enabled:hover:bg-gold-light/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {example}
+                </button>
+              );
+            })}
+          </div>
+          <div className="space-y-3">
+            {form.faqs.map((entry, index) => (
+              <div
+                key={`faq-${index}`}
+                className="space-y-2 rounded-2xl border border-gold/20 bg-white p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-gold-dark">
+                    質問 {index + 1}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => removeFaqEntry(index)}
+                    className="text-xs font-medium text-muted underline-offset-2 hover:text-charcoal hover:underline"
+                  >
+                    削除
+                  </button>
+                </div>
+                <input
+                  value={entry.question}
+                  onChange={(e) =>
+                    updateFaqEntry(index, "question", e.target.value)
+                  }
+                  className={inputClass}
+                  placeholder="例）未経験でも応募できますか？"
+                  maxLength={120}
+                />
+                <textarea
+                  value={entry.answer}
+                  onChange={(e) =>
+                    updateFaqEntry(index, "answer", e.target.value)
+                  }
+                  rows={3}
+                  className={inputClass}
+                  placeholder="回答を入力"
+                  maxLength={800}
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => addFaqEntry()}
+            disabled={form.faqs.length >= JOB_FAQ_MAX}
+            className="rounded-full border border-gold/40 bg-white px-4 py-2 text-sm font-semibold text-charcoal transition enabled:hover:border-gold disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            質問を追加（{form.faqs.length}/{JOB_FAQ_MAX}）
+          </button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

@@ -1,8 +1,11 @@
 import {
   parseBenefits,
+  parseJobFaqs,
   parseStoreImages,
+  sanitizeJobFaqsForSave,
   sanitizeStoreImagesForSave,
 } from "@/lib/job-db";
+import type { JobFaqEntry } from "@/types/job";
 
 export type ShopJobPayload = {
   imageUrl?: string | null;
@@ -41,6 +44,7 @@ export type ShopJobPayload = {
   /** null = unset; undefined = omit from DB update */
   trialVisitAvailable?: boolean | null;
   trialVisitNotes?: string;
+  faqs?: JobFaqEntry[];
 };
 
 function normalizeLevel(value: unknown): number {
@@ -186,6 +190,9 @@ export function normalizeShopJobPayload(body: unknown): ShopJobPayload {
       "trialVisitNotes",
       "trial_visit_notes",
     ),
+    faqs: hasOwn(data, "faqs")
+      ? sanitizeJobFaqsForSave(parseJobFaqs(data.faqs))
+      : undefined,
   };
 }
 
@@ -249,6 +256,10 @@ export function shopPayloadToRow(payload: ShopJobPayload) {
 
   if (payload.trialVisitAvailable !== undefined) {
     row.trial_visit_available = payload.trialVisitAvailable;
+  }
+
+  if (payload.faqs !== undefined) {
+    row.faqs = sanitizeJobFaqsForSave(payload.faqs);
   }
 
   if (payload.imageUrl !== undefined) {

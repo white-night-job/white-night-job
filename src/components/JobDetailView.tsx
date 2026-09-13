@@ -9,6 +9,7 @@ import { CompareRelatedShops } from "@/components/CompareRelatedShops";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { GirlReviewsJumpCard, GirlReviewsSection } from "@/components/GirlReviewsSection";
 import { SampleListingDetailNote } from "@/components/SampleListingNotice";
+import { JobFaqSection } from "@/components/JobFaqSection";
 import { JobHeroImage } from "@/components/JobHeroImage";
 import { LineApplyButton, PhoneApplyButton } from "@/components/LineApplyButton";
 import { SafetyBadge } from "@/components/SafetyBadge";
@@ -721,6 +722,7 @@ export function JobDetailView({
                     </ul>
                   </section>
                 )}
+                <JobFaqSection job={job} />
                 {job.descriptionText && (
                   <section className="rounded-2xl border border-gold/20 bg-ivory p-4">
                     <h2 className="mb-3 text-base font-semibold text-charcoal">

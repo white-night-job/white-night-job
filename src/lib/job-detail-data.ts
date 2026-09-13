@@ -23,6 +23,7 @@ export const PUBLIC_JOB_DETAIL_COLUMNS = [
   "description_text",
   "description",
   "cast_voices",
+  "faqs",
   "store_images",
   "requirements",
   "benefits",

@@ -4,9 +4,11 @@ import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import { safeDecryptShopPassword } from "@/lib/shop-credentials";
 import {
   FIXED_AREA,
+  JOB_FAQ_MAX,
   type CastVoiceEntry,
   type District,
   type Job,
+  type JobFaqEntry,
   type JobType,
 } from "@/types/job";
 
@@ -54,6 +56,7 @@ export type JobPayload = {
   /** null clears; undefined leaves unchanged on partial updates that omit the key */
   trialVisitAvailable?: boolean | null;
   trialVisitNotes?: string;
+  faqs?: JobFaqEntry[];
 };
 
 type JobRow = {
@@ -127,6 +130,7 @@ type JobRow = {
   costume_uniform?: string | null;
   trial_visit_available?: boolean | null;
   trial_visit_notes?: string | null;
+  faqs?: unknown;
 };
 
 type RowToJobOptions = {
@@ -171,6 +175,7 @@ export function rowToJob(row: JobRow, options?: RowToJobOptions): Job {
       coerceOptionalText(row.description),
     castVoices: resolveCastVoicesFromRow(row),
     castVoice: coerceOptionalText(row.cast_voice),
+    faqs: parseJobFaqs(row.faqs),
     requirements: coerceStringArray(row.requirements),
     benefits: coerceStringArray(row.benefits),
     otherBenefits: coerceStringArray(row.other_benefits),
@@ -368,6 +373,9 @@ export function payloadToRow(
     description_text: payload.descriptionText?.trim() || null,
     description: payload.descriptionText?.trim() || null,
     cast_voices: sanitizeCastVoicesForSave(payload.castVoices ?? []),
+    ...(payload.faqs !== undefined
+      ? { faqs: sanitizeJobFaqsForSave(payload.faqs) }
+      : {}),
     requirements: payload.requirements ?? ["20歳以上"],
     benefits: payload.benefits,
     other_benefits: payload.otherBenefits ?? [],
@@ -439,6 +447,9 @@ export function normalizeJobPayload(body: unknown): JobPayload {
       data.castVoices ??
         (data as { cast_voices?: unknown }).cast_voices,
     ),
+    faqs: hasPayloadKey(data, "faqs")
+      ? normalizeJobFaqsInput(data.faqs)
+      : undefined,
     businessHours: data.businessHours ? String(data.businessHours) : undefined,
     ageGroup: data.ageGroup ? String(data.ageGroup) : undefined,
     customerPersonalityLevel: data.customerPersonalityLevel
@@ -745,6 +756,66 @@ export function getDisplayCastVoices(
   if (fromLegacyJson.length > 0) return fromLegacyJson;
 
   return [{ name: "", age: "", comment: legacy }];
+}
+
+function coerceJobFaqsToArray(value: unknown): unknown[] {
+  if (value === null || value === undefined) return [];
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === "[]") return [];
+    try {
+      return coerceJobFaqsToArray(JSON.parse(trimmed));
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.faqs)) return record.faqs;
+    if ("question" in record || "answer" in record) return [record];
+  }
+
+  return [];
+}
+
+export function parseJobFaqs(value: unknown): JobFaqEntry[] {
+  return sanitizeJobFaqsForSave(
+    coerceJobFaqsToArray(value).map((item) => {
+      if (!item || typeof item !== "object") {
+        return { question: "", answer: "" };
+      }
+      const record = item as Record<string, unknown>;
+      return {
+        question: String(record.question ?? ""),
+        answer: String(record.answer ?? ""),
+      };
+    }),
+  );
+}
+
+export function sanitizeJobFaqsForSave(entries: JobFaqEntry[]): JobFaqEntry[] {
+  return entries
+    .map((entry) => ({
+      question: entry.question.trim(),
+      answer: entry.answer.trim(),
+    }))
+    .filter((entry) => entry.question && entry.answer)
+    .slice(0, JOB_FAQ_MAX);
+}
+
+function normalizeJobFaqsInput(value: unknown): JobFaqEntry[] {
+  return parseJobFaqs(value);
+}
+
+export function getDisplayJobFaqs(
+  job: Pick<Job, "faqs"> | null | undefined,
+): JobFaqEntry[] {
+  if (!job) return [];
+  return parseJobFaqs(job.faqs);
 }
 
 export function formatCastVoiceAge(age: string): string {

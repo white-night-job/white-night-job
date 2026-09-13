@@ -11,6 +11,14 @@ export type CastVoiceEntry = {
   comment: string;
 };
 
+export type JobFaqEntry = {
+  question: string;
+  answer: string;
+};
+
+/** Max FAQ items a shop can register per job. */
+export const JOB_FAQ_MAX = 8;
+
 export type JobType =
   | "ガールズバー"
   | "コンカフェ"
@@ -47,6 +55,7 @@ export interface JobEntry {
   castVoices?: CastVoiceEntry[];
   /** @deprecated 旧テキスト形式。cast_voices が空のときの表示用 */
   castVoice?: string;
+  faqs?: JobFaqEntry[];
   requirements: string[];
   benefits: string[];
   otherBenefits?: string[];
@@ -102,6 +111,8 @@ export interface Job {
   castVoices?: CastVoiceEntry[];
   /** @deprecated 旧テキスト形式。cast_voices が空のときの表示用 */
   castVoice?: string;
+  /** 店舗が登録するよくある質問（最大8件）。未登録時は非表示 */
+  faqs?: JobFaqEntry[];
   requirements: string[];
   benefits: string[];
   otherBenefits?: string[];
