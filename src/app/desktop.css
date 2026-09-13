@@ -752,12 +752,12 @@
 
   .top-search-cta-decor-figure--advisor {
     width: 7.8rem;
-    opacity: 0.23;
+    opacity: 0.17;
   }
 
   .top-search-cta-decor-figure--robot {
     width: 8.4rem;
-    opacity: 0.25;
+    opacity: 0.18;
   }
 
   .top-search-cta-content {
@@ -766,7 +766,8 @@
   }
 
   .top-search-cta-title {
-    font-size: 0.95rem;
+    font-size: 1.01rem;
+    font-weight: 600;
   }
 
   .feature-intro-section {

@@ -227,6 +227,16 @@ export function TopSearchFollowCtas() {
             </span>
             <span className="top-search-cta-badge">無料</span>
           </span>
+          <span className="top-search-cta-chevron" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M9 6l6 6-6 6"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
         </button>
 
         <button
@@ -244,8 +254,17 @@ export function TopSearchFollowCtas() {
             </span>
             <span className="top-search-cta-badge">24時間対応</span>
           </span>
-        </button>
-      </div>
+          <span className="top-search-cta-chevron" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M9 6l6 6-6 6"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </button>      </div>
 
       <MemberGateModal
         open={gate === "ai"}
