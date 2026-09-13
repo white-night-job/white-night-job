@@ -213,6 +213,22 @@ export async function fetchJobAnalyticsCounts(
   return countsFromRows((data ?? []) as Array<{ event_type: string }>);
 }
 
+/** Cumulative listing impressions (表示回数), excluding internal traffic. */
+export async function countImpressionsForJob(
+  supabase: SupabaseClient,
+  jobId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("job_analytics_events")
+    .select("job_id", { count: "exact", head: true })
+    .eq("job_id", jobId)
+    .eq("event_type", "job_impression")
+    .eq("is_internal", false);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function fetchJobMonthlyAnalytics(
   supabase: SupabaseClient,
   jobId: string,

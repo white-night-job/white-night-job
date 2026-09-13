@@ -4,7 +4,7 @@ import {
   emptyApplicationDetail,
   fetchApplicationCountsForJob,
 } from "@/lib/job-applications";
-import { countViewsForJob } from "@/lib/job-views";
+import { countImpressionsForJob } from "@/lib/job-analytics";
 import { getAuthenticatedShopJobId } from "@/lib/shop-auth";
 import {
   countTodayBoosts,
@@ -81,9 +81,9 @@ export async function GET() {
     let applicationDetail = emptyApplicationDetail();
     let viewCount = 0;
     try {
-      const [counts, views] = await Promise.all([
+      const [counts, impressions] = await Promise.all([
         fetchApplicationCountsForJob(supabase, jobId),
-        countViewsForJob(supabase, jobId),
+        countImpressionsForJob(supabase, jobId),
       ]);
       applicationDetail = {
         ...emptyApplicationDetail(),
@@ -91,7 +91,7 @@ export async function GET() {
         phone: counts.phone,
         total: counts.total,
       };
-      viewCount = views;
+      viewCount = impressions;
     } catch (error) {
       console.error("[shop-dashboard/metrics] counts failed", error);
     }

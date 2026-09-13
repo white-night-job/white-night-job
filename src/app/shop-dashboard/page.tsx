@@ -1632,7 +1632,7 @@ export default function ShopDashboardPage() {
           </div>
           {!isLightPlan && (
           <div>
-            <dt className="text-xs text-muted">詳細ページ表示（累計）</dt>
+            <dt className="text-xs text-muted">表示回数（累計）</dt>
             <dd className="text-lg font-semibold text-charcoal">
               {metricsLoading ? (
                 <span className="mt-1 inline-block h-6 w-16 animate-pulse rounded bg-gold/20" />
