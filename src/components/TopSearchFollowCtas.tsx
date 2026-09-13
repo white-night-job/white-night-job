@@ -33,74 +33,64 @@ function DiagnosisDecor() {
   return (
     <span className="top-search-cta-decor" aria-hidden>
       <svg
-        className="top-search-cta-decor-figure"
-        viewBox="0 0 120 140"
+        className="top-search-cta-decor-figure top-search-cta-decor-figure--advisor"
+        viewBox="0 0 100 130"
         fill="currentColor"
       >
-        {/* Head + glasses */}
-        <ellipse cx="62" cy="28" rx="18" ry="20" opacity="0.9" />
-        <ellipse
-          cx="62"
-          cy="28"
-          rx="18"
-          ry="20"
+        {/* Hair / head */}
+        <ellipse cx="42" cy="26" rx="17" ry="19" />
+        {/* Glasses */}
+        <circle
+          cx="35"
+          cy="26"
+          r="5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+        />
+        <circle
+          cx="49"
+          cy="26"
+          r="5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+        />
+        <path
+          d="M40.5 26h3M29.5 26h-3.5M54.5 26H58"
           fill="none"
           stroke="currentColor"
           strokeWidth="2.2"
-          opacity="0.35"
-        />
-        <path
-          d="M48 27h10M66 27h10"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.55"
         />
-        <circle
-          cx="53"
-          cy="27"
-          r="4.2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          opacity="0.55"
-        />
-        <circle
-          cx="71"
-          cy="27"
-          r="4.2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          opacity="0.55"
-        />
-        {/* Lab coat torso */}
-        <path d="M38 52c6-8 14-12 24-12s18 4 24 12l8 18v48H30V70l8-18z" />
+        {/* Neck */}
+        <rect x="37" y="42" width="10" height="8" rx="2" />
+        {/* Lab coat */}
+        <path d="M22 52c5-7 12-10 20-10s15 3 20 10l7 14v48H15V66l7-14z" />
         <path
-          d="M62 40v78M48 72h28"
+          d="M42 44v70"
           fill="none"
-          stroke="#f7f1e8"
-          strokeWidth="2"
+          stroke="#f6efe4"
+          strokeWidth="2.5"
+          opacity="0.55"
+        />
+        <path
+          d="M30 74h24"
+          fill="none"
+          stroke="#f6efe4"
+          strokeWidth="2.2"
           opacity="0.45"
         />
-        {/* Clipboard */}
-        <rect x="78" y="68" width="28" height="36" rx="3" opacity="0.85" />
-        <rect
-          x="84"
-          y="64"
-          width="16"
-          height="7"
-          rx="2"
-          opacity="0.7"
-        />
+        {/* Clipboard in hand */}
+        <rect x="62" y="62" width="26" height="34" rx="3.5" />
+        <rect x="68" y="58" width="14" height="7" rx="2" />
         <path
-          d="M84 80h16M84 88h14M84 96h12"
+          d="M68 74h14M68 82h12M68 90h10"
           fill="none"
-          stroke="#f7f1e8"
-          strokeWidth="2"
+          stroke="#f6efe4"
+          strokeWidth="2.2"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.55"
         />
       </svg>
       <svg
@@ -109,10 +99,10 @@ function DiagnosisDecor() {
         fill="none"
         stroke="currentColor"
       >
-        <circle cx="12" cy="12" r="9" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="9" strokeWidth="1.6" />
         <path
           d="M7.5 12.2l3 3 6-6.5"
-          strokeWidth="1.6"
+          strokeWidth="1.7"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -125,7 +115,7 @@ function DiagnosisDecor() {
       >
         <path
           d="M9.2 15.5h5.6M10 18h4M12 3.8a5.2 5.2 0 015.2 5.2c0 2.1-1.1 3.4-2.2 4.4-.7.7-1.2 1.4-1.2 2.4H10.2c0-1-.5-1.7-1.2-2.4-1.1-1-2.2-2.3-2.2-4.4A5.2 5.2 0 0112 3.8z"
-          strokeWidth="1.4"
+          strokeWidth="1.5"
           strokeLinejoin="round"
         />
       </svg>
@@ -138,45 +128,36 @@ function ChatDecor() {
   return (
     <span className="top-search-cta-decor" aria-hidden>
       <svg
-        className="top-search-cta-decor-figure"
-        viewBox="0 0 120 140"
+        className="top-search-cta-decor-figure top-search-cta-decor-figure--robot"
+        viewBox="0 0 100 130"
         fill="currentColor"
       >
         {/* Antenna */}
-        <circle cx="60" cy="14" r="4" opacity="0.75" />
+        <circle cx="50" cy="10" r="5" />
         <path
-          d="M60 18v10"
+          d="M50 15v12"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.4"
+          strokeWidth="3.2"
           strokeLinecap="round"
         />
         {/* Head */}
-        <rect x="34" y="28" width="52" height="40" rx="14" />
-        <circle cx="48" cy="48" r="5" fill="#f7f1e8" opacity="0.7" />
-        <circle cx="72" cy="48" r="5" fill="#f7f1e8" opacity="0.7" />
+        <rect x="24" y="27" width="52" height="38" rx="13" />
+        <circle cx="38" cy="45" r="5.5" fill="#f6efe4" />
+        <circle cx="62" cy="45" r="5.5" fill="#f6efe4" />
         <path
-          d="M50 58c3 3.2 9 3.2 12 0"
+          d="M40 56c3.2 3.4 9.8 3.4 13 0"
           fill="none"
-          stroke="#f7f1e8"
-          strokeWidth="2.2"
+          stroke="#f6efe4"
+          strokeWidth="2.6"
           strokeLinecap="round"
-          opacity="0.65"
         />
         {/* Body */}
-        <rect x="40" y="72" width="40" height="42" rx="12" opacity="0.9" />
-        <rect
-          x="50"
-          y="82"
-          width="20"
-          height="14"
-          rx="4"
-          fill="#f7f1e8"
-          opacity="0.45"
-        />
+        <rect x="30" y="70" width="40" height="44" rx="12" />
+        <rect x="40" y="80" width="20" height="14" rx="4" fill="#f6efe4" opacity="0.55" />
         {/* Arms */}
-        <rect x="22" y="78" width="14" height="28" rx="7" opacity="0.8" />
-        <rect x="84" y="78" width="14" height="28" rx="7" opacity="0.8" />
+        <rect x="12" y="76" width="14" height="30" rx="7" />
+        <rect x="74" y="76" width="14" height="30" rx="7" />
       </svg>
       <svg
         className="top-search-cta-decor-motif top-search-cta-decor-motif--bubble"
@@ -193,7 +174,7 @@ function ChatDecor() {
       >
         <path
           d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2M6.4 6.4l2.2 2.2M15.4 15.4l2.2 2.2M17.6 6.4l-2.2 2.2M8.6 15.4l-2.2 2.2"
-          strokeWidth="1.5"
+          strokeWidth="1.6"
           strokeLinecap="round"
         />
       </svg>
