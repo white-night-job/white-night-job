@@ -18,6 +18,26 @@ function trimText(value: unknown): string {
   return String(value).trim();
 }
 
+/** Card-only display: 体入時給 ¥2,000〜 */
+function formatTrialHourlyPayForCard(raw: string): string {
+  const match = raw.match(/(\d[\d,]*)/);
+  if (!match) {
+    const cleaned = raw.replace(/^体入時給\s*/, "").trim();
+    if (!cleaned) return "体入時給";
+    if (cleaned.startsWith("¥") || cleaned.startsWith("￥")) {
+      return `体入時給 ${cleaned}`;
+    }
+    return `体入時給 ¥${cleaned}`;
+  }
+
+  const amount = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(amount)) {
+    return `体入時給 ¥${match[1]}〜`;
+  }
+
+  return `体入時給 ¥${amount.toLocaleString("ja-JP")}〜`;
+}
+
 /**
  * Compact condition rows + tags for public JobCard.
  * Area / job type agnostic. Only real DB values — never invent placeholders.
@@ -30,15 +50,10 @@ export function buildJobCardConditions(job: Job): {
   try {
     const priorityRows: JobCardConditionRow[] = [];
 
+    // Listing cards: hide 本入時給. Keep generic 時給 only when 本入時給 is unset.
     const regular = trimText(job.regularHourlyPay);
     const salary = trimText(job.salary);
-    if (regular) {
-      priorityRows.push({
-        label: "本入時給",
-        value: regular,
-        emphasize: true,
-      });
-    } else if (salary) {
+    if (!regular && salary) {
       priorityRows.push({
         label: "時給",
         value: salary,
@@ -48,7 +63,11 @@ export function buildJobCardConditions(job: Job): {
 
     const trial = trimText(job.trialHourlyPay);
     if (trial) {
-      priorityRows.push({ label: "体入時給", value: trial, emphasize: true });
+      priorityRows.push({
+        label: "体入ホワイトナイト限定！",
+        value: formatTrialHourlyPayForCard(trial),
+        emphasize: true,
+      });
     }
 
     const workHours = trimText(job.businessHours) || trimText(job.workHours);
