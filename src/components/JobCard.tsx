@@ -123,35 +123,65 @@ export function JobCard({
               {hasConditionBlock && conditions ? (
                 <>
                   {conditions.priorityRows.length > 0 ? (
-                    <dl className="grid grid-cols-2 gap-1">
-                      {conditions.priorityRows.map((row) => (
-                        <div
-                          key={`${row.label}:${row.value}`}
-                          className={
-                            row.emphasize
-                              ? "min-w-0 rounded-md border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-1.5 py-0.5"
-                              : "min-w-0 rounded-md border border-gold/20 bg-white/50 px-1.5 py-0.5"
-                          }
-                        >
-                          <dt
-                            className={`text-[9px] font-semibold leading-none ${
-                              row.emphasize ? "text-gold-dark" : "text-muted"
-                            }`}
+                    <div className="space-y-1">
+                      {conditions.priorityRows
+                        .filter((row) => row.variant === "trialExclusive")
+                        .map((row) => (
+                          <div
+                            key={`${row.label}:${row.value}`}
+                            className="rounded-lg border border-gold/50 bg-gradient-to-br from-[#1a140e] via-[#241c12] to-[#1f1810] px-2.5 py-2 shadow-[inset_0_1px_0_rgba(232,213,163,0.18)]"
                           >
-                            {row.label}
-                          </dt>
-                          <dd
-                            className={`mt-0.5 line-clamp-2 min-w-0 break-words text-[11px] font-medium leading-tight sm:text-xs ${
-                              row.emphasize
-                                ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text font-bold text-transparent"
-                                : "text-charcoal"
-                            }`}
-                          >
-                            {row.value}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
+                            <p className="inline-flex max-w-full items-center rounded-sm border border-gold/35 bg-gold/15 px-1.5 py-0.5 text-[10px] font-bold leading-none tracking-wide text-gold-light">
+                              {row.label}
+                            </p>
+                            <p className="mt-1.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                              <span className="shrink-0 text-[11px] font-medium leading-none text-gold-light/75 sm:text-xs">
+                                体入時給
+                              </span>
+                              <span className="min-w-0 break-words font-serif text-lg font-bold leading-none tracking-wide text-gold-light sm:text-xl">
+                                {row.amountDisplay || row.value}
+                              </span>
+                            </p>
+                          </div>
+                        ))}
+                      {conditions.priorityRows.some(
+                        (row) => row.variant !== "trialExclusive",
+                      ) ? (
+                        <dl className="grid grid-cols-2 gap-1">
+                          {conditions.priorityRows
+                            .filter((row) => row.variant !== "trialExclusive")
+                            .map((row) => (
+                              <div
+                                key={`${row.label}:${row.value}`}
+                                className={
+                                  row.emphasize
+                                    ? "min-w-0 rounded-md border border-gold/30 bg-gradient-to-r from-gold/10 via-gold-mid/10 to-gold-light/15 px-1.5 py-0.5"
+                                    : "min-w-0 rounded-md border border-gold/20 bg-white/50 px-1.5 py-0.5"
+                                }
+                              >
+                                <dt
+                                  className={`text-[9px] font-semibold leading-none ${
+                                    row.emphasize
+                                      ? "text-gold-dark"
+                                      : "text-muted"
+                                  }`}
+                                >
+                                  {row.label}
+                                </dt>
+                                <dd
+                                  className={`mt-0.5 line-clamp-2 min-w-0 break-words text-[11px] font-medium leading-tight sm:text-xs ${
+                                    row.emphasize
+                                      ? "bg-gradient-to-r from-gold-dark via-gold to-gold-mid bg-clip-text font-bold text-transparent"
+                                      : "text-charcoal"
+                                  }`}
+                                >
+                                  {row.value}
+                                </dd>
+                              </div>
+                            ))}
+                        </dl>
+                      ) : null}
+                    </div>
                   ) : null}
 
                   {conditionTags.length > 0 ? (

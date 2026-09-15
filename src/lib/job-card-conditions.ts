@@ -6,6 +6,10 @@ export type JobCardConditionRow = {
   value: string;
   /** Highlight pay fields */
   emphasize?: boolean;
+  /** Full-width exclusive trial-pay banner on listing cards */
+  variant?: "trialExclusive";
+  /** Prominent amount only, e.g. ¥2,000〜 */
+  amountDisplay?: string;
 };
 
 export type JobCardConditionTag = {
@@ -18,24 +22,39 @@ function trimText(value: unknown): string {
   return String(value).trim();
 }
 
-/** Card-only display: 体入時給 ¥2,000〜 */
-function formatTrialHourlyPayForCard(raw: string): string {
+/** Card-only display parts for trial hourly pay. */
+function formatTrialHourlyPayForCard(raw: string): {
+  value: string;
+  amountDisplay: string;
+} {
   const match = raw.match(/(\d[\d,]*)/);
   if (!match) {
     const cleaned = raw.replace(/^体入時給\s*/, "").trim();
-    if (!cleaned) return "体入時給";
-    if (cleaned.startsWith("¥") || cleaned.startsWith("￥")) {
-      return `体入時給 ${cleaned}`;
+    if (!cleaned) {
+      return { value: "体入時給", amountDisplay: "" };
     }
-    return `体入時給 ¥${cleaned}`;
+    if (cleaned.startsWith("¥") || cleaned.startsWith("￥")) {
+      return {
+        value: `体入時給 ${cleaned}`,
+        amountDisplay: cleaned,
+      };
+    }
+    return {
+      value: `体入時給 ¥${cleaned}`,
+      amountDisplay: `¥${cleaned}`,
+    };
   }
 
   const amount = Number(match[1].replace(/,/g, ""));
-  if (!Number.isFinite(amount)) {
-    return `体入時給 ¥${match[1]}〜`;
-  }
+  const formatted = Number.isFinite(amount)
+    ? amount.toLocaleString("ja-JP")
+    : match[1];
+  const amountDisplay = `¥${formatted}〜`;
 
-  return `体入時給 ¥${amount.toLocaleString("ja-JP")}〜`;
+  return {
+    value: `体入時給 ${amountDisplay}`,
+    amountDisplay,
+  };
 }
 
 /**
@@ -63,10 +82,13 @@ export function buildJobCardConditions(job: Job): {
 
     const trial = trimText(job.trialHourlyPay);
     if (trial) {
+      const trialDisplay = formatTrialHourlyPayForCard(trial);
       priorityRows.push({
         label: "体入ホワイトナイト限定！",
-        value: formatTrialHourlyPayForCard(trial),
+        value: trialDisplay.value,
+        amountDisplay: trialDisplay.amountDisplay,
         emphasize: true,
+        variant: "trialExclusive",
       });
     }
 
