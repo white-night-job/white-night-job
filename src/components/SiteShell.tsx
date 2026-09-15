@@ -7,6 +7,7 @@ import { CompareProvider } from "@/components/CompareProvider";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SiteVisitTracker } from "@/components/SiteVisitTracker";
+import { UniqueVisitorTracker } from "@/components/UniqueVisitorTracker";
 
 /**
  * Public site chrome. Admin routes (/admin/*) render children only —
@@ -35,6 +36,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <CompareProvider>
       <SiteVisitTracker />
+      <UniqueVisitorTracker />
       <Header />
       <main className="min-w-0 flex-1">{children}</main>
       <Footer />
