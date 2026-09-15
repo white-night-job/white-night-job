@@ -14,11 +14,12 @@ type ApplyAction = {
 
 const LINE_APPLY_TEMPLATE = `ホワイトナイトジョブを見てご連絡しました！
 
-名前orあだ名：
-年齢：
-質問等：
+指名:
+年齢:
+（質問等）:
+（面接希望日）:
 
-よろしくお願いいたします。`;
+よろしくお願いいたします！`;
 
 const guideMessage = (
   <>
@@ -163,9 +164,7 @@ function LineApplyMessageModal({
               LINEで応募する
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-muted">
-              店舗へ送るメッセージをコピーして、
-              <br className="sm:hidden" />
-              LINEで貼り付けてご利用ください。
+              下記メッセージをコピーして、LINEで貼り付けてご利用いただくとスムーズです✨
             </p>
           </div>
 
