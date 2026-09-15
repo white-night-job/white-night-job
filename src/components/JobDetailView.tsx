@@ -39,7 +39,7 @@ const StoreImagesGallery = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-36 animate-pulse rounded-2xl border border-gold/15 bg-ivory/70" />
+      <div className="h-52 animate-pulse rounded-3xl border border-gold/15 bg-ivory/70 sm:h-60" />
     ),
   },
 );
@@ -485,6 +485,13 @@ export function JobDetailView({
               </p>
             ) : null}
 
+            {displayStoreImages.length > 0 ? (
+              <StoreImagesGallery
+                images={displayStoreImages}
+                shopName={job.shopName}
+              />
+            ) : null}
+
             {conditionRows.length > 0 ? (
               <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-3 shadow-[0_8px_28px_rgba(201,169,98,0.12)] sm:p-4">
                 <h2 className="mb-2.5 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal sm:mb-3">
@@ -539,13 +546,6 @@ export function JobDetailView({
                 </Link>
                 をご覧ください。
               </p>
-            ) : null}
-
-            {showExtras && displayStoreImages.length > 0 ? (
-              <StoreImagesGallery
-                images={displayStoreImages}
-                shopName={job.shopName}
-              />
             ) : null}
 
             <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-5 shadow-[0_8px_28px_rgba(201,169,98,0.12)]">
