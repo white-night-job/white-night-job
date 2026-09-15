@@ -12,6 +12,14 @@ type ApplyAction = {
   target?: "_blank" | "_self";
 };
 
+const LINE_APPLY_TEMPLATE = `ホワイトナイトジョブを見てご連絡しました！
+
+名前orあだ名：
+年齢：
+質問等：
+
+よろしくお願いいたします。`;
+
 const guideMessage = (
   <>
     <span>スムーズにご案内できるよう、</span>
@@ -45,7 +53,7 @@ function ConfirmApplyModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-charcoal via-[#1c160c] to-[#302512] px-5 py-6 text-white shadow-2xl">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-charcoal via-[#1c160c] to-[#302512] px-5 py-6 text-white shadow-2xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,213,163,0.18),transparent_35%)]" />
         <div className="relative space-y-5 text-center">
           <p className="rounded-2xl border border-gold/25 bg-black/20 px-4 py-5 text-sm leading-8 text-white/90 sm:text-base">
@@ -66,6 +74,134 @@ function ConfirmApplyModal({
               className={`flex-1 rounded-full px-4 py-3 text-sm ${luxuryBtnPrimaryOnDark}`}
             >
               OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LineApplyMessageModal({
+  lineUrl,
+  onClose,
+}: {
+  lineUrl: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copyResetRef = useRef<number | null>(null);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(LINE_APPLY_TEMPLATE);
+      setCopied(true);
+      if (copyResetRef.current != null) {
+        window.clearTimeout(copyResetRef.current);
+      }
+      copyResetRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyResetRef.current = null;
+      }, 2500);
+    } catch {
+      // Fallback for older browsers / insecure contexts
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = LINE_APPLY_TEMPLATE;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        setCopied(true);
+        if (copyResetRef.current != null) {
+          window.clearTimeout(copyResetRef.current);
+        }
+        copyResetRef.current = window.setTimeout(() => {
+          setCopied(false);
+          copyResetRef.current = null;
+        }, 2500);
+      } catch {
+        setCopied(false);
+      }
+    }
+  }
+
+  function handleOpenLine() {
+    window.open(lineUrl, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="line-apply-modal-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-gold/40 bg-gradient-to-br from-white via-ivory to-[#f7edd8] px-4 py-5 text-charcoal shadow-2xl sm:px-5 sm:py-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-gold/30 bg-white text-xl font-light text-gold-dark shadow-sm"
+          aria-label="閉じる"
+        >
+          ×
+        </button>
+
+        <div className="space-y-4 pr-8">
+          <div>
+            <h2
+              id="line-apply-modal-title"
+              className="font-serif text-xl font-semibold text-charcoal"
+            >
+              LINEで応募する
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              店舗へ送るメッセージをコピーして、
+              <br className="sm:hidden" />
+              LINEで貼り付けてご利用ください。
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-gold/30 bg-white px-3.5 py-3.5 shadow-sm sm:px-4 sm:py-4">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-7 text-charcoal sm:text-[15px]">
+              {LINE_APPLY_TEMPLATE}
+            </pre>
+          </div>
+
+          <div className="space-y-2.5">
+            <button
+              type="button"
+              onClick={() => void handleCopy()}
+              className={`flex min-h-12 w-full items-center justify-center rounded-full border px-4 py-3 text-sm font-semibold transition ${
+                copied
+                  ? "border-[#1fa35a]/50 bg-[#e8f8ef] text-[#047a3b]"
+                  : "border-gold/40 bg-gradient-to-r from-gold/15 via-gold-light/20 to-champagne text-gold-dark hover:border-gold"
+              }`}
+            >
+              {copied ? "コピーしました！" : "定型文をコピーする"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenLine}
+              className="apply-cta-btn--line apply-cta-btn apply-cta-btn--md flex min-h-12 w-full items-center justify-center px-4 py-3 text-sm sm:text-base"
+            >
+              LINEを開く
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex min-h-11 w-full items-center justify-center rounded-full border border-gold/25 px-4 py-2.5 text-sm font-medium text-muted hover:bg-white/70"
+            >
+              閉じる
             </button>
           </div>
         </div>
@@ -168,19 +304,39 @@ export function LineApplyButton({
   fullWidth?: boolean;
   size?: "sm" | "md" | "lg";
 }) {
-  const { modal, openConfirm } = useApplyConfirm(jobId, "line");
+  const [open, setOpen] = useState(false);
+  const clickGuardRef = useRef(false);
+
+  function handleOpen() {
+    if (clickGuardRef.current) return;
+    clickGuardRef.current = true;
+
+    if (jobId) {
+      void recordJobApplication(jobId, "line");
+    }
+    setOpen(true);
+
+    window.setTimeout(() => {
+      clickGuardRef.current = false;
+    }, APPLY_CLICK_COOLDOWN_MS);
+  }
 
   return (
     <>
       <button
         type="button"
-        onClick={() => openConfirm({ href: lineUrl, target: "_blank" })}
+        onClick={handleOpen}
         className={`apply-cta-btn--line ${applySizeClass(size)} ${fullWidth ? "w-full" : ""}`}
       >
         <ChatConsultIcon className="apply-cta-icon" />
         <span>{label}</span>
       </button>
-      {modal}
+      {open ? (
+        <LineApplyMessageModal
+          lineUrl={lineUrl}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </>
   );
 }
