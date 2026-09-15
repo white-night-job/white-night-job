@@ -103,8 +103,8 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
 
   return (
     <>
-      <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-3 shadow-[0_8px_28px_rgba(201,169,98,0.12)] sm:p-4">
-        <h2 className="mb-2 flex items-center gap-2 font-serif text-lg font-semibold text-charcoal sm:mb-2.5 sm:text-xl">
+      <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory px-3 py-2.5 shadow-[0_8px_28px_rgba(201,169,98,0.12)] sm:px-4 sm:py-3">
+        <h2 className="mb-1.5 flex items-center gap-2 font-serif text-lg font-semibold text-charcoal sm:mb-2 sm:text-xl">
           <span className="text-gold-dark">◆</span>
           店舗ギャラリー
         </h2>
@@ -117,7 +117,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
           {images.map((imageUrl, index) => (
             <div
               key={`${imageUrl}-${index}`}
-              className="w-full shrink-0 snap-center px-0.5"
+              className="w-full shrink-0 snap-center"
             >
               <button
                 type="button"
@@ -125,14 +125,14 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                 className="group block w-full overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold transition hover:border-gold/50"
                 aria-label={`${shopName}の店舗ギャラリー ${index + 1}を拡大表示`}
               >
-                <span className="relative block h-[230px] w-full bg-zinc-100 sm:h-[250px]">
+                <span className="relative block h-[110px] w-full bg-zinc-100 sm:h-[120px]">
                   <Image
                     src={imageUrl}
                     alt={`${shopName}の店舗ギャラリー ${index + 1}`}
                     fill
                     loading={index === 0 ? "eager" : "lazy"}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 70vw, 720px"
-                    className="object-cover transition group-hover:scale-[1.01]"
+                    className="object-cover object-center transition group-hover:scale-[1.01]"
                   />
                 </span>
               </button>
@@ -142,7 +142,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
 
         {images.length > 1 ? (
           <div
-            className="mt-2 flex items-center justify-center gap-1.5"
+            className="mt-1.5 flex items-center justify-center gap-1.5"
             role="tablist"
             aria-label="店舗ギャラリーのページ"
           >
@@ -156,10 +156,10 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                   aria-selected={active}
                   aria-label={`${index + 1}枚目`}
                   onClick={() => goToSlide(index)}
-                  className={`h-2 rounded-full transition ${
+                  className={`h-1.5 rounded-full transition ${
                     active
-                      ? "w-4 bg-gold-dark"
-                      : "w-2 bg-gold/35 hover:bg-gold/55"
+                      ? "w-3.5 bg-gold-dark"
+                      : "w-1.5 bg-gold/35 hover:bg-gold/55"
                   }`}
                 />
               );
@@ -182,13 +182,16 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
               event.stopPropagation();
               setLightboxIndex(null);
             }}
-            className="fixed z-[90] rounded-full border border-white/35 bg-black/65 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+            className="fixed z-[100] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-lg"
             style={{
-              top: "max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))",
-              right: "max(1rem, calc(env(safe-area-inset-right, 0px) + 1rem))",
+              top: "calc(env(safe-area-inset-top, 0px) + 16px)",
+              right: "calc(env(safe-area-inset-right, 0px) + 16px)",
             }}
+            aria-label="拡大表示を閉じる"
           >
-            閉じる
+            <span className="text-2xl font-light leading-none" aria-hidden>
+              ×
+            </span>
           </button>
 
           {images.length > 1 ? (
