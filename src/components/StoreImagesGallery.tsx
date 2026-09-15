@@ -130,9 +130,9 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
               event.stopPropagation();
               setLightboxIndex(null);
             }}
-            className="fixed z-[100] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-lg"
+            className="fixed z-[200] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-lg"
             style={{
-              top: "calc(env(safe-area-inset-top, 0px) + 16px)",
+              top: "calc(env(safe-area-inset-top, 0px) + 88px)",
               right: "calc(env(safe-area-inset-right, 0px) + 16px)",
             }}
             aria-label="拡大表示を閉じる"
