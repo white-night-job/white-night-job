@@ -129,16 +129,16 @@ export function JobCard({
                         .map((row) => (
                           <div
                             key={`${row.label}:${row.value}`}
-                            className="flex flex-col items-center justify-center rounded-lg border border-gold/50 bg-gradient-to-br from-[#1a140e] via-[#241c12] to-[#1f1810] px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(232,213,163,0.18)]"
+                            className="flex flex-col items-center justify-center rounded-lg border border-gold/40 bg-gradient-to-br from-[#f7e6ec] via-[#f0d0db] to-[#e8b9c8] px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
                           >
-                            <p className="max-w-full text-[12px] font-bold leading-tight tracking-wide text-gold-light sm:text-[13px]">
+                            <p className="max-w-full text-[12px] font-bold leading-tight tracking-wide text-[#5c3a42] sm:text-[13px]">
                               {row.label}
                             </p>
                             <p className="mt-0.5 flex max-w-full min-w-0 flex-wrap items-baseline justify-center gap-x-1 leading-none">
-                              <span className="shrink-0 text-[11px] font-semibold text-gold-light/80 sm:text-xs">
+                              <span className="shrink-0 text-[11px] font-semibold text-[#6b4550] sm:text-xs">
                                 体入時給
                               </span>
-                              <span className="min-w-0 break-words font-serif text-[22px] font-bold tracking-wide text-gold-light sm:text-2xl">
+                              <span className="min-w-0 break-words font-serif text-[22px] font-bold tracking-wide text-[#3d241f] sm:text-2xl">
                                 {row.amountDisplay || row.value}
                               </span>
                             </p>
