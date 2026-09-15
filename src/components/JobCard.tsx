@@ -129,19 +129,37 @@ export function JobCard({
                         .map((row) => (
                           <div
                             key={`${row.label}:${row.value}`}
-                            className="flex flex-col items-center justify-center rounded-lg border border-gold/40 bg-gradient-to-br from-[#f7e6ec] via-[#f0d0db] to-[#e8b9c8] px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+                            className="relative flex flex-col items-center justify-center overflow-hidden rounded-lg border border-gold/40 px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                            style={{
+                              backgroundImage: [
+                                "radial-gradient(ellipse 75% 65% at 8% 18%, rgba(255,255,255,0.98) 0%, transparent 58%)",
+                                "radial-gradient(ellipse 70% 55% at 92% 22%, rgba(244,210,220,0.72) 0%, transparent 55%)",
+                                "radial-gradient(ellipse 65% 60% at 78% 88%, rgba(255,255,255,0.92) 0%, transparent 52%)",
+                                "radial-gradient(ellipse 60% 50% at 18% 82%, rgba(236,188,204,0.68) 0%, transparent 55%)",
+                                "radial-gradient(ellipse 50% 40% at 48% 48%, rgba(250,230,236,0.55) 0%, transparent 60%)",
+                                "linear-gradient(145deg, #fff9fb 0%, #f6e4eb 42%, #faf0f4 72%, #f3dce5 100%)",
+                              ].join(", "),
+                            }}
                           >
-                            <p className="max-w-full text-[12px] font-bold leading-tight tracking-wide text-[#5c3a42] sm:text-[13px]">
+                            <span
+                              className="mb-1 h-px w-[min(11.5rem,78%)] bg-gradient-to-r from-transparent via-[#c4a574] to-transparent"
+                              aria-hidden
+                            />
+                            <p className="max-w-full text-[13px] font-bold leading-tight tracking-wide text-[#9a7a3a] sm:text-sm">
                               {row.label}
                             </p>
                             <p className="mt-0.5 flex max-w-full min-w-0 flex-wrap items-baseline justify-center gap-x-1 leading-none">
-                              <span className="shrink-0 text-[11px] font-semibold text-[#6b4550] sm:text-xs">
+                              <span className="shrink-0 text-xs font-semibold text-[#b08d4a] sm:text-[13px]">
                                 体入時給
                               </span>
-                              <span className="min-w-0 break-words font-serif text-[22px] font-bold tracking-wide text-[#3d241f] sm:text-2xl">
+                              <span className="min-w-0 break-words font-serif text-[24px] font-bold tracking-wide text-[#8b6914] sm:text-[26px]">
                                 {row.amountDisplay || row.value}
                               </span>
                             </p>
+                            <span
+                              className="mt-1 h-px w-[min(11.5rem,78%)] bg-gradient-to-r from-transparent via-[#c4a574] to-transparent"
+                              aria-hidden
+                            />
                           </div>
                         ))}
                       {conditions.priorityRows.some(
