@@ -127,24 +127,48 @@ export async function upsertSiteVisitor(
   }
 }
 
-async function countVisitorsSince(
+async function countUniqueUsersSince(
   supabase: SupabaseClient,
   sinceIso: string | null,
 ): Promise<number> {
-  let query = supabase
-    .from("site_visitors")
-    .select("id", { count: "exact", head: true });
+  const keys = new Set<string>();
+  const pageSize = 1000;
+  let from = 0;
 
-  if (sinceIso) {
-    query = query.gte("last_seen_at", sinceIso);
+  for (;;) {
+    let query = supabase
+      .from("site_visitors")
+      .select("visitor_id, user_id")
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (sinceIso) {
+      query = query.gte("last_seen_at", sinceIso);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      if (isMissingTableError(error)) return 0;
+      throw error;
+    }
+
+    const rows = data ?? [];
+    for (const row of rows) {
+      const userId = typeof row.user_id === "string" ? row.user_id.trim() : "";
+      const visitorId =
+        typeof row.visitor_id === "string" ? row.visitor_id.trim() : "";
+      if (userId) {
+        keys.add(`u:${userId}`);
+      } else if (visitorId) {
+        keys.add(`v:${visitorId}`);
+      }
+    }
+
+    if (rows.length < pageSize) break;
+    from += pageSize;
   }
 
-  const { count, error } = await query;
-  if (error) {
-    if (isMissingTableError(error)) return 0;
-    throw error;
-  }
-  return count ?? 0;
+  return keys.size;
 }
 
 export async function fetchUniqueUserCounts(
@@ -155,10 +179,10 @@ export async function fetchUniqueUserCounts(
     getUniqueUserRangeStarts(now);
 
   const [today, last7Days, last30Days, total] = await Promise.all([
-    countVisitorsSince(supabase, todayStartIso),
-    countVisitorsSince(supabase, last7StartIso),
-    countVisitorsSince(supabase, last30StartIso),
-    countVisitorsSince(supabase, null),
+    countUniqueUsersSince(supabase, todayStartIso),
+    countUniqueUsersSince(supabase, last7StartIso),
+    countUniqueUsersSince(supabase, last30StartIso),
+    countUniqueUsersSince(supabase, null),
   ]);
 
   return { today, last7Days, last30Days, total };

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { useUserSession } from "@/components/UserSessionProvider";
 import { trackUniqueVisitor } from "@/lib/site-visitor-client";
 
 /**
@@ -10,10 +11,12 @@ import { trackUniqueVisitor } from "@/lib/site-visitor-client";
  */
 export function UniqueVisitorTracker() {
   const pathname = usePathname() || "/";
+  const { currentUser, ready } = useUserSession();
 
   useEffect(() => {
-    trackUniqueVisitor(pathname);
-  }, [pathname]);
+    if (!ready) return;
+    trackUniqueVisitor(pathname, currentUser?.id ?? null);
+  }, [pathname, ready, currentUser?.id]);
 
   return null;
 }

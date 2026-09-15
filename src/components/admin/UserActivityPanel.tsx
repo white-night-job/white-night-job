@@ -50,6 +50,27 @@ const SUMMARY_CARDS: Array<{
   { key: "blackReports", label: "ブラック店報告の件数" },
 ];
 
+type UniqueUsersPeriod = "today" | "last7Days" | "last30Days" | "total";
+
+type UniqueUsersResponse = {
+  today: number;
+  last7Days: number;
+  last30Days: number;
+  total: number;
+  note?: string;
+  message?: string;
+};
+
+const UNIQUE_PERIOD_OPTIONS: Array<{
+  value: UniqueUsersPeriod;
+  label: string;
+}> = [
+  { value: "today", label: "今日" },
+  { value: "last7Days", label: "過去7日" },
+  { value: "last30Days", label: "過去30日" },
+  { value: "total", label: "累計" },
+];
+
 function MetricCard({
   label,
   metric,
@@ -89,6 +110,13 @@ export function UserActivityPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<ActivityResponse | null>(null);
+  const [uniquePeriod, setUniquePeriod] =
+    useState<UniqueUsersPeriod>("today");
+  const [uniqueLoading, setUniqueLoading] = useState(true);
+  const [uniqueError, setUniqueError] = useState("");
+  const [uniqueCounts, setUniqueCounts] = useState<UniqueUsersResponse | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,6 +146,31 @@ export function UserActivityPanel() {
     }
   }, [period, from, to]);
 
+  const loadUniqueUsers = useCallback(async () => {
+    setUniqueLoading(true);
+    setUniqueError("");
+    try {
+      const response = await fetch("/api/admin/unique-users", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const body = (await response.json()) as UniqueUsersResponse;
+      if (!response.ok) {
+        throw new Error(body.message ?? "ユニークユーザー数を取得できませんでした");
+      }
+      setUniqueCounts(body);
+    } catch (err) {
+      setUniqueCounts(null);
+      setUniqueError(
+        err instanceof Error
+          ? err.message
+          : "ユニークユーザー数を取得できませんでした",
+      );
+    } finally {
+      setUniqueLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (period === "custom" && (!from || !to)) {
       setLoading(false);
@@ -128,8 +181,90 @@ export function UserActivityPanel() {
     void load();
   }, [load, period, from, to]);
 
+  useEffect(() => {
+    void loadUniqueUsers();
+  }, [loadUniqueUsers]);
+
+  const selectedUniqueValue = uniqueCounts
+    ? Number(uniqueCounts[uniquePeriod] ?? 0)
+    : null;
+
   return (
     <div className="space-y-5">
+      <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
+        <h2 className="text-base font-semibold text-charcoal">
+          ユニークユーザー数
+        </h2>
+        <p className="mt-1 text-xs text-muted">
+          PVではなく、同一ユーザーを期間内1人として数えた利用人数です。未ログインは匿名ID、ログイン済みはuser_idで重複を除外します。
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {UNIQUE_PERIOD_OPTIONS.map((option) => {
+            const selected = uniquePeriod === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setUniquePeriod(option.value)}
+                aria-pressed={selected}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  selected
+                    ? "border-gold bg-gradient-to-r from-gold to-gold-dark text-white"
+                    : "border-gold/35 bg-ivory text-gold-dark hover:bg-ivory/80"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        {uniqueError ? (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {uniqueError}
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {UNIQUE_PERIOD_OPTIONS.map((option) => {
+              const value = uniqueCounts
+                ? Number(uniqueCounts[option.value] ?? 0)
+                : null;
+              const selected = uniquePeriod === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setUniquePeriod(option.value)}
+                  className={`rounded-2xl border bg-white p-4 text-left shadow-gold transition sm:p-5 ${
+                    selected
+                      ? "border-gold ring-1 ring-gold/40"
+                      : "border-gold/25 hover:border-gold/45"
+                  }`}
+                >
+                  <p className="text-sm font-medium text-muted">{option.label}</p>
+                  {uniqueLoading && value == null ? (
+                    <p className="mt-3 text-sm font-medium text-muted">集計中…</p>
+                  ) : (
+                    <p className="mt-2 font-serif text-3xl font-semibold text-charcoal">
+                      {(value ?? 0).toLocaleString("ja-JP")}
+                      <span className="ml-1 text-base font-medium text-muted">
+                        人
+                      </span>
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {selectedUniqueValue != null && !uniqueError ? (
+          <p className="mt-3 text-xs text-muted">
+            選択中: {UNIQUE_PERIOD_OPTIONS.find((o) => o.value === uniquePeriod)?.label}
+            {" — "}
+            {selectedUniqueValue.toLocaleString("ja-JP")}人
+          </p>
+        ) : null}
+      </section>
+
       <section className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
         <h2 className="text-base font-semibold text-charcoal">期間</h2>
         <p className="mt-1 text-xs text-muted">

@@ -79,7 +79,10 @@ function markPing() {
 }
 
 /** Record / refresh this browser as an active unique visitor. */
-export function trackUniqueVisitor(pagePath?: string): void {
+export function trackUniqueVisitor(
+  pagePath?: string,
+  userId?: string | null,
+): void {
   if (typeof window === "undefined") return;
 
   const path = pagePath || window.location.pathname || "/";
@@ -91,6 +94,7 @@ export function trackUniqueVisitor(pagePath?: string): void {
   markPing();
 
   const visitorId = getOrCreateVisitorId();
+  const trimmedUserId = userId?.trim() || null;
 
   void fetch("/api/site-visitors/ping", {
     method: "POST",
@@ -98,6 +102,7 @@ export function trackUniqueVisitor(pagePath?: string): void {
     credentials: "include",
     body: JSON.stringify({
       visitorId,
+      userId: trimmedUserId,
       pagePath: path.slice(0, 300),
     }),
   }).catch(() => {
