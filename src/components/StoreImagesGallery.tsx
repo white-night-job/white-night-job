@@ -15,8 +15,6 @@ function wrapIndex(index: number, length: number): number {
 
 export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -52,23 +50,6 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
   }, [lightboxIndex, images.length]);
 
   if (images.length === 0) return null;
-
-  function syncSlideFromScroll() {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const width = el.clientWidth;
-    if (width <= 0) return;
-    const next = Math.round(el.scrollLeft / width);
-    setSlideIndex(Math.min(Math.max(next, 0), images.length - 1));
-  }
-
-  function goToSlide(index: number) {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const next = Math.min(Math.max(index, 0), images.length - 1);
-    el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
-    setSlideIndex(next);
-  }
 
   function stepLightbox(delta: number) {
     setLightboxIndex((current) =>
@@ -109,63 +90,30 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
           店舗ギャラリー
         </h2>
 
-        <div
-          ref={scrollerRef}
-          className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          onScroll={syncSlideFromScroll}
-        >
+        <ul className="flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2">
           {images.map((imageUrl, index) => (
-            <div
+            <li
               key={`${imageUrl}-${index}`}
-              className="w-full shrink-0 snap-center"
+              className="h-[100px] w-[38%] min-w-[118px] max-w-[148px] shrink-0 sm:h-[106px] sm:w-[160px] sm:max-w-none"
             >
               <button
                 type="button"
                 onClick={() => setLightboxIndex(index)}
-                className="group block w-full overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold transition hover:border-gold/50"
+                className="group relative block h-full w-full overflow-hidden rounded-xl border border-gold/25 bg-zinc-100 shadow-sm transition hover:border-gold/50"
                 aria-label={`${shopName}の店舗ギャラリー ${index + 1}を拡大表示`}
               >
-                <span className="relative block h-[110px] w-full bg-zinc-100 sm:h-[120px]">
-                  <Image
-                    src={imageUrl}
-                    alt={`${shopName}の店舗ギャラリー ${index + 1}`}
-                    fill
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 70vw, 720px"
-                    className="object-cover object-center transition group-hover:scale-[1.01]"
-                  />
-                </span>
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {images.length > 1 ? (
-          <div
-            className="mt-1.5 flex items-center justify-center gap-1.5"
-            role="tablist"
-            aria-label="店舗ギャラリーのページ"
-          >
-            {images.map((_, index) => {
-              const active = index === slideIndex;
-              return (
-                <button
-                  key={`dot-${index}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`${index + 1}枚目`}
-                  onClick={() => goToSlide(index)}
-                  className={`h-1.5 rounded-full transition ${
-                    active
-                      ? "w-3.5 bg-gold-dark"
-                      : "w-1.5 bg-gold/35 hover:bg-gold/55"
-                  }`}
+                <Image
+                  src={imageUrl}
+                  alt={`${shopName}の店舗ギャラリー ${index + 1}`}
+                  fill
+                  loading={index < 3 ? "eager" : "lazy"}
+                  sizes="(max-width: 640px) 38vw, 160px"
+                  className="object-cover object-center transition group-hover:scale-[1.02]"
                 />
-              );
-            })}
-          </div>
-        ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {lightboxIndex !== null && (
