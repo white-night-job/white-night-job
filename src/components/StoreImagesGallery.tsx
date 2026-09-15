@@ -1,17 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 
 type StoreImagesGalleryProps = {
   images: string[];
   shopName: string;
 };
 
+function wrapIndex(index: number, length: number): number {
+  if (length <= 0) return 0;
+  return ((index % length) + length) % length;
+}
+
 export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -24,14 +31,15 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
         setLightboxIndex(null);
         return;
       }
+      if (images.length <= 1) return;
       if (event.key === "ArrowRight") {
         setLightboxIndex((current) =>
-          current === null ? null : Math.min(current + 1, images.length - 1),
+          current === null ? null : wrapIndex(current + 1, images.length),
         );
       }
       if (event.key === "ArrowLeft") {
         setLightboxIndex((current) =>
-          current === null ? null : Math.max(current - 1, 0),
+          current === null ? null : wrapIndex(current - 1, images.length),
         );
       }
     }
@@ -62,10 +70,41 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
     setSlideIndex(next);
   }
 
+  function stepLightbox(delta: number) {
+    setLightboxIndex((current) =>
+      current === null ? null : wrapIndex(current + delta, images.length),
+    );
+  }
+
+  function handleLightboxTouchStart(event: TouchEvent) {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+  }
+
+  function handleLightboxTouchEnd(event: TouchEvent) {
+    if (images.length <= 1) return;
+    const touch = event.changedTouches[0];
+    if (!touch || touchStartX.current == null || touchStartY.current == null) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
+
+    const dx = touch.clientX - touchStartX.current;
+    const dy = touch.clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy)) return;
+    stepLightbox(dx < 0 ? 1 : -1);
+  }
+
   return (
     <>
       <section className="rounded-3xl border border-gold/25 bg-gradient-to-br from-white to-ivory p-3 shadow-[0_8px_28px_rgba(201,169,98,0.12)] sm:p-4">
-        <h2 className="mb-2.5 flex items-center gap-2 font-serif text-xl font-semibold text-charcoal sm:mb-3">
+        <h2 className="mb-2 flex items-center gap-2 font-serif text-lg font-semibold text-charcoal sm:mb-2.5 sm:text-xl">
           <span className="text-gold-dark">◆</span>
           店舗ギャラリー
         </h2>
@@ -86,7 +125,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
                 className="group block w-full overflow-hidden rounded-2xl border border-gold/25 bg-white shadow-gold transition hover:border-gold/50"
                 aria-label={`${shopName}の店舗ギャラリー ${index + 1}を拡大表示`}
               >
-                <span className="relative block aspect-[4/3] w-full bg-zinc-100 sm:aspect-[16/10]">
+                <span className="relative block h-[230px] w-full bg-zinc-100 sm:h-[250px]">
                   <Image
                     src={imageUrl}
                     alt={`${shopName}の店舗ギャラリー ${index + 1}`}
@@ -103,7 +142,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
 
         {images.length > 1 ? (
           <div
-            className="mt-2.5 flex items-center justify-center gap-1.5"
+            className="mt-2 flex items-center justify-center gap-1.5"
             role="tablist"
             aria-label="店舗ギャラリーのページ"
           >
@@ -131,7 +170,7 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
 
       {lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 px-4 pb-8 pt-16"
           role="dialog"
           aria-modal="true"
           aria-label="店舗ギャラリーの拡大表示"
@@ -139,59 +178,72 @@ export function StoreImagesGallery({ images, shopName }: StoreImagesGalleryProps
         >
           <button
             type="button"
-            onClick={() => setLightboxIndex(null)}
-            className="absolute right-4 top-4 rounded-full border border-white/30 bg-black/50 px-3 py-1.5 text-sm font-medium text-white"
+            onClick={(event) => {
+              event.stopPropagation();
+              setLightboxIndex(null);
+            }}
+            className="fixed z-[90] rounded-full border border-white/35 bg-black/65 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+            style={{
+              top: "max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))",
+              right: "max(1rem, calc(env(safe-area-inset-right, 0px) + 1rem))",
+            }}
           >
             閉じる
           </button>
 
-          {images.length > 1 && lightboxIndex > 0 && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setLightboxIndex((current) =>
-                  current === null ? null : Math.max(current - 1, 0),
-                );
-              }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-black/50 px-3 py-2 text-white sm:left-6"
-              aria-label="前の画像"
-            >
-              ‹
-            </button>
-          )}
-
-          {images.length > 1 && lightboxIndex < images.length - 1 && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setLightboxIndex((current) =>
-                  current === null
-                    ? null
-                    : Math.min(current + 1, images.length - 1),
-                );
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/30 bg-black/50 px-3 py-2 text-white sm:right-6"
-              aria-label="次の画像"
-            >
-              ›
-            </button>
-          )}
+          {images.length > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  stepLightbox(-1);
+                }}
+                className="absolute left-2 top-1/2 z-[85] -translate-y-1/2 rounded-full border border-white/35 bg-black/60 px-3.5 py-2.5 text-xl font-semibold leading-none text-white sm:left-5"
+                aria-label="前の画像"
+              >
+                ＜
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  stepLightbox(1);
+                }}
+                className="absolute right-2 top-1/2 z-[85] -translate-y-1/2 rounded-full border border-white/35 bg-black/60 px-3.5 py-2.5 text-xl font-semibold leading-none text-white sm:right-5"
+                aria-label="次の画像"
+              >
+                ＞
+              </button>
+            </>
+          ) : null}
 
           <div
-            className="relative h-[min(85vh,900px)] w-full max-w-5xl"
+            className="relative h-[min(72vh,820px)] w-full max-w-5xl touch-pan-y"
             onClick={(event) => event.stopPropagation()}
+            onTouchStart={handleLightboxTouchStart}
+            onTouchEnd={handleLightboxTouchEnd}
           >
             <Image
               src={images[lightboxIndex]!}
               alt={`${shopName}の店舗ギャラリー ${lightboxIndex + 1}`}
               fill
               sizes="90vw"
-              className="rounded-lg object-contain"
+              className="rounded-lg object-contain select-none"
               priority
+              draggable={false}
             />
           </div>
+
+          <p
+            className="pointer-events-none absolute bottom-5 left-1/2 z-[85] -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-sm font-medium text-white"
+            style={{
+              bottom:
+                "max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))",
+            }}
+          >
+            {lightboxIndex + 1} / {images.length}
+          </p>
         </div>
       )}
     </>

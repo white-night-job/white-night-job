@@ -39,7 +39,7 @@ const StoreImagesGallery = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-52 animate-pulse rounded-3xl border border-gold/15 bg-ivory/70 sm:h-60" />
+      <div className="h-[280px] animate-pulse rounded-3xl border border-gold/15 bg-ivory/70" />
     ),
   },
 );
