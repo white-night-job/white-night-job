@@ -18,7 +18,6 @@ type ConfirmState = {
   message: string;
   lineUrl: string;
   copied: boolean;
-  copyFailed: boolean;
 };
 
 export function OnlineMeetingRequestForm({
@@ -44,7 +43,6 @@ export function OnlineMeetingRequestForm({
     second?: string;
   }>({});
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const canSubmit =
     shopName.trim().length > 0 &&
@@ -93,7 +91,6 @@ export function OnlineMeetingRequestForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setCopyFeedback(null);
 
     const nextFieldErrors: typeof fieldErrors = {};
 
@@ -159,13 +156,7 @@ export function OnlineMeetingRequestForm({
       message,
       lineUrl,
       copied,
-      copyFailed: !copied,
     });
-    setCopyFeedback(
-      copied
-        ? "メッセージをコピーしました。「LINEを開く」を押すと、対応環境では入力欄に反映されます。反映されない場合は貼り付けて送信してください。"
-        : "自動コピーに失敗しました。下のメッセージから「文章をコピーする」を押してください。",
-    );
   }
 
   async function handleCopyConfirmMessage() {
@@ -174,13 +165,7 @@ export function OnlineMeetingRequestForm({
     setConfirm({
       ...confirm,
       copied,
-      copyFailed: !copied,
     });
-    setCopyFeedback(
-      copied
-        ? "メッセージをコピーしました。LINEのトーク画面に貼り付けて送信してください。"
-        : "コピーに失敗しました。下の文章を長押しして手動でコピーしてください。",
-    );
   }
 
   function handleOpenLine() {
@@ -190,7 +175,6 @@ export function OnlineMeetingRequestForm({
 
   function handleCloseConfirm() {
     setConfirm(null);
-    setCopyFeedback(null);
   }
 
   return (
@@ -208,6 +192,7 @@ export function OnlineMeetingRequestForm({
             id="wnm-shop-name"
             name="shopName"
             type="text"
+            className="wnm-form__text"
             autoComplete="organization"
             required
             value={shopName}
@@ -224,6 +209,7 @@ export function OnlineMeetingRequestForm({
             id="wnm-contact-name"
             name="contactName"
             type="text"
+            className="wnm-form__text"
             autoComplete="name"
             required
             value={contactName}
@@ -232,161 +218,153 @@ export function OnlineMeetingRequestForm({
           />
         </div>
 
-        <div className="wnm-form__row">
-          <div className="wnm-form__field">
-            <label htmlFor="wnm-preferred-date">
-              第1希望日<span className="wnm-form__req">必須</span>
-            </label>
-            <div className="wnm-form__control">
-              <div className="wnm-form__control-input">
-                <input
-                  key={`preferred-date-${preferredDateKey}`}
-                  id="wnm-preferred-date"
-                  name="preferredDate"
-                  type="date"
-                  required
-                  min={minDate}
-                  value={preferredDate}
-                  onChange={(e) => {
-                    setPreferredDate(e.target.value);
-                    if (e.target.value) {
-                      setFieldErrors((prev) => {
-                        const next = { ...prev };
-                        delete next.preferredDate;
-                        return next;
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <button
-                type="button"
-                className="wnm-form__clear"
-                onClick={clearPreferredDate}
-                disabled={!preferredDate}
-                aria-label="第1希望日をクリア"
-              >
-                クリア
-              </button>
-            </div>
-            {fieldErrors.preferredDate ? (
-              <p className="wnm-form__field-error" role="alert">
-                {fieldErrors.preferredDate}
-              </p>
-            ) : null}
+        <div className="wnm-form__field wnm-form__field--datetime">
+          <label htmlFor="wnm-preferred-date">
+            第1希望日<span className="wnm-form__req">必須</span>
+          </label>
+          <div className="wnm-form__control">
+            <input
+              key={`preferred-date-${preferredDateKey}`}
+              id="wnm-preferred-date"
+              name="preferredDate"
+              type="date"
+              className="wnm-form__datetime"
+              required
+              min={minDate}
+              value={preferredDate}
+              onChange={(e) => {
+                setPreferredDate(e.target.value);
+                if (e.target.value) {
+                  setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.preferredDate;
+                    return next;
+                  });
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearPreferredDate}
+              disabled={!preferredDate}
+              aria-label="第1希望日をクリア"
+            >
+              クリア
+            </button>
           </div>
+          {fieldErrors.preferredDate ? (
+            <p className="wnm-form__field-error" role="alert">
+              {fieldErrors.preferredDate}
+            </p>
+          ) : null}
+        </div>
 
-          <div className="wnm-form__field">
-            <label htmlFor="wnm-preferred-time">
-              第1希望時間<span className="wnm-form__req">必須</span>
-            </label>
-            <div className="wnm-form__control">
-              <div className="wnm-form__control-input">
-                <input
-                  key={`preferred-time-${preferredTimeKey}`}
-                  id="wnm-preferred-time"
-                  name="preferredTime"
-                  type="time"
-                  required
-                  value={preferredTime}
-                  onChange={(e) => {
-                    setPreferredTime(e.target.value);
-                    if (e.target.value) {
-                      setFieldErrors((prev) => {
-                        const next = { ...prev };
-                        delete next.preferredTime;
-                        return next;
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <button
-                type="button"
-                className="wnm-form__clear"
-                onClick={clearPreferredTime}
-                disabled={!preferredTime}
-                aria-label="第1希望時間をクリア"
-              >
-                クリア
-              </button>
-            </div>
-            {fieldErrors.preferredTime ? (
-              <p className="wnm-form__field-error" role="alert">
-                {fieldErrors.preferredTime}
-              </p>
-            ) : null}
+        <div className="wnm-form__field wnm-form__field--datetime">
+          <label htmlFor="wnm-preferred-time">
+            第1希望時間<span className="wnm-form__req">必須</span>
+          </label>
+          <div className="wnm-form__control">
+            <input
+              key={`preferred-time-${preferredTimeKey}`}
+              id="wnm-preferred-time"
+              name="preferredTime"
+              type="time"
+              className="wnm-form__datetime"
+              required
+              value={preferredTime}
+              onChange={(e) => {
+                setPreferredTime(e.target.value);
+                if (e.target.value) {
+                  setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.preferredTime;
+                    return next;
+                  });
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearPreferredTime}
+              disabled={!preferredTime}
+              aria-label="第1希望時間をクリア"
+            >
+              クリア
+            </button>
+          </div>
+          {fieldErrors.preferredTime ? (
+            <p className="wnm-form__field-error" role="alert">
+              {fieldErrors.preferredTime}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="wnm-form__field wnm-form__field--datetime">
+          <label htmlFor="wnm-second-date">
+            第2希望日<span className="wnm-form__opt">任意</span>
+          </label>
+          <div className="wnm-form__control">
+            <input
+              key={`second-date-${secondDateKey}`}
+              id="wnm-second-date"
+              name="secondDate"
+              type="date"
+              className="wnm-form__datetime"
+              min={minDate}
+              value={secondDate}
+              onChange={(e) => {
+                setSecondDate(e.target.value);
+                setFieldErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.second;
+                  return next;
+                });
+              }}
+            />
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearSecondDate}
+              disabled={!secondDate}
+              aria-label="第2希望日をクリア"
+            >
+              クリア
+            </button>
           </div>
         </div>
 
-        <div className="wnm-form__row">
-          <div className="wnm-form__field">
-            <label htmlFor="wnm-second-date">
-              第2希望日<span className="wnm-form__opt">任意</span>
-            </label>
-            <div className="wnm-form__control">
-              <div className="wnm-form__control-input">
-                <input
-                  key={`second-date-${secondDateKey}`}
-                  id="wnm-second-date"
-                  name="secondDate"
-                  type="date"
-                  min={minDate}
-                  value={secondDate}
-                  onChange={(e) => {
-                    setSecondDate(e.target.value);
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      delete next.second;
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-              <button
-                type="button"
-                className="wnm-form__clear"
-                onClick={clearSecondDate}
-                disabled={!secondDate}
-                aria-label="第2希望日をクリア"
-              >
-                クリア
-              </button>
-            </div>
-          </div>
-
-          <div className="wnm-form__field">
-            <label htmlFor="wnm-second-time">
-              第2希望時間<span className="wnm-form__opt">任意</span>
-            </label>
-            <div className="wnm-form__control">
-              <div className="wnm-form__control-input">
-                <input
-                  key={`second-time-${secondTimeKey}`}
-                  id="wnm-second-time"
-                  name="secondTime"
-                  type="time"
-                  value={secondTime}
-                  onChange={(e) => {
-                    setSecondTime(e.target.value);
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      delete next.second;
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-              <button
-                type="button"
-                className="wnm-form__clear"
-                onClick={clearSecondTime}
-                disabled={!secondTime}
-                aria-label="第2希望時間をクリア"
-              >
-                クリア
-              </button>
-            </div>
+        <div className="wnm-form__field wnm-form__field--datetime">
+          <label htmlFor="wnm-second-time">
+            第2希望時間<span className="wnm-form__opt">任意</span>
+          </label>
+          <div className="wnm-form__control">
+            <input
+              key={`second-time-${secondTimeKey}`}
+              id="wnm-second-time"
+              name="secondTime"
+              type="time"
+              className="wnm-form__datetime"
+              value={secondTime}
+              onChange={(e) => {
+                setSecondTime(e.target.value);
+                setFieldErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.second;
+                  return next;
+                });
+              }}
+            />
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearSecondTime}
+              disabled={!secondTime}
+              aria-label="第2希望時間をクリア"
+            >
+              クリア
+            </button>
           </div>
         </div>
         {fieldErrors.second ? (
@@ -452,20 +430,13 @@ export function OnlineMeetingRequestForm({
             <h3 id="wnm-confirm-title" className="wnm-confirm__title">
               送信用メッセージの確認
             </h3>
+
             <p className="wnm-confirm__lead">
-              「LINEを開く」を押すと、対応環境では申込内容が入力欄に入ります。
-              <br />
-              入らない場合は、下の文章をコピーしてトーク画面に貼り付けてください。
-              <br />
               LINEの送信ボタンを押すまで申し込みは完了しません。
             </p>
-
-            {copyFeedback ? (
-              <p
-                className={`wnm-confirm__feedback${confirm.copyFailed ? " is-error" : ""}`}
-                role="status"
-              >
-                {copyFeedback}
+            {confirm.copied ? (
+              <p className="wnm-confirm__feedback" role="status">
+                移行後、通常は自動入力ですがメッセージが反映されない場合は貼り付けて送信してください。
               </p>
             ) : null}
 
