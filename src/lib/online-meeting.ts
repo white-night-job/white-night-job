@@ -1,16 +1,72 @@
+export type OnlineMeetingRequestInput = {
+  shopName: string;
+  contactName: string;
+  preferredDate: string;
+  preferredTime: string;
+  secondPreferredDateTime?: string;
+  consultation?: string;
+};
+
+/** Format YYYY-MM-DD + HH:mm for message body (Japan-facing display). */
+export function formatMeetingDateTime(date: string, time: string): string {
+  const d = date.trim();
+  const t = time.trim();
+  if (!d || !t) return "";
+  const [y, m, day] = d.split("-");
+  if (!y || !m || !day) return `${d} ${t}`;
+  return `${y}年${Number(m)}月${Number(day)}日 ${t}`;
+}
+
+export function buildOnlineMeetingLineMessage(
+  input: OnlineMeetingRequestInput,
+): string {
+  const first = formatMeetingDateTime(
+    input.preferredDate,
+    input.preferredTime,
+  );
+  const second = input.secondPreferredDateTime?.trim() || "なし";
+  const consultation = input.consultation?.trim() || "なし";
+
+  return [
+    "White Night Job",
+    "オンライン面談希望",
+    "",
+    `店舗名：${input.shopName.trim()}`,
+    `ご担当者名：${input.contactName.trim()}`,
+    `第1希望日時：${first}`,
+    `第2希望日時：${second}`,
+    `ご相談内容：${consultation}`,
+    "",
+    "オンライン面談を希望しております。",
+    "よろしくお願いいたします。",
+  ].join("\n");
+}
+
 /**
- * Pre-contract online meeting booking for shops considering a listing.
- * Set NEXT_PUBLIC_ONLINE_MEETING_BOOKING_URL to an https(s) calendar/booking URL
- * (e.g. Calendly). When unset or invalid, booking CTAs stay in a “準備中” state.
+ * LINE official account deep link that attempts to open a chat with prefilled text.
+ * Prefill support varies by device / LINE app version — callers should also copy to clipboard.
  */
-export function getOnlineMeetingBookingUrl(): string | null {
-  const raw = process.env.NEXT_PUBLIC_ONLINE_MEETING_BOOKING_URL?.trim() ?? "";
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
+export function buildOnlineMeetingLineUrl(
+  officialAccountId: string,
+  message: string,
+): string {
+  const id = officialAccountId.startsWith("@")
+    ? officialAccountId
+    : `@${officialAccountId}`;
+  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?text=${encodeURIComponent(message)}`;
+}
+
+export function buildOnlineMeetingLineAddUrl(officialAccountId: string): string {
+  const id = officialAccountId.startsWith("@")
+    ? officialAccountId
+    : `@${officialAccountId}`;
+  return `https://line.me/R/ti/p/${id}`;
+}
+
+/** Today's date in local timezone as YYYY-MM-DD (for date input min). */
+export function getLocalDateInputMin(now = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }

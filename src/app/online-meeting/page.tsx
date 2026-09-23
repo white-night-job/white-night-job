@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { getOnlineMeetingBookingUrl } from "@/lib/online-meeting";
+import { OnlineMeetingRequestForm } from "@/components/OnlineMeetingRequestForm";
+import { getLineOfficialAccountId } from "@/lib/line-friendship";
 import { buildPageMetadata } from "@/lib/seo";
 import "./online-meeting.css";
 
@@ -176,12 +177,12 @@ const STEPS: { step: string; title: string; text: string; note?: string }[] = [
   {
     step: "STEP 01",
     title: "ご予約",
-    text: "予約ページからご希望の日時を選択してください。",
+    text: "フォームにご希望の日時を入力し、LINEで面談を申し込んでください。",
   },
   {
     step: "STEP 02",
     title: "面談のご案内",
-    text: "ご予約後、オンライン面談に必要な情報をご案内いたします。",
+    text: "希望日時の送信後、担当者より日程をご案内いたします。",
   },
   {
     step: "STEP 03",
@@ -219,45 +220,21 @@ const FAQS: { q: string; a: string }[] = [
   },
 ];
 
-function BookingCta({
-  bookingUrl,
-  id,
-}: {
-  bookingUrl: string | null;
-  id?: string;
-}) {
-  if (bookingUrl) {
-    return (
-      <div className="wnm-book" id={id}>
-        <a
-          href={bookingUrl}
-          className="wnm-book__btn"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          無料オンライン面談を予約する
-        </a>
-        <p className="wnm-book__hint">
-          外部の予約ページへ移動します。面談のご予約は掲載契約の成立を意味するものではありません。
-        </p>
-      </div>
-    );
-  }
-
+function ScrollToFormCta({ id }: { id?: string }) {
   return (
     <div className="wnm-book" id={id}>
-      <p className="wnm-book__pending" role="status">
-        予約受付準備中
-      </p>
+      <a href="#online-meeting-form" className="wnm-book__btn">
+        無料オンライン面談を予約する
+      </a>
       <p className="wnm-book__hint">
-        現在、オンライン面談の予約受付を準備しております。予約が可能になり次第、こちらからご案内いたします。
+        入力フォームへ移動します。面談のお申し込みは掲載契約の成立を意味するものではありません。
       </p>
     </div>
   );
 }
 
 export default function OnlineMeetingPage() {
-  const bookingUrl = getOnlineMeetingBookingUrl();
+  const lineOfficialAccountId = getLineOfficialAccountId();
 
   return (
     <div className="wn-meeting-page">
@@ -303,7 +280,7 @@ export default function OnlineMeetingPage() {
             ))}
           </ul>
 
-          <BookingCta bookingUrl={bookingUrl} id="online-meeting-book-hero" />
+          <ScrollToFormCta id="online-meeting-book-hero" />
         </header>
 
         <section className="wnm-section" aria-labelledby="wnm-pain-title">
@@ -374,7 +351,7 @@ export default function OnlineMeetingPage() {
         <section
           className="wnm-section"
           aria-labelledby="wnm-booking-title"
-          id="online-meeting-booking"
+          id="online-meeting-form"
         >
           <div className="wnm-booking-panel">
             <div className="wnm-section-head">
@@ -388,9 +365,11 @@ export default function OnlineMeetingPage() {
               </h2>
             </div>
             <p className="wnm-lead">
-              ご希望の日時を選択し、オンライン面談をご予約ください。
+              ご希望の日時を入力し、LINE公式アカウントへ面談希望をお送りください。
             </p>
-            <BookingCta bookingUrl={bookingUrl} />
+            <OnlineMeetingRequestForm
+              lineOfficialAccountId={lineOfficialAccountId}
+            />
           </div>
         </section>
 
@@ -452,7 +431,7 @@ export default function OnlineMeetingPage() {
             サービス内容や掲載に関する疑問を、オンライン面談でお気軽にご相談ください。
           </p>
           <div className="wnm-bottom__actions">
-            <BookingCta bookingUrl={bookingUrl} />
+            <ScrollToFormCta />
             <Link href="/features" className="wnm-book__sub">
               White Night Jobの特徴を見る
             </Link>
