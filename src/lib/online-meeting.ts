@@ -46,7 +46,8 @@ export function buildOnlineMeetingLineMessage(
 
 /**
  * LINE oaMessage deep link — opens OA chat with text prefilled when supported.
- * Format: https://line.me/R/oaMessage/%40id/?text={encoded message}
+ * Format: https://line.me/R/oaMessage/%40id/?{encoded message}
+ * (Do not use ?text= — some LINE clients include the literal "text=" in the compose box.)
  * Prefill is not guaranteed on every device; callers should also offer copy fallback.
  */
 export function buildOnlineMeetingLineChatUrl(
@@ -56,7 +57,7 @@ export function buildOnlineMeetingLineChatUrl(
   const id = officialAccountId.startsWith("@")
     ? officialAccountId
     : `@${officialAccountId}`;
-  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?text=${encodeURIComponent(message)}`;
+  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?${encodeURIComponent(message)}`;
 }
 
 /** Today's date in local timezone as YYYY-MM-DD (for date input min). */
