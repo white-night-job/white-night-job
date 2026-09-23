@@ -68,6 +68,7 @@ const POINTS: {
   title: string;
   text: string;
   examples: string[];
+  examplesLabel?: string;
   tip: string;
   icon: ReactNode;
 }[] = [
@@ -189,7 +190,68 @@ const POINTS: {
       </svg>
     ),
   },
+  {
+    num: "06",
+    title: "口コミを活用して店舗の魅力を伝える",
+    text: "求職者にとって、実際に働いている方や店舗に関する口コミは、応募を検討する際の参考情報になります。口コミを通じて店舗の雰囲気や働く環境を伝えることで、求人情報だけでは伝わりにくい魅力を補うことができます。また、口コミの内容を確認することで、店舗の良い点や改善が期待できる点を把握し、求人内容や採用活動の見直しにも活用できます。",
+    examplesLabel: "ポイント",
+    examples: [
+      "口コミによる店舗の雰囲気や魅力の発信",
+      "求職者の応募前の不安解消",
+      "口コミを参考にした店舗・求人内容の改善",
+    ],
+    tip: "実在する口コミのみを活用し、架空の評価や存在しない口コミは表示しないでください。",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M5.5 17c-1.1-1-1.8-2.4-1.8-4C3.7 8.7 7.4 6 12 6s8.3 2.7 8.3 7-3.7 7-8.3 7c-.8 0-1.6-.1-2.3-.3L5 20.5 5.5 17Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
 ];
+
+const METRIC_GUIDES = [
+  {
+    title: "表示回数",
+    text: "求人一覧などで求人がどの程度見られているかを把握できます。露出が少ない場合は、掲載内容の更新や上位表示の活用などを検討するきっかけになります。",
+  },
+  {
+    title: "求人詳細クリック数",
+    text: "一覧から詳細ページへ進んだ回数です。求職者が求人に興味を持ったかどうかを確認する指標として活用できます。",
+  },
+  {
+    title: "求人詳細クリック率",
+    text: "表示に対して詳細へ進んだ割合です。一覧での写真・紹介文・給与情報などの見せ方を見直す判断材料になります。",
+  },
+  {
+    title: "応募数",
+    text: "LINE・電話などの応募導線がクリックされた回数を確認できます。詳細閲覧後に応募へつながっているかを把握する参考になります。",
+  },
+  {
+    title: "口コミ",
+    text: "店舗の雰囲気や働く環境が求職者にどう伝わっているかを確認できます。良い点の維持や、求人内容・採用活動の改善に活かせます。",
+  },
+] as const;
+
+const FUNNEL_STEPS = [
+  "表示回数を確認",
+  "求人詳細クリック率を確認",
+  "応募状況や口コミを確認",
+  "求人の良い点・改善点を把握",
+  "写真・紹介文・待遇情報などを改善",
+  "掲載品質の向上",
+] as const;
+
+const DETAIL_CTR_POINTS = [
+  "求人一覧での表示状況",
+  "求人詳細ページへのクリック状況",
+  "求人詳細クリック率",
+  "クリック率を参考にした掲載内容の改善",
+] as const;
 
 const ANALYTICS_STEPS = [
   {
@@ -277,7 +339,7 @@ export default function ListingSuccessGuidePage() {
           <div className="lsg-section-head">
             <p className="lsg-section-head__eyebrow">
               <span className="lsg-line" aria-hidden />
-              5 POINTS
+              POINTS
               <span className="lsg-line" aria-hidden />
             </p>
             <h2 id="lsg-points-title" className="lsg-section-head__title">
@@ -298,7 +360,9 @@ export default function ListingSuccessGuidePage() {
                   <p className="lsg-point__text">{point.text}</p>
                   {point.examples.length > 0 ? (
                     <>
-                      <p className="lsg-point__examples-label">掲載例</p>
+                      <p className="lsg-point__examples-label">
+                        {point.examplesLabel ?? "掲載例"}
+                      </p>
                       <ul className="lsg-point__examples">
                         {point.examples.map((example) => (
                           <li key={example}>{example}</li>
@@ -330,6 +394,64 @@ export default function ListingSuccessGuidePage() {
             <p className="lsg-lead">
               White Night Jobでは、アクセス・応募状況を確認するだけでなく、求人の良い点や改善点を分析し、掲載品質の向上につなげるサポートを行っています。
             </p>
+
+            <h3 className="lsg-analytics__subhead">掲載効果を確認する指標</h3>
+            <ul className="lsg-metrics">
+              {METRIC_GUIDES.map((metric) => (
+                <li key={metric.title} className="lsg-metrics__item">
+                  <p className="lsg-metrics__title">{metric.title}</p>
+                  <p className="lsg-metrics__text">{metric.text}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="lsg-ctr">
+              <h3 className="lsg-ctr__title">求人詳細クリック率を確認する</h3>
+              <p className="lsg-ctr__text">
+                求人一覧で表示された求人が、どの程度詳細ページの閲覧につながっているかを確認することで、求職者の興味・関心を把握できます。
+              </p>
+              <p className="lsg-ctr__text">
+                求人詳細クリック率を参考に、求人一覧での写真・紹介文・給与情報などの見せ方を見直し、詳細ページへの誘導改善につなげます。
+              </p>
+              <ul className="lsg-ctr__points">
+                {DETAIL_CTR_POINTS.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <div className="lsg-ctr__formula">
+                <p className="lsg-ctr__formula-label">計算方法</p>
+                <p className="lsg-ctr__formula-body">
+                  求人詳細クリック数 ÷ 求人一覧での表示回数 × 100
+                </p>
+                <p className="lsg-ctr__formula-note">
+                  ※店舗ダッシュボードの「詳細クリック率」は、店舗詳細クリック数 ÷ 表示回数で算出しています。
+                </p>
+                <p className="lsg-ctr__formula-example">
+                  例：求人一覧で1,000回表示され、詳細ページが50回クリックされた場合、求人詳細クリック率は5％です。
+                </p>
+                <p className="lsg-ctr__formula-disclaimer">
+                  ※上記の数値は計算方法の説明用であり、実際の掲載実績ではありません。
+                </p>
+              </div>
+            </div>
+
+            <h3 className="lsg-analytics__subhead">改善につなげる流れ</h3>
+            <ol className="lsg-funnel" aria-label="分析から改善までの流れ">
+              {FUNNEL_STEPS.map((step, index) => (
+                <li key={step} className="lsg-funnel__item">
+                  <span className="lsg-funnel__step">{step}</span>
+                  {index < FUNNEL_STEPS.length - 1 ? (
+                    <span className="lsg-funnel__arrow" aria-hidden>
+                      ↓
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+            <p className="lsg-lead lsg-lead--compact">
+              求人の表示から応募までの状況を把握し、掲載内容の改善につなげましょう。
+            </p>
+
             <ol className="lsg-analytics__steps">
               {ANALYTICS_STEPS.map((step) => (
                 <li key={step.num} className="lsg-analytics__step">
@@ -344,7 +466,7 @@ export default function ListingSuccessGuidePage() {
               ))}
             </ol>
             <p className="lsg-note">
-              ※利用できる分析機能は契約プランによって異なります。
+              ※利用できる分析機能は契約プランによって異なります。詳細クリック数・詳細クリック率・改善レポートなどは、プランにより表示内容が異なります。
             </p>
           </div>
         </section>
@@ -410,10 +532,7 @@ export default function ListingSuccessGuidePage() {
           </p>
           <div className="lsg-cta__actions">
             <Link href="/shop-dashboard" className="lsg-cta__primary">
-              求人情報を編集する
-            </Link>
-            <Link href="/shop-dashboard" className="lsg-cta__secondary">
-              アクセス・応募分析を見る
+              店舗ダッシュボードを確認する
             </Link>
           </div>
           <p className="lsg-cta__sub">
