@@ -23,15 +23,16 @@ export function formatMeetingDateTime(date: string, time: string): string {
 export function buildOnlineMeetingLineMessage(
   input: OnlineMeetingRequestInput,
 ): string {
-  const first = formatMeetingDateTime(
-    input.preferredDate,
-    input.preferredTime,
-  );
-  const second = input.secondPreferredDateTime?.trim() || "なし";
-  const consultation = input.consultation?.trim() || "なし";
+  const first =
+    formatMeetingDateTime(input.preferredDate, input.preferredTime) ||
+    "未入力";
+  const second = input.secondPreferredDateTime?.trim() || "未入力";
+  const consultation = input.consultation?.trim() || "未入力";
 
   return [
-    "【オンライン面談】",
+    "【White Night Job】",
+    "---オンライン面談---",
+    "",
     `店舗名：${input.shopName.trim()}`,
     `ご担当者名：${input.contactName.trim()}`,
     `第1希望日時：${first}`,
