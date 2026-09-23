@@ -49,6 +49,7 @@ const STATIC_PATHS: Array<{
   { path: "/for-shops", changeFrequency: "monthly", priority: 0.5 },
   { path: "/features", changeFrequency: "monthly", priority: 0.55 },
   { path: "/online-meeting", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/listing-success-guide", changeFrequency: "monthly", priority: 0.5 },
   { path: "/company", changeFrequency: "yearly", priority: 0.3 },
   { path: "/contact", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.2 },
