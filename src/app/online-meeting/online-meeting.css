@@ -441,6 +441,39 @@
   color: rgba(250, 247, 242, 0.92);
 }
 
+.wnm-form__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.wnm-form__clear {
+  flex-shrink: 0;
+  min-height: 1.85rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(232, 213, 163, 0.92);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.wnm-form__clear:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.wnm-form__field-error {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #ffb4b4;
+}
+
 .wnm-form__req,
 .wnm-form__opt {
   display: inline-block;

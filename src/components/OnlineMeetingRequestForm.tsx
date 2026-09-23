@@ -3,29 +3,40 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import {
-  buildOnlineMeetingLineAddUrl,
+  ONLINE_MEETING_LINE_ACCOUNT_ID,
+  buildOnlineMeetingLineChatUrl,
   buildOnlineMeetingLineMessage,
-  buildOnlineMeetingLineUrl,
   formatMeetingDateTime,
   getLocalDateInputMin,
 } from "@/lib/online-meeting";
 
 type Props = {
-  lineOfficialAccountId: string;
+  lineOfficialAccountId?: string;
 };
 
-export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
+export function OnlineMeetingRequestForm({
+  lineOfficialAccountId = ONLINE_MEETING_LINE_ACCOUNT_ID,
+}: Props) {
   const minDate = useMemo(() => getLocalDateInputMin(), []);
+  const lineChatUrl = useMemo(
+    () => buildOnlineMeetingLineChatUrl(lineOfficialAccountId),
+    [lineOfficialAccountId],
+  );
 
   const [shopName, setShopName] = useState("");
   const [contactName, setContactName] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredTime, setPreferredTime] = useState("");
+  const [preferredTimeKey, setPreferredTimeKey] = useState(0);
   const [secondDate, setSecondDate] = useState("");
   const [secondTime, setSecondTime] = useState("");
+  const [secondTimeKey, setSecondTimeKey] = useState(0);
   const [consultation, setConsultation] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [preferredTimeError, setPreferredTimeError] = useState<string | null>(
+    null,
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit =
@@ -34,6 +45,19 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
     preferredDate.trim().length > 0 &&
     preferredTime.trim().length > 0 &&
     !submitting;
+
+  function clearPreferredTime() {
+    setPreferredTime("");
+    setPreferredTimeKey((key) => key + 1);
+    setPreferredTimeError("面談希望時間を選択してください。");
+    setStatus(null);
+  }
+
+  function clearSecondTime() {
+    setSecondTime("");
+    setSecondTimeKey((key) => key + 1);
+    setStatus(null);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,6 +70,9 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
       !preferredDate.trim() ||
       !preferredTime.trim()
     ) {
+      if (!preferredTime.trim()) {
+        setPreferredTimeError("面談希望時間を選択してください。");
+      }
       setError("必須項目を入力してください。");
       return;
     }
@@ -81,13 +108,7 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
     setSubmitting(true);
     try {
       const copied = await copyTextToClipboard(message);
-      const lineUrl = buildOnlineMeetingLineUrl(
-        lineOfficialAccountId,
-        message,
-      );
-      const fallbackUrl = buildOnlineMeetingLineAddUrl(lineOfficialAccountId);
-
-      window.open(lineUrl || fallbackUrl, "_blank", "noopener,noreferrer");
+      window.open(lineChatUrl, "_blank", "noopener,noreferrer");
 
       if (copied) {
         setStatus(
@@ -95,7 +116,7 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
         );
       } else {
         setStatus(
-          "LINEを開きました。定型文の自動入力ができない場合は、この画面に戻って内容を控えてからLINEへ貼り付けてください。LINEの送信ボタンを押すまで申し込みは完了しません。",
+          "LINEを開きました。メッセージのコピーに失敗したため、この画面の内容を控えてLINEへ貼り付けてください。LINEの送信ボタンを押すまで申し込みは完了しません。",
         );
       }
     } finally {
@@ -153,17 +174,36 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
           />
         </div>
         <div className="wnm-form__field">
-          <label htmlFor="wnm-preferred-time">
-            面談希望時間<span className="wnm-form__req">必須</span>
-          </label>
+          <div className="wnm-form__label-row">
+            <label htmlFor="wnm-preferred-time">
+              面談希望時間<span className="wnm-form__req">必須</span>
+            </label>
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearPreferredTime}
+              disabled={!preferredTime}
+            >
+              クリア
+            </button>
+          </div>
           <input
+            key={`preferred-time-${preferredTimeKey}`}
             id="wnm-preferred-time"
             name="preferredTime"
             type="time"
             required
             value={preferredTime}
-            onChange={(e) => setPreferredTime(e.target.value)}
+            onChange={(e) => {
+              setPreferredTime(e.target.value);
+              if (e.target.value) setPreferredTimeError(null);
+            }}
           />
+          {preferredTimeError ? (
+            <p className="wnm-form__field-error" role="alert">
+              {preferredTimeError}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -182,10 +222,21 @@ export function OnlineMeetingRequestForm({ lineOfficialAccountId }: Props) {
           />
         </div>
         <div className="wnm-form__field">
-          <label htmlFor="wnm-second-time">
-            第2希望時間<span className="wnm-form__opt">任意</span>
-          </label>
+          <div className="wnm-form__label-row">
+            <label htmlFor="wnm-second-time">
+              第2希望時間<span className="wnm-form__opt">任意</span>
+            </label>
+            <button
+              type="button"
+              className="wnm-form__clear"
+              onClick={clearSecondTime}
+              disabled={!secondTime}
+            >
+              クリア
+            </button>
+          </div>
           <input
+            key={`second-time-${secondTimeKey}`}
             id="wnm-second-time"
             name="secondTime"
             type="time"

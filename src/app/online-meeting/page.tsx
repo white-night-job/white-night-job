@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { OnlineMeetingRequestForm } from "@/components/OnlineMeetingRequestForm";
-import { getLineOfficialAccountId } from "@/lib/line-friendship";
+import { ONLINE_MEETING_LINE_ACCOUNT_ID } from "@/lib/online-meeting";
 import { buildPageMetadata } from "@/lib/seo";
 import "./online-meeting.css";
 
@@ -234,8 +234,6 @@ function ScrollToFormCta({ id }: { id?: string }) {
 }
 
 export default function OnlineMeetingPage() {
-  const lineOfficialAccountId = getLineOfficialAccountId();
-
   return (
     <div className="wn-meeting-page">
       <div className="wnm-wrap">
@@ -368,7 +366,7 @@ export default function OnlineMeetingPage() {
               ご希望の日時を入力し、LINE公式アカウントへ面談希望をお送りください。
             </p>
             <OnlineMeetingRequestForm
-              lineOfficialAccountId={lineOfficialAccountId}
+              lineOfficialAccountId={ONLINE_MEETING_LINE_ACCOUNT_ID}
             />
           </div>
         </section>

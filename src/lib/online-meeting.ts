@@ -1,3 +1,6 @@
+/** LINE official account Basic ID for pre-contract online meeting requests. */
+export const ONLINE_MEETING_LINE_ACCOUNT_ID = "@266bbynf";
+
 export type OnlineMeetingRequestInput = {
   shopName: string;
   contactName: string;
@@ -28,9 +31,7 @@ export function buildOnlineMeetingLineMessage(
   const consultation = input.consultation?.trim() || "なし";
 
   return [
-    "White Night Job",
-    "オンライン面談希望",
-    "",
+    "【オンライン面談】",
     `店舗名：${input.shopName.trim()}`,
     `ご担当者名：${input.contactName.trim()}`,
     `第1希望日時：${first}`,
@@ -43,20 +44,12 @@ export function buildOnlineMeetingLineMessage(
 }
 
 /**
- * LINE official account deep link that attempts to open a chat with prefilled text.
- * Prefill support varies by device / LINE app version — callers should also copy to clipboard.
+ * Opens the official account talk / friend screen by Basic ID.
+ * Message is not auto-sent — callers copy to clipboard and ask the user to paste.
  */
-export function buildOnlineMeetingLineUrl(
-  officialAccountId: string,
-  message: string,
+export function buildOnlineMeetingLineChatUrl(
+  officialAccountId: string = ONLINE_MEETING_LINE_ACCOUNT_ID,
 ): string {
-  const id = officialAccountId.startsWith("@")
-    ? officialAccountId
-    : `@${officialAccountId}`;
-  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?text=${encodeURIComponent(message)}`;
-}
-
-export function buildOnlineMeetingLineAddUrl(officialAccountId: string): string {
   const id = officialAccountId.startsWith("@")
     ? officialAccountId
     : `@${officialAccountId}`;
