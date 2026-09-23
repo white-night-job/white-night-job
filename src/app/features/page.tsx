@@ -80,6 +80,43 @@ const PILLARS: { label: string; icon: ReactNode }[] = [
   },
 ];
 
+const COMPARE_ROWS: { label: string; general: boolean; wn: boolean }[] = [
+  { label: "求人情報の掲載", general: true, wn: true },
+  { label: "AIによる24時間の応募前サポート", general: false, wn: true },
+  { label: "LINEおすすめ通知", general: false, wn: true },
+  { label: "職種診断", general: false, wn: true },
+  { label: "最大5店舗の比較機能", general: false, wn: true },
+  { label: "アクセス・応募状況の確認", general: true, wn: true },
+  { label: "求人の良い点・改善点の分析", general: false, wn: true },
+  { label: "具体的な求人改善提案", general: false, wn: true },
+  { label: "掲載品質の継続的な改善サポート", general: false, wn: true },
+];
+
+const ANALYTICS_STEPS: { num: string; title: string; text: string }[] = [
+  {
+    num: "01",
+    title: "アクセス・応募状況の可視化",
+    text: "求人の表示回数や応募数を確認し、現在の掲載状況を把握できます。",
+  },
+  {
+    num: "02",
+    title: "求人の良い点を分析",
+    text: "給与・待遇・店舗紹介・写真など、求人の魅力として伝わっている部分を整理します。",
+  },
+  {
+    num: "03",
+    title: "改善点を具体的に提示",
+    text: "店舗紹介文、待遇情報、写真、求人内容の分かりやすさなど、改善が期待できる項目を明確にします。",
+  },
+  {
+    num: "04",
+    title: "掲載品質の継続的な向上",
+    text: "分析結果をもとに求人内容を見直し、求職者に店舗の魅力がより伝わる掲載内容を目指します。",
+  },
+];
+
+const FLOW_STEPS = ["掲載", "分析", "改善", "掲載品質の向上"] as const;
+
 const SUPPORT_FEATURES: { num: string; title: string; text: string }[] = [
   {
     num: "05",
@@ -96,12 +133,15 @@ const SUPPORT_FEATURES: { num: string; title: string; text: string }[] = [
     title: "店舗の魅力を伝える求人ページ",
     text: "給与・待遇・営業時間に加え、店舗の雰囲気や特徴を掲載。求職者が働くイメージを持ちやすい求人ページを提供します。",
   },
-  {
-    num: "08",
-    title: "アクセス・応募状況の可視化",
-    text: "店舗ダッシュボードで表示回数や応募数を確認でき、求人内容の改善に活用できます。",
-  },
 ];
+
+function Mark({ ok }: { ok: boolean }) {
+  return (
+    <span className={`wnf-mark${ok ? " is-yes" : " is-no"}`} aria-label={ok ? "あり" : "なし"}>
+      {ok ? "◯" : "×"}
+    </span>
+  );
+}
 
 function PhoneChrome({ children }: { children: ReactNode }) {
   return (
@@ -240,6 +280,58 @@ function MockCompare() {
   );
 }
 
+function MockAnalyticsReport() {
+  return (
+    <div className="wnf-mock-report" aria-hidden>
+      <div className="wnf-mock-report__head">
+        <p className="wnf-mock-report__title">アクセス・応募分析・レポート</p>
+        <p className="wnf-mock-report__sub">店舗ダッシュボード（イメージ）</p>
+      </div>
+      <div className="wnf-mock-report__metrics">
+        <div className="wnf-mock-report__metric">
+          <span>表示回数</span>
+          <strong>—</strong>
+        </div>
+        <div className="wnf-mock-report__metric">
+          <span>LINE応募数</span>
+          <strong>—</strong>
+        </div>
+        <div className="wnf-mock-report__metric">
+          <span>電話応募数</span>
+          <strong>—</strong>
+        </div>
+        <div className="wnf-mock-report__metric">
+          <span>応募数</span>
+          <strong>—</strong>
+        </div>
+      </div>
+      <div className="wnf-mock-report__block is-good">
+        <p className="wnf-mock-report__block-title">良い点</p>
+        <ul>
+          <li>給与・待遇情報が整理され、求職者が条件を把握しやすい</li>
+          <li>店舗紹介文で雰囲気や特徴が伝わる構成になっている</li>
+        </ul>
+      </div>
+      <div className="wnf-mock-report__block is-improve">
+        <p className="wnf-mock-report__block-title">改善優先度</p>
+        <div className="wnf-mock-report__priority">
+          <span className="is-high">高</span>
+          <p>店内写真の追加・紹介文の具体化</p>
+        </div>
+      </div>
+      <div className="wnf-mock-report__block">
+        <p className="wnf-mock-report__block-title">具体的な改善内容</p>
+        <div className="wnf-mock-report__advice">
+          <p className="wnf-mock-report__advice-action">
+            店内全景・カウンター席が分かる写真を追加し、紹介文に客層・教育体制を追記する
+          </p>
+          <p className="wnf-mock-report__advice-effect">期待効果：求人詳細の分かりやすさ向上</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FeaturesPage() {
   return (
     <div className="wn-features-page">
@@ -358,6 +450,100 @@ export default function FeaturesPage() {
             </article>
           </li>
         </ol>
+
+        <section className="wnf-compare" aria-labelledby="wnf-compare-title">
+          <div className="wnf-section-head">
+            <p className="wnf-section-head__eyebrow">
+              <span className="wnf-hero__line" aria-hidden />
+              COMPARISON
+              <span className="wnf-hero__line" aria-hidden />
+            </p>
+            <h2 id="wnf-compare-title" className="wnf-section-head__title">
+              一般的な求人サイトとの違い
+            </h2>
+          </div>
+
+          <div className="wnf-compare__scroll">
+            <table className="wnf-compare__table">
+              <thead>
+                <tr>
+                  <th scope="col">比較項目</th>
+                  <th scope="col" className="is-general">
+                    一般的な求人サイト
+                  </th>
+                  <th scope="col" className="is-wn">
+                    White Night Job
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    <td className="is-general">
+                      <Mark ok={row.general} />
+                    </td>
+                    <td className="is-wn">
+                      <Mark ok={row.wn} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="wnf-compare__note">
+            ※本表は一般的な求人サイトの機能構成との比較イメージです。特定の競合サービスの機能を断定するものではありません。
+          </p>
+        </section>
+
+        <section className="wnf-analytics" aria-labelledby="wnf-analytics-title">
+          <div className="wnf-section-head">
+            <p className="wnf-section-head__eyebrow">
+              <span className="wnf-hero__line" aria-hidden />
+              IMPROVE
+              <span className="wnf-hero__line" aria-hidden />
+            </p>
+            <h2 id="wnf-analytics-title" className="wnf-section-head__title wnf-analytics__title">
+              掲載して終わりにしない。
+              <br />
+              分析と改善で、求人の質を高める。
+            </h2>
+          </div>
+          <p className="wnf-analytics__lead">
+            求人の表示回数や応募状況を確認するだけでなく、掲載内容の良い点・改善点を詳しく分析。具体的な改善提案を通じて、店舗の魅力がより伝わる求人ページづくりをサポートします。
+          </p>
+
+          <ol className="wnf-flow" aria-label="掲載品質向上の流れ">
+            {FLOW_STEPS.map((step, index) => (
+              <li key={step} className="wnf-flow__item">
+                <span className="wnf-flow__step">{step}</span>
+                {index < FLOW_STEPS.length - 1 ? (
+                  <span className="wnf-flow__arrow" aria-hidden>
+                    →
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+
+          <ol className="wnf-analytics__steps">
+            {ANALYTICS_STEPS.map((step) => (
+              <li key={step.num} className="wnf-analytics__step">
+                <span className="wnf-analytics__step-num" aria-hidden>
+                  {step.num}
+                </span>
+                <div>
+                  <h3 className="wnf-analytics__step-title">{step.title}</h3>
+                  <p className="wnf-analytics__step-text">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <div className="wnf-analytics__visual">
+            <MockAnalyticsReport />
+          </div>
+        </section>
 
         <div className="wnf-section-head">
           <p className="wnf-section-head__eyebrow">
