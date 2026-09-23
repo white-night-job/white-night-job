@@ -1,0 +1,226 @@
+/* White Night Job — /features (shop-facing intro, dark luxury, mobile-first) */
+
+.wn-features-page {
+  --wnf-gold: #c4a574;
+  --wnf-gold-mid: #d4bc8e;
+  --wnf-gold-light: #e8d5a3;
+  --wnf-cream: #faf7f2;
+  --wnf-bg0: #0c0a08;
+  --wnf-bg1: #16120e;
+  --wnf-bg2: #1f1912;
+  --wnf-card: rgba(32, 26, 18, 0.92);
+  --wnf-border: rgba(196, 165, 116, 0.38);
+  color: var(--wnf-cream);
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -10%, rgba(196, 165, 116, 0.16), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 30%, rgba(80, 55, 25, 0.35), transparent 50%),
+    linear-gradient(180deg, var(--wnf-bg0) 0%, var(--wnf-bg1) 42%, var(--wnf-bg2) 100%);
+  min-height: 100%;
+}
+
+.wn-features-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wnf-wrap {
+  width: min(100%, 42rem);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3.5rem;
+}
+
+.wnf-hero {
+  padding: 1.75rem 0 1.5rem;
+  text-align: center;
+}
+
+.wnf-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.85rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(232, 213, 163, 0.78);
+}
+
+.wnf-hero__line {
+  display: block;
+  width: 2.25rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 165, 116, 0.75), transparent);
+}
+
+.wnf-hero__title {
+  margin: 0;
+  font-family: var(--font-serif, ui-serif, Georgia, "Noto Serif JP", serif);
+  font-size: clamp(1.65rem, 6vw, 2.15rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  color: #faf7f2;
+}
+
+.wnf-hero__lead {
+  margin: 1rem auto 0;
+  max-width: 22rem;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+  color: rgba(250, 247, 242, 0.78);
+}
+
+.wnf-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wnf-card {
+  padding: 1.05rem 1rem 1.15rem;
+  border: 1px solid var(--wnf-border);
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%),
+    var(--wnf-card);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(232, 213, 163, 0.08);
+}
+
+.wnf-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.wnf-card__num {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.55);
+  background: linear-gradient(180deg, rgba(212, 188, 142, 0.22), rgba(80, 55, 25, 0.35));
+  font-family: var(--font-serif, ui-serif, Georgia, serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--wnf-gold-light);
+}
+
+.wnf-card__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(196, 165, 116, 0.35);
+  background: rgba(196, 165, 116, 0.1);
+  color: var(--wnf-gold-mid);
+}
+
+.wnf-card__title {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-serif, ui-serif, Georgia, "Noto Serif JP", serif);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  color: #faf7f2;
+}
+
+.wnf-card__text {
+  margin: 0.7rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: rgba(250, 247, 242, 0.74);
+}
+
+.wnf-note {
+  margin: 1.15rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(196, 165, 116, 0.28);
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: rgba(232, 213, 163, 0.82);
+  text-align: center;
+}
+
+.wnf-cta {
+  margin-top: 1.75rem;
+  text-align: center;
+}
+
+.wnf-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.15rem;
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.65);
+  background: linear-gradient(180deg, #f5ede0 0%, #e8dcc8 28%, #d9c59a 58%, #c9ad7a 100%);
+  color: #1a140e;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.wnf-cta__btn:active {
+  transform: scale(0.99);
+}
+
+.wnf-cta__sub {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: rgba(250, 247, 242, 0.55);
+}
+
+@media (min-width: 640px) {
+  .wnf-wrap {
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  .wnf-hero {
+    padding: 2.25rem 0 1.75rem;
+  }
+
+  .wnf-hero__lead {
+    max-width: 28rem;
+    font-size: 1rem;
+  }
+
+  .wnf-card {
+    padding: 1.25rem 1.25rem 1.35rem;
+  }
+
+  .wnf-card__title {
+    font-size: 1.125rem;
+  }
+
+  .wnf-card__text {
+    font-size: 0.9375rem;
+  }
+
+  .wnf-cta__btn {
+    width: auto;
+    min-width: 16rem;
+    padding-inline: 1.75rem;
+  }
+}
