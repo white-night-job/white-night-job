@@ -16,6 +16,7 @@ type Props = {
 
 type ConfirmState = {
   message: string;
+  lineUrl: string;
   copied: boolean;
   copyFailed: boolean;
 };
@@ -24,10 +25,6 @@ export function OnlineMeetingRequestForm({
   lineOfficialAccountId = ONLINE_MEETING_LINE_ACCOUNT_ID,
 }: Props) {
   const minDate = useMemo(() => getLocalDateInputMin(), []);
-  const lineChatUrl = useMemo(
-    () => buildOnlineMeetingLineChatUrl(lineOfficialAccountId),
-    [lineOfficialAccountId],
-  );
 
   const [shopName, setShopName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -153,15 +150,20 @@ export function OnlineMeetingRequestForm({
       consultation,
     });
 
+    const lineUrl = buildOnlineMeetingLineChatUrl(
+      message,
+      lineOfficialAccountId,
+    );
     const copied = await copyTextToClipboard(message);
     setConfirm({
       message,
+      lineUrl,
       copied,
       copyFailed: !copied,
     });
     setCopyFeedback(
       copied
-        ? "メッセージをコピーしました。下の案内に従ってLINEへ貼り付けてください。"
+        ? "メッセージをコピーしました。「LINEを開く」を押すと、対応環境では入力欄に反映されます。反映されない場合は貼り付けて送信してください。"
         : "自動コピーに失敗しました。下のメッセージから「文章をコピーする」を押してください。",
     );
   }
@@ -182,7 +184,8 @@ export function OnlineMeetingRequestForm({
   }
 
   function handleOpenLine() {
-    window.open(lineChatUrl, "_blank", "noopener,noreferrer");
+    if (!confirm) return;
+    window.open(confirm.lineUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleCloseConfirm() {
@@ -235,25 +238,27 @@ export function OnlineMeetingRequestForm({
               第1希望日<span className="wnm-form__req">必須</span>
             </label>
             <div className="wnm-form__control">
-              <input
-                key={`preferred-date-${preferredDateKey}`}
-                id="wnm-preferred-date"
-                name="preferredDate"
-                type="date"
-                required
-                min={minDate}
-                value={preferredDate}
-                onChange={(e) => {
-                  setPreferredDate(e.target.value);
-                  if (e.target.value) {
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      delete next.preferredDate;
-                      return next;
-                    });
-                  }
-                }}
-              />
+              <div className="wnm-form__control-input">
+                <input
+                  key={`preferred-date-${preferredDateKey}`}
+                  id="wnm-preferred-date"
+                  name="preferredDate"
+                  type="date"
+                  required
+                  min={minDate}
+                  value={preferredDate}
+                  onChange={(e) => {
+                    setPreferredDate(e.target.value);
+                    if (e.target.value) {
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.preferredDate;
+                        return next;
+                      });
+                    }
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="wnm-form__clear"
@@ -276,24 +281,26 @@ export function OnlineMeetingRequestForm({
               第1希望時間<span className="wnm-form__req">必須</span>
             </label>
             <div className="wnm-form__control">
-              <input
-                key={`preferred-time-${preferredTimeKey}`}
-                id="wnm-preferred-time"
-                name="preferredTime"
-                type="time"
-                required
-                value={preferredTime}
-                onChange={(e) => {
-                  setPreferredTime(e.target.value);
-                  if (e.target.value) {
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      delete next.preferredTime;
-                      return next;
-                    });
-                  }
-                }}
-              />
+              <div className="wnm-form__control-input">
+                <input
+                  key={`preferred-time-${preferredTimeKey}`}
+                  id="wnm-preferred-time"
+                  name="preferredTime"
+                  type="time"
+                  required
+                  value={preferredTime}
+                  onChange={(e) => {
+                    setPreferredTime(e.target.value);
+                    if (e.target.value) {
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.preferredTime;
+                        return next;
+                      });
+                    }
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="wnm-form__clear"
@@ -318,22 +325,24 @@ export function OnlineMeetingRequestForm({
               第2希望日<span className="wnm-form__opt">任意</span>
             </label>
             <div className="wnm-form__control">
-              <input
-                key={`second-date-${secondDateKey}`}
-                id="wnm-second-date"
-                name="secondDate"
-                type="date"
-                min={minDate}
-                value={secondDate}
-                onChange={(e) => {
-                  setSecondDate(e.target.value);
-                  setFieldErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.second;
-                    return next;
-                  });
-                }}
-              />
+              <div className="wnm-form__control-input">
+                <input
+                  key={`second-date-${secondDateKey}`}
+                  id="wnm-second-date"
+                  name="secondDate"
+                  type="date"
+                  min={minDate}
+                  value={secondDate}
+                  onChange={(e) => {
+                    setSecondDate(e.target.value);
+                    setFieldErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.second;
+                      return next;
+                    });
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="wnm-form__clear"
@@ -351,21 +360,23 @@ export function OnlineMeetingRequestForm({
               第2希望時間<span className="wnm-form__opt">任意</span>
             </label>
             <div className="wnm-form__control">
-              <input
-                key={`second-time-${secondTimeKey}`}
-                id="wnm-second-time"
-                name="secondTime"
-                type="time"
-                value={secondTime}
-                onChange={(e) => {
-                  setSecondTime(e.target.value);
-                  setFieldErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.second;
-                    return next;
-                  });
-                }}
-              />
+              <div className="wnm-form__control-input">
+                <input
+                  key={`second-time-${secondTimeKey}`}
+                  id="wnm-second-time"
+                  name="secondTime"
+                  type="time"
+                  value={secondTime}
+                  onChange={(e) => {
+                    setSecondTime(e.target.value);
+                    setFieldErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.second;
+                      return next;
+                    });
+                  }}
+                />
+              </div>
               <button
                 type="button"
                 className="wnm-form__clear"
@@ -442,9 +453,11 @@ export function OnlineMeetingRequestForm({
               送信用メッセージの確認
             </h3>
             <p className="wnm-confirm__lead">
-              LINEのトーク画面に貼り付けて送信してください。
+              「LINEを開く」を押すと、対応環境では申込内容が入力欄に入ります。
               <br />
-              LINEへ移動するだけでは申し込みは完了しません。
+              入らない場合は、下の文章をコピーしてトーク画面に貼り付けてください。
+              <br />
+              LINEの送信ボタンを押すまで申し込みは完了しません。
             </p>
 
             {copyFeedback ? (

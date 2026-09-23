@@ -45,16 +45,18 @@ export function buildOnlineMeetingLineMessage(
 }
 
 /**
- * Opens the official account talk / friend screen by Basic ID.
- * Message is not auto-sent — callers copy to clipboard and ask the user to paste.
+ * LINE oaMessage deep link — opens OA chat with text prefilled when supported.
+ * Format: https://line.me/R/oaMessage/%40id/?text={encoded message}
+ * Prefill is not guaranteed on every device; callers should also offer copy fallback.
  */
 export function buildOnlineMeetingLineChatUrl(
+  message: string,
   officialAccountId: string = ONLINE_MEETING_LINE_ACCOUNT_ID,
 ): string {
   const id = officialAccountId.startsWith("@")
     ? officialAccountId
     : `@${officialAccountId}`;
-  return `https://line.me/R/ti/p/${id}`;
+  return `https://line.me/R/oaMessage/${encodeURIComponent(id)}/?text=${encodeURIComponent(message)}`;
 }
 
 /** Today's date in local timezone as YYYY-MM-DD (for date input min). */
