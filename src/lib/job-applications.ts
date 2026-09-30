@@ -422,6 +422,7 @@ export async function recordJobApplication(
 
     await fetch(`/api/jobs/${jobId}/applications`, {
       method: "POST",
+      keepalive: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type,

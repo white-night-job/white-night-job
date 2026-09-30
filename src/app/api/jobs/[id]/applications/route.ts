@@ -1,5 +1,10 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getErrorMessage } from "@/lib/api-error";
+import {
+  claimApplyButtonNotification,
+  resolveApplyVisitorKey,
+  sendApplyButtonNotification,
+} from "@/lib/apply-button-notify";
 import {
   insertAnalyticsEvent,
   isInternalAnalyticsRequest,
@@ -61,6 +66,25 @@ export async function POST(request: Request, { params }: RouteContext) {
         type: body.type,
       });
       if (error) throw error;
+
+      const applicationType = body.type;
+      const pressedAt = new Date();
+      if (
+        claimApplyButtonNotification(
+          jobId,
+          applicationType,
+          resolveApplyVisitorKey(request, body.anonymousId),
+        )
+      ) {
+        after(() =>
+          sendApplyButtonNotification(
+            supabase,
+            jobId,
+            applicationType,
+            pressedAt,
+          ),
+        );
+      }
 
       try {
         await insertUserActivityEvent(supabase, {
