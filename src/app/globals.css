@@ -176,20 +176,16 @@
 
   .apply-cta-btn--line {
     color: #ffffff;
-    border: 1px solid #168a5b;
-    background: #168a5b;
-    box-shadow:
-      0 2px 8px rgba(17, 115, 75, 0.16),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border: 1px solid #2dbe60;
+    background: #2dbe60;
+    box-shadow: 0 2px 8px rgba(45, 190, 96, 0.18);
   }
 
   .apply-cta-btn--line:hover,
   .apply-cta-btn--line:active {
-    border-color: #11734b;
-    background: #11734b;
-    box-shadow:
-      0 3px 10px rgba(17, 115, 75, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: #25a854;
+    background: #25a854;
+    box-shadow: 0 3px 10px rgba(37, 168, 84, 0.22);
   }
 
   .apply-cta-btn--line .apply-cta-icon {
