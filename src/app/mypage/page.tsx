@@ -4,6 +4,7 @@ import { LineLoginButton } from "@/components/LineLoginButton";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { MyPageDiagnosisSection } from "@/components/mypage/MyPageDiagnosisSection";
 import { MyPageMenu } from "@/components/mypage/MyPageMenu";
+import { MyPagePreferredAreasSection } from "@/components/mypage/MyPagePreferredAreasSection";
 import { MyPageProfileCard } from "@/components/mypage/MyPageProfileCard";
 import { MyPageSalesStyleSection } from "@/components/mypage/MyPageSalesStyleSection";
 import { MyPageSearchHistorySection } from "@/components/mypage/MyPageSearchHistorySection";
@@ -52,6 +53,8 @@ export default function MyPage() {
   return (
     <div className="mx-auto max-w-lg px-4 py-5 sm:max-w-2xl sm:px-6 sm:py-8">
       <MyPageProfileCard />
+
+      <MyPagePreferredAreasSection />
 
       <MyPageMenu />
 

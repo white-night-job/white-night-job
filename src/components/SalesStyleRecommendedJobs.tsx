@@ -4,24 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { JobCard } from "@/components/JobCard";
 import { emptyJobFilters } from "@/lib/job-filters";
 import { fetchJobs } from "@/lib/job-storage";
+import { dedupeJobsByShop, formatPreferredAreaList } from "@/lib/preferred-areas";
+import { usePreferredAreas } from "@/lib/preferred-areas-client";
 import { SALES_STYLE_PROFILES, type SalesStyleType } from "@/lib/sales-style-diagnosis";
 import type { Job } from "@/types/job";
-
-/** API の並び（既存ランキング・プラン順位）を維持したまま、同一求人・同一店舗を除外する */
-function dedupeJobs(jobs: Job[]): Job[] {
-  const seenIds = new Set<string>();
-  const seenShops = new Set<string>();
-  const result: Job[] = [];
-  for (const job of jobs) {
-    if (seenIds.has(job.id)) continue;
-    const shopKey = job.shopName?.trim().toLowerCase();
-    if (shopKey && seenShops.has(shopKey)) continue;
-    seenIds.add(job.id);
-    if (shopKey) seenShops.add(shopKey);
-    result.push(job);
-  }
-  return result;
-}
 
 export function SalesStyleRecommendedJobs({
   type,
@@ -31,23 +17,27 @@ export function SalesStyleRecommendedJobs({
   sectionId: string;
 }) {
   const profile = SALES_STYLE_PROFILES[type];
+  const { areas, configured, ready: areasReady } = usePreferredAreas();
   const filters = useMemo(
     () => ({
       ...emptyJobFilters(),
       jobTypes: profile.jobTypes.map((jobType) => jobType.value),
+      districts: configured ? [...areas] : [],
     }),
-    [profile],
+    [profile, configured, areas],
   );
   const [jobs, setJobs] = useState<Job[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
+    if (!areasReady) return;
     let cancelled = false;
     setStatus("loading");
+    // API の並び（既存ランキング・プラン順位）を維持する
     fetchJobs(filters)
       .then((items) => {
         if (cancelled) return;
-        setJobs(dedupeJobs(items));
+        setJobs(dedupeJobsByShop(items));
         setStatus("ready");
       })
       .catch(() => {
@@ -56,7 +46,9 @@ export function SalesStyleRecommendedJobs({
     return () => {
       cancelled = true;
     };
-  }, [filters]);
+  }, [filters, areasReady]);
+
+  const jobTypeLabel = profile.jobTypes.map((jobType) => jobType.label).join("・");
 
   return (
     <section
@@ -68,8 +60,9 @@ export function SalesStyleRecommendedJobs({
         あなたに合う店舗
       </h3>
       <p className="job-diagnosis-section-lead">
-        相性の良い職種（{profile.jobTypes.map((jobType) => jobType.label).join("・")}
-        ）の掲載中求人です。
+        {configured
+          ? `希望エリア（${formatPreferredAreaList(areas)}）にある、相性の良い職種（${jobTypeLabel}）の掲載中求人です。`
+          : `相性の良い職種（${jobTypeLabel}）の掲載中求人です。`}
       </p>
 
       <div className="sales-style-shops-list">

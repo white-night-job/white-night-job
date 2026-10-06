@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCompare } from "@/components/CompareProvider";
 import { JobTypeDiagnosisSharePanel } from "@/components/JobTypeDiagnosisSharePanel";
 import { useUserSession } from "@/components/UserSessionProvider";
@@ -25,6 +25,7 @@ import { fetchJobs } from "@/lib/job-storage";
 import { startLiffLogin } from "@/lib/liff-auth-client";
 import { logLiffDebug, navigateToWebLineOAuth } from "@/lib/liff-login-intent";
 import { MEMBER_PATHS } from "@/lib/member-access";
+import { usePreferredAreas } from "@/lib/preferred-areas-client";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 
 function MedalCard({
@@ -165,10 +166,26 @@ export function JobTypeDiagnosisResults({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const {
+    areas: userPreferredAreas,
+    configured: hasUserPreferredAreas,
+    ready: preferredAreasReady,
+  } = usePreferredAreas();
+  // マイページの希望エリアが設定済みなら、おすすめ店舗の表示エリアとして使う（保存する回答は変更しない）
+  const recommendationAnswers = useMemo<DiagnosisAnswers>(
+    () =>
+      hasUserPreferredAreas
+        ? { ...answers, preferredAreas: [...userPreferredAreas] }
+        : answers,
+    [answers, hasUserPreferredAreas, userPreferredAreas],
+  );
+
   const socialProof = getSocialProofApplyRate(result.topTwo[0].jobType);
   const primaryJobsUrl = buildDiagnosisJobsUrl(result.topTwo[0].jobType);
   const trialJobsUrl = buildDiagnosisTrialJobsUrl(result.topTwo[0].jobType);
-  const preferredAreasLabel = formatPreferredAreasLabel(answers.preferredAreas);
+  const preferredAreasLabel = formatPreferredAreasLabel(
+    recommendationAnswers.preferredAreas,
+  );
 
   function goCompareRecommended() {
     const ids = recommendedShops.map((shop) => shop.jobId).slice(0, 3);
@@ -181,6 +198,7 @@ export function JobTypeDiagnosisResults({
   }
 
   useEffect(() => {
+    if (!preferredAreasReady) return;
     let cancelled = false;
     setLoadingShops(true);
 
@@ -188,7 +206,7 @@ export function JobTypeDiagnosisResults({
       .then((jobs) => {
         if (cancelled) return;
         setRecommendedShops(
-          pickRecommendedDiagnosisShops(jobs, result, answers, 10),
+          pickRecommendedDiagnosisShops(jobs, result, recommendationAnswers, 10),
         );
       })
       .finally(() => {
@@ -198,7 +216,7 @@ export function JobTypeDiagnosisResults({
     return () => {
       cancelled = true;
     };
-  }, [result, answers]);
+  }, [result, recommendationAnswers, preferredAreasReady]);
 
   useEffect(() => {
     if (!isLoggedIn || !ready) {

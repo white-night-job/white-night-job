@@ -4010,6 +4010,22 @@
   margin-top: 0.875rem;
 }
 
+.listing-panel-area-note {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  max-width: 100%;
+  margin: -0.25rem auto 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(196, 165, 116, 0.45);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8b6f3e;
+  text-align: center;
+}
+
 .sales-style-result-catch {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;

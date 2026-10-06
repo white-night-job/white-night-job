@@ -1,11 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchListingJobs,
   getCachedListingJobs,
   JOBS_UPDATED_EVENT,
 } from "@/lib/job-storage";
+import {
+  dedupeJobsByShop,
+  filterJobsByPreferredAreas,
+  formatPreferredAreaList,
+} from "@/lib/preferred-areas";
+import { usePreferredAreas } from "@/lib/preferred-areas-client";
 import type { Job } from "@/types/job";
 import { CompactJobCard } from "./CompactJobCard";
 
@@ -55,6 +61,21 @@ export function JobListingCarousel({
   const [ready, setReady] = useState(() => cached != null);
   const [error, setError] = useState("");
   const meta = LISTING_META[kind];
+  const {
+    userId,
+    areas: preferredAreas,
+    configured,
+    ready: areasReady,
+  } = usePreferredAreas();
+  const waitingAreas = userId !== null && !areasReady;
+  // 既存の対象店舗・並び順を決めた後に、希望エリアで絞り込む（ランキングは変えない）
+  const visibleJobs = useMemo(
+    () =>
+      configured
+        ? dedupeJobsByShop(filterJobsByPreferredAreas(jobs, preferredAreas))
+        : jobs,
+    [configured, jobs, preferredAreas],
+  );
 
   const load = useCallback((options?: { showSkeleton?: boolean }) => {
     if (options?.showSkeleton && getCachedListingJobs(kind) == null) {
@@ -94,7 +115,13 @@ export function JobListingCarousel({
         <span className="listing-heading-line" aria-hidden />
       </h2>
 
-      {!ready ? (
+      {configured ? (
+        <p className="listing-panel-area-note">
+          希望エリア：{formatPreferredAreaList(preferredAreas)}
+        </p>
+      ) : null}
+
+      {!ready || waitingAreas ? (
         <div className="listing-carousel">
           <div className="listing-carousel-track">
             <div className="listing-carousel-grid">
@@ -108,9 +135,11 @@ export function JobListingCarousel({
         <div className="listing-panel-message listing-panel-message-error">
           {error}
         </div>
-      ) : jobs.length === 0 ? (
+      ) : visibleJobs.length === 0 ? (
         <div className="listing-panel-message">
-          現在表示できる店舗がありません。
+          {configured
+            ? "希望エリアに該当する店舗は現在ありません。"
+            : "現在表示できる店舗がありません。"}
         </div>
       ) : (
         <div className="listing-carousel">
@@ -118,7 +147,7 @@ export function JobListingCarousel({
           <div className="listing-carousel-fade listing-carousel-fade-right" aria-hidden />
           <div className="listing-carousel-track">
             <div className="listing-carousel-grid">
-              {jobs.map((job) => (
+              {visibleJobs.map((job) => (
                 <div key={job.id} className="listing-carousel-item snap-start">
                   <CompactJobCard job={job} theme="premium" badge={meta.badge} />
                 </div>
