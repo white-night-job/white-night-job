@@ -48,7 +48,7 @@ export function resolveApplyVisitorKey(
   return "unknown";
 }
 
-function formatJstDateTime(date: Date): string {
+export function formatJstDateTime(date: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Tokyo",
     year: "numeric",

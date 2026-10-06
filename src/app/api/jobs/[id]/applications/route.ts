@@ -15,6 +15,7 @@ import {
   insertUserActivityEvent,
   type UserActivityAttribution,
 } from "@/lib/user-activity-events";
+import { sendShopApplyLineNotification } from "@/lib/shop-line-link";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 type RouteContext = {
@@ -78,6 +79,14 @@ export async function POST(request: Request, { params }: RouteContext) {
       ) {
         after(() =>
           sendApplyButtonNotification(
+            supabase,
+            jobId,
+            applicationType,
+            pressedAt,
+          ),
+        );
+        after(() =>
+          sendShopApplyLineNotification(
             supabase,
             jobId,
             applicationType,

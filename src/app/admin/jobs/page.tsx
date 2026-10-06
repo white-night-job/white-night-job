@@ -5,6 +5,7 @@ import { ImageUploadSizeHint } from "@/components/ImageUploadSizeHint";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminUnsavedChanges } from "@/components/admin/AdminUnsavedChanges";
+import { AdminShopLineNotifySettings } from "@/components/admin/AdminShopLineNotifySettings";
 import { useScrollToTopAfterChange } from "@/hooks/useScrollToTopAfterChange";
 import { useAuthSessionGuard } from "@/hooks/useAuthSessionGuard";
 import {
@@ -3643,6 +3644,8 @@ function AdminJobsPageInner() {
             </div>
           </div>
         </div>
+
+        {editingId ? <AdminShopLineNotifySettings jobId={editingId} /> : null}
 
         <div className="flex flex-wrap gap-3 border-t border-gold/15 pt-4">
           {!(editingId && editingListingStatus === "published") ? (

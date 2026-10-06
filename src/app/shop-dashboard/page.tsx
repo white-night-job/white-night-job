@@ -54,6 +54,7 @@ import {
 } from "@/types/job";
 import { formatDistrictLabel } from "@/data/districts";
 import { ShopGirlReviewsManager } from "@/components/ShopGirlReviewsManager";
+import { ShopLineNotifyStatus } from "@/components/ShopLineNotifyStatus";
 import {
   getPlanDefinition,
   getPlanFeatures,
@@ -1815,6 +1816,8 @@ export default function ShopDashboardPage() {
           )}
         </dl>
       </section>
+
+      <ShopLineNotifyStatus />
 
       <section className="mb-8 rounded-2xl border border-gold/30 bg-gradient-to-br from-charcoal via-[#1f1a12] to-[#2d2618] p-5 shadow-gold sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
