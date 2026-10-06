@@ -1,7 +1,10 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { recordLineContactEvent } from "@/lib/shop-line-link";
-import { verifyStoreLineSignature } from "@/lib/store-line-messaging";
+import {
+  describeStoreLineChannelSecret,
+  verifyStoreLineSignature,
+} from "@/lib/store-line-messaging";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -30,19 +33,30 @@ export async function GET() {
 export async function POST(request: Request) {
   const signature = request.headers.get("x-line-signature");
   const rawBody = await request.text();
+  const diagnostics = {
+    ...describeStoreLineChannelSecret(),
+    hasGirlsSecret: Boolean(process.env.LINE_MESSAGING_CHANNEL_SECRET),
+    hasSignatureHeader: Boolean(signature),
+    bodyLength: rawBody.length,
+    vercelEnv: process.env.VERCEL_ENV ?? null,
+    commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+  };
+
   if (!signature) {
+    console.warn("[webhook/line] verify route=no_signature -> 401", diagnostics);
     return NextResponse.json({ message: "Invalid signature" }, { status: 401 });
   }
 
   if (!verifyStoreLineSignature(rawBody, signature)) {
     if (verifyGirlsLineSignature(rawBody, signature)) {
+      console.info("[webhook/line] verify route=girls -> 200 (no-op)", diagnostics);
       return NextResponse.json({ ok: true });
     }
-    console.warn("[webhook/line] signature mismatch", {
-      hasStoreSecret: Boolean(process.env.STORE_LINE_MESSAGING_CHANNEL_SECRET?.trim()),
-    });
+    console.warn("[webhook/line] verify route=mismatch -> 401", diagnostics);
     return NextResponse.json({ message: "Invalid signature" }, { status: 401 });
   }
+
+  console.info("[webhook/line] verify route=store -> 200", diagnostics);
 
   try {
     const payload = JSON.parse(rawBody) as { events?: LineWebhookEvent[] };

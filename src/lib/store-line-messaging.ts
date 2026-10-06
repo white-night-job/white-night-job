@@ -18,6 +18,18 @@ export function hasStoreLineChannelSecret(): boolean {
   return Boolean(getStoreLineChannelSecret());
 }
 
+/** Diagnostics only — never includes the secret value itself. */
+export function describeStoreLineChannelSecret(): {
+  hasStoreSecret: boolean;
+  storeSecretLooksValid: boolean;
+} {
+  const secret = getStoreLineChannelSecret();
+  return {
+    hasStoreSecret: Boolean(secret),
+    storeSecretLooksValid: Boolean(secret && /^[0-9a-f]{32}$/i.test(secret)),
+  };
+}
+
 export function hasStoreLineChannelAccessToken(): boolean {
   return Boolean(getStoreLineChannelAccessToken());
 }
