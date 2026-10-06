@@ -3990,6 +3990,26 @@
   width: auto;
 }
 
+.job-diagnosis-option.sales-style-option-selected {
+  border-color: rgba(196, 165, 116, 0.85);
+  background: rgba(196, 165, 116, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(196, 165, 116, 0.45);
+}
+
+.sales-style-back-btn {
+  width: 100%;
+  margin-top: 0.875rem;
+}
+
+.sales-style-shops-section {
+  margin-top: 1.25rem;
+  scroll-margin-top: 5rem;
+}
+
+.sales-style-shops-list {
+  margin-top: 0.875rem;
+}
+
 .sales-style-result-catch {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;

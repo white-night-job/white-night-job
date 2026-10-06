@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { SalesStyleRecommendedJobs } from "@/components/SalesStyleRecommendedJobs";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { startLiffLogin } from "@/lib/liff-auth-client";
 import { logLiffDebug, navigateToWebLineOAuth } from "@/lib/liff-login-intent";
 import { MEMBER_PATHS } from "@/lib/member-access";
 import {
-  buildSalesStyleJobsUrl,
   SALES_STYLE_PROFILES,
   type SalesStyleAnswers,
   type SalesStyleResult,
@@ -33,8 +32,6 @@ export function SalesStyleDiagnosisResults({
 
   const main = SALES_STYLE_PROFILES[result.mainType];
   const sub = result.subType ? SALES_STYLE_PROFILES[result.subType] : null;
-  const jobsUrl = buildSalesStyleJobsUrl(result.mainType);
-
   async function saveToMyPage() {
     if (!isLoggedIn) {
       const redirect = MEMBER_PATHS.salesStyleDiagnosis;
@@ -145,6 +142,8 @@ export function SalesStyleDiagnosisResults({
         </article>
       ) : null}
 
+      <SalesStyleRecommendedJobs type={result.mainType} sectionId="sales-style-shops" />
+
       <div className="job-diagnosis-actions">
         <button
           type="button"
@@ -167,10 +166,6 @@ export function SalesStyleDiagnosisResults({
           もう一度診断する
         </button>
       </div>
-
-      <Link href={jobsUrl} className="job-diagnosis-primary-cta">
-        この営業スタイルに合う求人を見る
-      </Link>
     </div>
   );
 }

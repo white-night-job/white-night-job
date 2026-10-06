@@ -333,12 +333,3 @@ export function calculateSalesStyleResult(
     diagnosedAt: new Date().toISOString(),
   };
 }
-
-/** 店舗側に営業スタイル属性はないため、相性の良い職種で求人一覧へ絞り込む */
-export function buildSalesStyleJobsUrl(type: SalesStyleType): string {
-  const params = new URLSearchParams();
-  for (const jobType of SALES_STYLE_PROFILES[type].jobTypes) {
-    params.append("jobType", jobType.value);
-  }
-  return `/jobs?${params.toString()}`;
-}

@@ -58,6 +58,11 @@ export function SalesStyleDiagnosis({ authenticated = false }: SalesStyleDiagnos
     }, 450);
   }
 
+  function goBack() {
+    if (phase !== "questions" || step === 0) return;
+    setStep(step - 1);
+  }
+
   function reset() {
     setStep(0);
     setAnswers({});
@@ -125,17 +130,32 @@ export function SalesStyleDiagnosis({ authenticated = false }: SalesStyleDiagnos
                 </p>
                 <p className="job-diagnosis-question font-serif">{current.title}</p>
                 <div className="job-diagnosis-options">
-                  {current.options.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleSelect(option.value)}
-                      className="job-diagnosis-option"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {current.options.map((option) => {
+                    const selected = answers[current.id] === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleSelect(option.value)}
+                        className={`job-diagnosis-option${
+                          selected ? " sales-style-option-selected" : ""
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
+                {step > 0 ? (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className="job-diagnosis-secondary-btn sales-style-back-btn"
+                  >
+                    1つ前の質問に戻る
+                  </button>
+                ) : null}
               </div>
             )}
 
