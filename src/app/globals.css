@@ -176,28 +176,20 @@
 
   .apply-cta-btn--line {
     color: #ffffff;
-    border: 1px solid rgba(24, 146, 79, 0.55);
-    background: linear-gradient(
-      180deg,
-      #2bb673 0%,
-      #1fa35a 48%,
-      #18924f 100%
-    );
+    border: 1px solid #168a5b;
+    background: #168a5b;
     box-shadow:
-      0 3px 12px rgba(24, 120, 70, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      0 2px 8px rgba(17, 115, 75, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
-  .apply-cta-btn--line:hover {
-    background: linear-gradient(
-      180deg,
-      #36c47e 0%,
-      #26b066 48%,
-      #1c9d57 100%
-    );
+  .apply-cta-btn--line:hover,
+  .apply-cta-btn--line:active {
+    border-color: #11734b;
+    background: #11734b;
     box-shadow:
-      0 5px 18px rgba(24, 120, 70, 0.32),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      0 3px 10px rgba(17, 115, 75, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .apply-cta-btn--line .apply-cta-icon {
