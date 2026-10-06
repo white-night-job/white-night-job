@@ -3,6 +3,7 @@ import { buildWebLineLoginHref } from "@/lib/liff-login-intent";
 export const MEMBER_PATHS = {
   consultation: "/consultation",
   diagnosis: "/diagnosis",
+  salesStyleDiagnosis: "/sales-style-diagnosis",
 } as const;
 
 /**

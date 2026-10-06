@@ -195,7 +195,7 @@ function ChatDecor() {
 export function TopSearchFollowCtas() {
   const router = useRouter();
   const { isLoggedIn, ready } = useUserSession();
-  const [gate, setGate] = useState<"ai" | "diagnosis" | null>(null);
+  const [gate, setGate] = useState<"ai" | "diagnosis" | "salesStyle" | null>(null);
 
   function handleDiagnosis() {
     if (!ready) return;
@@ -204,6 +204,15 @@ export function TopSearchFollowCtas() {
       return;
     }
     setGate("diagnosis");
+  }
+
+  function handleSalesStyleDiagnosis() {
+    if (!ready) return;
+    if (isLoggedIn) {
+      router.push(MEMBER_PATHS.salesStyleDiagnosis);
+      return;
+    }
+    setGate("salesStyle");
   }
 
   function handleAiChat() {
@@ -273,6 +282,34 @@ export function TopSearchFollowCtas() {
             </svg>
           </span>
         </button>
+
+        <button
+          type="button"
+          onClick={handleSalesStyleDiagnosis}
+          className="top-search-cta top-search-cta--diagnosis top-search-cta--sales-style"
+        >
+          <span className="top-search-cta-decor" aria-hidden>
+            <span className="top-search-cta-decor-glow" />
+            <span className="top-search-cta-spark top-search-cta-spark--a" />
+            <span className="top-search-cta-spark top-search-cta-spark--b" />
+          </span>
+          <span className="top-search-cta-content">
+            <span className="top-search-cta-title">
+              <span className="top-search-cta-title-line">自分に合う営業スタイル診断</span>
+            </span>
+            <span className="top-search-cta-badge">無料</span>
+          </span>
+          <span className="top-search-cta-chevron" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M9 6l6 6-6 6"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
       </div>
 
       <MemberGateModal
@@ -289,6 +326,14 @@ export function TopSearchFollowCtas() {
         title="職種診断はLINEログイン後に利用できます"
         description="診断結果を保存して、あなたに合う職種や求人をいつでも確認できます。"
         redirectPath={MEMBER_PATHS.diagnosis}
+        action="diagnosis"
+      />
+      <MemberGateModal
+        open={gate === "salesStyle"}
+        onClose={() => setGate(null)}
+        title="営業スタイル診断はLINEログイン後に利用できます"
+        description="診断結果を保存して、マイページでいつでも確認できます。"
+        redirectPath={MEMBER_PATHS.salesStyleDiagnosis}
         action="diagnosis"
       />
     </section>

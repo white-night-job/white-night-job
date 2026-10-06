@@ -5,14 +5,16 @@ import { useUserSession } from "@/components/UserSessionProvider";
 import { MyPageDiagnosisSection } from "@/components/mypage/MyPageDiagnosisSection";
 import { MyPageMenu } from "@/components/mypage/MyPageMenu";
 import { MyPageProfileCard } from "@/components/mypage/MyPageProfileCard";
+import { MyPageSalesStyleSection } from "@/components/mypage/MyPageSalesStyleSection";
 import { MyPageSearchHistorySection } from "@/components/mypage/MyPageSearchHistorySection";
 import { useCallback, useState } from "react";
 
-type SectionKey = "search" | "diagnosis";
+type SectionKey = "search" | "diagnosis" | "salesStyle";
 
 const INITIAL_OPEN: Record<SectionKey, boolean> = {
   search: false,
   diagnosis: false,
+  salesStyle: false,
 };
 
 export default function MyPage() {
@@ -61,6 +63,10 @@ export default function MyPage() {
         <MyPageDiagnosisSection
           open={openSections.diagnosis}
           onToggle={() => toggleSection("diagnosis")}
+        />
+        <MyPageSalesStyleSection
+          open={openSections.salesStyle}
+          onToggle={() => toggleSection("salesStyle")}
         />
       </div>
     </div>

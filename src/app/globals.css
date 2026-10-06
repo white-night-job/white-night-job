@@ -3972,6 +3972,32 @@
   }
 }
 
+.top-search-cta.top-search-cta--sales-style {
+  grid-column: 1 / -1;
+  min-height: 4.5rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.top-search-cta--sales-style .top-search-cta-content {
+  flex-direction: row;
+  flex-wrap: wrap;
+  min-height: 0;
+  gap: 0.35rem 0.6rem;
+}
+
+.top-search-cta--sales-style .top-search-cta-title {
+  width: auto;
+}
+
+.sales-style-result-catch {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #8b6f3e;
+}
+
 .top-mid-band-line-wrap {
   width: 100%;
   max-width: 42rem;

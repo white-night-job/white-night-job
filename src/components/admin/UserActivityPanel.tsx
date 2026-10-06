@@ -14,6 +14,7 @@ type Summary = {
   lineClicks: MetricAvailability;
   phoneClicks: MetricAvailability;
   diagnosisUses: MetricAvailability;
+  salesStyleDiagnosisUses: MetricAvailability;
   aiChatUses: MetricAvailability;
   blackReports: MetricAvailability;
 };
@@ -46,6 +47,7 @@ const SUMMARY_CARDS: Array<{
   { key: "lineClicks", label: "LINE応募クリック数" },
   { key: "phoneClicks", label: "電話応募クリック数" },
   { key: "diagnosisUses", label: "職種診断の利用回数" },
+  { key: "salesStyleDiagnosisUses", label: "営業スタイル診断の利用回数" },
   { key: "aiChatUses", label: "AI相談の利用回数" },
   { key: "blackReports", label: "ブラック店報告の件数" },
 ];

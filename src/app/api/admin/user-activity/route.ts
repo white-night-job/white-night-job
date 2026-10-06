@@ -9,6 +9,7 @@ import {
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
 import { JOB_DIAGNOSIS_COMPLETED } from "@/lib/job-diagnosis-events";
+import { isSalesStyleTableMissing } from "@/lib/sales-style-diagnosis-events";
 import { isUserActivityTableMissing } from "@/lib/user-activity-events";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
       lineCountResult,
       phoneCountResult,
       diagnosisCountResult,
+      salesStyleCountResult,
       reportsCountResult,
       allViewsResult,
       allAppsResult,
@@ -75,6 +77,11 @@ export async function GET(request: Request) {
         .from("job_diagnosis_events")
         .select("id", { count: "exact", head: true })
         .eq("event_type", JOB_DIAGNOSIS_COMPLETED)
+        .gte("occurred_at", startIso)
+        .lt("occurred_at", endIso),
+      supabase
+        .from("sales_style_diagnosis_events")
+        .select("id", { count: "exact", head: true })
         .gte("occurred_at", startIso)
         .lt("occurred_at", endIso),
       supabase
@@ -115,6 +122,11 @@ export async function GET(request: Request) {
       );
     if (diagnosisCountResult.error && !diagnosisTableMissing) {
       throw diagnosisCountResult.error;
+    }
+
+    const salesStyleTableMissing = isSalesStyleTableMissing(salesStyleCountResult.error);
+    if (salesStyleCountResult.error && !salesStyleTableMissing) {
+      throw salesStyleCountResult.error;
     }
 
     const allViews = allViewsResult.data ?? [];
@@ -202,6 +214,14 @@ export async function GET(request: Request) {
           : availableMetric(
               diagnosisCountResult.count ?? 0,
               "職種診断を最後まで利用し、結果が表示された回数",
+            ),
+        salesStyleDiagnosisUses: salesStyleTableMissing
+          ? unavailableMetric(
+              "営業スタイル診断の集計準備中です（マイグレーション後に反映）",
+            )
+          : availableMetric(
+              salesStyleCountResult.count ?? 0,
+              "営業スタイル診断を最後まで回答し、結果が表示された回数",
             ),
         aiChatUses: unavailableMetric("現在取得していません"),
         blackReports: availableMetric(reportsCountResult.count ?? 0),
