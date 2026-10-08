@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { useUserSession } from "@/components/UserSessionProvider";
 import { MEMBER_PATHS } from "@/lib/member-access";
@@ -96,8 +96,84 @@ function Phrases({ parts }: { parts: string[] }) {
   );
 }
 
+type Petal = {
+  x: number;
+  y: number;
+  size: number;
+  rotate: number;
+  opacity: number;
+  tone: 0 | 1 | 2;
+  blur?: boolean;
+  /** ゆっくり漂わせる（秒） */
+  drift?: number;
+  /** スマホでは非表示 */
+  desktopOnly?: boolean;
+};
+
+const PETAL_TONES = ["#f2c4cf", "#e8b3c0", "#f8e3e8"] as const;
+
+/** 位置は % 指定。カード周囲に偏らせて自然に散らす */
+const PETALS: Petal[] = [
+  { x: 3, y: 4, size: 14, rotate: -28, opacity: 0.4, tone: 0, drift: 12 },
+  { x: 9, y: 13, size: 8, rotate: 42, opacity: 0.3, tone: 2 },
+  { x: 15, y: 2, size: 11, rotate: 110, opacity: 0.22, tone: 1, blur: true },
+  { x: 1, y: 30, size: 7, rotate: 160, opacity: 0.25, tone: 0, desktopOnly: true },
+  { x: 24, y: 9, size: 6, rotate: -70, opacity: 0.2, tone: 1, desktopOnly: true },
+  { x: 82, y: 3, size: 12, rotate: 24, opacity: 0.35, tone: 0, drift: 14 },
+  { x: 91, y: 10, size: 16, rotate: -48, opacity: 0.28, tone: 2, blur: true },
+  { x: 96, y: 26, size: 8, rotate: 82, opacity: 0.32, tone: 1 },
+  { x: 74, y: 12, size: 7, rotate: 150, opacity: 0.2, tone: 0, desktopOnly: true },
+  { x: 49, y: 56, size: 9, rotate: 36, opacity: 0.3, tone: 0, drift: 11 },
+  { x: 52, y: 64, size: 6, rotate: -120, opacity: 0.22, tone: 2, desktopOnly: true },
+  { x: 2, y: 62, size: 10, rotate: 64, opacity: 0.26, tone: 1 },
+  { x: 97, y: 52, size: 9, rotate: -15, opacity: 0.24, tone: 0, desktopOnly: true },
+  { x: 4, y: 86, size: 13, rotate: -95, opacity: 0.32, tone: 0, drift: 13 },
+  { x: 12, y: 95, size: 7, rotate: 30, opacity: 0.22, tone: 2 },
+  { x: 30, y: 97, size: 9, rotate: 140, opacity: 0.18, tone: 1, blur: true, desktopOnly: true },
+  { x: 70, y: 96, size: 8, rotate: -40, opacity: 0.2, tone: 0, desktopOnly: true },
+  { x: 86, y: 90, size: 15, rotate: 58, opacity: 0.3, tone: 1, drift: 15 },
+  { x: 95, y: 80, size: 9, rotate: -130, opacity: 0.28, tone: 2 },
+  { x: 62, y: 1, size: 6, rotate: 12, opacity: 0.18, tone: 1, desktopOnly: true },
+];
+
+function PetalLayer() {
+  return (
+    <span className="tc-petals" aria-hidden>
+      {PETALS.map((petal, index) => (
+        <span
+          key={index}
+          className={`tc-petal${petal.drift ? " tc-petal--drift" : ""}${
+            petal.desktopOnly ? " tc-petal--desktop" : ""
+          }`}
+          style={
+            {
+              left: `${petal.x}%`,
+              top: `${petal.y}%`,
+              width: `${petal.size}px`,
+              height: `${Math.round(petal.size * 1.35)}px`,
+              opacity: petal.opacity,
+              color: PETAL_TONES[petal.tone],
+              filter: petal.blur ? "blur(1px)" : undefined,
+              "--tc-drift": petal.drift ? `${petal.drift}s` : undefined,
+              "--tc-delay": `${-(index % 5) * 2}s`,
+            } as CSSProperties
+          }
+        >
+          <svg viewBox="0 0 20 27" style={{ transform: `rotate(${petal.rotate}deg)` }}>
+            <path
+              d="M10 26.5C4 22 1.2 15 2.8 9C4 4.5 7 2 9 1.6L10 4.2L11 1.6C13 2 16 4.5 17.2 9C18.8 15 16 22 10 26.5Z"
+              fill="currentColor"
+            />
+          </svg>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 type CareCardProps = {
   variant: "job" | "ai" | "style";
+  wide?: boolean;
   ribbon: string;
   title: string[];
   sub: string[];
@@ -106,9 +182,13 @@ type CareCardProps = {
   onClick: () => void;
 };
 
-function CareCard({ variant, ribbon, title, sub, badges, art, onClick }: CareCardProps) {
+function CareCard({ variant, wide = false, ribbon, title, sub, badges, art, onClick }: CareCardProps) {
   return (
-    <button type="button" onClick={onClick} className={`tc-card tc-card--${variant}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`tc-card tc-card--${variant} ${wide ? "tc-card--wide" : "tc-card--half"}`}
+    >
       <span className="tc-art">{art}</span>
       <span className="tc-body">
         <span className="tc-ribbon">{ribbon}</span>
@@ -169,6 +249,7 @@ export function TopSearchFollowCtas() {
 
   return (
     <section className="tc-section" aria-labelledby="tc-heading">
+      <PetalLayer />
       <div className="tc-head">
         <p className="tc-eyebrow font-serif">SUPPORT</p>
         <div className="tc-heading-row">
@@ -181,6 +262,16 @@ export function TopSearchFollowCtas() {
       </div>
       <div className="tc-grid">
         <CareCard
+          variant="ai"
+          wide
+          ribbon="初めての方へ"
+          title={["不安なことを", "AIに相談"]}
+          sub={["夜職が初めてでも、", "気になることを", "すぐ聞ける"]}
+          badges={["24時間対応", "匿名OK"]}
+          art={<AiChatIcon />}
+          onClick={handleAiChat}
+        />
+        <CareCard
           variant="job"
           ribbon="おすすめ"
           title={["あなたに合う", "お仕事診断"]}
@@ -188,15 +279,6 @@ export function TopSearchFollowCtas() {
           badges={["無料", "1分で診断"]}
           art={<JobDiagnosisIcon />}
           onClick={handleDiagnosis}
-        />
-        <CareCard
-          variant="ai"
-          ribbon="初めての方へ"
-          title={["不安なことを", "AIに相談"]}
-          sub={["夜職が初めてでも、", "気になることを", "すぐ聞ける"]}
-          badges={["24時間対応", "匿名OK"]}
-          art={<AiChatIcon />}
-          onClick={handleAiChat}
         />
         <CareCard
           variant="style"

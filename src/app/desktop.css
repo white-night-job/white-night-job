@@ -733,8 +733,8 @@
   }
 
   .tc-section {
-    max-width: min(960px, 94vw);
-    margin: 1.15rem auto 0.7rem;
+    max-width: min(880px, 94vw);
+    margin: 0.8rem auto 0.3rem;
   }
 
   .tc-grid {
