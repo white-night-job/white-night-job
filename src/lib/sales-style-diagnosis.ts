@@ -1,5 +1,3 @@
-import type { JobType } from "@/types/job";
-
 export const SALES_STYLE_TYPES = [
   "entertainer",
   "healer",
@@ -10,103 +8,11 @@ export const SALES_STYLE_TYPES = [
 
 export type SalesStyleType = (typeof SALES_STYLE_TYPES)[number];
 
-export type SalesStyleProfile = {
-  type: SalesStyleType;
-  name: string;
-  catchCopy: string;
-  feature: string;
-  services: string[];
-  weaknesses: string[];
-  workStyle: string;
-  jobTypes: Array<{ label: string; value: JobType }>;
-};
-
-export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
-  entertainer: {
-    type: "entertainer",
-    name: "盛り上げ・エンタメ型",
-    catchCopy: "その場をパッと明るくする、みんなのムードメーカー",
-    feature:
-      "明るさ・リアクション・テンポの良い会話が強み。場の空気を動かしやすく、初対面でも印象を残しやすいタイプ。",
-    services: ["盛り上げ役", "団体客対応", "ノリの良い会話", "テンポ重視の接客"],
-    weaknesses: [
-      "静かな相手への接客",
-      "テンションを維持しすぎて疲れる",
-      "相手の話を聞く時間が短くなりやすい",
-    ],
-    workStyle: "自分の明るさを活かせる、にぎやかな店舗やフリー客が多い環境。",
-    jobTypes: [
-      { label: "ガールズバー", value: "ガールズバー" },
-      { label: "コンカフェ", value: "コンカフェ" },
-      { label: "ニュークラブ", value: "ニュークラ" },
-    ],
-  },
-  healer: {
-    type: "healer",
-    name: "聞き上手・癒し型",
-    catchCopy: "そばにいるだけで安心される、癒しの存在",
-    feature:
-      "相手の話を聞いて安心感を与えるのが得意。無理に盛り上げなくても、居心地の良さでリピートにつなげやすいタイプ。",
-    services: ["1対1の会話", "相談を聞く", "常連づくり", "落ち着いた接客"],
-    weaknesses: ["強引な営業", "大人数での盛り上げ", "短時間で強い印象を残す接客"],
-    workStyle: "常連客を少しずつ増やし、長く通ってもらうスタイル。",
-    jobTypes: [
-      { label: "スナック", value: "スナック" },
-      { label: "ラウンジ", value: "ラウンジ" },
-      { label: "ガールズバー", value: "ガールズバー" },
-    ],
-  },
-  romance: {
-    type: "romance",
-    name: "距離感近め・恋人営業型",
-    catchCopy: "距離を縮めて、特別な関係を築ける人",
-    feature:
-      "マメな連絡や距離の縮め方が得意。お客様との関係性を深めて、指名・リピートにつなげやすいタイプ。",
-    services: ["LINE営業", "指名づくり", "リピート促進", "距離感の近い接客"],
-    weaknesses: ["距離を縮めすぎる", "連絡頻度が負担になる", "相手に期待を持たせすぎる"],
-    workStyle: "固定客や指名制度があり、継続的な関係づくりが売上につながる環境。",
-    jobTypes: [
-      { label: "ニュークラブ", value: "ニュークラ" },
-      { label: "ラウンジ", value: "ラウンジ" },
-      { label: "ガールズバー", value: "ガールズバー" },
-    ],
-  },
-  elegant: {
-    type: "elegant",
-    name: "上品・落ち着き型",
-    catchCopy: "品の良さと落ち着きで、信頼される大人の接客",
-    feature:
-      "丁寧な言葉遣いや落ち着いた雰囲気が強み。ガツガツした営業をしなくても、品の良さや安心感で評価されやすいタイプ。",
-    services: ["落ち着いた会話", "丁寧な接客", "年上のお客様対応", "高単価客への接客"],
-    weaknesses: ["大騒ぎする接客", "強い営業", "テンション重視の店舗"],
-    workStyle: "接客の丁寧さや雰囲気を評価してもらえる店舗。",
-    jobTypes: [
-      { label: "ラウンジ", value: "ラウンジ" },
-      { label: "ニュークラブ", value: "ニュークラ" },
-      { label: "スナック", value: "スナック" },
-    ],
-  },
-  natural: {
-    type: "natural",
-    name: "マイペース・自然体型",
-    catchCopy: "飾らない自分らしさで、自然と好かれる人",
-    feature:
-      "無理にキャラを作らず、自分らしく接客できるタイプ。営業感を出さずに親しみやすさで関係を作りやすい。",
-    services: [
-      "自然体の会話",
-      "友達感覚の接客",
-      "自分のペースでの接客",
-      "無理をしない常連づくり",
-    ],
-    weaknesses: ["厳しい売上ノルマ", "頻繁なLINE営業", "強い競争環境"],
-    workStyle: "ノルマが少なく、自由度が高く、自分のペースで働ける店舗。",
-    jobTypes: [
-      { label: "ガールズバー", value: "ガールズバー" },
-      { label: "コンカフェ", value: "コンカフェ" },
-      { label: "スナック", value: "スナック" },
-    ],
-  },
-};
+export {
+  SALES_STYLE_PROFILES,
+  type SalesStyleProfile,
+  type SalesStyleTheme,
+} from "@/lib/sales-style-profiles";
 
 type Points = Partial<Record<SalesStyleType, number>>;
 

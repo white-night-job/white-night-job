@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MemberGateModal } from "@/components/MemberGateModal";
 import { SalesStyleDiagnosisResults } from "@/components/SalesStyleDiagnosisResults";
@@ -42,13 +43,16 @@ export function SalesStyleDiagnosis({ authenticated = false }: SalesStyleDiagnos
 
     const next = { ...answers, [current.id]: value };
     setAnswers(next);
+    advance(next);
+  }
 
+  function advance(currentAnswers: SalesStyleAnswers) {
     if (step < total - 1) {
       setStep(step + 1);
       return;
     }
 
-    const nextResult = calculateSalesStyleResult(next);
+    const nextResult = calculateSalesStyleResult(currentAnswers);
     if (!nextResult) return;
     completionKeyRef.current = createDiagnosisCompletionKey();
     setResult(nextResult);
@@ -61,6 +65,11 @@ export function SalesStyleDiagnosis({ authenticated = false }: SalesStyleDiagnos
   function goBack() {
     if (phase !== "questions" || step === 0) return;
     setStep(step - 1);
+  }
+
+  function goNext() {
+    if (phase !== "questions" || !answers[current.id]) return;
+    advance(answers);
   }
 
   function reset() {
@@ -147,15 +156,26 @@ export function SalesStyleDiagnosis({ authenticated = false }: SalesStyleDiagnos
                     );
                   })}
                 </div>
-                {step > 0 ? (
+                <div className="ss-question-nav">
                   <button
                     type="button"
                     onClick={goBack}
-                    className="job-diagnosis-secondary-btn sales-style-back-btn"
+                    disabled={step === 0}
+                    className="ss-question-nav-btn"
                   >
-                    1つ前の質問に戻る
+                    <ChevronLeft size={16} strokeWidth={2} aria-hidden />
+                    戻る
                   </button>
-                ) : null}
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    disabled={!answers[current.id]}
+                    className="ss-question-nav-btn ss-question-nav-btn--next"
+                  >
+                    {step === total - 1 ? "結果を見る" : "次へ"}
+                    <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
               </div>
             )}
 
