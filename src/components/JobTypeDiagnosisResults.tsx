@@ -2,9 +2,48 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Briefcase,
+  CalendarDays,
+  Check,
+  Clock,
+  Coffee,
+  Crown,
+  Ear,
+  Gem,
+  Heart,
+  Home,
+  Info,
+  Lightbulb,
+  MessageCircle,
+  Moon,
+  Shirt,
+  Smile,
+  Sparkles,
+  Sprout,
+  Star,
+  TrendingUp,
+  Users,
+  Wine,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useCompare } from "@/components/CompareProvider";
 import { JobTypeDiagnosisSharePanel } from "@/components/JobTypeDiagnosisSharePanel";
+import { JobTypeIllustration } from "@/components/JobTypeIllustration";
+import { JobTypeRecommendedJobs } from "@/components/JobTypeRecommendedJobs";
+import {
+  buildDiagnosisStrengths,
+  JOB_TYPE_VISUALS,
+  type JobTypeSuitedIcon,
+  type JobTypeVisual,
+} from "@/data/job-type-diagnosis/visuals";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
   buildDiagnosisJobsUrl,
@@ -28,75 +67,210 @@ import { MEMBER_PATHS } from "@/lib/member-access";
 import { usePreferredAreas } from "@/lib/preferred-areas-client";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
 
-function MedalCard({
-  rank,
-  item,
-  delayMs,
+const SUITED_ICONS: Record<JobTypeSuitedIcon, LucideIcon> = {
+  message: MessageCircle,
+  sprout: Sprout,
+  calendar: CalendarDays,
+  smile: Smile,
+  heart: Heart,
+  sparkles: Sparkles,
+  coffee: Coffee,
+  star: Star,
+  users: Users,
+  home: Home,
+  clock: Clock,
+  ear: Ear,
+  gem: Gem,
+  briefcase: Briefcase,
+  trending: TrendingUp,
+  shirt: Shirt,
+  wine: Wine,
+  crown: Crown,
+  moon: Moon,
+};
+
+function themeVars(visual: JobTypeVisual): CSSProperties {
+  return {
+    "--ss-accent": visual.theme.accent,
+    "--ss-soft": visual.theme.soft,
+    "--ss-deep": visual.theme.deep,
+  } as CSSProperties;
+}
+
+function AptitudeGauge({ percent, compact = false }: { percent: number; compact?: boolean }) {
+  return (
+    <div className={`jt-gauge${compact ? " jt-gauge--compact" : ""}`}>
+      <div className="jt-gauge-head">
+        <span className="jt-gauge-label">適性</span>
+        <span className="jt-gauge-value">
+          {percent}
+          <small>%</small>
+        </span>
+      </div>
+      <div
+        className="jt-gauge-track"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-label={`適性${percent}%`}
+      >
+        <div className="jt-gauge-fill" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ResultSection({
+  icon: Icon,
+  eyebrow,
+  title,
+  children,
 }: {
-  rank: 1 | 2;
-  item: DiagnosisResultItem;
-  delayMs: number;
+  icon: LucideIcon;
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
 }) {
-  const medal = rank === 1 ? "🥇" : "🥈";
-  const rankLabel = rank === 1 ? "第1位" : "第2位";
+  return (
+    <section className="ss-section jt-section">
+      <div className="ss-section-head">
+        <span className="ss-section-icon" aria-hidden>
+          <Icon size={16} strokeWidth={1.8} />
+        </span>
+        <div>
+          <p className="ss-section-eyebrow">{eyebrow}</p>
+          <h4 className="ss-section-title font-serif">{title}</h4>
+        </div>
+      </div>
+      <div className="ss-section-body">{children}</div>
+    </section>
+  );
+}
+
+function TopResultCard({
+  item,
+  answers,
+}: {
+  item: DiagnosisResultItem;
+  answers: DiagnosisAnswers;
+}) {
+  const visual = JOB_TYPE_VISUALS[item.jobType];
+  const strengths = buildDiagnosisStrengths(answers);
 
   return (
-    <article
-      className={`job-diagnosis-result-card job-diagnosis-result-card-rank-${rank}`}
-      style={{ animationDelay: `${delayMs}ms` }}
-    >
-      <div className="job-diagnosis-result-medal" aria-hidden>
-        {medal}
-      </div>
-      <p className="job-diagnosis-result-rank">{rankLabel}</p>
-      <h3 className="job-diagnosis-result-job font-serif">{item.jobType}</h3>
-
-      <div className="job-diagnosis-result-meter-wrap">
-        <p className="job-diagnosis-result-meter-label">適性</p>
-        <div className="job-diagnosis-result-meter">
-          <div
-            className="job-diagnosis-result-meter-fill"
-            style={{ width: `${item.percent}%` }}
-          />
-        </div>
-        <p className="job-diagnosis-result-percent">{item.percent}%</p>
-      </div>
-
-      <div className="job-diagnosis-result-block">
-        <p className="job-diagnosis-result-block-title">おすすめ理由</p>
-        <p className="job-diagnosis-result-block-text">{item.reason}</p>
-      </div>
-
-      <div className="job-diagnosis-result-block">
-        <p className="job-diagnosis-result-block-title">向いているポイント</p>
-        <ul className="job-diagnosis-result-list">
-          {item.points.map((point) => (
-            <li key={point}>{point}</li>
+    <div className="ss-result jt-result" style={themeVars(visual)}>
+      <article className="ss-hero jt-hero" aria-labelledby="jt-top-heading">
+        <p className="jt-rank-badge">
+          <Crown size={14} strokeWidth={2} aria-hidden />
+          第1位
+        </p>
+        <JobTypeIllustration visual={visual} label={item.jobType} />
+        <h3 id="jt-top-heading" className="ss-hero-name font-serif">
+          {item.jobType}
+        </h3>
+        <p className="ss-hero-catch">{visual.catchCopy}</p>
+        <ul className="ss-badges">
+          {visual.keywords.map((keyword) => (
+            <li key={keyword}>{keyword}</li>
           ))}
         </ul>
-      </div>
+        <AptitudeGauge percent={item.percent} />
+      </article>
 
-      <div className="job-diagnosis-result-block">
-        <p className="job-diagnosis-result-block-title">メリット</p>
-        <ul className="job-diagnosis-result-list">
+      <ResultSection icon={Sparkles} eyebrow="Reason" title="あなたに合う理由">
+        <p className="jt-text">{visual.fitReason}</p>
+      </ResultSection>
+
+      <ResultSection icon={Users} eyebrow="Match" title="こんな人に向いています">
+        <ul className="jt-suited-grid">
+          {visual.suitedFor.map((suited) => {
+            const Icon = SUITED_ICONS[suited.icon];
+            return (
+              <li key={suited.label} className="jt-suited-item">
+                <span className="jt-suited-icon" aria-hidden>
+                  <Icon size={16} strokeWidth={1.8} />
+                </span>
+                <span>{suited.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </ResultSection>
+
+      <ResultSection icon={Gem} eyebrow="Merit" title="この職種のメリット">
+        <ul className="jt-merit-list">
           {item.merits.map((merit) => (
-            <li key={merit}>{merit}</li>
+            <li key={merit} className="jt-merit-card">
+              <Check size={14} strokeWidth={2.4} aria-hidden />
+              <span>{merit}</span>
+            </li>
           ))}
         </ul>
-      </div>
+      </ResultSection>
 
-      <div className="job-diagnosis-result-block job-diagnosis-result-block-caution">
-        <p className="job-diagnosis-result-block-title">注意点</p>
-        <ul className="job-diagnosis-result-list">
-          {item.cautions.map((caution) => (
-            <li key={caution}>{caution}</li>
+      <ResultSection icon={Info} eyebrow="Before you start" title="働く前に知っておきたいこと">
+        <div className="ss-card ss-card--caution">
+          <ul className="ss-list ss-list--dot">
+            {item.cautions.map((caution) => (
+              <li key={caution}>
+                <span className="ss-list-mark" aria-hidden />
+                <span>{caution}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="jt-soft-note">事前に知っておけば大丈夫。面接や体験入店で気軽に確認してみましょう。</p>
+        </div>
+      </ResultSection>
+
+      <ResultSection icon={Star} eyebrow="Your strength" title="この職種で活かせるあなたの強み">
+        {strengths.length > 0 ? (
+          <ul className="ss-chips">
+            {strengths.map((strength) => (
+              <li key={strength} className="ss-chip">
+                {strength}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="ss-card ss-card--accent ss-card-with-icon">
+          <Lightbulb size={16} className="ss-inline-icon" aria-hidden />
+          <p className="jt-text">{visual.advice}</p>
+        </div>
+      </ResultSection>
+
+      <ResultSection icon={TrendingUp} eyebrow="Tips" title="この職種で働くコツ">
+        <ol className="ss-list ss-list--num">
+          {visual.tips.map((tip, index) => (
+            <li key={tip}>
+              <span className="ss-list-mark" aria-hidden>
+                {index + 1}
+              </span>
+              <span>{tip}</span>
+            </li>
           ))}
-        </ul>
-      </div>
+        </ol>
+      </ResultSection>
 
-      <Link href={item.jobsUrl} className="job-diagnosis-result-jobs-btn">
-        この職種の求人を見る
-      </Link>
+      <JobTypeRecommendedJobs jobType={item.jobType} jobsUrl={item.jobsUrl} />
+    </div>
+  );
+}
+
+function RunnerUpCard({ rank, item }: { rank: 2 | 3; item: DiagnosisResultItem }) {
+  const visual = JOB_TYPE_VISUALS[item.jobType];
+  return (
+    <article className="jt-runner" style={themeVars(visual)}>
+      <JobTypeIllustration visual={visual} size="sm" label={item.jobType} />
+      <div className="jt-runner-body">
+        <p className="jt-runner-rank">第{rank}位</p>
+        <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
+        <p className="jt-runner-catch">{visual.catchCopy}</p>
+        <AptitudeGauge percent={item.percent} compact />
+        <Link href={item.jobsUrl} className="jt-runner-link">
+          この職種の求人を見る
+        </Link>
+      </div>
     </article>
   );
 }
@@ -310,8 +484,18 @@ export function JobTypeDiagnosisResults({
         </p>
       ) : null}
 
-      <MedalCard rank={1} item={result.topTwo[0]} delayMs={80} />
-      <MedalCard rank={2} item={result.topTwo[1]} delayMs={180} />
+      <TopResultCard item={result.topTwo[0]} answers={answers} />
+
+      <section className="jt-runners" aria-labelledby="jt-runners-heading">
+        <h3 id="jt-runners-heading" className="jt-runners-title font-serif">
+          こちらの職種も向いています
+        </h3>
+        <div className="jt-runners-list">
+          {result.ranked.slice(1, 3).map((item, index) => (
+            <RunnerUpCard key={item.jobType} rank={index === 0 ? 2 : 3} item={item} />
+          ))}
+        </div>
+      </section>
 
       <section className="job-diagnosis-empathy-card" aria-labelledby="job-diagnosis-empathy-heading">
         <h3 id="job-diagnosis-empathy-heading" className="job-diagnosis-empathy-title font-serif">

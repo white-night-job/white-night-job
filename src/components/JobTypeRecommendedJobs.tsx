@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { Store } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { FavoriteButton } from "@/components/FavoriteButton";
-import { JobImpressionTracker } from "@/components/JobImpressionTracker";
-import { buildJobCardConditions } from "@/lib/job-card-conditions";
-import { isUncontractedPlan } from "@/lib/job-plan";
+import { SalesStyleShopCard } from "@/components/SalesStyleRecommendedJobs";
 import { emptyJobFilters } from "@/lib/job-filters";
-import { fetchJobs, formatLocation } from "@/lib/job-storage";
+import { fetchJobs } from "@/lib/job-storage";
+import {
+  mapDiagnosisJobTypeToFilter,
+  type DiagnosisJobType,
+} from "@/lib/job-type-diagnosis";
 import { dedupeJobsByShop, formatPreferredAreaList } from "@/lib/preferred-areas";
 import { usePreferredAreas } from "@/lib/preferred-areas-client";
-import { SALES_STYLE_PROFILES, type SalesStyleType } from "@/lib/sales-style-diagnosis";
-import { IMAGE_ALT_BRAND } from "@/lib/site";
 import type { Job } from "@/types/job";
 
 const INITIAL_COUNT = 4;
@@ -20,72 +19,15 @@ const PAGE_SIZE = 4;
 /** 希望エリア内の件数がこれ未満なら、エリア外の同職種求人を「近い条件」として添える */
 const NEARBY_THRESHOLD = 3;
 
-function jobTypeLabel(jobType: string): string {
-  return jobType === "ニュークラ" ? "ニュークラブ" : jobType;
-}
-
-export function SalesStyleShopCard({ job }: { job: Job }) {
-  const storeInfoOnly = isUncontractedPlan(job.plan);
-  const tags = storeInfoOnly ? [] : buildJobCardConditions(job).tags.slice(0, 3);
-
-  return (
-    <JobImpressionTracker jobId={job.id}>
-      <article className="ss-shop-card">
-        <div className="ss-shop-fav">
-          <FavoriteButton jobId={job.id} allowLineLoginRedirect />
-        </div>
-        <Link href={`/jobs/${job.id}`} prefetch className="ss-shop-link">
-          <div className="ss-shop-thumb">
-            {job.imageUrl ? (
-              <img
-                src={job.imageUrl}
-                alt={`${job.shopName}の求人｜${IMAGE_ALT_BRAND}`}
-                loading="lazy"
-              />
-            ) : (
-              <span className="font-serif">White Night</span>
-            )}
-          </div>
-          <div className="ss-shop-body">
-            <h4 className="ss-shop-name font-serif">{job.shopName}</h4>
-            <p className="ss-shop-meta">
-              {formatLocation(job)}
-              <span aria-hidden> ／ </span>
-              {jobTypeLabel(job.jobType)}
-            </p>
-            {!storeInfoOnly && job.salary ? (
-              <p className="ss-shop-salary">{job.salary}</p>
-            ) : null}
-            {tags.length > 0 ? (
-              <ul className="ss-shop-tags">
-                {tags.map((tag) => (
-                  <li key={tag.key}>{tag.label}</li>
-                ))}
-              </ul>
-            ) : null}
-            <span className="ss-shop-cta">
-              {storeInfoOnly ? "店舗情報を見る" : "詳細・応募はこちら"}
-            </span>
-          </div>
-        </Link>
-      </article>
-    </JobImpressionTracker>
-  );
-}
-
-export function SalesStyleRecommendedJobs({
-  type,
-  sectionId,
+export function JobTypeRecommendedJobs({
+  jobType,
+  jobsUrl,
 }: {
-  type: SalesStyleType;
-  sectionId: string;
+  jobType: DiagnosisJobType;
+  jobsUrl: string;
 }) {
-  const profile = SALES_STYLE_PROFILES[type];
   const { areas, configured, ready: areasReady } = usePreferredAreas();
-  const jobTypes = useMemo(
-    () => profile.jobTypes.map((jobType) => jobType.value),
-    [profile],
-  );
+  const jobTypes = useMemo(() => [mapDiagnosisJobTypeToFilter(jobType)], [jobType]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [nearbyJobs, setNearbyJobs] = useState<Job[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -146,29 +88,28 @@ export function SalesStyleRecommendedJobs({
   );
   const visible = combined.slice(0, visibleCount);
   const firstNearbyIndex = visible.findIndex((item) => item.nearby);
-  const jobTypeText = profile.jobTypes.map((jobType) => jobType.label).join("・");
 
   return (
     <section
-      id={sectionId}
+      id="job-diagnosis-matched-jobs"
       className="ss-section ss-shops-section"
-      aria-labelledby={`${sectionId}-heading`}
+      aria-labelledby="job-diagnosis-matched-jobs-heading"
     >
       <div className="ss-section-head">
         <span className="ss-section-icon" aria-hidden>
           <Store size={16} strokeWidth={1.8} />
         </span>
         <div>
-          <p className="ss-section-eyebrow">Recommend</p>
-          <h3 id={`${sectionId}-heading`} className="ss-section-title font-serif">
-            あなたに合う店舗
+          <p className="ss-section-eyebrow">Jobs</p>
+          <h3 id="job-diagnosis-matched-jobs-heading" className="ss-section-title font-serif">
+            あなたに合う求人
           </h3>
         </div>
       </div>
       <p className="ss-section-lead">
         {configured
-          ? `希望エリア（${formatPreferredAreaList(areas)}）の、${jobTypeText}の掲載中求人です。`
-          : `相性の良い職種（${jobTypeText}）の掲載中求人です。`}
+          ? `希望エリア（${formatPreferredAreaList(areas)}）の、${jobType}の掲載中求人です。`
+          : `全エリアの、${jobType}の掲載中求人です。マイページで希望エリアを設定すると絞り込めます。`}
       </p>
 
       {status === "loading" ? (
@@ -206,7 +147,11 @@ export function SalesStyleRecommendedJobs({
             >
               もっと見る（残り{combined.length - visibleCount}件）
             </button>
-          ) : null}
+          ) : (
+            <Link href={jobsUrl} className="ss-more-btn jt-more-link">
+              {jobType}の求人をすべて見る
+            </Link>
+          )}
         </>
       )}
     </section>
