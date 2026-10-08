@@ -15,6 +15,11 @@ import {
   jobMatchesBroadcastArea,
   type NotificationArea,
 } from "@/lib/notification-areas";
+import {
+  fetchPreferredAreasByUser,
+  fetchUserNotificationTargetAreas,
+  resolveNotificationTargetAreas,
+} from "@/lib/notification-target-areas";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
 
@@ -204,27 +209,15 @@ async function fetchEligibleUsers(options?: {
     return { users: [], funnel };
   }
 
-  const [{ data: users, error: usersError }, { data: areas, error: areasError }] =
-    await Promise.all([
-      supabase
-        .from("users")
-        .select("id, line_user_id, line_push_blocked")
-        .in("id", userIds)
-        .not("line_user_id", "is", null),
-      supabase
-        .from("user_notification_areas")
-        .select("user_id, area")
-        .in("user_id", userIds),
-    ]);
+  const [{ data: users, error: usersError }, preferredAreasByUser] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, line_user_id, line_push_blocked")
+      .in("id", userIds)
+      .not("line_user_id", "is", null),
+    fetchPreferredAreasByUser(userIds),
+  ]);
   if (usersError) throw usersError;
-  if (areasError) throw areasError;
-
-  const areasByUser = new Map<string, NotificationArea[]>();
-  for (const row of areas ?? []) {
-    const list = areasByUser.get(row.user_id) ?? [];
-    list.push(row.area as NotificationArea);
-    areasByUser.set(row.user_id, list);
-  }
 
   const result: EligibleUser[] = [];
   for (const user of users ?? []) {
@@ -232,8 +225,7 @@ async function fetchEligibleUsers(options?: {
     funnel.withLineUserId += 1;
     if (user.line_push_blocked) continue;
     funnel.notBlocked += 1;
-    const userAreas = areasByUser.get(user.id) ?? [];
-    if (userAreas.length === 0) continue;
+    const userAreas = resolveNotificationTargetAreas(preferredAreasByUser.get(user.id));
     funnel.withAreas += 1;
     result.push({
       userId: user.id,
@@ -569,7 +561,7 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
   const [
     { data: settings },
     { data: user },
-    { data: areas },
+    userAreas,
     { data: todayLog },
   ] = await Promise.all([
     supabase
@@ -582,10 +574,7 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
       .select("id, line_user_id, line_push_blocked")
       .eq("id", userId)
       .maybeSingle(),
-    supabase
-      .from("user_notification_areas")
-      .select("area")
-      .eq("user_id", userId),
+    fetchUserNotificationTargetAreas(userId),
     supabase
       .from("line_notification_logs")
       .select("status")
@@ -603,7 +592,6 @@ export async function diagnoseDailyPickupUser(userId: string): Promise<{
     topJobsRaw,
     cooldownShopKeys,
   );
-  const userAreas = (areas ?? []).map((row) => row.area as NotificationArea);
   const matching = jobsForUserAreas(topJobs, userAreas);
   const matchingBeforeCooldown = jobsForUserAreas(topJobsRaw, userAreas);
   const reasons: string[] = [];

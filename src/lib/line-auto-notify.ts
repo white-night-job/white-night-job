@@ -11,6 +11,7 @@ import {
   parseHourlySalary,
   type UserNotifyPrefs,
 } from "@/lib/notification-preferences";
+import { fetchPreferredAreasByUser } from "@/lib/notification-target-areas";
 import { SITE_URL } from "@/lib/site";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
@@ -110,41 +111,17 @@ async function loadAllUserPrefs(): Promise<UserNotifyPrefs[]> {
   if (withLine.length === 0) return [];
 
   const userIds = withLine.map((row) => row.id);
-  const [
-    { data: settingsRows },
-    { data: areas },
-    { data: jobTypes },
-  ] = await Promise.all([
+  const [{ data: settingsRows }, preferredAreasByUser] = await Promise.all([
     supabase
       .from("user_notification_settings")
-      .select(
-        "user_id, notify_new_jobs, notify_pickup_jobs, notify_favorite_updates, min_hourly_wage",
-      )
+      .select("user_id, notify_new_jobs, notify_pickup_jobs, notify_favorite_updates")
       .in("user_id", userIds),
-    supabase.from("user_notification_areas").select("user_id, area").in("user_id", userIds),
-    supabase
-      .from("user_notification_job_types")
-      .select("user_id, job_type")
-      .in("user_id", userIds),
+    fetchPreferredAreasByUser(userIds),
   ]);
 
   const settingsByUser = new Map(
     (settingsRows ?? []).map((row) => [row.user_id, row] as const),
   );
-
-  const areasByUser = new Map<string, string[]>();
-  for (const row of areas ?? []) {
-    const list = areasByUser.get(row.user_id) ?? [];
-    list.push(row.area);
-    areasByUser.set(row.user_id, list);
-  }
-
-  const jobTypesByUser = new Map<string, string[]>();
-  for (const row of jobTypes ?? []) {
-    const list = jobTypesByUser.get(row.user_id) ?? [];
-    list.push(row.job_type);
-    jobTypesByUser.set(row.user_id, list);
-  }
 
   return withLine.map((row) => {
     const settings = settingsByUser.get(row.id);
@@ -154,9 +131,7 @@ async function loadAllUserPrefs(): Promise<UserNotifyPrefs[]> {
       notifyNewJobs: settings?.notify_new_jobs ?? true,
       notifyPickupJobs: settings?.notify_pickup_jobs ?? true,
       notifyFavoriteUpdates: settings?.notify_favorite_updates ?? true,
-      areas: areasByUser.get(row.id) ?? [],
-      jobTypes: jobTypesByUser.get(row.id) ?? [],
-      minHourlyWage: Number(settings?.min_hourly_wage ?? 0),
+      areas: preferredAreasByUser.get(row.id) ?? [],
     };
   });
 }

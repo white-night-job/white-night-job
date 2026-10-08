@@ -2,8 +2,14 @@ import { buildShopCarouselMessage } from "@/lib/line-flex-messages";
 import { sendLinePushMessages } from "@/lib/line-auth";
 import {
   filterJobsByBroadcastAreas,
+  jobMatchesBroadcastArea,
   type NotificationArea,
 } from "@/lib/notification-areas";
+import {
+  fetchPreferredAreasByUser,
+  fetchUserNotificationTargetAreas,
+  resolveNotificationTargetAreas,
+} from "@/lib/notification-target-areas";
 import { rowToJob } from "@/lib/job-db";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
@@ -122,17 +128,14 @@ export async function fetchPublishedJobs(filter?: {
   return (data ?? []).map((row) => rowToJob(row));
 }
 
+/** 通知対象エリア＝マイページの希望エリア（未設定なら全エリア） */
 export async function getUserNotificationAreas(userId: string): Promise<NotificationArea[]> {
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("user_notification_areas")
-    .select("area")
-    .eq("user_id", userId);
-  if (error) {
+  try {
+    return await fetchUserNotificationTargetAreas(userId);
+  } catch (error) {
     console.error("[line-notification] getUserNotificationAreas failed", { userId, error });
     throw error;
   }
-  return (data ?? []).map((row) => row.area as NotificationArea);
 }
 
 function filterJobsForUser(jobs: Job[], userAreas: NotificationArea[]): Job[] {
@@ -180,30 +183,28 @@ export async function fetchUsersByNotificationAreas(
   const supabase = createSupabaseAdmin();
   if (areas.length === 0) return [];
 
-  const { data: areaRows, error } = await supabase
-    .from("user_notification_areas")
-    .select("user_id")
-    .in("area", areas);
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, line_user_id")
+    .not("line_user_id", "is", null);
   if (error) {
     console.error("[line-notification] fetchUsersByNotificationAreas failed", { areas, error });
     throw error;
   }
 
-  const userIds = [...new Set((areaRows ?? []).map((row) => row.user_id))];
-  if (userIds.length === 0) return [];
-
-  const { data: users, error: usersError } = await supabase
-    .from("users")
-    .select("id, line_user_id")
-    .in("id", userIds);
-  if (usersError) {
-    console.error("[line-notification] users fetch failed", { userIds, error: usersError });
-    throw usersError;
-  }
-
-  return (users ?? []).filter(
+  const withLine = (users ?? []).filter(
     (user): user is UserTarget => Boolean(user.line_user_id),
   );
+  const preferredAreasByUser = await fetchPreferredAreasByUser(
+    withLine.map((user) => user.id),
+  );
+
+  return withLine.filter((user) => {
+    const targetAreas = resolveNotificationTargetAreas(preferredAreasByUser.get(user.id));
+    return targetAreas.some((district) =>
+      areas.some((area) => jobMatchesBroadcastArea(district, area)),
+    );
+  });
 }
 
 export async function fetchUsersByNotifyFlag(

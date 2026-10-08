@@ -20,13 +20,6 @@ function parseSettings(raw: unknown): NotificationSettingsState {
     notifyPickupJobs: Boolean(payload.notifyPickupJobs),
     notifyFavoriteUpdates: Boolean(payload.notifyFavoriteUpdates),
     notifyDailyPickup: Boolean(payload.notifyDailyPickup),
-    notificationAreas: Array.isArray(payload.notificationAreas)
-      ? payload.notificationAreas
-      : [],
-    notificationJobTypes: Array.isArray(payload.notificationJobTypes)
-      ? payload.notificationJobTypes
-      : [],
-    minHourlyWage: Number(payload.minHourlyWage ?? 0) || 0,
   };
 }
 
