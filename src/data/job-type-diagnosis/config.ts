@@ -3,21 +3,10 @@ import type {
   DiagnosisQuestion,
   DiagnosisSingleAnswerKey,
 } from "@/lib/job-type-diagnosis-types";
-import { DIAGNOSIS_PREFERRED_AREA_OPTIONS } from "@/lib/job-type-diagnosis-types";
 
 /** 管理画面から差し替え可能な診断設定（質問・スコア・表示文言） */
 export const JOB_TYPE_DIAGNOSIS_CONFIG = {
   questions: [
-    {
-      key: "preferredAreas",
-      title: "働きたいエリアを選んでください",
-      hint: "※複数選択できます",
-      multiSelect: true,
-      options: DIAGNOSIS_PREFERRED_AREA_OPTIONS.map((option) => ({
-        label: option.label,
-        value: option.value,
-      })),
-    },
     {
       key: "priority",
       title: "夜職で一番重視することは？",

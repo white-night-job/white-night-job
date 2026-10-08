@@ -24,6 +24,7 @@ export type DiagnosisPreferredArea =
   (typeof DIAGNOSIS_PREFERRED_AREA_OPTIONS)[number]["value"];
 
 export type DiagnosisAnswers = {
+  /** 診断では質問しない。おすすめ店舗の絞り込み時にマイページの希望エリアを入れる */
   preferredAreas: DiagnosisPreferredArea[] | null;
   priority: string | null;
   experience: string | null;
@@ -44,11 +45,8 @@ export type DiagnosisSingleAnswerKey = Exclude<
 >;
 
 export type DiagnosisQuestion = {
-  key: keyof DiagnosisAnswers;
+  key: DiagnosisSingleAnswerKey;
   title: string;
-  hint?: string;
-  /** true のとき複数選択（preferredAreas 用） */
-  multiSelect?: boolean;
   options: { label: string; value: string }[];
 };
 

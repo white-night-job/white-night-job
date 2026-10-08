@@ -345,12 +345,12 @@ export function JobTypeDiagnosisResults({
     configured: hasUserPreferredAreas,
     ready: preferredAreasReady,
   } = usePreferredAreas();
-  // マイページの希望エリアが設定済みなら、おすすめ店舗の表示エリアとして使う（保存する回答は変更しない）
+  // おすすめ店舗はマイページの希望エリアで絞り込む。未設定なら全エリア（保存する回答は変更しない）
   const recommendationAnswers = useMemo<DiagnosisAnswers>(
-    () =>
-      hasUserPreferredAreas
-        ? { ...answers, preferredAreas: [...userPreferredAreas] }
-        : answers,
+    () => ({
+      ...answers,
+      preferredAreas: hasUserPreferredAreas ? [...userPreferredAreas] : null,
+    }),
     [answers, hasUserPreferredAreas, userPreferredAreas],
   );
 
@@ -517,7 +517,9 @@ export function JobTypeDiagnosisResults({
           おすすめ店舗
         </h3>
         <p className="job-diagnosis-section-lead">
-          あなたの診断結果と希望エリアに合うお店をピックアップしました。
+          {hasUserPreferredAreas
+            ? "あなたの診断結果と希望エリアに合うお店をピックアップしました。"
+            : "あなたの診断結果に合うお店を全エリアからピックアップしました。"}
         </p>
 
         {loadingShops ? (
@@ -531,7 +533,9 @@ export function JobTypeDiagnosisResults({
         ) : (
           <div className="job-diagnosis-shops-empty">
             <p>
-              現在、診断結果と希望エリアの両方に一致するおすすめ店舗はありません。
+              {hasUserPreferredAreas
+                ? "現在、診断結果と希望エリアの両方に一致するおすすめ店舗はありません。"
+                : "現在、診断結果に一致するおすすめ店舗はありません。"}
             </p>
             <Link href="/#shop-search" className="job-diagnosis-shops-search-btn">
               店舗を検索する

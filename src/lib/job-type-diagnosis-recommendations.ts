@@ -18,6 +18,7 @@ import { formatDistrictLabel } from "@/data/districts";
 
 const PRIMARY_MATCH_REASON =
   "希望エリア・診断結果の第1位職種にマッチしています";
+const PRIMARY_JOB_TYPE_REASON = "診断結果の第1位職種にマッチしています";
 
 export function formatDiagnosisDistrictLabel(district: string): string {
   return formatDistrictLabel(district);
@@ -57,12 +58,12 @@ function listingPriorityScore(job: Job): number {
   return 0;
 }
 
-function buildShopReason(job: Job, result: DiagnosisResult): string {
+function buildShopReason(job: Job, result: DiagnosisResult, hasAreas: boolean): string {
   const templates = JOB_TYPE_DIAGNOSIS_CONFIG.shopReasonTemplates;
   const primary = mapDiagnosisJobTypeToFilter(result.topTwo[0].jobType);
 
   if (job.jobType === primary) {
-    return PRIMARY_MATCH_REASON;
+    return hasAreas ? PRIMARY_MATCH_REASON : PRIMARY_JOB_TYPE_REASON;
   }
   if (job.benefits.includes("未経験者大歓迎")) {
     return templates[1];
@@ -77,7 +78,7 @@ function buildShopReason(job: Job, result: DiagnosisResult): string {
  * おすすめ店舗選定:
  * - 公開中
  * - 診断第1位職種に一致
- * - 希望エリア（複数は OR）に一致
+ * - 希望エリア（複数は OR）に一致。希望エリア未設定なら全エリア
  * - プレミアムプラン
  * 上記をすべて満たす求人のみ。不足分の穴埋め・他プラン代替はしない。
  * 件数超過時は既存のおすすめスコア＋上位表示優先度で並び替え（ランダムなし）。
@@ -89,7 +90,7 @@ export function pickRecommendedDiagnosisShops(
   limit = 10,
 ): RecommendedDiagnosisShop[] {
   const preferredAreas = parsePreferredAreasFromAnswers(answers);
-  if (preferredAreas.length === 0) return [];
+  const hasAreas = preferredAreas.length > 0;
 
   const primary = mapDiagnosisJobTypeToFilter(result.topTwo[0].jobType);
   const areaSet = new Set<District>(preferredAreas);
@@ -97,7 +98,7 @@ export function pickRecommendedDiagnosisShops(
   const ranked = jobs
     .filter(isPublishedPremiumJob)
     .filter((job) => job.jobType === primary)
-    .filter((job) => areaSet.has(job.district))
+    .filter((job) => !hasAreas || areaSet.has(job.district))
     .map((job) => {
       let score = 20; // 職種・エリア一致は必須条件のためベース点
       if (job.isVerified) score += 4;
@@ -119,7 +120,7 @@ export function pickRecommendedDiagnosisShops(
     areaLabel: formatDiagnosisDistrictLabel(job.district),
     salary: job.salary,
     jobType: job.jobType,
-    reason: buildShopReason(job, result),
+    reason: buildShopReason(job, result, hasAreas),
     detailUrl: `/jobs/${job.id}`,
   }));
 }
