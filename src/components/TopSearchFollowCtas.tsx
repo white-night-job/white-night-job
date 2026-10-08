@@ -99,10 +99,12 @@ function Phrases({ parts }: { parts: string[] }) {
 type Petal = {
   x: number;
   y: number;
+  /** 768px以上での位置（カード配置が変わるため） */
+  wide?: { x?: number; y?: number };
   size: number;
   rotate: number;
   opacity: number;
-  tone: 0 | 1 | 2;
+  tone: 0 | 1 | 2 | 3;
   blur?: boolean;
   /** ゆっくり漂わせる（秒） */
   drift?: number;
@@ -110,30 +112,54 @@ type Petal = {
   desktopOnly?: boolean;
 };
 
-const PETAL_TONES = ["#f2c4cf", "#e8b3c0", "#f8e3e8"] as const;
+const PETAL_TONES = ["#f7b8c8", "#f3a9bd", "#efc3cf", "#f9d6df"] as const;
 
-/** 位置は % 指定。カード周囲に偏らせて自然に散らす */
+/** 位置は % 指定。見出し周り・カードの外周・カード間に偏らせて自然に散らす */
 const PETALS: Petal[] = [
-  { x: 3, y: 4, size: 14, rotate: -28, opacity: 0.4, tone: 0, drift: 12 },
-  { x: 9, y: 13, size: 8, rotate: 42, opacity: 0.3, tone: 2 },
-  { x: 15, y: 2, size: 11, rotate: 110, opacity: 0.22, tone: 1, blur: true },
-  { x: 1, y: 30, size: 7, rotate: 160, opacity: 0.25, tone: 0, desktopOnly: true },
-  { x: 24, y: 9, size: 6, rotate: -70, opacity: 0.2, tone: 1, desktopOnly: true },
-  { x: 82, y: 3, size: 12, rotate: 24, opacity: 0.35, tone: 0, drift: 14 },
-  { x: 91, y: 10, size: 16, rotate: -48, opacity: 0.28, tone: 2, blur: true },
-  { x: 96, y: 26, size: 8, rotate: 82, opacity: 0.32, tone: 1 },
-  { x: 74, y: 12, size: 7, rotate: 150, opacity: 0.2, tone: 0, desktopOnly: true },
-  { x: 49, y: 56, size: 9, rotate: 36, opacity: 0.3, tone: 0, drift: 11 },
-  { x: 52, y: 64, size: 6, rotate: -120, opacity: 0.22, tone: 2, desktopOnly: true },
-  { x: 2, y: 62, size: 10, rotate: 64, opacity: 0.26, tone: 1 },
-  { x: 97, y: 52, size: 9, rotate: -15, opacity: 0.24, tone: 0, desktopOnly: true },
-  { x: 4, y: 86, size: 13, rotate: -95, opacity: 0.32, tone: 0, drift: 13 },
-  { x: 12, y: 95, size: 7, rotate: 30, opacity: 0.22, tone: 2 },
-  { x: 30, y: 97, size: 9, rotate: 140, opacity: 0.18, tone: 1, blur: true, desktopOnly: true },
-  { x: 70, y: 96, size: 8, rotate: -40, opacity: 0.2, tone: 0, desktopOnly: true },
-  { x: 86, y: 90, size: 15, rotate: 58, opacity: 0.3, tone: 1, drift: 15 },
-  { x: 95, y: 80, size: 9, rotate: -130, opacity: 0.28, tone: 2 },
-  { x: 62, y: 1, size: 6, rotate: 12, opacity: 0.18, tone: 1, desktopOnly: true },
+  // 見出し周辺
+  { x: 2, y: 2, size: 14, rotate: -28, opacity: 0.5, tone: 0, drift: 11 },
+  { x: 10, y: 8, size: 8, rotate: 40, opacity: 0.42, tone: 1 },
+  { x: 19, y: 1, size: 11, rotate: -50, opacity: 0.4, tone: 3, blur: true },
+  { x: 30, y: 3, size: 7, rotate: 22, opacity: 0.38, tone: 2 },
+  { x: 5, y: 13, size: 10, rotate: 55, opacity: 0.45, tone: 1 },
+  { x: 63, y: 0, size: 22, rotate: -40, opacity: 0.32, tone: 3, blur: true },
+  { x: 82, y: 0.5, size: 14, rotate: 30, opacity: 0.46, tone: 0, drift: 13 },
+  { x: 91, y: 1, size: 8, rotate: -15, opacity: 0.42, tone: 2 },
+  { x: 93, y: 12, size: 11, rotate: -55, opacity: 0.48, tone: 1 },
+  { x: 43, y: 0.5, size: 6, rotate: 50, opacity: 0.36, tone: 1 },
+  // カードの左右
+  { x: 0.5, y: 24, size: 12, rotate: 60, opacity: 0.48, tone: 0, drift: 12 },
+  { x: 96.5, y: 33, size: 10, rotate: -30, opacity: 0.45, tone: 1 },
+  { x: -1, y: 42, size: 18, rotate: -20, opacity: 0.4, tone: 3, blur: true },
+  { x: 97, y: 64, size: 13, rotate: 45, opacity: 0.46, tone: 0 },
+  { x: 0, y: 72, size: 9, rotate: -45, opacity: 0.44, tone: 2 },
+  { x: 96, y: 84, size: 16, rotate: 20, opacity: 0.42, tone: 1, drift: 14 },
+  // 上段と下段の間
+  { x: 22, y: 50, wide: { y: 58 }, size: 9, rotate: -60, opacity: 0.5, tone: 0 },
+  { x: 46, y: 51, wide: { y: 59 }, size: 7, rotate: 35, opacity: 0.45, tone: 1, drift: 10 },
+  { x: 74, y: 50, wide: { y: 58 }, size: 10, rotate: 55, opacity: 0.48, tone: 3 },
+  { x: 48.6, y: 70, wide: { y: 78 }, size: 8, rotate: 10, opacity: 0.45, tone: 0 },
+  // 左下・右下
+  { x: 7, y: 95, size: 12, rotate: -35, opacity: 0.48, tone: 1 },
+  { x: 29, y: 96.5, size: 7, rotate: 30, opacity: 0.4, tone: 2 },
+  { x: 43, y: 96, size: 20, rotate: 15, opacity: 0.3, tone: 3, blur: true },
+  { x: 63, y: 95.5, size: 10, rotate: -50, opacity: 0.45, tone: 0 },
+  { x: 86, y: 96, size: 8, rotate: 40, opacity: 0.42, tone: 2 },
+  // PCのみ：カード外側の余白
+  { x: 4, y: 30, size: 20, rotate: -25, opacity: 0.36, tone: 0, blur: true, desktopOnly: true },
+  { x: 9, y: 45, size: 9, rotate: 40, opacity: 0.46, tone: 1, desktopOnly: true },
+  { x: 12, y: 62, size: 14, rotate: -55, opacity: 0.44, tone: 3, drift: 12, desktopOnly: true },
+  { x: 5, y: 80, size: 8, rotate: 15, opacity: 0.42, tone: 2, desktopOnly: true },
+  { x: 11, y: 88, size: 24, rotate: 35, opacity: 0.3, tone: 0, blur: true, desktopOnly: true },
+  { x: 13, y: 20, size: 7, rotate: -10, opacity: 0.42, tone: 1, desktopOnly: true },
+  { x: 88, y: 22, size: 12, rotate: 50, opacity: 0.46, tone: 0, desktopOnly: true },
+  { x: 92, y: 42, size: 7, rotate: -40, opacity: 0.42, tone: 3, desktopOnly: true },
+  { x: 86, y: 55, size: 18, rotate: 20, opacity: 0.4, tone: 1, drift: 13, desktopOnly: true },
+  { x: 93, y: 72, size: 9, rotate: -60, opacity: 0.46, tone: 0, desktopOnly: true },
+  { x: 89, y: 88, size: 21, rotate: -30, opacity: 0.32, tone: 3, blur: true, desktopOnly: true },
+  { x: 24, y: 10, size: 10, rotate: 30, opacity: 0.42, tone: 2, desktopOnly: true },
+  { x: 74, y: 13, size: 8, rotate: -45, opacity: 0.44, tone: 1, desktopOnly: true },
+  { x: 36, y: 2, size: 12, rotate: 55, opacity: 0.4, tone: 0, drift: 11, desktopOnly: true },
 ];
 
 function PetalLayer() {
@@ -147,8 +173,10 @@ function PetalLayer() {
           }`}
           style={
             {
-              left: `${petal.x}%`,
-              top: `${petal.y}%`,
+              "--tc-x": `${petal.x}%`,
+              "--tc-y": `${petal.y}%`,
+              "--tc-x-wide": `${petal.wide?.x ?? petal.x}%`,
+              "--tc-y-wide": `${petal.wide?.y ?? petal.y}%`,
               width: `${petal.size}px`,
               height: `${Math.round(petal.size * 1.35)}px`,
               opacity: petal.opacity,
@@ -250,45 +278,47 @@ export function TopSearchFollowCtas() {
   return (
     <section className="tc-section" aria-labelledby="tc-heading">
       <PetalLayer />
-      <div className="tc-head">
-        <p className="tc-eyebrow font-serif">SUPPORT</p>
-        <div className="tc-heading-row">
-          <span className="tc-heading-line" aria-hidden />
-          <h2 id="tc-heading" className="tc-heading font-serif">
-            迷ったら、まずは無料で診断・相談
-          </h2>
-          <span className="tc-heading-line" aria-hidden />
+      <div className="tc-inner">
+        <div className="tc-head">
+          <p className="tc-eyebrow font-serif">SUPPORT</p>
+          <div className="tc-heading-row">
+            <span className="tc-heading-line" aria-hidden />
+            <h2 id="tc-heading" className="tc-heading font-serif">
+              迷ったら、まずは無料で診断・相談
+            </h2>
+            <span className="tc-heading-line" aria-hidden />
+          </div>
         </div>
-      </div>
-      <div className="tc-grid">
-        <CareCard
-          variant="ai"
-          wide
-          ribbon="初めての方へ"
-          title={["不安なことを", "AIに相談"]}
-          sub={["夜職が初めてでも、", "気になることを", "すぐ聞ける"]}
-          badges={["24時間対応", "匿名OK"]}
-          art={<AiChatIcon />}
-          onClick={handleAiChat}
-        />
-        <CareCard
-          variant="job"
-          ribbon="おすすめ"
-          title={["あなたに合う", "お仕事診断"]}
-          sub={["未経験でも、", "自分に合う", "働き方がわかる"]}
-          badges={["無料", "1分で診断"]}
-          art={<JobDiagnosisIcon />}
-          onClick={handleDiagnosis}
-        />
-        <CareCard
-          variant="style"
-          ribbon="NEW"
-          title={["あなたに合う", "接客タイプ診断"]}
-          sub={["話し方や", "接客の強みが", "見つかる"]}
-          badges={["無料", "相性チェック"]}
-          art={<SalesStyleIcon />}
-          onClick={handleSalesStyleDiagnosis}
-        />
+        <div className="tc-grid">
+          <CareCard
+            variant="ai"
+            wide
+            ribbon="初めての方へ"
+            title={["不安なことを", "AIに相談"]}
+            sub={["夜職が初めてでも、", "気になることを", "すぐ聞ける"]}
+            badges={["24時間対応", "匿名OK"]}
+            art={<AiChatIcon />}
+            onClick={handleAiChat}
+          />
+          <CareCard
+            variant="job"
+            ribbon="おすすめ"
+            title={["あなたに合う", "お仕事診断"]}
+            sub={["未経験でも、", "自分に合う", "働き方がわかる"]}
+            badges={["無料", "1分で診断"]}
+            art={<JobDiagnosisIcon />}
+            onClick={handleDiagnosis}
+          />
+          <CareCard
+            variant="style"
+            ribbon="NEW"
+            title={["あなたに合う", "接客タイプ診断"]}
+            sub={["話し方や", "接客の強みが", "見つかる"]}
+            badges={["無料", "相性チェック"]}
+            art={<SalesStyleIcon />}
+            onClick={handleSalesStyleDiagnosis}
+          />
+        </div>
       </div>
 
       <MemberGateModal

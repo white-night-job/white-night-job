@@ -3459,14 +3459,44 @@
 .tc-section {
   position: relative;
   width: 100%;
-  max-width: 48rem;
-  margin: 0.4rem auto 0;
-  padding: 1.25rem 0.85rem 1.4rem;
+  margin: 0;
+  padding: 1.5rem 0.85rem 1.7rem;
   overflow: hidden;
   box-sizing: border-box;
   background:
-    radial-gradient(ellipse 30% 45% at 26% 10%, rgba(242, 205, 216, 0.26) 0%, transparent 100%),
-    radial-gradient(ellipse 30% 45% at 74% 92%, rgba(240, 222, 228, 0.3) 0%, transparent 100%);
+    radial-gradient(ellipse 55% 30% at 50% 4%, rgba(255, 255, 255, 0.7) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 0% 100%, rgba(232, 160, 182, 0.2) 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 100% 100%, rgba(232, 160, 182, 0.2) 0%, transparent 100%),
+    linear-gradient(180deg, #fdf2f5 0%, #fbeaf0 45%, #f6dfe7 100%);
+}
+
+.tc-section::before,
+.tc-section::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.tc-section::before {
+  top: 0;
+  height: 1.25rem;
+  background: linear-gradient(180deg, rgba(255, 250, 247, 0.85), transparent);
+}
+
+.tc-section::after {
+  bottom: 0;
+  height: 1.5rem;
+  background: linear-gradient(180deg, transparent, rgba(226, 170, 188, 0.22));
+}
+
+.tc-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 48rem;
+  margin: 0 auto;
 }
 
 .tc-petals {
@@ -3478,7 +3508,16 @@
 
 .tc-petal {
   position: absolute;
+  left: var(--tc-x);
+  top: var(--tc-y);
   display: block;
+}
+
+@media (min-width: 768px) {
+  .tc-petal {
+    left: var(--tc-x-wide);
+    top: var(--tc-y-wide);
+  }
 }
 
 .tc-petal svg {
@@ -3497,10 +3536,10 @@
     transform: translate(0, 0) rotate(0deg);
   }
   33% {
-    transform: translate(5px, 6px) rotate(8deg);
+    transform: translate(7px, 9px) rotate(12deg);
   }
   66% {
-    transform: translate(-4px, 10px) rotate(-6deg);
+    transform: translate(-6px, 15px) rotate(-9deg);
   }
 }
 
@@ -3520,7 +3559,7 @@
   font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.32em;
-  color: #b08a4f;
+  color: #9c7840;
 }
 
 .tc-heading-row {
@@ -3535,11 +3574,11 @@
   flex: 1 1 0;
   max-width: 2.5rem;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(190, 160, 110, 0.7));
+  background: linear-gradient(90deg, transparent, rgba(170, 135, 80, 0.75));
 }
 
 .tc-heading-row .tc-heading-line:last-child {
-  background: linear-gradient(90deg, rgba(190, 160, 110, 0.7), transparent);
+  background: linear-gradient(90deg, rgba(170, 135, 80, 0.75), transparent);
 }
 
 .tc-heading {
@@ -3562,10 +3601,10 @@
 }
 
 .tc-card {
-  --tc-bg: linear-gradient(120deg, #fdfafa 0%, #f8eef1 100%);
-  --tc-line: rgba(210, 155, 175, 0.45);
-  --tc-line-hover: rgba(210, 155, 175, 0.75);
-  --tc-accent: #b07489;
+  --tc-bg: linear-gradient(120deg, #fffbfc 0%, #f9e3ea 100%);
+  --tc-line: rgba(200, 130, 155, 0.5);
+  --tc-line-hover: rgba(200, 130, 155, 0.8);
+  --tc-accent: #ab6b82;
   --tc-deep: #8a4f64;
   position: relative;
   display: flex;
@@ -3580,7 +3619,7 @@
   background: var(--tc-bg);
   text-align: left;
   color: #2b221b;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(140, 70, 95, 0.07);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -3590,17 +3629,17 @@
 }
 
 .tc-card--ai {
-  --tc-bg: linear-gradient(120deg, #fbfafd 0%, #f0eef6 100%);
-  --tc-line: rgba(160, 145, 205, 0.4);
-  --tc-line-hover: rgba(160, 145, 205, 0.7);
+  --tc-bg: linear-gradient(120deg, #fdfcff 0%, #ebe6f6 100%);
+  --tc-line: rgba(150, 132, 205, 0.5);
+  --tc-line-hover: rgba(150, 132, 205, 0.8);
   --tc-accent: #8178a8;
   --tc-deep: #5b5287;
 }
 
 .tc-card--style {
-  --tc-bg: linear-gradient(120deg, #fdfbf8 0%, #f5efe5 100%);
-  --tc-line: rgba(190, 160, 115, 0.4);
-  --tc-line-hover: rgba(190, 160, 115, 0.72);
+  --tc-bg: linear-gradient(120deg, #fffdf9 0%, #f3e9d8 100%);
+  --tc-line: rgba(185, 150, 100, 0.52);
+  --tc-line-hover: rgba(185, 150, 100, 0.8);
   --tc-accent: #a88a5c;
   --tc-deep: #7a5f36;
 }
@@ -3609,7 +3648,7 @@
 .tc-card:focus-visible {
   transform: translateY(-2px);
   border-color: var(--tc-line-hover);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 10px 24px rgba(140, 70, 95, 0.1);
 }
 
 .tc-card:focus-visible {
@@ -3820,8 +3859,7 @@
 
 @media (min-width: 768px) {
   .tc-section {
-    margin: 0.6rem auto 0.2rem;
-    padding: 1.6rem 1rem 1.8rem;
+    padding: 2rem 1rem 2.2rem;
   }
 
   .tc-heading {
