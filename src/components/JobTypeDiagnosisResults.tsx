@@ -30,6 +30,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -66,6 +67,7 @@ import { logLiffDebug, navigateToWebLineOAuth } from "@/lib/liff-login-intent";
 import { MEMBER_PATHS } from "@/lib/member-access";
 import { usePreferredAreas } from "@/lib/preferred-areas-client";
 import { IMAGE_ALT_BRAND } from "@/lib/site";
+import { invalidateUserCache, writeUserCache } from "@/lib/user-data-cache";
 
 const SUITED_ICONS: Record<JobTypeSuitedIcon, LucideIcon> = {
   message: MessageCircle,
@@ -333,12 +335,14 @@ export function JobTypeDiagnosisResults({
 }: JobTypeDiagnosisResultsProps) {
   const router = useRouter();
   const { setCompareIds, showToast } = useCompare();
-  const { isLoggedIn, ready } = useUserSession();
+  const { currentUser, isLoggedIn, ready } = useUserSession();
   const [recommendedShops, setRecommendedShops] = useState<RecommendedDiagnosisShop[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
   const [history, setHistory] = useState<SavedDiagnosisResult[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState("");
+  const autoSavedRef = useRef<string | null>(null);
 
   const {
     areas: userPreferredAreas,
@@ -442,6 +446,10 @@ export function JobTypeDiagnosisResults({
       return;
     }
 
+    await persistResult();
+  }
+
+  async function persistResult() {
     setSaving(true);
     setMessage("");
     try {
@@ -459,14 +467,20 @@ export function JobTypeDiagnosisResults({
           resultSignature: result.resultSignature,
         }),
       });
-      const data = (await response.json()) as {
+      const data = (await response.json().catch(() => ({}))) as {
         message?: string;
         history?: SavedDiagnosisResult[];
       };
       if (!response.ok) {
         throw new Error(data.message ?? "保存に失敗しました。");
       }
-      if (data.history) setHistory(data.history);
+      if (data.history) {
+        setHistory(data.history);
+        writeUserCache("mypage:diagnosis", currentUser?.id, data.history);
+      } else {
+        invalidateUserCache("mypage:diagnosis");
+      }
+      setSaved(true);
       setMessage("診断結果をマイページに保存しました。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
@@ -474,6 +488,15 @@ export function JobTypeDiagnosisResults({
       setSaving(false);
     }
   }
+
+  // ログイン中は診断完了時に自動保存する（同じ結果は1回だけ）
+  useEffect(() => {
+    if (!ready || !isLoggedIn) return;
+    if (autoSavedRef.current === result.diagnosedAt) return;
+    autoSavedRef.current = result.diagnosedAt;
+    void persistResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 結果ごとに1回だけ実行する
+  }, [ready, isLoggedIn, result.diagnosedAt]);
 
   return (
     <div className="job-diagnosis-results job-diagnosis-results-visible">
@@ -603,10 +626,10 @@ export function JobTypeDiagnosisResults({
         <button
           type="button"
           onClick={() => void saveToMyPage()}
-          disabled={saving || !ready}
+          disabled={saving || saved || !ready}
           className="job-diagnosis-save-btn"
         >
-          {saving ? "保存中..." : "診断結果をLINEへ保存"}
+          {saving ? "保存中..." : saved ? "保存しました" : "診断結果をLINEへ保存"}
         </button>
         {message && <p className="job-diagnosis-save-message">{message}</p>}
         {!isLoggedIn && ready && (

@@ -42,6 +42,10 @@ export function writeUserCache(
   store.set(key, { userId, savedAt: Date.now(), value });
 }
 
+export function invalidateUserCache(key: string): void {
+  store.delete(key);
+}
+
 export function clearUserCache(): void {
   store.clear();
 }

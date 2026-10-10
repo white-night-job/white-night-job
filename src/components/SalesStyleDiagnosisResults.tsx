@@ -14,7 +14,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { SalesStyleCharacter } from "@/components/SalesStyleCharacter";
 import { SalesStyleRecommendedJobs } from "@/components/SalesStyleRecommendedJobs";
 import { useUserSession } from "@/components/UserSessionProvider";
@@ -28,7 +28,7 @@ import {
   type SalesStyleTheme,
   type SavedSalesStyleResult,
 } from "@/lib/sales-style-diagnosis";
-import { writeUserCache } from "@/lib/user-data-cache";
+import { invalidateUserCache, writeUserCache } from "@/lib/user-data-cache";
 
 function themeVars(theme: SalesStyleTheme): CSSProperties {
   return {
@@ -136,6 +136,7 @@ export function SalesStyleDiagnosisResults({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState("");
+  const autoSavedRef = useRef<string | null>(null);
 
   const main = SALES_STYLE_PROFILES[result.mainType];
   const sub = result.subType ? SALES_STYLE_PROFILES[result.subType] : null;
@@ -158,6 +159,19 @@ export function SalesStyleDiagnosisResults({
       return;
     }
 
+    await persistResult();
+  }
+
+  // ログイン中は診断完了時に自動保存する（同じ結果は1回だけ）
+  useEffect(() => {
+    if (!ready || !isLoggedIn) return;
+    if (autoSavedRef.current === result.diagnosedAt) return;
+    autoSavedRef.current = result.diagnosedAt;
+    void persistResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 結果ごとに1回だけ実行する
+  }, [ready, isLoggedIn, result.diagnosedAt]);
+
+  async function persistResult() {
     setSaving(true);
     setMessage("");
     try {
@@ -176,6 +190,8 @@ export function SalesStyleDiagnosisResults({
       }
       if (data.history) {
         writeUserCache("mypage:sales-style-diagnosis", currentUser?.id, data.history);
+      } else {
+        invalidateUserCache("mypage:sales-style-diagnosis");
       }
       setSaved(true);
       setMessage("診断結果をマイページに保存しました。");

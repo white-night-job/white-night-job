@@ -13,6 +13,13 @@ function isDiagnosisJobType(value: string): value is DiagnosisJobType {
   return DIAGNOSIS_JOB_TYPES.includes(value as DiagnosisJobType);
 }
 
+function isMissingResultSignatureColumn(error: { code?: string; message?: string }): boolean {
+  return (
+    (error.code === "42703" || error.code === "PGRST204") &&
+    /result_signature/.test(error.message ?? "")
+  );
+}
+
 function mapHistoryRow(row: {
   id: string;
   diagnosed_at: string;
@@ -120,7 +127,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = createSupabaseAdmin();
-  const { error } = await supabase.from("user_job_type_diagnoses").insert({
+  const row = {
     user_id: userId,
     diagnosed_at: body.diagnosedAt ?? new Date().toISOString(),
     first_job_type: firstJobType,
@@ -128,13 +135,28 @@ export async function POST(request: Request) {
     second_job_type: secondJobType,
     second_percent: body.secondPercent,
     answers: body.answers ?? {},
-    result_signature: body.resultSignature ?? `${firstJobType}|${secondJobType}`,
     updated_at: new Date().toISOString(),
-  });
+  };
+  const resultSignature = body.resultSignature ?? `${firstJobType}|${secondJobType}`;
+
+  let { error } = await supabase
+    .from("user_job_type_diagnoses")
+    .insert({ ...row, result_signature: resultSignature });
+
+  // 履歴化マイグレーション（add-user-job-type-diagnosis-history.sql）未適用のDBでも保存できるようにする
+  if (error && isMissingResultSignatureColumn(error)) {
+    ({ error } = await supabase.from("user_job_type_diagnoses").insert(row));
+  }
+  if (error?.code === "23505") {
+    ({ error } = await supabase
+      .from("user_job_type_diagnoses")
+      .update(row)
+      .eq("user_id", userId));
+  }
 
   if (error) {
     console.error("[job-type-diagnosis] POST failed:", { userId, error });
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message: "保存に失敗しました。" }, { status: 500 });
   }
 
   try {
