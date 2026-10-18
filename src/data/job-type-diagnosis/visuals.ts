@@ -59,7 +59,7 @@ export type JobTypeVisual = {
 export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   ガールズバー: {
     key: "girls-bar",
-    imageSrc: null,
+    imageSrc: "/images/job-types/girls-bar.jpg",
     theme: { accent: "#e0779f", soft: "#fdf0f5", deep: "#9c3d63" },
     catchCopy: "会話を楽しみながら、自分らしく働ける王道スタイル",
     keywords: ["カジュアル", "会話が主役", "未経験OK多め"],
@@ -81,7 +81,7 @@ export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   },
   コンカフェ: {
     key: "concept-cafe",
-    imageSrc: null,
+    imageSrc: "/images/job-types/concept-cafe.jpg",
     theme: { accent: "#b58bd6", soft: "#f7f2fc", deep: "#6f4a93" },
     catchCopy: "好きな世界観を武器に、楽しく接客できるスタイル",
     keywords: ["世界観", "かわいい", "お酒なしOK多め"],
@@ -103,7 +103,7 @@ export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   },
   スナック: {
     key: "snack",
-    imageSrc: null,
+    imageSrc: "/images/job-types/snack.jpg",
     theme: { accent: "#9b3a50", soft: "#faf3ec", deep: "#6e2233" },
     catchCopy: "会話と居心地の良さで、常連さんと長く付き合える",
     keywords: ["アットホーム", "常連さん", "落ち着き"],
@@ -125,7 +125,7 @@ export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   },
   ラウンジ: {
     key: "lounge",
-    imageSrc: null,
+    imageSrc: "/images/job-types/lounge.jpg",
     theme: { accent: "#b8975a", soft: "#f8f3ea", deep: "#3a312a" },
     catchCopy: "落ち着いた接客と上品さを活かせる大人の働き方",
     keywords: ["上品", "大人の接客", "スキルアップ"],
@@ -147,7 +147,7 @@ export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   },
   クラブ: {
     key: "club",
-    imageSrc: null,
+    imageSrc: "/images/job-types/club.jpg",
     theme: { accent: "#b9965a", soft: "#f3f2f7", deep: "#23263a" },
     catchCopy: "フォーマルな接客で、ハイクラスな世界に挑戦できる",
     keywords: ["ハイクラス", "高単価", "フォーマル"],
@@ -169,7 +169,7 @@ export const JOB_TYPE_VISUALS: Record<DiagnosisJobType, JobTypeVisual> = {
   },
   "キャバクラ（ニュークラブ）": {
     key: "new-club",
-    imageSrc: null,
+    imageSrc: "/images/job-types/new-club.jpg",
     theme: { accent: "#c9a35c", soft: "#f8f4eb", deep: "#1d1a16" },
     catchCopy: "華やかさと接客力を武器に、高収入を目指せるスタイル",
     keywords: ["華やか", "高収入", "ドレス"],

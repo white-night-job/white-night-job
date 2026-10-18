@@ -178,7 +178,7 @@ function HeroResultCard({ item }: { item: DiagnosisResultItem }) {
         第1位
       </p>
       <div className="jt-hero-art">
-        <JobTypeIllustration visual={visual} label={item.jobType} />
+        <JobTypeIllustration visual={visual} label={item.jobType} photo />
       </div>
       <h3 id="jt-top-heading" className="ss-hero-name font-serif">
         {item.jobType}
@@ -607,7 +607,7 @@ export function JobTypeDiagnosisResults({
           <>
             <p className="job-diagnosis-empathy-stat">
               <span className="job-diagnosis-empathy-percent">{applyTendency.percent}%</span>
-              が{applyTendency.jobTypeLabel}の応募ボタンを押しています
+              が{applyTendency.jobTypeLabel}に応募しています。
             </p>
           </>
         ) : (
