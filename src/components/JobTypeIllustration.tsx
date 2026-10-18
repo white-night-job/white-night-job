@@ -217,9 +217,7 @@ function Woman({ scene }: { scene: SceneConfig }) {
       <ellipse cx="80" cy="72" rx="22" ry="25" fill={SKIN} />
       <path d="M68 76q4 -4 8 0" fill="none" stroke="#3a2a22" strokeWidth="2" strokeLinecap="round" />
       <path d="M84 76q4 -4 8 0" fill="none" stroke="#3a2a22" strokeWidth="2" strokeLinecap="round" />
-      <ellipse cx="66" cy="83" rx="4.2" ry="2.4" fill="#f29d9d" opacity="0.5" />
-      <ellipse cx="94" cy="83" rx="4.2" ry="2.4" fill="#f29d9d" opacity="0.5" />
-      <path d="M76 88q4 3.5 8 0" fill="none" stroke="#c9636b" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M77 89q3 1.6 6 0" fill="none" stroke="#a56a62" strokeWidth="1.2" strokeLinecap="round" />
       {scene.earrings ? (
         <g fill={scene.earrings}>
           <circle cx="58.5" cy="82" r="2.2" />
@@ -257,25 +255,8 @@ function BackDecor({ kind, id }: { kind: JobTypeVisualKey; id: string }) {
             <rect x="51" y="27" width="4" height="8" rx="1" />
           </g>
           <line x1="12" y1="55" x2="66" y2="55" stroke="#c9a25e" strokeWidth="2" opacity="0.6" />
-          <g filter={`url(#${id}-glow)`}>
-            <rect x="166" y="20" width="58" height="28" rx="9" fill="none" stroke="#ff8fc0" strokeWidth="2" />
-            <text
-              x="195"
-              y="40"
-              textAnchor="middle"
-              fontSize="15"
-              fontWeight="700"
-              letterSpacing="3"
-              fill="#ffe0ee"
-              stroke="#ff8fc0"
-              strokeWidth="0.6"
-              fontFamily="sans-serif"
-            >
-              BAR
-            </text>
-          </g>
-          <Sparkle x={154} y={22} r={4} color="#ffd1e6" opacity={0.8} />
-          <Sparkle x={214} y={62} r={3} color="#f3d08a" opacity={0.8} />
+          <circle cx="196" cy="36" r="28" fill={`url(#${id}-lamp)`} />
+          <Sparkle x={168} y={24} r={2.2} color="#f3d08a" opacity={0.55} />
         </g>
       );
     case "concept-cafe":
@@ -294,12 +275,8 @@ function BackDecor({ kind, id }: { kind: JobTypeVisualKey; id: string }) {
               />
             );
           })}
-          <polygon points={starPoints(30, 64, 9)} fill="#f3d08a" opacity="0.9" />
-          <polygon points={starPoints(212, 52, 7)} fill="#c9b2ec" />
-          <path d={heartPath(196, 84, 6)} fill="#f4a7c6" />
-          <path d={heartPath(44, 98, 5)} fill="#c9b2ec" opacity="0.85" />
-          <Sparkle x={58} y={42} r={4} color="#f3d08a" />
-          <Sparkle x={186} y={34} r={3.5} color="#f4a7c6" />
+          <polygon points={starPoints(30, 64, 4)} fill="#f3d08a" opacity="0.45" />
+          <Sparkle x={186} y={34} r={2.2} color="#f3d08a" opacity={0.5} />
         </g>
       );
     case "snack":
@@ -519,8 +496,12 @@ export function JobTypeIllustration({
             </linearGradient>
           ) : null}
           <radialGradient id={`${id}-lamp`}>
-            <stop offset="0%" stopColor="#ffe6a8" stopOpacity="0.85" />
+            <stop offset="0%" stopColor="#ffe6a8" stopOpacity="0.7" />
             <stop offset="100%" stopColor="#ffe6a8" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${id}-vignette`} cx="50%" cy="35%" r="70%">
+            <stop offset="0%" stopColor="#fff4e4" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#120c0a" stopOpacity="0.28" />
           </radialGradient>
           <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="2.2" result="blur" />
@@ -536,6 +517,7 @@ export function JobTypeIllustration({
         <g clipPath={`url(#${id}-frame)`}>
           <rect x="0" y="0" width="240" height="160" fill={`url(#${id}-bg)`} />
           {layers}
+          <rect x="0" y="0" width="240" height="160" fill={`url(#${id}-vignette)`} />
         </g>
         <rect
           x="1"

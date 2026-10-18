@@ -378,6 +378,16 @@ export function JobTypeDiagnosisResults({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState("");
+  const [applyTendency, setApplyTendency] = useState<
+    | {
+        status: "ready";
+        percent: number;
+        jobTypeLabel: string;
+        cohortSize: number;
+      }
+    | { status: "insufficient" }
+    | null
+  >(null);
   const autoSavedRef = useRef<string | null>(null);
 
   const {
@@ -513,6 +523,50 @@ export function JobTypeDiagnosisResults({
     }
   }
 
+  useEffect(() => {
+    const firstJobType = result.topTwo[0]?.jobType;
+    if (!firstJobType) return;
+    let cancelled = false;
+    setApplyTendency(null);
+    const params = new URLSearchParams({ firstJobType });
+    fetch(`/api/job-type-diagnosis/apply-tendency?${params.toString()}`, {
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return { status: "insufficient" as const };
+        return (await response.json()) as {
+          status?: string;
+          percent?: number;
+          jobTypeLabel?: string;
+          cohortSize?: number;
+        };
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (
+          data.status === "ready" &&
+          typeof data.percent === "number" &&
+          data.jobTypeLabel &&
+          typeof data.cohortSize === "number"
+        ) {
+          setApplyTendency({
+            status: "ready",
+            percent: data.percent,
+            jobTypeLabel: data.jobTypeLabel,
+            cohortSize: data.cohortSize,
+          });
+          return;
+        }
+        setApplyTendency({ status: "insufficient" });
+      })
+      .catch(() => {
+        if (!cancelled) setApplyTendency({ status: "insufficient" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [result]);
+
   // ログイン中は診断完了時に自動保存する（同じ結果は1回だけ）
   useEffect(() => {
     if (!ready || !isLoggedIn) return;
@@ -549,12 +603,26 @@ export function JobTypeDiagnosisResults({
         <h3 id="job-diagnosis-empathy-heading" className="job-diagnosis-empathy-title font-serif">
           あなたと同じ診断結果だった方は...
         </h3>
-        <p className="job-diagnosis-empathy-stat">
-          <span className="job-diagnosis-empathy-percent">集計中</span>
-        </p>
-        <p className="job-diagnosis-empathy-note">
-          応募完了のデータが揃い次第、割合を表示します。閲覧や応募ボタンのクリックは集計に含めていません。
-        </p>
+        {applyTendency?.status === "ready" ? (
+          <>
+            <p className="job-diagnosis-empathy-stat">
+              <span className="job-diagnosis-empathy-percent">{applyTendency.percent}%</span>
+              が{applyTendency.jobTypeLabel}の応募ボタンを押しています
+            </p>
+            <p className="job-diagnosis-empathy-note">
+              同じ診断結果の方 {applyTendency.cohortSize}人を集計。応募完了ではなく、応募ボタンのクリックです。
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="job-diagnosis-empathy-stat">
+              <span className="job-diagnosis-empathy-percent">集計中</span>
+            </p>
+            <p className="job-diagnosis-empathy-note">
+              同じ診断結果の応募ボタンクリックが足りないため、割合は表示していません。
+            </p>
+          </>
+        )}
       </section>
 
       <section className="jt-shops" aria-labelledby="job-diagnosis-shops-heading">

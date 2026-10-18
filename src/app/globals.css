@@ -4624,35 +4624,69 @@
 
 .jt-hero {
   border-color: var(--ss-accent);
-  padding: 1rem 0.95rem 0.9rem;
+  padding: 0.7rem 0.8rem 0.65rem;
+}
+
+.jt-hero::before {
+  display: none;
 }
 
 .jt-hero-art {
-  width: min(100%, 11.5rem);
-  margin: 0.15rem auto 0;
+  width: min(100%, 8.25rem);
+  margin: 0.1rem auto 0;
 }
 
 .jt-hero-art .jt-illust--lg {
-  max-width: 11.5rem;
+  max-width: 8.25rem;
+  filter: drop-shadow(0 6px 12px rgba(17, 17, 17, 0.12));
+}
+
+.jt-hero .jt-rank-badge {
+  margin: 0 0 0.3rem;
+  padding: 0.16rem 0.7rem;
+  font-size: 0.68rem;
 }
 
 .jt-hero .ss-hero-name {
-  margin-top: 0.2rem;
-  font-size: 1.7rem;
-  line-height: 1.3;
+  margin-top: 0.15rem;
+  font-size: 1.45rem;
+  line-height: 1.25;
+}
+
+.jt-hero .ss-hero-name::after {
+  margin-top: 0.28rem;
+  height: 1px;
 }
 
 .jt-hero .jt-gauge {
-  margin-top: 0.45rem;
+  max-width: 14rem;
+  margin-top: 0.25rem;
+}
+
+.jt-hero .jt-gauge-value {
+  font-size: 1.35rem;
+}
+
+.jt-hero .jt-gauge-track {
+  height: 0.38rem;
+  margin-top: 0.2rem;
 }
 
 .jt-hero .ss-hero-catch {
-  margin-top: 0.45rem;
+  display: -webkit-box;
+  margin-top: 0.28rem;
+  overflow: hidden;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .jt-hero-tags {
+  flex-wrap: wrap;
   justify-content: center;
-  margin-top: 0.55rem;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
 }
 
 .jt-rank-badge {
