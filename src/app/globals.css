@@ -5155,17 +5155,74 @@
   color: #2a211c;
 }
 
+.jt-runner-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .jt-runner-summary {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
+  flex: 1;
 }
 
 .jt-runner-detail {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.jt-runner-detail .jt-narrative,
+.jt-runner-detail .jt-panel,
+.jt-runner-detail .ss-section,
+.jt-runner-detail .ss-shop-list,
+.jt-runner-detail .ss-shop-card,
+.jt-runner-detail .ss-shop-link {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.jt-runner-detail .jt-suited-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.jt-runner-detail .ss-shop-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.jt-runner-detail .jt-suited-item,
+.jt-runner-detail .jt-merit-card,
+.jt-runner-detail .jt-step-list li,
+.jt-runner-detail .ss-section-head {
+  min-width: 0;
+}
+
+.jt-runner-detail .jt-suited-item > span:last-child,
+.jt-runner-detail .jt-merit-card > span,
+.jt-runner-detail .jt-step-list p,
+.jt-runner-detail .jt-text,
+.jt-runner-detail .jt-caution-list li,
+.jt-runner-detail .ss-section-lead,
+.jt-runner-detail .ss-section-title,
+.jt-runner-detail .jt-panel-title,
+.jt-runner-detail .jt-panel-subtitle,
+.jt-runner-name {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.jt-runner-head .jt-fold-btn {
+  flex-shrink: 0;
 }
 
 .jt-more-link {
@@ -5188,14 +5245,18 @@
 
 .jt-runners-list {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.65rem;
 }
 
 .jt-runner {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 0.75rem;
   border-radius: 1rem;
   border: 1px solid var(--ss-accent);
@@ -5246,8 +5307,9 @@
 }
 
 @media (max-width: 359px) {
-  .jt-suited-grid {
-    grid-template-columns: 1fr;
+  .jt-suited-grid,
+  .jt-runner-detail .jt-suited-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .jt-illust--sm {
@@ -5257,11 +5319,15 @@
 
 @media (min-width: 640px) {
   .jt-runners-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .jt-runner-summary .jt-illust--sm {
     width: 6.5rem;
+  }
+
+  .jt-runner-detail .ss-shop-list {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 

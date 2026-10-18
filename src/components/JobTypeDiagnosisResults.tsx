@@ -293,22 +293,24 @@ function RunnerUpCard({
 
   return (
     <article className="jt-runner" style={themeVars(visual)}>
-      <div className="jt-runner-summary">
-        <JobTypeIllustration visual={visual} size="sm" label={item.jobType} />
-        <div className="jt-runner-body">
-          <p className="jt-runner-rank">第{rank}位</p>
-          <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
-          <AptitudeGauge percent={item.percent} compact />
+      <div className="jt-runner-head">
+        <div className="jt-runner-summary">
+          <JobTypeIllustration visual={visual} size="sm" label={item.jobType} />
+          <div className="jt-runner-body">
+            <p className="jt-runner-rank">第{rank}位</p>
+            <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
+            <AptitudeGauge percent={item.percent} compact />
+          </div>
         </div>
+        <button
+          type="button"
+          className="jt-fold-btn"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? "閉じる" : "詳しく見る"}
+        </button>
       </div>
-      <button
-        type="button"
-        className="jt-fold-btn"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        {open ? "閉じる" : "詳しく見る"}
-      </button>
       {open ? (
         <div className="jt-runner-detail">
           <DiagnosisNarrative item={item} answers={answers} />
