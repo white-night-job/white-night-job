@@ -609,9 +609,6 @@ export function JobTypeDiagnosisResults({
               <span className="job-diagnosis-empathy-percent">{applyTendency.percent}%</span>
               が{applyTendency.jobTypeLabel}の応募ボタンを押しています
             </p>
-            <p className="job-diagnosis-empathy-note">
-              同じ診断結果の方 {applyTendency.cohortSize}人を集計。応募完了ではなく、応募ボタンのクリックです。
-            </p>
           </>
         ) : (
           <>
