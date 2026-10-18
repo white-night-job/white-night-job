@@ -106,6 +106,7 @@ export const JOB_TYPE_DIAGNOSIS_CONFIG = {
         { label: "私服", value: "casual" },
         { label: "ドレス", value: "dress" },
         { label: "綺麗めワンピース", value: "onepiece" },
+        { label: "どれでも", value: "any" },
       ],
     },
     {
@@ -173,6 +174,8 @@ export const JOB_TYPE_DIAGNOSIS_CONFIG = {
     { key: "outfit", value: "casual", weights: { ガールズバー: 5, スナック: 4 } },
     { key: "outfit", value: "dress", weights: { "キャバクラ（ニュークラブ）": 5, クラブ: 5, ラウンジ: 4 } },
     { key: "outfit", value: "onepiece", weights: { ラウンジ: 5, "キャバクラ（ニュークラブ）": 4, スナック: 3 } },
+    // 「どれでも」は服装で職種を優遇・減点しない
+    { key: "outfit", value: "any", weights: {} },
     // Q11 性格
     { key: "personality", value: "outgoing", weights: { ガールズバー: 5, コンカフェ: 4 } },
     { key: "personality", value: "shy_warm", weights: { スナック: 5, コンカフェ: 4, ガールズバー: 3 } },

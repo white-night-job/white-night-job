@@ -18,6 +18,7 @@ import {
   HandHeart,
   Heart,
   Home,
+  Layers,
   Hourglass,
   MessageCircle,
   Moon,
@@ -125,6 +126,7 @@ const OPTION_ICONS: Record<string, Record<string, LucideIcon>> = {
     casual: Sparkles,
     dress: Flower2,
     onepiece: Heart,
+    any: Layers,
   },
   personality: {
     outgoing: Smile,
