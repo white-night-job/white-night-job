@@ -4624,6 +4624,35 @@
 
 .jt-hero {
   border-color: var(--ss-accent);
+  padding: 1rem 0.95rem 0.9rem;
+}
+
+.jt-hero-art {
+  width: min(100%, 11.5rem);
+  margin: 0.15rem auto 0;
+}
+
+.jt-hero-art .jt-illust--lg {
+  max-width: 11.5rem;
+}
+
+.jt-hero .ss-hero-name {
+  margin-top: 0.2rem;
+  font-size: 1.7rem;
+  line-height: 1.3;
+}
+
+.jt-hero .jt-gauge {
+  margin-top: 0.45rem;
+}
+
+.jt-hero .ss-hero-catch {
+  margin-top: 0.45rem;
+}
+
+.jt-hero-tags {
+  justify-content: center;
+  margin-top: 0.55rem;
 }
 
 .jt-rank-badge {
@@ -4810,6 +4839,300 @@
   color: rgba(42, 34, 24, 0.6);
 }
 
+.jt-narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.jt-panel {
+  padding: 0.85rem 0.85rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 169, 122, 0.32);
+  background: linear-gradient(180deg, #fffdfb 0%, #fbf6f2 100%);
+}
+
+.jt-panel-eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a68455;
+}
+
+.jt-panel-title,
+.jt-panel-subtitle {
+  margin: 0.2rem 0 0.45rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #2a211c;
+}
+
+.jt-panel-subtitle {
+  margin-top: 0.85rem;
+  font-size: 0.92rem;
+}
+
+.jt-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.jt-text strong {
+  font-weight: 700;
+  color: #6e4e32;
+}
+
+.jt-caution-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.jt-caution-list li {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border-left: 3px solid #d7a3ab;
+  background: #fdf6f6;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #4a3336;
+}
+
+.jt-strength-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jt-strength-list li {
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 165, 116, 0.55);
+  background: linear-gradient(180deg, #fffaf3, #f3e6cf);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7a5b32;
+}
+
+.jt-step-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.jt-step-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.jt-step-list li > span {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e7cfc4, #c9ad7a);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.jt-step-list p {
+  margin: 0.05rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: #2a211c;
+}
+
+.jt-fold {
+  margin-top: 0.7rem;
+}
+
+.jt-fold-body {
+  margin-bottom: 0.55rem;
+}
+
+.jt-fold-btn {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8b6f3e;
+}
+
+.jt-shops {
+  margin-top: 0.9rem;
+  padding: 0.9rem 0.75rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 160, 0.55);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(243, 214, 218, 0.55), transparent 42%),
+    linear-gradient(180deg, #fffaf8 0%, #f8f1e8 100%);
+}
+
+.jt-shops-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2a211c;
+}
+
+.jt-shops-lead {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: #8d5d62;
+}
+
+.jt-shops-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.jt-shop-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 160, 164, 0.5);
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(120, 72, 78, 0.08);
+}
+
+.jt-shop-fav {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+}
+
+.jt-shop-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.jt-shop-image-wrap {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #f6efe6;
+}
+
+.jt-shop-image,
+.jt-shop-image-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jt-shop-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  letter-spacing: 0.14em;
+  color: #c4a574;
+}
+
+.jt-shop-body {
+  padding: 0.8rem 0.85rem 0.9rem;
+}
+
+.jt-shop-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #2a211c;
+}
+
+.jt-shop-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(42, 34, 24, 0.72);
+}
+
+.jt-shop-salary {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #8b6f3e;
+}
+
+.jt-shop-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jt-shop-tags li {
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: #f8ecec;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #8d5d62;
+}
+
+.jt-shop-reason {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: #6e5344;
+}
+
+.jt-shop-cta {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f6efe4 0%, #e4c9b4 55%, #c9ad7a 100%);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2a211c;
+}
+
+.jt-runner-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.jt-runner-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .jt-more-link {
   display: inline-flex;
   align-items: center;
@@ -4899,17 +5222,11 @@
 
 @media (min-width: 640px) {
   .jt-runners-list {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
-  .jt-runner {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: left;
-  }
-
-  .jt-illust--sm {
-    width: 100%;
+  .jt-runner-summary .jt-illust--sm {
+    width: 6.5rem;
   }
 }
 

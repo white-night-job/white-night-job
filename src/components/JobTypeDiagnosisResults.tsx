@@ -13,8 +13,6 @@ import {
   Gem,
   Heart,
   Home,
-  Info,
-  Lightbulb,
   MessageCircle,
   Moon,
   Shirt,
@@ -36,6 +34,7 @@ import {
   type ReactNode,
 } from "react";
 import { useCompare } from "@/components/CompareProvider";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { JobTypeDiagnosisSharePanel } from "@/components/JobTypeDiagnosisSharePanel";
 import { JobTypeIllustration } from "@/components/JobTypeIllustration";
 import { JobTypeRecommendedJobs } from "@/components/JobTypeRecommendedJobs";
@@ -123,34 +122,85 @@ function AptitudeGauge({ percent, compact = false }: { percent: number; compact?
   );
 }
 
-function ResultSection({
-  icon: Icon,
-  eyebrow,
-  title,
-  children,
-}: {
-  icon: LucideIcon;
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="ss-section jt-section">
-      <div className="ss-section-head">
-        <span className="ss-section-icon" aria-hidden>
-          <Icon size={16} strokeWidth={1.8} />
-        </span>
-        <div>
-          <p className="ss-section-eyebrow">{eyebrow}</p>
-          <h4 className="ss-section-title font-serif">{title}</h4>
-        </div>
-      </div>
-      <div className="ss-section-body">{children}</div>
-    </section>
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightKeywords(text: string, keywords: string[]): ReactNode {
+  const keys = [...new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean))].sort(
+    (a, b) => b.length - a.length,
+  );
+  if (keys.length === 0) return text;
+  const pattern = new RegExp(`(${keys.map(escapeRegExp).join("|")})`, "g");
+  return text.split(pattern).map((part, index) =>
+    keys.includes(part) ? <strong key={`${part}-${index}`}>{part}</strong> : part,
   );
 }
 
-function TopResultCard({
+function RichCopy({ text, keywords }: { text: string; keywords: string[] }) {
+  const sentences = text.split("。").filter((sentence) => sentence.trim().length > 0);
+  if (sentences.length <= 1) {
+    return <p className="jt-text">{highlightKeywords(text, keywords)}</p>;
+  }
+  return (
+    <div className="jt-prose">
+      {sentences.map((sentence) => (
+        <p key={sentence} className="jt-text">
+          {highlightKeywords(`${sentence}。`, keywords)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function DetailToggle({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="jt-fold">
+      {open ? <div className="jt-fold-body">{children}</div> : null}
+      <button
+        type="button"
+        className="jt-fold-btn"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? "閉じる" : "詳しく見る"}
+      </button>
+    </div>
+  );
+}
+
+function HeroResultCard({ item }: { item: DiagnosisResultItem }) {
+  const visual = JOB_TYPE_VISUALS[item.jobType];
+
+  return (
+    <article className="ss-hero jt-hero" style={themeVars(visual)} aria-labelledby="jt-top-heading">
+      <p className="jt-rank-badge">
+        <Crown size={14} strokeWidth={2} aria-hidden />
+        第1位
+      </p>
+      <div className="jt-hero-art">
+        <JobTypeIllustration visual={visual} label={item.jobType} />
+      </div>
+      <h3 id="jt-top-heading" className="ss-hero-name font-serif">
+        {item.jobType}
+      </h3>
+      <AptitudeGauge percent={item.percent} />
+      <p className="ss-hero-catch">{visual.catchCopy}</p>
+      <ul className="ss-badges jt-hero-tags">
+        {visual.keywords.map((keyword) => (
+          <li key={keyword}>{keyword}</li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function DiagnosisNarrative({
   item,
   answers,
 }: {
@@ -159,32 +209,15 @@ function TopResultCard({
 }) {
   const visual = JOB_TYPE_VISUALS[item.jobType];
   const strengths = buildDiagnosisStrengths(answers);
+  const keywords = visual.keywords;
 
   return (
-    <div className="ss-result jt-result" style={themeVars(visual)}>
-      <article className="ss-hero jt-hero" aria-labelledby="jt-top-heading">
-        <p className="jt-rank-badge">
-          <Crown size={14} strokeWidth={2} aria-hidden />
-          第1位
-        </p>
-        <JobTypeIllustration visual={visual} label={item.jobType} />
-        <h3 id="jt-top-heading" className="ss-hero-name font-serif">
-          {item.jobType}
-        </h3>
-        <p className="ss-hero-catch">{visual.catchCopy}</p>
-        <ul className="ss-badges">
-          {visual.keywords.map((keyword) => (
-            <li key={keyword}>{keyword}</li>
-          ))}
-        </ul>
-        <AptitudeGauge percent={item.percent} />
-      </article>
-
-      <ResultSection icon={Sparkles} eyebrow="Reason" title="あなたに合う理由">
-        <p className="jt-text">{visual.fitReason}</p>
-      </ResultSection>
-
-      <ResultSection icon={Users} eyebrow="Match" title="こんな人に向いています">
+    <div className="jt-narrative" style={themeVars(visual)}>
+      <section className="jt-panel">
+        <p className="jt-panel-eyebrow">Reason</p>
+        <h4 className="jt-panel-title font-serif">あなたに合う理由</h4>
+        <RichCopy text={visual.fitReason} keywords={keywords} />
+        <h4 className="jt-panel-subtitle font-serif">こんな人に向いています</h4>
         <ul className="jt-suited-grid">
           {visual.suitedFor.map((suited) => {
             const Icon = SUITED_ICONS[suited.icon];
@@ -198,126 +231,138 @@ function TopResultCard({
             );
           })}
         </ul>
-      </ResultSection>
+      </section>
 
-      <ResultSection icon={Gem} eyebrow="Merit" title="この職種のメリット">
+      <section className="jt-panel">
+        <p className="jt-panel-eyebrow">Merit</p>
+        <h4 className="jt-panel-title font-serif">この職種のメリット</h4>
         <ul className="jt-merit-list">
           {item.merits.map((merit) => (
             <li key={merit} className="jt-merit-card">
               <Check size={14} strokeWidth={2.4} aria-hidden />
-              <span>{merit}</span>
+              <span>{highlightKeywords(merit, keywords)}</span>
             </li>
           ))}
         </ul>
-      </ResultSection>
-
-      <ResultSection icon={Info} eyebrow="Before you start" title="働く前に知っておきたいこと">
-        <div className="ss-card ss-card--caution">
-          <ul className="ss-list ss-list--dot">
+        <DetailToggle>
+          <h4 className="jt-panel-subtitle font-serif">働く前に知っておきたいこと</h4>
+          <ul className="jt-caution-list">
             {item.cautions.map((caution) => (
-              <li key={caution}>
-                <span className="ss-list-mark" aria-hidden />
-                <span>{caution}</span>
-              </li>
+              <li key={caution}>{highlightKeywords(caution, keywords)}</li>
             ))}
           </ul>
-          <p className="jt-soft-note">事前に知っておけば大丈夫。面接や体験入店で気軽に確認してみましょう。</p>
-        </div>
-      </ResultSection>
+          <p className="jt-soft-note">
+            事前に知っておけば大丈夫。面接や体験入店で気軽に確認してみましょう。
+          </p>
+        </DetailToggle>
+      </section>
 
-      <ResultSection icon={Star} eyebrow="Your strength" title="この職種で活かせるあなたの強み">
+      <section className="jt-panel">
+        <p className="jt-panel-eyebrow">Your strength</p>
+        <h4 className="jt-panel-title font-serif">この職種で活かせるあなたの強み</h4>
         {strengths.length > 0 ? (
-          <ul className="ss-chips">
+          <ul className="jt-strength-list">
             {strengths.map((strength) => (
-              <li key={strength} className="ss-chip">
-                {strength}
-              </li>
+              <li key={strength}>{strength}</li>
             ))}
           </ul>
         ) : null}
-        <div className="ss-card ss-card--accent ss-card-with-icon">
-          <Lightbulb size={16} className="ss-inline-icon" aria-hidden />
-          <p className="jt-text">{visual.advice}</p>
-        </div>
-      </ResultSection>
-
-      <ResultSection icon={TrendingUp} eyebrow="Tips" title="この職種で働くコツ">
-        <ol className="ss-list ss-list--num">
+        <h4 className="jt-panel-subtitle font-serif">この職種で働くコツ</h4>
+        <ol className="jt-step-list">
           {visual.tips.map((tip, index) => (
             <li key={tip}>
-              <span className="ss-list-mark" aria-hidden>
-                {index + 1}
-              </span>
-              <span>{tip}</span>
+              <span aria-hidden>{index + 1}</span>
+              <p>{highlightKeywords(tip, keywords)}</p>
             </li>
           ))}
         </ol>
-      </ResultSection>
-
-      <JobTypeRecommendedJobs jobType={item.jobType} jobsUrl={item.jobsUrl} />
+        <DetailToggle>
+          <h4 className="jt-panel-subtitle font-serif">詳しいアドバイス</h4>
+          <RichCopy text={visual.advice} keywords={keywords} />
+        </DetailToggle>
+      </section>
     </div>
   );
 }
 
-function RunnerUpCard({ rank, item }: { rank: 2 | 3; item: DiagnosisResultItem }) {
+function RunnerUpCard({
+  rank,
+  item,
+  answers,
+}: {
+  rank: 2 | 3;
+  item: DiagnosisResultItem;
+  answers: DiagnosisAnswers;
+}) {
   const visual = JOB_TYPE_VISUALS[item.jobType];
+  const [open, setOpen] = useState(false);
+
   return (
     <article className="jt-runner" style={themeVars(visual)}>
-      <JobTypeIllustration visual={visual} size="sm" label={item.jobType} />
-      <div className="jt-runner-body">
-        <p className="jt-runner-rank">第{rank}位</p>
-        <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
-        <p className="jt-runner-catch">{visual.catchCopy}</p>
-        <AptitudeGauge percent={item.percent} compact />
-        <Link href={item.jobsUrl} className="jt-runner-link">
-          この職種の求人を見る
-        </Link>
+      <div className="jt-runner-summary">
+        <JobTypeIllustration visual={visual} size="sm" label={item.jobType} />
+        <div className="jt-runner-body">
+          <p className="jt-runner-rank">第{rank}位</p>
+          <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
+          <p className="jt-runner-catch">{visual.catchCopy}</p>
+          <AptitudeGauge percent={item.percent} compact />
+        </div>
       </div>
+      <button
+        type="button"
+        className="jt-fold-btn"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? "閉じる" : "詳しく見る"}
+      </button>
+      {open ? (
+        <div className="jt-runner-detail">
+          <DiagnosisNarrative item={item} answers={answers} />
+          <JobTypeRecommendedJobs jobType={item.jobType} jobsUrl={item.jobsUrl} />
+        </div>
+      ) : null}
     </article>
   );
 }
 
 function RecommendedShopCard({ shop }: { shop: RecommendedDiagnosisShop }) {
   return (
-    <article className="job-diagnosis-shop-card">
-      <div className="job-diagnosis-shop-image-wrap">
-        {shop.imageUrl ? (
-          <img
-            src={shop.imageUrl}
-            alt={`${shop.shopName}の求人｜${IMAGE_ALT_BRAND}`}
-            className="job-diagnosis-shop-image"
-          />
-        ) : (
-          <div className="job-diagnosis-shop-image-placeholder font-serif">
-            White Night
-          </div>
-        )}
+    <article className="jt-shop-card">
+      <div className="jt-shop-fav">
+        <FavoriteButton jobId={shop.jobId} allowLineLoginRedirect />
       </div>
-
-      <div className="job-diagnosis-shop-body">
-        <h4 className="job-diagnosis-shop-name font-serif">{shop.shopName}</h4>
-        <dl className="job-diagnosis-shop-meta">
-          <div>
-            <dt>エリア</dt>
-            <dd>{shop.areaLabel}</dd>
-          </div>
-          <div>
-            <dt>時給</dt>
-            <dd className="job-diagnosis-shop-salary">{shop.salary}</dd>
-          </div>
-          <div>
-            <dt>職種</dt>
-            <dd>{shop.jobType}</dd>
-          </div>
-        </dl>
-        <div className="job-diagnosis-shop-reason-block">
-          <p className="job-diagnosis-shop-reason-label">診断とのマッチ理由</p>
-          <p className="job-diagnosis-shop-reason">{shop.reason}</p>
+      <Link href={shop.detailUrl} className="jt-shop-link">
+        <div className="jt-shop-image-wrap">
+          {shop.imageUrl ? (
+            <img
+              src={shop.imageUrl}
+              alt={`${shop.shopName}の求人｜${IMAGE_ALT_BRAND}`}
+              className="jt-shop-image"
+            />
+          ) : (
+            <div className="jt-shop-image-placeholder font-serif">White Night</div>
+          )}
         </div>
-        <Link href={shop.detailUrl} className="job-diagnosis-shop-detail-btn">
-          詳しく見る
-        </Link>
-      </div>
+        <div className="jt-shop-body">
+          <h4 className="jt-shop-name font-serif">{shop.shopName}</h4>
+          <p className="jt-shop-meta">
+            <span>{shop.areaLabel}</span>
+            <span aria-hidden> / </span>
+            <span>{shop.jobType}</span>
+          </p>
+          {shop.salary ? <p className="jt-shop-salary">{shop.salary}</p> : null}
+          {shop.tags.length > 0 ? (
+            <ul className="jt-shop-tags">
+              {shop.tags.map((tag) => (
+                <li key={tag}>{tag}</li>
+              ))}
+            </ul>
+          ) : null}
+          {shop.reason ? <p className="jt-shop-reason">{shop.reason}</p> : null}
+          <span className="jt-shop-cta">このお店を詳しく見る</span>
+        </div>
+      </Link>
     </article>
   );
 }
@@ -507,7 +552,42 @@ export function JobTypeDiagnosisResults({
         </p>
       ) : null}
 
-      <TopResultCard item={result.topTwo[0]} answers={answers} />
+      <HeroResultCard item={result.topTwo[0]} />
+
+      <section className="jt-shops" aria-labelledby="job-diagnosis-shops-heading">
+        <h3 id="job-diagnosis-shops-heading" className="jt-shops-title font-serif">
+          あなたにおすすめの店舗
+        </h3>
+        <p className="jt-shops-lead">診断結果から、あなたに合うお店をピックアップ</p>
+        <p className="job-diagnosis-section-lead">
+          {hasUserPreferredAreas
+            ? "あなたの診断結果と希望エリアに合うお店をピックアップしました。"
+            : "あなたの診断結果に合うお店を全エリアからピックアップしました。"}
+        </p>
+
+        {loadingShops ? (
+          <p className="job-diagnosis-shops-loading">おすすめ店舗を読み込み中...</p>
+        ) : recommendedShops.length > 0 ? (
+          <div className="jt-shops-list">
+            {recommendedShops.map((shop) => (
+              <RecommendedShopCard key={shop.jobId} shop={shop} />
+            ))}
+          </div>
+        ) : (
+          <div className="job-diagnosis-shops-empty">
+            <p>
+              {hasUserPreferredAreas
+                ? "現在、診断結果と希望エリアの両方に一致するおすすめ店舗はありません。"
+                : "現在、診断結果に一致するおすすめ店舗はありません。"}
+            </p>
+            <Link href="/#shop-search" className="job-diagnosis-shops-search-btn">
+              店舗を検索する
+            </Link>
+          </div>
+        )}
+      </section>
+
+      <DiagnosisNarrative item={result.topTwo[0]} answers={answers} />
 
       <section className="jt-runners" aria-labelledby="jt-runners-heading">
         <h3 id="jt-runners-heading" className="jt-runners-title font-serif">
@@ -515,7 +595,12 @@ export function JobTypeDiagnosisResults({
         </h3>
         <div className="jt-runners-list">
           {result.ranked.slice(1, 3).map((item, index) => (
-            <RunnerUpCard key={item.jobType} rank={index === 0 ? 2 : 3} item={item} />
+            <RunnerUpCard
+              key={item.jobType}
+              rank={index === 0 ? 2 : 3}
+              item={item}
+              answers={answers}
+            />
           ))}
         </div>
       </section>
@@ -532,38 +617,6 @@ export function JobTypeDiagnosisResults({
           <p className="job-diagnosis-empathy-note">
             ※ 実際の応募データが蓄積されるまで、参考値を表示しています。
           </p>
-        )}
-      </section>
-
-      <section className="job-diagnosis-shops-section" aria-labelledby="job-diagnosis-shops-heading">
-        <h3 id="job-diagnosis-shops-heading" className="job-diagnosis-section-title font-serif">
-          おすすめ店舗
-        </h3>
-        <p className="job-diagnosis-section-lead">
-          {hasUserPreferredAreas
-            ? "あなたの診断結果と希望エリアに合うお店をピックアップしました。"
-            : "あなたの診断結果に合うお店を全エリアからピックアップしました。"}
-        </p>
-
-        {loadingShops ? (
-          <p className="job-diagnosis-shops-loading">おすすめ店舗を読み込み中...</p>
-        ) : recommendedShops.length > 0 ? (
-          <div className="job-diagnosis-shops-grid">
-            {recommendedShops.map((shop) => (
-              <RecommendedShopCard key={shop.jobId} shop={shop} />
-            ))}
-          </div>
-        ) : (
-          <div className="job-diagnosis-shops-empty">
-            <p>
-              {hasUserPreferredAreas
-                ? "現在、診断結果と希望エリアの両方に一致するおすすめ店舗はありません。"
-                : "現在、診断結果に一致するおすすめ店舗はありません。"}
-            </p>
-            <Link href="/#shop-search" className="job-diagnosis-shops-search-btn">
-              店舗を検索する
-            </Link>
-          </div>
         )}
       </section>
 

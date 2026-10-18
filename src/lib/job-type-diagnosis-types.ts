@@ -95,4 +95,6 @@ export type RecommendedDiagnosisShop = {
   jobType: JobType;
   reason: string;
   detailUrl: string;
+  /** 求人データにある待遇タグ。最大3件。無い場合は空 */
+  tags: string[];
 };

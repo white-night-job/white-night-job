@@ -11,6 +11,7 @@ import type {
 import {
   DIAGNOSIS_PREFERRED_AREA_OPTIONS,
 } from "@/lib/job-type-diagnosis-types";
+import { buildJobCardConditions } from "@/lib/job-card-conditions";
 import { parseJobPlan } from "@/lib/job-plan";
 import { resolveJobListingStatus } from "@/lib/job-listing-status";
 import type { District, Job } from "@/types/job";
@@ -122,5 +123,6 @@ export function pickRecommendedDiagnosisShops(
     jobType: job.jobType,
     reason: buildShopReason(job, result, hasAreas),
     detailUrl: `/jobs/${job.id}`,
+    tags: buildJobCardConditions(job).tags.slice(0, 3).map((tag) => tag.label),
   }));
 }
