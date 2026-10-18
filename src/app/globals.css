@@ -4722,6 +4722,7 @@
   aspect-ratio: 3 / 2;
   border-radius: 1.1rem;
   object-fit: cover;
+  object-position: center 32%;
 }
 
 .jt-illust--lg {

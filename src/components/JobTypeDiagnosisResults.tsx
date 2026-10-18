@@ -178,7 +178,7 @@ function HeroResultCard({ item }: { item: DiagnosisResultItem }) {
         第1位
       </p>
       <div className="jt-hero-art">
-        <JobTypeIllustration visual={visual} label={item.jobType} photo />
+        <JobTypeIllustration visual={visual} label={item.jobType} />
       </div>
       <h3 id="jt-top-heading" className="ss-hero-name font-serif">
         {item.jobType}

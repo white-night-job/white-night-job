@@ -452,19 +452,16 @@ export function JobTypeIllustration({
   visual,
   size = "lg",
   label,
-  photo = false,
 }: {
   visual: JobTypeVisual;
   size?: "lg" | "sm";
   label: string;
-  /** 第1位カードだけ写真を使う。第2位は従来のイラストのまま */
-  photo?: boolean;
 }) {
   const rawId = useId();
   const id = `jti${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
   const className = `jt-illust jt-illust--${size}`;
 
-  if (photo && visual.imageSrc) {
+  if (visual.imageSrc) {
     return (
       <div className={className}>
         <img src={visual.imageSrc} alt={`${label}のイメージ`} className="jt-illust-image" />
