@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Briefcase,
   CalendarDays,
@@ -33,9 +32,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { useCompare } from "@/components/CompareProvider";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { JobTypeDiagnosisSharePanel } from "@/components/JobTypeDiagnosisSharePanel";
 import { JobTypeIllustration } from "@/components/JobTypeIllustration";
 import { JobTypeRecommendedJobs } from "@/components/JobTypeRecommendedJobs";
 import {
@@ -46,10 +43,7 @@ import {
 } from "@/data/job-type-diagnosis/visuals";
 import { useUserSession } from "@/components/UserSessionProvider";
 import {
-  buildDiagnosisJobsUrl,
-  buildDiagnosisTrialJobsUrl,
   formatDiagnosisDate,
-  getSocialProofApplyRate,
   type DiagnosisAnswers,
   type DiagnosisResult,
   type DiagnosisResultItem,
@@ -304,7 +298,6 @@ function RunnerUpCard({
         <div className="jt-runner-body">
           <p className="jt-runner-rank">第{rank}位</p>
           <h4 className="jt-runner-name font-serif">{item.jobType}</h4>
-          <p className="jt-runner-catch">{visual.catchCopy}</p>
           <AptitudeGauge percent={item.percent} compact />
         </div>
       </div>
@@ -378,8 +371,6 @@ export function JobTypeDiagnosisResults({
   answers,
   onReset,
 }: JobTypeDiagnosisResultsProps) {
-  const router = useRouter();
-  const { setCompareIds, showToast } = useCompare();
   const { currentUser, isLoggedIn, ready } = useUserSession();
   const [recommendedShops, setRecommendedShops] = useState<RecommendedDiagnosisShop[]>([]);
   const [loadingShops, setLoadingShops] = useState(true);
@@ -403,22 +394,10 @@ export function JobTypeDiagnosisResults({
     [answers, hasUserPreferredAreas, userPreferredAreas],
   );
 
-  const socialProof = getSocialProofApplyRate(result.topTwo[0].jobType);
-  const primaryJobsUrl = buildDiagnosisJobsUrl(result.topTwo[0].jobType);
-  const trialJobsUrl = buildDiagnosisTrialJobsUrl(result.topTwo[0].jobType);
+  const secondPlace = result.ranked[1] ?? result.topTwo[1];
   const preferredAreasLabel = formatPreferredAreasLabel(
     recommendationAnswers.preferredAreas,
   );
-
-  function goCompareRecommended() {
-    const ids = recommendedShops.map((shop) => shop.jobId).slice(0, 3);
-    if (ids.length === 0) {
-      showToast("比較できるおすすめ店舗がありません", "error");
-      return;
-    }
-    setCompareIds(ids);
-    router.push("/compare");
-  }
 
   useEffect(() => {
     if (!preferredAreasReady) return;
@@ -553,6 +532,30 @@ export function JobTypeDiagnosisResults({
       ) : null}
 
       <HeroResultCard item={result.topTwo[0]} />
+      <DiagnosisNarrative item={result.topTwo[0]} answers={answers} />
+
+      {secondPlace ? (
+        <section className="jt-runners" aria-labelledby="jt-runners-heading">
+          <h3 id="jt-runners-heading" className="jt-runners-title font-serif">
+            第2位のおすすめ職種
+          </h3>
+          <div className="jt-runners-list">
+            <RunnerUpCard rank={2} item={secondPlace} answers={answers} />
+          </div>
+        </section>
+      ) : null}
+
+      <section className="job-diagnosis-empathy-card" aria-labelledby="job-diagnosis-empathy-heading">
+        <h3 id="job-diagnosis-empathy-heading" className="job-diagnosis-empathy-title font-serif">
+          あなたと同じ診断結果だった方は...
+        </h3>
+        <p className="job-diagnosis-empathy-stat">
+          <span className="job-diagnosis-empathy-percent">集計中</span>
+        </p>
+        <p className="job-diagnosis-empathy-note">
+          応募完了のデータが揃い次第、割合を表示します。閲覧や応募ボタンのクリックは集計に含めていません。
+        </p>
+      </section>
 
       <section className="jt-shops" aria-labelledby="job-diagnosis-shops-heading">
         <h3 id="job-diagnosis-shops-heading" className="jt-shops-title font-serif">
@@ -586,62 +589,6 @@ export function JobTypeDiagnosisResults({
           </div>
         )}
       </section>
-
-      <DiagnosisNarrative item={result.topTwo[0]} answers={answers} />
-
-      <section className="jt-runners" aria-labelledby="jt-runners-heading">
-        <h3 id="jt-runners-heading" className="jt-runners-title font-serif">
-          こちらの職種も向いています
-        </h3>
-        <div className="jt-runners-list">
-          {result.ranked.slice(1, 3).map((item, index) => (
-            <RunnerUpCard
-              key={item.jobType}
-              rank={index === 0 ? 2 : 3}
-              item={item}
-              answers={answers}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="job-diagnosis-empathy-card" aria-labelledby="job-diagnosis-empathy-heading">
-        <h3 id="job-diagnosis-empathy-heading" className="job-diagnosis-empathy-title font-serif">
-          あなたと同じ診断結果だった方は...
-        </h3>
-        <p className="job-diagnosis-empathy-stat">
-          <span className="job-diagnosis-empathy-percent">{socialProof.percent}%</span>
-          が{result.topTwo[0].jobType}へ応募しています。
-        </p>
-        {socialProof.source === "dummy" && (
-          <p className="job-diagnosis-empathy-note">
-            ※ 実際の応募データが蓄積されるまで、参考値を表示しています。
-          </p>
-        )}
-      </section>
-
-      <section className="job-diagnosis-trial-card" aria-labelledby="job-diagnosis-trial-heading">
-        <h3 id="job-diagnosis-trial-heading" className="job-diagnosis-trial-title font-serif">
-          まずは体験入店から始めてみませんか？
-        </h3>
-        <p className="job-diagnosis-trial-text">
-          いきなり本入店せず、雰囲気を確かめながら始められるお店をご紹介しています。
-        </p>
-        <Link href={trialJobsUrl} className="job-diagnosis-trial-btn">
-          体験入店できるお店を見る
-        </Link>
-      </section>
-
-      <section className="job-diagnosis-advice-card">
-        <h3 className="job-diagnosis-advice-title font-serif">あなたへのアドバイス</h3>
-        <ul className="job-diagnosis-advice-list">
-          {result.advice.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      </section>
-
-      <JobTypeDiagnosisSharePanel result={result} onMessage={setMessage} />
 
       {isLoggedIn && history.length > 0 && (
         <section className="job-diagnosis-history-card" aria-labelledby="job-diagnosis-history-heading">
@@ -697,21 +644,6 @@ export function JobTypeDiagnosisResults({
           もう一度診断する
         </button>
       </div>
-
-      <Link href={primaryJobsUrl} className="job-diagnosis-primary-cta">
-        あなたに合う求人をもっと見る
-      </Link>
-
-      {recommendedShops.length > 0 && (
-        <button
-          type="button"
-          onClick={goCompareRecommended}
-          disabled={loadingShops}
-          className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-gold/40 bg-charcoal px-5 text-sm font-semibold text-gold-light disabled:opacity-60"
-        >
-          あなたにおすすめの店舗を比較する
-        </button>
-      )}
     </div>
   );
 }
