@@ -237,7 +237,7 @@ export function NightJobDiagnosis({ authenticated = false }: NightJobDiagnosisPr
         <div className="job-diagnosis-heading">
           <p className="job-diagnosis-eyebrow">Diagnosis</p>
           <span className="job-diagnosis-gold-line" aria-hidden />
-          <h2 className="job-diagnosis-title font-serif">あなたに合う職種診断</h2>
+          <h2 className="job-diagnosis-title font-serif">あなたに向いている職種診断</h2>
           <p className="job-diagnosis-subtitle">
             約1分・{questionTotal}の質問で
             <br />
