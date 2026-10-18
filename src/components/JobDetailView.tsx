@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { CompareButton } from "@/components/CompareButton";
@@ -20,6 +21,7 @@ import {
 import {
   getDisplayStoreImages,
 } from "@/lib/job-db";
+import { hasInternalPreviousPage } from "@/lib/internal-navigation";
 import { formatLocation } from "@/lib/job-storage";
 import { luxuryBtnPrimary } from "@/lib/luxury-styles";
 import {
@@ -215,6 +217,28 @@ function FavoriteSlot({
   return <FavoriteButton jobId={jobId} allowLineLoginRedirect />;
 }
 
+function JobDetailBackButton() {
+  const router = useRouter();
+
+  return (
+    <div className="mb-3">
+      <button
+        type="button"
+        onClick={() => {
+          if (hasInternalPreviousPage()) {
+            router.back();
+            return;
+          }
+          router.push("/jobs");
+        }}
+        className="inline-flex min-h-10 items-center bg-transparent p-0 text-left text-sm font-medium text-gold-dark"
+      >
+        ← 前の画面へ戻る
+      </button>
+    </div>
+  );
+}
+
 export function JobDetailView({
   job,
   preview = false,
@@ -336,27 +360,7 @@ export function JobDetailView({
         </div>
       )}
 
-      {!preview && (
-        <div className="mb-3">
-          {susukinoGirlsBarBackLink ? (
-            <Link
-              href={susukinoGirlsBarBackLink.href}
-              scroll={false}
-              className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
-            >
-              ← {susukinoGirlsBarBackLink.label}
-            </Link>
-          ) : (
-            <Link
-              href="/jobs"
-              scroll={false}
-              className="inline-flex min-h-10 items-center text-sm font-medium text-gold-dark"
-            >
-              ← 戻る
-            </Link>
-          )}
-        </div>
-      )}
+      {!preview && <JobDetailBackButton />}
 
       {showBreadcrumbs && (
         <Breadcrumbs

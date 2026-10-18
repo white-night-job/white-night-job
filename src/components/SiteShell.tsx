@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { ChatBot } from "@/components/ChatBot";
 import { CompareProvider } from "@/components/CompareProvider";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SiteVisitTracker } from "@/components/SiteVisitTracker";
 import { UniqueVisitorTracker } from "@/components/UniqueVisitorTracker";
+import { trackInternalNavigation } from "@/lib/internal-navigation";
 
 /**
  * Public site chrome. Admin routes (/admin/*) render children only —
@@ -15,6 +16,11 @@ import { UniqueVisitorTracker } from "@/components/UniqueVisitorTracker";
  */
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "";
+
+  useEffect(() => {
+    trackInternalNavigation(pathname);
+  }, [pathname]);
+
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   const isShopDashboardRoute =
     pathname === "/shop-dashboard" || pathname.startsWith("/shop-dashboard/");
