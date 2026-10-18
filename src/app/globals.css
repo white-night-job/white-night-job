@@ -4025,6 +4025,7 @@
 .sales-style-character-image {
   border-radius: 50%;
   object-fit: cover;
+  object-position: center 30%;
 }
 
 .sales-style-character--lg {
@@ -7027,13 +7028,45 @@ body.job-listing-preview-open {
 }
 
 .job-diagnosis-title {
-  margin: 0.45rem -2.4rem 0 0;
+  margin: 0.45rem 0 0;
   font-size: 1.45rem;
   font-weight: 600;
   line-height: 1.45;
   letter-spacing: 0.04em;
   text-align: center;
   color: #2a211c;
+}
+
+.job-diagnosis-heading .job-diagnosis-title {
+  margin-right: -2.4rem;
+}
+
+#sales-style-diagnosis .job-diagnosis-title {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin-right: 0;
+  padding: 0 0.4rem;
+  font-size: 1.2rem;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 400px) {
+  #sales-style-diagnosis .job-diagnosis-title {
+    font-size: 1.32rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (min-width: 640px) {
+  #sales-style-diagnosis .job-diagnosis-title {
+    padding: 0;
+    font-size: 1.45rem;
+    line-height: 1.45;
+    letter-spacing: 0.04em;
+  }
 }
 
 .job-diagnosis-subtitle {

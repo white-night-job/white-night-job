@@ -44,7 +44,7 @@ export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
     name: "盛り上げ・エンタメ型",
     catchCopy: "その場をパッと明るくする、みんなのムードメーカー",
     characterLabel: "華やかムードメーカー",
-    imageSrc: null,
+    imageSrc: "/images/sales-style/entertainer.jpg",
     theme: { accent: "#d4875a", soft: "#fcf1e9", deep: "#93542f" },
     keywords: ["明るさ", "リアクション", "テンポ"],
     summary:
@@ -93,7 +93,7 @@ export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
     name: "聞き上手・癒し型",
     catchCopy: "そばにいるだけで安心される、癒しの存在",
     characterLabel: "やさしい癒し系",
-    imageSrc: null,
+    imageSrc: "/images/sales-style/healer.jpg",
     theme: { accent: "#7fa58f", soft: "#eef5f0", deep: "#4c705d" },
     keywords: ["聞き上手", "安心感", "リピート"],
     summary:
@@ -138,7 +138,7 @@ export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
     name: "距離感近め・恋人営業型",
     catchCopy: "距離を縮めて、特別な関係を築ける人",
     characterLabel: "ときめきメーカー",
-    imageSrc: null,
+    imageSrc: "/images/sales-style/romance.jpg",
     theme: { accent: "#c97a8f", soft: "#fcf0f3", deep: "#8f4459" },
     keywords: ["マメさ", "特別感", "指名力"],
     summary:
@@ -183,7 +183,7 @@ export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
     name: "上品・落ち着き型",
     catchCopy: "品の良さと落ち着きで、信頼される大人の接客",
     characterLabel: "洗練された大人レディ",
-    imageSrc: null,
+    imageSrc: "/images/sales-style/elegant.jpg",
     theme: { accent: "#8a78a8", soft: "#f3f0f8", deep: "#4f4270" },
     keywords: ["上品さ", "ていねい", "信頼感"],
     summary:
@@ -228,7 +228,7 @@ export const SALES_STYLE_PROFILES: Record<SalesStyleType, SalesStyleProfile> = {
     name: "マイペース・自然体型",
     catchCopy: "飾らない自分らしさで、自然と好かれる人",
     characterLabel: "ふんわり自然体",
-    imageSrc: null,
+    imageSrc: "/images/sales-style/natural.jpg",
     theme: { accent: "#b39463", soft: "#f7f2e8", deep: "#76603a" },
     keywords: ["親しみやすさ", "自然体", "マイペース"],
     summary:
