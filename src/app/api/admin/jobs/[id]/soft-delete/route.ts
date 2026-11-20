@@ -51,13 +51,31 @@ export async function POST(_request: Request, { params }: RouteContext) {
       );
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const patch = buildSoftDeleteJobPatch(existing);
+    let { data: updated, error: updateError } = await supabase
       .from("jobs")
-      .update(buildSoftDeleteJobPatch())
+      .update(patch)
       .eq("id", id)
       .is("deleted_at", null)
-      .select("id, shop_name, deleted_at")
+      .select("id, shop_name, deleted_at, deleted_from_listing_status")
       .maybeSingle();
+
+    // deleted_from_listing_status 未追加のDBでも削除できるようにする
+    if (
+      updateError &&
+      (updateError.code === "42703" ||
+        updateError.code === "PGRST204" ||
+        /deleted_from_listing_status/.test(updateError.message ?? ""))
+    ) {
+      const { deleted_from_listing_status: _ignored, ...legacyPatch } = patch;
+      ({ data: updated, error: updateError } = await supabase
+        .from("jobs")
+        .update(legacyPatch)
+        .eq("id", id)
+        .is("deleted_at", null)
+        .select("id, shop_name, deleted_at")
+        .maybeSingle());
+    }
 
     if (updateError) throw updateError;
     if (!updated) {

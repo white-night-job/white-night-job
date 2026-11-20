@@ -483,6 +483,22 @@ function AdminJobsPageInner() {
   } | null>(null);
   const [softDeleteTarget, setSoftDeleteTarget] = useState<Job | null>(null);
   const [softDeleting, setSoftDeleting] = useState(false);
+  type ShopListTab = "listed" | "deleted";
+  type DeletedShopItem = {
+    job: Job;
+    deletedAt: string;
+    deletedFromListingStatus: JobListingStatus | null;
+    deletedFromListingStatusLabel: string | null;
+  };
+  const [shopListTab, setShopListTab] = useState<ShopListTab>("listed");
+  const [deletedItems, setDeletedItems] = useState<DeletedShopItem[]>([]);
+  const [deletedSearchPerformed, setDeletedSearchPerformed] = useState(false);
+  const [deletedSearchLoading, setDeletedSearchLoading] = useState(false);
+  const [deletedSearchPage, setDeletedSearchPage] = useState(1);
+  const [deletedSearchTotal, setDeletedSearchTotal] = useState(0);
+  const [deletedSearchHasMore, setDeletedSearchHasMore] = useState(false);
+  const [restoreTarget, setRestoreTarget] = useState<DeletedShopItem | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [reissuingPassword, setReissuingPassword] = useState(false);
   const [copyToast, setCopyToast] = useState<{
     message: string;
@@ -662,6 +678,58 @@ function AdminJobsPageInner() {
     }
   }
 
+  async function runDeletedSearch(page = 1, append = false) {
+    setDeletedSearchLoading(true);
+    setMessage("");
+    try {
+      const params = new URLSearchParams({
+        q: shopSearchQuery.trim(),
+        region: regionFilter,
+        page: String(page),
+        limit: String(SEARCH_LIMIT),
+      });
+      for (const plan of planFilters) {
+        params.append("plan", plan);
+      }
+      const data = await readJson<{
+        items: DeletedShopItem[];
+        total: number;
+        page: number;
+        hasMore: boolean;
+        searched?: boolean;
+      }>(
+        await fetch(`/api/admin/jobs/deleted?${params.toString()}`, {
+          cache: "no-store",
+          credentials: "include",
+        }),
+      );
+
+      setDeletedSearchPerformed(Boolean(data.searched));
+      setDeletedSearchTotal(data.total);
+      setDeletedSearchHasMore(data.hasMore);
+      setDeletedSearchPage(data.page);
+      setDeletedItems((current) => {
+        if (!append) return data.items ?? [];
+        const seen = new Set(current.map((item) => item.job.id));
+        const merged = [...current];
+        for (const item of data.items ?? []) {
+          if (seen.has(item.job.id)) continue;
+          seen.add(item.job.id);
+          merged.push(item);
+        }
+        return merged;
+      });
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "削除済み店舗の取得に失敗しました。",
+      );
+    } finally {
+      setDeletedSearchLoading(false);
+    }
+  }
+
   async function runDraftSearch() {
     setDraftSearchLoading(true);
     setMessage("");
@@ -720,16 +788,48 @@ function AdminJobsPageInner() {
 
   async function refreshAfterMutation() {
     await loadDraftTotal();
+    if (shopListTab === "deleted" || deletedSearchPerformed) {
+      await runDeletedSearch(1, false);
+    }
     if (
-      shopSearchQuery.trim() ||
-      regionFilter !== "all" ||
-      statusFilter !== "all" ||
-      planFilters.length > 0
+      shopListTab === "listed" &&
+      (shopSearchQuery.trim() ||
+        regionFilter !== "all" ||
+        statusFilter !== "all" ||
+        planFilters.length > 0)
     ) {
       await runShopSearch(1, false);
     }
     if (draftSearchPerformed || isDraftSearchOpen) {
       await runDraftSearch();
+    }
+  }
+
+  async function handleConfirmRestore() {
+    const target = restoreTarget;
+    if (!target || restoring) return;
+    if (!(await ensureAdminSession())) return;
+
+    setRestoring(true);
+    setMessage("");
+    try {
+      const data = await readJson<{ ok?: boolean; message?: string }>(
+        await fetch(`/api/admin/jobs/${target.job.id}/restore`, {
+          method: "POST",
+          credentials: "include",
+        }),
+      );
+      setRestoreTarget(null);
+      setShopListTab("listed");
+      setMessage(data.message ?? "店舗を復元しました");
+      await refreshAfterMutation();
+      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "店舗の復元に失敗しました。",
+      );
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -1814,19 +1914,73 @@ function AdminJobsPageInner() {
 
         {isShopSearchOpen && (
           <div id="admin-shop-search-panel" className="mt-4 space-y-4">
+            <div
+              className="flex flex-wrap gap-2 rounded-2xl border border-gold/25 bg-white p-2 shadow-gold"
+              role="tablist"
+              aria-label="店舗一覧の切り替え"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={shopListTab === "listed"}
+                onClick={() => {
+                  setShopListTab("listed");
+                  setMessage("");
+                }}
+                className={`min-h-11 flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:flex-none ${
+                  shopListTab === "listed"
+                    ? "bg-gradient-to-r from-gold to-gold-dark text-white shadow-gold"
+                    : "border border-gold/30 bg-ivory text-gold-dark hover:bg-gold/10"
+                }`}
+              >
+                掲載店舗一覧
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={shopListTab === "deleted"}
+                onClick={() => {
+                  setShopListTab("deleted");
+                  setMessage("");
+                  if (!deletedSearchPerformed) {
+                    void runDeletedSearch(1, false);
+                  }
+                }}
+                className={`min-h-11 flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:flex-none ${
+                  shopListTab === "deleted"
+                    ? "bg-gradient-to-r from-gold to-gold-dark text-white shadow-gold"
+                    : "border border-gold/30 bg-ivory text-gold-dark hover:bg-gold/10"
+                }`}
+              >
+                削除済み店舗一覧
+              </button>
+            </div>
+
             <div className="rounded-2xl border border-gold/25 bg-white p-4 shadow-gold sm:p-5">
-              <h3 className="text-base font-semibold text-charcoal">店舗検索</h3>
+              <h3 className="text-base font-semibold text-charcoal">
+                {shopListTab === "deleted" ? "削除済み店舗検索" : "店舗検索"}
+              </h3>
               <p className="mt-1 text-xs text-muted">
-                店舗名やエリアを指定して検索すると、該当店舗だけが表示されます。
+                {shopListTab === "deleted"
+                  ? "削除済み店舗を店舗名・エリア・プランで絞り込みできます。条件なしでも一覧表示できます。"
+                  : "店舗名やエリアを指定して検索すると、該当店舗だけが表示されます。"}
               </p>
               <form
                 className="mt-4 space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (shopListTab === "deleted") {
+                    void runDeletedSearch(1, false);
+                    return;
+                  }
                   void runShopSearch(1, false);
                 }}
               >
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div
+                  className={`grid gap-4 ${
+                    shopListTab === "deleted" ? "sm:grid-cols-2" : "sm:grid-cols-3"
+                  }`}
+                >
                   <div>
                     <label htmlFor="region-filter" className={labelClass}>
                       地域で絞り込み
@@ -1844,21 +1998,23 @@ function AdminJobsPageInner() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="status-filter" className={labelClass}>
-                      公開状態
-                    </label>
-                    <select
-                      id="status-filter"
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      className={inputClass}
-                    >
-                      <option value="all">公開中 + 掲載停止</option>
-                      <option value="published">公開中</option>
-                      <option value="paused">掲載停止</option>
-                    </select>
-                  </div>
+                  {shopListTab === "listed" ? (
+                    <div>
+                      <label htmlFor="status-filter" className={labelClass}>
+                        公開状態
+                      </label>
+                      <select
+                        id="status-filter"
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="all">公開中 + 掲載停止</option>
+                        <option value="published">公開中</option>
+                        <option value="paused">掲載停止</option>
+                      </select>
+                    </div>
+                  ) : null}
                   <div>
                     <label htmlFor="shop-search" className={labelClass}>
                       店舗名で検索
@@ -1900,15 +2056,106 @@ function AdminJobsPageInner() {
                 </fieldset>
                 <button
                   type="submit"
-                  disabled={searchLoading}
+                  disabled={
+                    shopListTab === "deleted" ? deletedSearchLoading : searchLoading
+                  }
                   className="w-full rounded-full bg-gradient-to-r from-gold to-gold-dark px-5 py-3 text-sm font-semibold text-white shadow-gold disabled:opacity-60 sm:w-auto"
                 >
-                  {searchLoading ? "検索中..." : "検索する"}
+                  {shopListTab === "deleted"
+                    ? deletedSearchLoading
+                      ? "検索中..."
+                      : "検索する"
+                    : searchLoading
+                      ? "検索中..."
+                      : "検索する"}
                 </button>
               </form>
             </div>
 
-            {!searchPerformed ? (
+            {shopListTab === "deleted" ? (
+              !deletedSearchPerformed ? (
+                <div className="rounded-2xl border border-dashed border-gold/30 bg-white px-4 py-10 text-center text-sm text-muted">
+                  「検索する」を押すと削除済み店舗が表示されます。
+                </div>
+              ) : deletedSearchLoading && deletedItems.length === 0 ? (
+                <div className="h-32 animate-pulse rounded-2xl border border-gold/20 bg-white" />
+              ) : deletedItems.length === 0 ? (
+                <div className="rounded-2xl border border-gold/20 bg-white px-4 py-10 text-center text-sm text-muted">
+                  削除済みの店舗はありません。
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-base font-semibold text-charcoal">
+                      削除済み店舗
+                      <span className="ml-1 text-sm font-normal text-muted">
+                        （{deletedItems.length}件表示 / 全{deletedSearchTotal}件）
+                      </span>
+                    </h3>
+                  </div>
+                  <ul className="space-y-3">
+                    {deletedItems.map((item) => {
+                      const job = item.job;
+                      return (
+                        <li
+                          key={job.id}
+                          className="rounded-2xl border border-gold/20 bg-white p-4 shadow-gold sm:p-5"
+                        >
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-gold-dark">
+                                {formatLocation(job)} · {job.jobType}
+                              </p>
+                              <p className="mt-1 text-lg font-semibold text-charcoal">
+                                {job.shopName}
+                              </p>
+                              <p className="mt-1 text-xs font-medium text-gold-dark">
+                                プラン：
+                                {JOB_PLAN_DEFINITIONS[parseJobPlan(job.plan)].label}
+                              </p>
+                              <p className="mt-2 text-sm text-muted">
+                                削除日時：{formatAdminDateTime(item.deletedAt)}
+                              </p>
+                              <p className="mt-1 text-sm text-muted">
+                                削除前の公開状態：
+                                {item.deletedFromListingStatusLabel ?? "—"}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void (async () => {
+                                    if (!(await ensureAdminSession())) return;
+                                    setRestoreTarget(item);
+                                  })();
+                                }}
+                                disabled={restoring || softDeleting}
+                                className="inline-flex min-h-11 items-center justify-center rounded-full border border-gold/40 bg-ivory px-4 py-2 text-sm font-semibold text-gold-dark hover:bg-gold/10 disabled:opacity-60"
+                              >
+                                店舗を復元
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {deletedSearchHasMore && (
+                    <button
+                      type="button"
+                      disabled={deletedSearchLoading}
+                      onClick={() => void runDeletedSearch(deletedSearchPage + 1, true)}
+                      className="w-full rounded-full border border-gold/40 px-4 py-3 text-sm font-semibold text-gold-dark hover:bg-ivory disabled:opacity-60"
+                    >
+                      {deletedSearchLoading
+                        ? "読み込み中..."
+                        : "さらに表示（最大20件ずつ）"}
+                    </button>
+                  )}
+                </>
+              )
+            ) : !searchPerformed ? (
               <div className="rounded-2xl border border-dashed border-gold/30 bg-white px-4 py-10 text-center text-sm text-muted">
                 店舗名・エリア・公開状態・掲載プランのいずれかで絞り込んで検索してください
               </div>
@@ -3875,6 +4122,54 @@ function AdminJobsPageInner() {
                 className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {softDeleting ? "削除中..." : "削除する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {restoreTarget ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="restore-confirm-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-gold/30 bg-white p-5 shadow-lg sm:p-6">
+            <h2
+              id="restore-confirm-title"
+              className="text-lg font-semibold text-charcoal"
+            >
+              店舗を復元しますか？
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-charcoal">
+              「{restoreTarget.job.shopName || "（未入力）"}」を復元します。
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              復元後は求人管理画面の掲載店舗一覧に戻ります。
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              復元直後は掲載停止状態のため、公開サイトには表示されません。必要に応じて管理者が公開してください。
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (restoring) return;
+                  setRestoreTarget(null);
+                }}
+                disabled={restoring}
+                className="rounded-full border border-charcoal/25 px-4 py-2 text-sm text-charcoal disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmRestore()}
+                disabled={restoring}
+                className="rounded-full bg-gradient-to-r from-gold to-gold-dark px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {restoring ? "復元中..." : "復元する"}
               </button>
             </div>
           </div>
