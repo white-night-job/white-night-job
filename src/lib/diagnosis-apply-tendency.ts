@@ -1,4 +1,5 @@
 import { DIAGNOSIS_JOB_TYPES, type DiagnosisJobType } from "@/lib/job-type-diagnosis-types";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { JobType } from "@/types/job";
 
@@ -106,10 +107,12 @@ export async function computeDiagnosisApplyTendency(
   }
 
   const supabase = createSupabaseAdmin();
-  const { data: jobs, error } = await supabase
-    .from("jobs")
-    .select("id, job_type")
-    .in("id", [...clickedJobIds]);
+  const { data: jobs, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("id, job_type")
+      .in("id", [...clickedJobIds]),
+  );
   if (error) throw error;
 
   const jobTypeById = new Map<string, DiagnosisJobType>();

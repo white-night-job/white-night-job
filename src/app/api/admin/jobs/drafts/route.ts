@@ -5,6 +5,7 @@ import { computeJobDraftProgress } from "@/lib/job-draft-progress";
 import { rowToJob } from "@/lib/job-db";
 import { migratePlaintextShopPasswordsInRows } from "@/lib/shop-credentials";
 import { JOB_TYPES, type District, type JobType } from "@/types/job";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -51,17 +52,21 @@ export async function GET(request: Request) {
 
     const supabase = createSupabaseAdmin();
 
-    const { count: draftTotal, error: countError } = await supabase
-      .from("jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("listing_status", "draft");
+    const { count: draftTotal, error: countError } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("listing_status", "draft"),
+    );
     if (countError) throw countError;
 
-    let query = supabase
-      .from("jobs")
-      .select("*", { count: "exact" })
-      .eq("listing_status", "draft")
-      .order("updated_at", { ascending: false });
+    let query = excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("*", { count: "exact" })
+        .eq("listing_status", "draft")
+        .order("updated_at", { ascending: false }),
+    );
 
     if (shopName) {
       query = query.ilike("shop_name", `%${shopName}%`);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId, USER_COOKIE_NAME } from "@/lib/user-auth";
 import {
@@ -49,10 +50,12 @@ export async function GET(request: Request) {
   // Only the visible slice is hydrated; `favorites` keeps every id so the
   // favorite state on job cards stays accurate.
   const visibleIds = jobIds.slice(0, limit);
-  const { data: jobs, error: jobsError } = await supabase
-    .from("jobs")
-    .select(USER_JOB_CARD_COLUMNS)
-    .in("id", visibleIds);
+  const { data: jobs, error: jobsError } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select(USER_JOB_CARD_COLUMNS)
+      .in("id", visibleIds),
+  );
   if (jobsError) {
     console.error("[favorites] jobs fetch failed:", {
       userId,

@@ -13,6 +13,7 @@ import {
   fetchViewRowsWithStatus,
   fillViewCountsForJobs,
 } from "@/lib/job-views";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +25,13 @@ export async function GET() {
 
   try {
     const supabase = createSupabaseAdmin();
-    const { data: jobs, error: jobsError } = await supabase
-      .from("jobs")
-      .select("*")
-      .eq("published", true)
-      .order("created_at", { ascending: false });
+    const { data: jobs, error: jobsError } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false }),
+    );
 
     if (jobsError) throw jobsError;
 

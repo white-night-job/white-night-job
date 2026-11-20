@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
 import {
@@ -46,11 +47,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ history: [], jobs: [] });
   }
 
-  const { data: jobs, error: jobsError } = await supabase
-    .from("jobs")
-    .select(USER_JOB_CARD_COLUMNS)
-    .in("id", jobIds)
-    .eq("published", true);
+  const { data: jobs, error: jobsError } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select(USER_JOB_CARD_COLUMNS)
+      .in("id", jobIds)
+      .eq("published", true),
+  );
 
   if (jobsError) {
     console.error("[view-history] jobs fetch failed:", {
@@ -93,12 +96,13 @@ export async function POST(request: Request) {
 
   const supabase = createSupabaseAdmin();
 
-  const { data: job } = await supabase
-    .from("jobs")
-    .select("id")
-    .eq("id", jobId)
-    .eq("published", true)
-    .maybeSingle();
+  const { data: job } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("id")
+      .eq("id", jobId)
+      .eq("published", true),
+  ).maybeSingle();
 
   if (!job) {
     return NextResponse.json({ message: "Job not found" }, { status: 404 });

@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { getErrorMessage } from "@/lib/api-error";
 import { rowToJob } from "@/lib/job-db";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
 
@@ -64,12 +65,13 @@ async function fetchPublishedJobDetailUncached(id: string): Promise<Job | null> 
   const startedAt = Date.now();
   try {
     const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("jobs")
-      .select(PUBLIC_JOB_DETAIL_COLUMNS)
-      .eq("id", id)
-      .eq("published", true)
-      .maybeSingle();
+    const { data, error } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select(PUBLIC_JOB_DETAIL_COLUMNS)
+        .eq("id", id)
+        .eq("published", true),
+    ).maybeSingle();
 
     if (error) {
       console.error("[job-detail] supabase select failed", {

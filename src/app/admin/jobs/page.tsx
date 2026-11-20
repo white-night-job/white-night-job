@@ -2,6 +2,7 @@
 
 import { JobListingPreview } from "@/components/JobListingPreview";
 import { ImageUploadSizeHint } from "@/components/ImageUploadSizeHint";
+import { Trash2 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminUnsavedChanges } from "@/components/admin/AdminUnsavedChanges";
@@ -480,6 +481,8 @@ function AdminJobsPageInner() {
     shopLoginId: string;
     shopLoginPassword: string;
   } | null>(null);
+  const [softDeleteTarget, setSoftDeleteTarget] = useState<Job | null>(null);
+  const [softDeleting, setSoftDeleting] = useState(false);
   const [reissuingPassword, setReissuingPassword] = useState(false);
   const [copyToast, setCopyToast] = useState<{
     message: string;
@@ -1425,6 +1428,37 @@ function AdminJobsPageInner() {
     }
   }
 
+  async function handleConfirmSoftDelete() {
+    const job = softDeleteTarget;
+    if (!job || softDeleting) return;
+    if (!(await ensureAdminSession())) return;
+
+    setSoftDeleting(true);
+    setMessage("");
+    try {
+      const data = await readJson<{ ok?: boolean; message?: string }>(
+        await fetch(`/api/admin/jobs/${job.id}/soft-delete`, {
+          method: "POST",
+          credentials: "include",
+        }),
+      );
+      setSoftDeleteTarget(null);
+      if (editingId === job.id) {
+        resetForm();
+        setIsAddFormOpen(false);
+      }
+      setMessage(data.message ?? "店舗を削除しました");
+      await refreshAfterMutation();
+      window.dispatchEvent(new Event(JOBS_UPDATED_EVENT));
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "店舗の削除に失敗しました。",
+      );
+    } finally {
+      setSoftDeleting(false);
+    }
+  }
+
   async function handleDelete(job: Job) {
     if (resolveJobListingStatus(job) !== "draft") {
       setMessage("公開中・掲載停止の求人はこの画面から削除できません。");
@@ -1984,7 +2018,7 @@ function AdminJobsPageInner() {
                             )}
                           </div>
 
-                          <div className="flex shrink-0 gap-2 lg:flex-col lg:items-end">
+                          <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-end">
                             <button
                               type="button"
                               onClick={() => {
@@ -2035,6 +2069,20 @@ function AdminJobsPageInner() {
                               className="rounded-full border border-gold/40 px-4 py-2 text-sm font-medium text-gold-dark hover:bg-ivory"
                             >
                               店舗ダッシュボードを見る
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void (async () => {
+                                  if (!(await ensureAdminSession())) return;
+                                  setSoftDeleteTarget(job);
+                                })();
+                              }}
+                              disabled={softDeleting}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                              店舗を削除
                             </button>
                           </div>
                         </div>
@@ -3784,6 +3832,54 @@ function AdminJobsPageInner() {
           </div>
         </div>
       )}
+
+      {softDeleteTarget ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="soft-delete-confirm-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-gold/30 bg-white p-5 shadow-lg sm:p-6">
+            <h2
+              id="soft-delete-confirm-title"
+              className="text-lg font-semibold text-charcoal"
+            >
+              店舗を削除しますか？
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-charcoal">
+              「{softDeleteTarget.shopName || "（未入力）"}」を削除します。
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              削除すると求人一覧や公開サイトから表示されなくなります。
+            </p>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-charcoal">
+              本当に削除してもよろしいですか？
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (softDeleting) return;
+                  setSoftDeleteTarget(null);
+                }}
+                disabled={softDeleting}
+                className="rounded-full border border-charcoal/25 px-4 py-2 text-sm text-charcoal disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmSoftDelete()}
+                disabled={softDeleting}
+                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {softDeleting ? "削除中..." : "削除する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {copyToast && (
         <div

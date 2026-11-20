@@ -1,4 +1,5 @@
 import { rowToJob } from "@/lib/job-db";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
 
@@ -16,13 +17,15 @@ export async function fetchColumnRecommendedJobs(
   const supabase = createSupabaseAdmin();
   const limit = filter.limit ?? 3;
 
-  let query = supabase
-    .from("jobs")
-    .select("*")
-    .eq("published", true)
-    .order("pickup_enabled", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  let query = excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("*")
+      .eq("published", true)
+      .order("pickup_enabled", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  );
 
   if (filter.jobType) query = query.eq("job_type", filter.jobType);
   if (filter.district) query = query.eq("district", filter.district);

@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getAdminCache, setAdminCache } from "@/lib/admin-cache";
 import { getErrorMessage } from "@/lib/api-error";
 import { getJstMonthBounds, percentChange } from "@/lib/jst-month-bounds";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -56,10 +57,12 @@ export async function GET() {
       countInRange("job_views", lastMonth.startIso, lastMonth.endIso),
       countInRange("job_applications", thisMonth.startIso, thisMonth.endIso),
       countInRange("job_applications", lastMonth.startIso, lastMonth.endIso),
-      supabase
-        .from("jobs")
-        .select("id", { count: "exact", head: true })
-        .eq("published", true),
+      excludeSoftDeletedJobs(
+        supabase
+          .from("jobs")
+          .select("id", { count: "exact", head: true })
+          .eq("published", true),
+      ),
     ]);
 
     if (publishedResult.error) throw publishedResult.error;

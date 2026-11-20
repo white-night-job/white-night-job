@@ -3,6 +3,7 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { setAdminShopViewCookie } from "@/lib/admin-shop-view";
 import { getErrorMessage } from "@/lib/api-error";
 import { setShopCookie } from "@/lib/shop-auth";
+import { isJobSoftDeleted } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -31,13 +32,19 @@ export async function POST(_request: Request, { params }: RouteContext) {
     const supabase = createSupabaseAdmin();
     const { data: job, error } = await supabase
       .from("jobs")
-      .select("id, shop_name")
+      .select("id, shop_name, deleted_at")
       .eq("id", jobId)
       .maybeSingle();
 
     if (error) throw error;
     if (!job) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+    if (isJobSoftDeleted(job)) {
+      return NextResponse.json(
+        { message: "削除済みの店舗ダッシュボードは開けません。" },
+        { status: 403 },
+      );
     }
 
     await setShopCookie(job.id);

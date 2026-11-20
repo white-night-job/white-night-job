@@ -34,6 +34,10 @@ import { parseJobPlan, parsePlanFromBody } from "@/lib/job-plan";
 import { parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
 import { PUBLIC_JOB_DETAIL_COLUMNS } from "@/lib/job-detail-data";
 import { runAutoNotificationsAfterJobChange } from "@/lib/line-auto-notify";
+import {
+  excludeSoftDeletedJobs,
+  isJobSoftDeleted,
+} from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { revalidateTag } from "next/cache";
 
@@ -114,12 +118,13 @@ export async function GET(_request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
     const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("jobs")
-      .select(PUBLIC_JOB_DETAIL_COLUMNS)
-      .eq("id", id)
-      .eq("published", true)
-      .maybeSingle();
+    const { data, error } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select(PUBLIC_JOB_DETAIL_COLUMNS)
+        .eq("id", id)
+        .eq("published", true),
+    ).maybeSingle();
 
     if (error) {
       console.error("[api/jobs/[id]] supabase select failed", {
@@ -183,6 +188,16 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
     if (!previous) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+
+    if (isJobSoftDeleted(previous)) {
+      return NextResponse.json(
+        {
+          message:
+            "削除済みの店舗は編集・再公開できません。求人情報は履歴として保持されています。",
+        },
+        { status: 403 },
+      );
     }
 
     const currentStatus = resolveJobListingStatus(previous);

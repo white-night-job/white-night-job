@@ -16,6 +16,7 @@ import {
   type UserActivityAttribution,
 } from "@/lib/user-activity-events";
 import { sendShopApplyLineNotification } from "@/lib/shop-line-link";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 type RouteContext = {
@@ -45,12 +46,13 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
 
     const supabase = createSupabaseAdmin();
-    const { data: job, error: jobError } = await supabase
-      .from("jobs")
-      .select("id")
-      .eq("id", jobId)
-      .eq("published", true)
-      .maybeSingle();
+    const { data: job, error: jobError } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id")
+        .eq("id", jobId)
+        .eq("published", true),
+    ).maybeSingle();
 
     if (jobError) throw jobError;
     if (!job) {

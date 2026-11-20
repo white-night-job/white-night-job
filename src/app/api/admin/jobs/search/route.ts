@@ -13,6 +13,7 @@ import { isJobPlan, type JobPlan } from "@/lib/job-plan";
 import { aggregateViewCounts } from "@/lib/job-views";
 import { migratePlaintextShopPasswordsInRows } from "@/lib/shop-credentials";
 import { FIXED_AREA, type District } from "@/types/job";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { fetchListingRanksForJobs } from "@/lib/shop-boosts";
 
@@ -82,10 +83,13 @@ export async function GET(request: Request) {
     const supabase = createSupabaseAdmin();
 
     // Listed search: published / paused only (drafts use /api/admin/jobs/drafts).
-    let slimQuery = supabase
-      .from("jobs")
-      .select("id, shop_name, district, area, created_at, published, listing_status, plan")
-      .order("created_at", { ascending: false });
+    // Soft-deleted shops are excluded from the normal admin listing.
+    let slimQuery = excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id, shop_name, district, area, created_at, published, listing_status, plan")
+        .order("created_at", { ascending: false }),
+    );
 
     if (statusFilter === "published") {
       slimQuery = slimQuery.eq("listing_status", "published");

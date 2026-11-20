@@ -10,6 +10,7 @@ import {
   validateShopJobPayload,
 } from "@/lib/shop-job-db";
 import { invalidateShopScopedCache } from "@/lib/shop-scoped-cache";
+import { isJobSoftDeleted } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { revalidateTag } from "next/cache";
 
@@ -85,6 +86,12 @@ export async function GET() {
     if (!data) {
       return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
     }
+    if (isJobSoftDeleted(data)) {
+      return NextResponse.json(
+        { message: "削除済みの店舗は利用できません。" },
+        { status: 403 },
+      );
+    }
 
     console.info("[shop-dashboard/job]", {
       jobId,
@@ -139,10 +146,21 @@ export async function PATCH(request: Request) {
       .eq("id", jobId)
       .maybeSingle();
 
+    if (!previous) {
+      return NextResponse.json({ message: "求人が見つかりません。" }, { status: 404 });
+    }
+    if (isJobSoftDeleted(previous)) {
+      return NextResponse.json(
+        { message: "削除済みの店舗は編集できません。" },
+        { status: 403 },
+      );
+    }
+
     const { data, error } = await supabase
       .from("jobs")
       .update(row)
       .eq("id", jobId)
+      .is("deleted_at", null)
       .select("*")
       .single();
 

@@ -11,6 +11,7 @@ import type { ChatApiMessage } from "@/lib/chat/types";
 import { rowToJob } from "@/lib/job-db";
 import { CHAT_BOT_ELIGIBLE_PLANS } from "@/lib/job-plan";
 import { fetchBoostStatsForJobs } from "@/lib/shop-boosts";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
 
@@ -23,12 +24,14 @@ const MAX_RECOMMENDATIONS = 10;
 
 async function fetchPublishedChatJobs() {
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*")
-    .eq("published", true)
-    // AIチャット紹介はスタンダード・プレミアムのみ（未契約・ライトは対象外）
-    .in("plan", [...CHAT_BOT_ELIGIBLE_PLANS]);
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("*")
+      .eq("published", true)
+      // AIチャット紹介はスタンダード・プレミアムのみ（未契約・ライトは対象外）
+      .in("plan", [...CHAT_BOT_ELIGIBLE_PLANS]),
+  );
 
   if (error) throw error;
   return (data ?? []).map((row) => jobToChatJob(rowToJob(row)));

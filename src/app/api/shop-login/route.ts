@@ -3,6 +3,7 @@ import { clearAdminShopViewCookie } from "@/lib/admin-shop-view";
 import { getErrorMessage } from "@/lib/api-error";
 import { setShopCookie } from "@/lib/shop-auth";
 import { shopPasswordsMatch } from "@/lib/shop-credentials";
+import { isJobSoftDeleted } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     const { data: job, error } = await supabase
       .from("jobs")
       .select(
-        "id, shop_name, shop_login_id, shop_login_password, published, plan, shop_login_failed_attempts, shop_login_locked_until",
+        "id, shop_name, shop_login_id, shop_login_password, published, plan, shop_login_failed_attempts, shop_login_locked_until, deleted_at",
       )
       .eq("shop_login_id", loginId)
       .maybeSingle();
@@ -50,6 +51,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: "ログインIDまたはパスワードが違います" },
         { status: 401 },
+      );
+    }
+
+    if (isJobSoftDeleted(job)) {
+      return NextResponse.json(
+        { message: "この店舗アカウントは利用できません。" },
+        { status: 403 },
       );
     }
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseJobPlan, type JobPlan } from "@/lib/job-plan";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 
 export const DAILY_BOOST_LIMIT = 5;
 const TOKYO_TIME_ZONE = "Asia/Tokyo";
@@ -204,10 +205,12 @@ export async function fetchListingRanksForJobs(
   }
   if (targets.length === 0) return empty;
 
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("id, district, created_at, updated_at, plan")
-    .eq("published", true);
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("id, district, created_at, updated_at, plan")
+      .eq("published", true),
+  );
 
   if (error) throw error;
 

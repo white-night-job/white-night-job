@@ -11,6 +11,7 @@ import {
   resolveNotificationTargetAreas,
 } from "@/lib/notification-target-areas";
 import { rowToJob } from "@/lib/job-db";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
 
@@ -86,11 +87,13 @@ export async function sendCarouselToLineUser(params: {
 export async function fetchJobsByIds(jobIds: string[]): Promise<Job[]> {
   if (jobIds.length === 0) return [];
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*")
-    .in("id", jobIds)
-    .eq("published", true);
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("*")
+      .in("id", jobIds)
+      .eq("published", true),
+  );
   if (error) {
     console.error("[line-notification] fetchJobsByIds failed", { jobIds, error });
     throw error;
@@ -106,12 +109,14 @@ export async function fetchPublishedJobs(filter?: {
 }): Promise<Job[]> {
   const supabase = createSupabaseAdmin();
   const limit = filter?.limit ?? 10;
-  let query = supabase
-    .from("jobs")
-    .select("*")
-    .eq("published", true)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  let query = excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("*")
+      .eq("published", true)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  );
 
   if (filter?.pickup) {
     query = query.eq("pickup_enabled", true);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rowToJob } from "@/lib/job-db";
 import { sendCarouselToLineUser } from "@/lib/line-notification";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import { getAuthenticatedUserId } from "@/lib/user-auth";
 
@@ -37,11 +38,13 @@ export async function POST(request: Request) {
   const jobIds = (favorites ?? []).map((row) => row.job_id);
   let jobs: ReturnType<typeof rowToJob>[] = [];
   if (jobIds.length > 0) {
-    const { data: jobRows, error: jobsError } = await supabase
-      .from("jobs")
-      .select("*")
-      .in("id", jobIds)
-      .eq("published", true);
+    const { data: jobRows, error: jobsError } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("*")
+        .in("id", jobIds)
+        .eq("published", true),
+    );
     if (jobsError) {
       console.error("[send-favorite-shops] jobs fetch failed", { userId, jobIds, jobsError });
       return NextResponse.json({ message: jobsError.message }, { status: 500 });

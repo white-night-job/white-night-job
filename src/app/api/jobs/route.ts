@@ -46,6 +46,7 @@ import {
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
 import { isNewListingJob, isNewlyOpenedShopJob, parseOpenDateFromBody, parsePostedAtFromBody } from "@/lib/job-listing";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 /** Persist plan + related flags; ranking/pickup/AI come from form (admin may override). */
@@ -121,11 +122,13 @@ export async function GET(request: Request) {
     const listing = searchParams.get("listing");
     const supabase = createSupabaseAdmin();
 
-    let query = supabase
-      .from("jobs")
-      .select("*")
-      .eq("published", true)
-      .order("created_at", { ascending: false });
+    let query = excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false }),
+    );
 
     if (listing === "pickup") {
       query = query.eq("pickup_enabled", true);

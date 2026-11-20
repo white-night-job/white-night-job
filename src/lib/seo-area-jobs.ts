@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { rowToJob } from "@/lib/job-db";
 import { listingDisplayGroupRank } from "@/lib/shop-boosts";
 import { collectPresentComparisonBenefits } from "@/lib/seo-comparison-tags";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job, JobType } from "@/types/job";
 
@@ -88,12 +89,14 @@ async function fetchPublishedJobsPageUncached(params: {
 
   const supabase = createSupabaseAdmin();
   const runSelect = async (columns: string) => {
-    let query = supabase
-      .from("jobs")
-      .select(columns)
-      .eq("published", true)
-      .eq("district", params.district)
-      .order("created_at", { ascending: false });
+    let query = excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select(columns)
+        .eq("published", true)
+        .eq("district", params.district)
+        .order("created_at", { ascending: false }),
+    );
     if (params.jobType) {
       query = query.eq("job_type", params.jobType);
     }
@@ -211,11 +214,13 @@ async function listPublishedJobTypesForDistrictUncached(
   }
 
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("job_type")
-    .eq("published", true)
-    .eq("district", district);
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("job_type")
+      .eq("published", true)
+      .eq("district", district),
+  );
 
   if (error) {
     console.error("[seo-area-jobs] job_type list failed", error.message);
@@ -256,11 +261,13 @@ async function listPublishedJobIdsUncached(): Promise<SitemapJobEntry[]> {
   }
 
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("id, updated_at, posted_at, plan")
-    .eq("published", true)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("id, updated_at, posted_at, plan")
+      .eq("published", true)
+      .order("updated_at", { ascending: false }),
+  );
 
   if (error) {
     console.error("[sitemap] published jobs select failed", error.message);

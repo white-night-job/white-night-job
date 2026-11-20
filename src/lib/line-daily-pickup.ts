@@ -20,6 +20,7 @@ import {
   fetchUserNotificationTargetAreas,
   resolveNotificationTargetAreas,
 } from "@/lib/notification-target-areas";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { Job } from "@/types/job";
 
@@ -239,11 +240,13 @@ async function fetchEligibleUsers(options?: {
 
 async function fetchTopPickupJobs(): Promise<Job[]> {
   const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*")
-    .eq("published", true)
-    .eq("listing_priority", "top");
+  const { data, error } = await excludeSoftDeletedJobs(
+    supabase
+      .from("jobs")
+      .select("*")
+      .eq("published", true)
+      .eq("listing_priority", "top"),
+  );
   if (error) throw error;
   return (data ?? [])
     .map((row) => rowToJob(row))

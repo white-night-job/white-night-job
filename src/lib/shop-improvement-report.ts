@@ -9,6 +9,7 @@ import {
   calculateDistrictRank,
   fetchBoostStatsForJobs,
 } from "@/lib/shop-boosts";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import {
   getPlanDefinition,
   getPlanFeatures,
@@ -1591,11 +1592,13 @@ async function fetchListingContext(
   if (!jobRow?.district) return base;
 
   try {
-    const { data: districtRows, error } = await supabase
-      .from("jobs")
-      .select("id, created_at, updated_at, plan")
-      .eq("published", true)
-      .eq("district", jobRow.district);
+    const { data: districtRows, error } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id, created_at, updated_at, plan")
+        .eq("published", true)
+        .eq("district", jobRow.district),
+    );
 
     if (error) throw error;
 
@@ -1635,14 +1638,16 @@ async function fetchPeerComparison(
   if (!district || !jobType) return null;
 
   try {
-    const { data: peerJobs, error: peerError } = await supabase
-      .from("jobs")
-      .select("id")
-      .eq("published", true)
-      .eq("district", district)
-      .eq("job_type", jobType)
-      .neq("id", jobId)
-      .limit(PEER_FETCH_LIMIT);
+    const { data: peerJobs, error: peerError } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id")
+        .eq("published", true)
+        .eq("district", district)
+        .eq("job_type", jobType)
+        .neq("id", jobId)
+        .limit(PEER_FETCH_LIMIT),
+    );
 
     if (peerError) throw peerError;
 

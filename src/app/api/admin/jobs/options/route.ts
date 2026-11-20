@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getErrorMessage } from "@/lib/api-error";
+import { excludeSoftDeletedJobs } from "@/lib/job-soft-delete";
 import { createSupabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,13 @@ export async function GET() {
 
   try {
     const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("jobs")
-      .select("id, shop_name, district")
-      .eq("published", true)
-      .order("shop_name", { ascending: true });
+    const { data, error } = await excludeSoftDeletedJobs(
+      supabase
+        .from("jobs")
+        .select("id, shop_name, district")
+        .eq("published", true)
+        .order("shop_name", { ascending: true }),
+    );
 
     if (error) throw error;
 
